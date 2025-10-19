@@ -1,0 +1,25 @@
+# Isaac API Security Rules
+
+# Block direct access to config.php
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Block access to data directory
+<DirectoryMatch "data">
+    Require all denied
+</DirectoryMatch>
+
+# Force HTTPS (if available)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Enable CORS (for local testing)
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Authorization, Content-Type"
+</IfModule>
