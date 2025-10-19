@@ -1,0 +1,471 @@
+feature: P0-3 Add Casual Conversation Patterns
+complexity: MEDIUM
+priority: P0
+estimated_effort: 3 hours
+
+files_affected:
+  - isaac/core/ai_translator.py
+  - tests/test_p0_fixes.py (append tests)
+
+problem_statement: |
+  Translator only recognizes 11 patterns (backup/restore/list/help commands).
+  Missing casual conversation patterns for greetings, questions, time/weather queries.
+  User types "isaac hello" and it fails because "hello" pattern doesn't exist.
+
+implementation:
+  - step: Add casual pattern lists to __init__() method
+    file: isaac/core/ai_translator.py
+    action: modify
+    location: __init__() method, line ~22, after existing pattern definitions
+    code: |
+      # In AITranslator.__init__() method
+      # Add these new pattern lists AFTER the existing patterns (backup, restore, etc.)
+      # Around line 50-60, after help_patterns definition
+      
+      # Casual conversation patterns
+      self.casual_patterns = [
+          r"(?:hi|hello|hey|greetings?)(?:\s+there)?",
+          r"good\s+(?:morning|afternoon|evening|day)",
+          r"how\s+are\s+you",
+          r"what'?s\s+up",
+          r"yo(?:\s+isaac)?",
+          r"howdy",
+      ]
+      
+      # Question patterns (general queries)
+      self.question_patterns = [
+          r"what\s+(?:is|are|was|were)\s+(.+)",
+          r"when\s+(?:is|are|was|were)\s+(.+)",
+          r"where\s+(?:is|are|was|were)\s+(.+)",
+          r"why\s+(?:is|are|was|were|do|does)\s+(.+)",
+          r"how\s+(?:do|does|can|could|would)\s+(.+)",
+          r"can\s+you\s+(.+)",
+          r"could\s+you\s+(.+)",
+          r"would\s+you\s+(.+)",
+      ]
+      
+      # Time and weather patterns
+      self.time_weather_patterns = [
+          r"what\s+time\s+(?:is\s+it)?",
+          r"what'?s\s+the\s+(?:time|date)",
+          r"what\s+(?:is\s+)?(?:the\s+)?date",
+          r"(?:what'?s\s+)?the\s+weather",
+          r"is\s+it\s+(?:raining|snowing|sunny|cloudy)",
+          r"how'?s\s+the\s+weather",
+      ]
+
+  - step: Add pattern matching logic to translate() method
+    file: isaac/core/ai_translator.py
+    action: modify
+    location: translate() method, line ~145, after help patterns section
+    code: |
+      # In translate() method
+      # Add these sections AFTER the help patterns check (around line 145)
+      # BEFORE the fallback/unknown command handling
+      
+      # Try casual conversation patterns
+      for pattern in self.casual_patterns:
+          if re.search(pattern, text_lower):
+              return TranslationResult(
+                  original=text,
+                  translated="chat",
+                  resolved_paths=[],
+                  confidence=0.9,
+                  needs_confirmation=False,
+                  metadata={
+                      "operation": "chat",
+                      "type": "greeting",
+                      "intent": "casual_conversation"
+                  }
+              )
+      
+      # Try question patterns
+      for pattern in self.question_patterns:
+          match = re.search(pattern, text_lower)
+          if match:
+              # Extract the subject of the question if captured
+              subject = match.group(1).strip() if match.lastindex and match.lastindex >= 1 else ""
+              return TranslationResult(
+                  original=text,
+                  translated=f"query {subject}" if subject else "query",
+                  resolved_paths=[],
+                  confidence=0.8,
+                  needs_confirmation=False,
+                  metadata={
+                      "operation": "query",
+                      "type": "question",
+                      "subject": subject,
+                      "intent": "information_request"
+                  }
+              )
+      
+      # Try time/weather patterns
+      for pattern in self.time_weather_patterns:
+          if re.search(pattern, text_lower):
+              # Determine if it's time or weather related
+              pattern_type = "time" if "time" in pattern or "date" in pattern else "weather"
+              return TranslationResult(
+                  original=text,
+                  translated="info",
+                  resolved_paths=[],
+                  confidence=0.85,
+                  needs_confirmation=False,
+                  metadata={
+                      "operation": "info",
+                      "type": "system",
+                      "info_type": pattern_type,
+                      "intent": "system_query"
+                  }
+              )
+      
+      # If no patterns matched, fall through to existing fallback logic
+      # (existing code continues here)
+
+  - step: Add comprehensive tests for casual patterns
+    file: tests/test_p0_fixes.py
+    action: modify
+    location: After P0-2 tests, new P0-3 section
+    code: |
+      # ============================================================================
+      # P0-3: CASUAL PATTERN TESTS
+      # ============================================================================
+      
+      def test_greeting_hello(translator):
+          """Test basic 'hello' greeting"""
+          result = translator.translate("hello")
+          
+          assert result is not None, "Should match casual pattern"
+          assert result.confidence > 0.8, "Should have high confidence"
+          assert result.metadata["operation"] == "chat"
+          assert result.metadata["type"] == "greeting"
+          assert result.translated == "chat"
+      
+      
+      def test_greeting_hi(translator):
+          """Test 'hi' greeting"""
+          result = translator.translate("hi")
+          
+          assert result is not None
+          assert result.confidence >= 0.9
+          assert result.metadata["type"] == "greeting"
+      
+      
+      def test_greeting_hey_there(translator):
+          """Test 'hey there' greeting with optional word"""
+          result = translator.translate("hey there")
+          
+          assert result is not None
+          assert result.metadata["type"] == "greeting"
+      
+      
+      def test_greeting_good_morning(translator):
+          """Test time-based greeting"""
+          result = translator.translate("good morning")
+          
+          assert result is not None
+          assert result.confidence >= 0.9
+          assert result.metadata["type"] == "greeting"
+      
+      
+      def test_greeting_how_are_you(translator):
+          """Test conversational greeting"""
+          result = translator.translate("how are you")
+          
+          assert result is not None
+          assert result.metadata["type"] == "greeting"
+      
+      
+      def test_greeting_whats_up(translator):
+          """Test casual greeting"""
+          result = translator.translate("what's up")
+          
+          assert result is not None
+          assert result.metadata["type"] == "greeting"
+      
+      
+      def test_question_what_is(translator):
+          """Test 'what is' question pattern"""
+          result = translator.translate("what is Python")
+          
+          assert result is not None
+          assert result.confidence >= 0.7
+          assert result.metadata["operation"] == "query"
+          assert result.metadata["type"] == "question"
+          assert "Python" in result.metadata["subject"]
+      
+      
+      def test_question_when_is(translator):
+          """Test 'when is' question pattern"""
+          result = translator.translate("when is the meeting")
+          
+          assert result is not None
+          assert result.metadata["type"] == "question"
+          assert "meeting" in result.metadata["subject"]
+      
+      
+      def test_question_where_is(translator):
+          """Test 'where is' question pattern"""
+          result = translator.translate("where is the file")
+          
+          assert result is not None
+          assert result.metadata["type"] == "question"
+          assert "file" in result.metadata["subject"]
+      
+      
+      def test_question_why_do(translator):
+          """Test 'why' question pattern"""
+          result = translator.translate("why do we use backups")
+          
+          assert result is not None
+          assert result.metadata["type"] == "question"
+          assert "backups" in result.metadata["subject"]
+      
+      
+      def test_question_how_can(translator):
+          """Test 'how can' question pattern"""
+          result = translator.translate("how can I restore")
+          
+          assert result is not None
+          assert result.metadata["type"] == "question"
+      
+      
+      def test_question_can_you(translator):
+          """Test 'can you' question pattern"""
+          result = translator.translate("can you help me")
+          
+          assert result is not None
+          assert result.metadata["type"] == "question"
+          assert "help me" in result.metadata["subject"]
+      
+      
+      def test_time_query(translator):
+          """Test 'what time is it' query"""
+          result = translator.translate("what time is it")
+          
+          assert result is not None
+          assert result.confidence >= 0.8
+          assert result.metadata["operation"] == "info"
+          assert result.metadata["info_type"] == "time"
+          assert result.translated == "info"
+      
+      
+      def test_date_query(translator):
+          """Test date query"""
+          result = translator.translate("what's the date")
+          
+          assert result is not None
+          assert result.metadata["operation"] == "info"
+          assert result.metadata["info_type"] == "time"
+      
+      
+      def test_weather_query(translator):
+          """Test weather query"""
+          result = translator.translate("what's the weather")
+          
+          assert result is not None
+          assert result.confidence >= 0.8
+          assert result.metadata["operation"] == "info"
+          assert result.metadata["info_type"] == "weather"
+      
+      
+      def test_weather_condition_query(translator):
+          """Test specific weather condition"""
+          result = translator.translate("is it raining")
+          
+          assert result is not None
+          assert result.metadata["info_type"] == "weather"
+      
+      
+      def test_case_insensitive_patterns(translator):
+          """Test that patterns work regardless of case"""
+          test_cases = [
+              "HELLO",
+              "Hello",
+              "HeLLo",
+              "WHAT TIME IS IT",
+              "What's The Weather",
+          ]
+          
+          for query in test_cases:
+              result = translator.translate(query)
+              assert result is not None, f"Failed for: {query}"
+              assert result.confidence > 0.7, f"Low confidence for: {query}"
+      
+      
+      def test_pattern_priority_order(translator):
+          """Test that existing patterns (backup/restore) still take priority"""
+          # These should still match existing command patterns, not casual
+          result_backup = translator.translate("backup everything")
+          assert "backup" in result_backup.translated.lower()
+          
+          result_restore = translator.translate("restore my files")
+          assert "restore" in result_restore.translated.lower()
+          
+          result_list = translator.translate("list backups")
+          assert "list" in result_list.translated.lower()
+      
+      
+      def test_no_false_positives(translator):
+          """Test that random strings don't match casual patterns"""
+          # These should NOT match casual patterns
+          random_strings = [
+              "xyzabc123",
+              "   ",
+              "...",
+          ]
+          
+          for query in random_strings:
+              result = translator.translate(query)
+              # Should either return None or very low confidence
+              if result:
+                  assert result.confidence < 0.5, f"False positive for: {query}"
+
+verification:
+  - check: Greetings are recognized
+    test: translator.translate("hello")
+    expected: |
+      TranslationResult(
+        translated="chat",
+        confidence=0.9,
+        metadata={"operation": "chat", "type": "greeting"}
+      )
+  
+  - check: Questions are recognized
+    test: translator.translate("what time is it")
+    expected: |
+      TranslationResult(
+        translated="info",
+        confidence=0.85,
+        metadata={"operation": "info", "info_type": "time"}
+      )
+  
+  - check: Existing patterns still work
+    test: translator.translate("backup everything")
+    expected: Should match backup pattern, not casual
+  
+  - check: Case insensitive
+    test: translator.translate("HELLO")
+    expected: Same result as "hello"
+  
+  - check: All P0-3 tests pass
+    test: pytest tests/test_p0_fixes.py -k "P0-3" -v
+    expected: 20+ pattern tests pass
+  
+  - check: No regression in existing tests
+    test: pytest tests/ -v
+    expected: All 15 existing tests + new tests pass
+
+rollback:
+  - action: Remove casual pattern definitions
+    location: ai_translator.py, __init__() method
+    change: Delete casual_patterns, question_patterns, time_weather_patterns lists
+  
+  - action: Remove pattern matching logic
+    location: ai_translator.py, translate() method
+    change: Delete the three new pattern matching sections
+  
+  - action: Remove P0-3 tests
+    location: tests/test_p0_fixes.py
+    change: Delete all test_greeting_*, test_question_*, test_time_*, test_weather_* functions
+  
+  - action: Run test suite
+    command: pytest tests/ -v
+    expected: Should return to 15 passing tests (original state)
+
+dependencies:
+  - P0-1 must be implemented (prefix validation)
+  - P0-2 must be implemented (strip logic)
+  - TranslationResult class must support metadata field
+  - Existing pattern matching infrastructure must be working
+
+risks:
+  - MEDIUM: Could create false positives if patterns too broad
+  - Pattern order matters: existing command patterns must be checked FIRST
+  - Mitigation: Conservative regex patterns, comprehensive testing
+  - Edge case: Ambiguous queries (e.g., "backup hello" - should match backup, not greeting)
+
+notes: |
+  IMPORTANT CONTEXT:
+  - This completes the P0 fix trilogy (P0-1 + P0-2 + P0-3)
+  - Flow: "isaac hello" -> (P0-1 validates) -> (P0-2 strips) -> "hello" -> (P0-3 matches)
+  - Pattern order is CRITICAL: check existing patterns BEFORE casual patterns
+  - All patterns are case-insensitive (use text_lower for matching)
+  
+  PATTERN DESIGN PHILOSOPHY:
+  - Casual patterns: High confidence (0.9) because very specific greetings
+  - Question patterns: Medium confidence (0.8) because more varied
+  - Time/weather: High confidence (0.85) because specific system queries
+  
+  METADATA STRUCTURE:
+  All patterns include:
+  - operation: Type of operation (chat/query/info)
+  - type: Subtype (greeting/question/system)
+  - intent: Higher-level intent (casual_conversation/information_request/system_query)
+  - Additional fields: subject (for questions), info_type (for time/weather)
+  
+  TESTING STRATEGY:
+  1. Test each pattern category (greetings, questions, time/weather)
+  2. Test variations within each category (hello/hi/hey, what/when/where)
+  3. Test case insensitivity (HELLO/Hello/hello)
+  4. Test pattern priority (ensure existing commands not overridden)
+  5. Test false positives (random strings should not match)
+  
+  INTEGRATION TEST (full flow after all P0 fixes):
+  ```python
+  def test_full_casual_conversation_workflow(router):
+      # User types "isaac hello"
+      result = router.execute("isaac hello")
+      
+      # Should pass all three fixes:
+      # 1. P0-1: Prefix validated ✓
+      # 2. P0-2: Stripped to "hello" ✓
+      # 3. P0-3: Matched casual pattern ✓
+      
+      assert result.success or "I have a name" not in result.message
+      # Actual response depends on chat handler implementation
+  ```
+
+implementation_notes: |
+  Code Location Details:
+  - File: isaac/core/ai_translator.py
+  - Method 1: __init__() around line 22-60
+  - Method 2: translate() around line 145-180
+  
+  Pattern Addition Order (in __init__):
+  1. Add after existing patterns (backup, restore, list, help)
+  2. Before any other initialization
+  3. Store as self.casual_patterns, self.question_patterns, self.time_weather_patterns
+  
+  Pattern Matching Order (in translate()):
+  CRITICAL: Add AFTER help patterns but BEFORE fallback
+  
+  Current order should be:
+  1. Backup patterns
+  2. Restore patterns
+  3. List patterns
+  4. Help patterns
+  5. **[NEW]** Casual patterns
+  6. **[NEW]** Question patterns
+  7. **[NEW]** Time/weather patterns
+  8. Fallback/unknown
+  
+  Why This Order?
+  - Existing commands take priority (prevents "backup hello" from matching greeting)
+  - Casual patterns checked before general fallback
+  - Specific patterns (time/weather) before general (questions)
+  
+  Regex Pattern Notes:
+  - Use raw strings (r"...") for regex
+  - (?:...) = non-capturing group (better performance)
+  - \s+ = one or more spaces
+  - (.+) = capture group for extracting subjects
+  - ? = optional (e.g., "greetings?" matches "greeting" or "greetings")
+  - '? = optional apostrophe (handles "what's" and "whats")
+  
+  Testing Priority:
+  1. Basic greeting (test_greeting_hello) - most common use case
+  2. Time query (test_time_query) - specific system query
+  3. Question pattern (test_question_what_is) - general information
+  4. Pattern priority (test_pattern_priority_order) - prevents regression
+  5. Case insensitivity (test_case_insensitive_patterns) - UX requirement
+  6. False positives (test_no_false_positives) - quality assurance

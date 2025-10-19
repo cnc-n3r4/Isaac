@@ -9,7 +9,7 @@ Handles:
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict, Any
 import shlex
 
 
@@ -29,6 +29,7 @@ class CommandResult:
     message: str
     status_symbol: str  # '✓' / '✗' / '⊘'
     suggestion: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
     def __str__(self):
         """Format result for display."""
@@ -143,6 +144,21 @@ class CommandRouter:
         # Parse command
         cmd_type, tokens = self.parse(command_string)
 
+        # P0-1: Check for natural language prefix requirement
+        if cmd_type == CommandType.NATURAL:
+            # Natural language commands MUST start with "isaac "
+            if not command_string.lower().startswith("isaac "):
+                return CommandResult(
+                    success=False,
+                    status_symbol='⊘',
+                    message="I have a name, use it.",
+                    suggestion=f"Try: isaac {command_string}",
+                    metadata={
+                        "error_type": "missing_prefix",
+                        "hint": "Natural language commands require the 'isaac' prefix"
+                    }
+                )
+
         # Route to appropriate handler
         if cmd_type == CommandType.INTERNAL:
             return self._handle_internal(tokens)
@@ -239,7 +255,13 @@ class CommandRouter:
             from isaac.core.ai_translator import create_translator
             translator = create_translator()
 
-            translation = translator.translate(original)
+            # P0-2: Strip "isaac " prefix before translation
+            stripped_input = original
+            if original.lower().startswith("isaac "):
+                # Remove first occurrence only, preserve rest of string
+                stripped_input = original[6:].strip()  # len("isaac ") = 6
+
+            translation = translator.translate(stripped_input)
             if translation:
                 # Show translation to user
                 print(f"\nAI Translation:")
@@ -247,7 +269,16 @@ class CommandRouter:
                 print(f"  → {translation.translated}")
                 print(f"  Confidence: {translation.confidence:.0%}\n")
 
-                if translation.needs_confirmation:
+                # Handle different translation types
+                if translation.translated in ["chat", "query", "info"]:
+                    # These are conversational responses, not commands to execute
+                    return CommandResult(
+                        success=True,
+                        message=f"Understood: {translation.original}",
+                        status_symbol='✓',
+                        metadata=translation.metadata
+                    )
+                elif translation.needs_confirmation:
                     confirm = input("Execute? (y/n): ").strip().lower()
                     if confirm not in ['y', 'yes']:
                         return CommandResult(

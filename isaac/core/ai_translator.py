@@ -48,8 +48,39 @@ class AITranslator:
         ]
 
         self.help_patterns = [
-            r"(?:help|what\s+can\s+you\s+do|how\s+do\s+i\s+.+)".replace("'", '"'),
-            r"(?:show\s+commands?|command\s+list)".replace("'", '"'),
+            r"^(?:help|what\s+can\s+you\s+do|how\s+do\s+i\s+.+|show\s+commands?|command\s+list)$",
+        ]
+
+        # Casual conversation patterns
+        self.casual_patterns = [
+            r"(?:hi|hello|hey|greetings?)(?:\s+there)?",
+            r"good\s+(?:morning|afternoon|evening|day)",
+            r"how\s+are\s+you",
+            r"what'?s\s+up",
+            r"yo(?:\s+isaac)?",
+            r"howdy",
+        ]
+
+        # Question patterns (general queries)
+        self.question_patterns = [
+            r"what\s+(?:is|are|was|were)\s+(.+)",
+            r"when\s+(?:is|are|was|were)\s+(.+)",
+            r"where\s+(?:is|are|was|were)\s+(.+)",
+            r"why\s+(?:is|are|was|were|do|does)\s+(.+)",
+            r"how\s+(?:do|does|can|could|would)\s+(.+)",
+            r"can\s+you\s+(.+)",
+            r"could\s+you\s+(.+)",
+            r"would\s+you\s+(.+)",
+        ]
+
+        # Time and weather patterns
+        self.time_weather_patterns = [
+            r"what\s+time\s+(?:is\s+it)?",
+            r"what'?s\s+the\s+(?:time|date)",
+            r"what\s+(?:is\s+)?(?:the\s+)?date",
+            r"(?:what'?s\s+)?the\s+weather",
+            r"is\s+it\s+(?:raining|snowing|sunny|cloudy)",
+            r"how'?s\s+the\s+weather",
         ]
 
         # Common path mappings
@@ -82,15 +113,15 @@ class AITranslator:
             if match:
                 source = match.group(1).strip()
                 resolved = self._resolve_paths(source)
-                if resolved:
-                    return TranslationResult(
-                        original=text,
-                        translated=f"backup {" ".join(resolved)}",
-                        resolved_paths=resolved,
-                        confidence=0.8,
-                        needs_confirmation=True,
-                        metadata={"operation": "backup", "source": source}
-                    )
+                # Always return translation, let handler deal with path resolution
+                return TranslationResult(
+                    original=text,
+                    translated=f"backup {source}",
+                    resolved_paths=resolved,
+                    confidence=0.8,
+                    needs_confirmation=True,
+                    metadata={"operation": "backup", "source": source}
+                )
 
         # Try restore patterns
         for pattern in self.restore_patterns:
@@ -98,15 +129,15 @@ class AITranslator:
             if match:
                 target = match.group(1).strip()
                 resolved = self._resolve_paths(target)
-                if resolved:
-                    return TranslationResult(
-                        original=text,
-                        translated=f"restore {" ".join(resolved)}",
-                        resolved_paths=resolved,
-                        confidence=0.7,
-                        needs_confirmation=True,
-                        metadata={"operation": "restore", "target": target}
-                    )
+                # Always return translation, let handler deal with path resolution
+                return TranslationResult(
+                    original=text,
+                    translated=f"restore {target}",
+                    resolved_paths=resolved,
+                    confidence=0.7,
+                    needs_confirmation=True,
+                    metadata={"operation": "restore", "target": target}
+                )
 
         # Try list patterns
         for pattern in self.list_patterns:
@@ -135,13 +166,83 @@ class AITranslator:
         # Try help patterns
         for pattern in self.help_patterns:
             if re.search(pattern, text_lower):
+                # Additional check: make sure this is actually a help request, not just contains "help"
+                # For example, "can you help me" should not match help pattern
+                if "help" in text_lower and not any(word in text_lower for word in ["can", "could", "would", "how", "what"]):
+                    return TranslationResult(
+                        original=text,
+                        translated="help",
+                        resolved_paths=[],
+                        confidence=0.95,
+                        needs_confirmation=False,
+                        metadata={"operation": "help"}
+                    )
+                # For other help patterns, allow them
+                elif not "help" in text_lower:
+                    return TranslationResult(
+                        original=text,
+                        translated="help",
+                        resolved_paths=[],
+                        confidence=0.95,
+                        needs_confirmation=False,
+                        metadata={"operation": "help"}
+                    )
+
+        # Try question patterns
+        for pattern in self.question_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                # Extract the subject of the question from original text to preserve case
+                original_match = re.search(pattern, text)
+                subject = ""
+                if original_match and original_match.lastindex and original_match.lastindex >= 1:
+                    subject = original_match.group(1).strip()
                 return TranslationResult(
                     original=text,
-                    translated="help",
+                    translated=f"query {subject}" if subject else "query",
                     resolved_paths=[],
-                    confidence=0.95,
+                    confidence=0.8,
                     needs_confirmation=False,
-                    metadata={"operation": "help"}
+                    metadata={
+                        "operation": "query",
+                        "type": "question",
+                        "subject": subject,
+                        "intent": "information_request"
+                    }
+                )
+
+        # Try casual conversation patterns
+        for pattern in self.casual_patterns:
+            if re.search(pattern, text_lower):
+                return TranslationResult(
+                    original=text,
+                    translated="chat",
+                    resolved_paths=[],
+                    confidence=0.9,
+                    needs_confirmation=False,
+                    metadata={
+                        "operation": "chat",
+                        "type": "greeting",
+                        "intent": "casual_conversation"
+                    }
+                )
+
+        # Try time/weather patterns
+        for pattern in self.time_weather_patterns:
+            if re.search(pattern, text_lower):
+                # Determine if it's time or weather related
+                pattern_type = "time" if "time" in pattern or "date" in pattern else "weather"
+                return TranslationResult(
+                    original=text,
+                    translated="info",
+                    resolved_paths=[],
+                    confidence=0.85,
+                    needs_confirmation=False,
+                    metadata={
+                        "operation": "info",
+                        "info_type": pattern_type,
+                        "intent": "system_query"
+                    }
                 )
 
         return None
