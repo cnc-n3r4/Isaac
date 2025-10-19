@@ -1,0 +1,70 @@
+phase: "3.5 - Task Mode"
+feature: "Multi-step task automation with AI planning and recovery"
+estimated_time: "2-3 hours"
+complexity: "MEDIUM-HIGH"
+risk: "MEDIUM"
+
+# EXECUTION ORDER
+run_order:
+  - file: "01_feature_brief.md"
+    purpose: "Understand task mode workflow"
+    action: "READ FIRST - Comprehensive context"
+    
+  - file: "02_impl_task_history.md"
+    purpose: "Create isaac/models/task_history.py"
+    action: "IMPLEMENT - Immutable task logging"
+    estimated_time: "30 minutes"
+    
+  - file: "03_impl_task_planner_part1.md"
+    purpose: "Create isaac/ai/task_planner.py (planning)"
+    action: "IMPLEMENT - Task planning logic"
+    estimated_time: "45 minutes"
+    
+  - file: "04_impl_task_planner_part2.md"
+    purpose: "Complete task_planner.py (execution + recovery)"
+    action: "IMPLEMENT - Execution and failure handling"
+    estimated_time: "45 minutes"
+    
+  - file: "05_impl_command_router_mods.md"
+    purpose: "Modify command_router.py for task detection"
+    action: "INTEGRATE - Wire task mode"
+    estimated_time: "15 minutes"
+    
+  - file: "06_test_instructions.md"
+    purpose: "Manual testing"
+    action: "VERIFY - Test multi-step tasks"
+    estimated_time: "20 minutes"
+    
+  - file: "07_completion_report_template.md"
+    purpose: "Document implementation"
+    action: "FILL OUT after complete"
+
+dependencies:
+  required:
+    - "Phase 3.1 complete (ClaudeClient.plan_task() working)"
+    - "Phase 3.4 complete (validation for task steps)"
+    - "claude_api_key in ~/.isaac/config.json"
+    
+success_criteria:
+  - "'isaac task: backup /home' → shows multi-step plan"
+  - "User chooses execution mode (autonomous/approve-once/step-by-step)"
+  - "Steps execute with tier validation"
+  - "Failures trigger recovery options (5 choices)"
+  - "Task history logged immutably"
+  - "Graceful degradation if AI unavailable"
+
+files_to_create:
+  - "isaac/models/task_history.py (~80 lines)"
+  - "isaac/ai/task_planner.py (~200 lines, split into 2 parts)"
+
+files_to_modify:
+  - "isaac/core/command_router.py - Add task mode detection (start of route_command)"
+
+total_lines: "~290 lines (280 new + 10 modified)"
+
+safety_notes:
+  - "All task steps go through tier validation"
+  - "User controls execution mode"
+  - "Immutable task history for audit trail"
+  - "5 recovery options on failure"
+  - "Can abort at any time"

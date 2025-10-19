@@ -1,0 +1,56 @@
+phase: "3.4 - AI Validation"
+feature: "AI-powered safety validation for Tier 3 commands"
+estimated_time: "1 hour"
+complexity: "SIMPLE"
+risk: "LOW"
+
+# EXECUTION ORDER
+run_order:
+  - file: "01_feature_brief.md"
+    purpose: "Understand AI validation workflow"
+    action: "READ FIRST - Provides context"
+    
+  - file: "02_impl_validator.md"
+    purpose: "Create isaac/ai/validator.py"
+    action: "IMPLEMENT - Validation logic"
+    estimated_time: "30 minutes"
+    
+  - file: "03_impl_tier3_integration.md"
+    purpose: "Modify command_router.py Tier 3 section"
+    action: "INTEGRATE - Display validation + confirm"
+    estimated_time: "20 minutes"
+    
+  - file: "04_test_instructions.md"
+    purpose: "Manual testing"
+    action: "VERIFY - Test dangerous commands"
+    estimated_time: "10 minutes"
+    
+  - file: "05_completion_report_template.md"
+    purpose: "Document implementation"
+    action: "FILL OUT after complete"
+
+dependencies:
+  required:
+    - "Phase 3.1 complete (ClaudeClient.validate_command() working)"
+    - "claude_api_key in ~/.isaac/config.json"
+    
+success_criteria:
+  - "'git push -f' → AI warns about force push"
+  - "'rm -rf /' → AI shows critical warnings"
+  - "Warnings and suggestions displayed clearly"
+  - "User confirms after seeing validation"
+  - "Graceful degradation if AI unavailable"
+
+files_to_create:
+  - "isaac/ai/validator.py (~80 lines)"
+
+files_to_modify:
+  - "isaac/core/command_router.py - Tier 3 section (lines 83-93)"
+
+total_lines: "~90 lines (80 new + 10 modified)"
+
+safety_notes:
+  - "Validation is advisory, not blocking"
+  - "User always has final say"
+  - "AI unavailable → fallback to simple confirmation"
+  - "Display warnings prominently"

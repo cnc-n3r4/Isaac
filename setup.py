@@ -4,8 +4,8 @@ setup(
     name='isaac',
     version='2.0.0',
     description='Multi-platform intelligent shell assistant with cloud sync',
-    author='Your Name',
-    author_email='your.email@example.com',
+    author='Nick Demiduk',
+    author_email='Nick.Demiduk@protonmail.com',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[

@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Dict, Any
 import uuid
 
+from isaac.models.task_history import TaskHistory
+
 
 class Preferences:
     """User preferences storage."""
@@ -58,6 +60,14 @@ class SessionManager:
         # Initialize data objects
         self.preferences = Preferences()
         self.command_history = CommandHistory()
+        
+        # AI query history (separate from command history)
+        from isaac.models.aiquery_history import AIQueryHistory
+        self.ai_query_history = AIQueryHistory()
+        
+        # Task history for multi-step tasks
+        from isaac.models.task_history import TaskHistory
+        self.task_history = TaskHistory()
         
         # Initialize cloud sync if enabled
         self.cloud = None
@@ -113,6 +123,16 @@ class SessionManager:
             except Exception:
                 pass
         
+        # Load task history
+        task_file = self.isaac_dir / 'task_history.json'
+        if task_file.exists():
+            try:
+                with open(task_file, 'r') as f:
+                    data = json.load(f)
+                    self.task_history = TaskHistory.from_dict(data)
+            except Exception:
+                pass
+        
         print("Isaac > Loaded from local storage.")
     
     def load_from_cloud(self):
@@ -136,6 +156,12 @@ class SessionManager:
             if cloud_history:
                 self.command_history = CommandHistory.from_dict(cloud_history)
                 print("Isaac > Loaded command history from cloud.")
+            
+            # Load task history from cloud (overwrite local)
+            cloud_tasks = self.cloud.get_session_file('task_history.json')
+            if cloud_tasks:
+                self.task_history = TaskHistory.from_dict(cloud_tasks)
+                print("Isaac > Loaded task history from cloud.")
                 
         except Exception as e:
             # Cloud load failed, use local data
@@ -178,3 +204,27 @@ class SessionManager:
                 self.cloud.save_session_file('preferences.json', self.preferences.to_dict())
             except Exception:
                 pass  # Local save succeeded, cloud optional
+    
+    def log_ai_query(self, query: str, translated_command: str, explanation: str = "", executed: bool = False, shell_name: str = "unknown"):
+        """Log AI query for privacy-focused history."""
+        self.ai_query_history.add(
+            query=query,
+            command=translated_command,
+            shell=shell_name,
+            executed=executed,
+            result='executed' if executed else 'translated'
+        )
+    
+    def save_task_history(self):
+        """Save task history to local and cloud."""
+        # Local save
+        task_file = self.isaac_dir / 'task_history.json'
+        with open(task_file, 'w') as f:
+            json.dump(self.task_history.to_dict(), f, indent=2)
+        
+        # Cloud sync
+        if self.cloud:
+            try:
+                self.cloud.save_session_file('task_history.json', self.task_history.to_dict())
+            except Exception:
+                pass

@@ -1,0 +1,215 @@
+# Implementation: Translator Module
+
+## Goal
+Create translator.py with translate_query() function that calls ClaudeClient and handles errors.
+
+**Time Estimate:** 45 minutes
+
+---
+
+## File to Create
+
+**Path:** `isaac/ai/translator.py`
+
+**Lines:** ~100
+
+---
+
+## Complete Implementation
+
+```python
+"""
+Translator - Natural language to shell command translation
+Uses ClaudeClient to convert user queries into executable commands
+"""
+
+from typing import Dict
+from isaac.ai.claude_client import ClaudeClient
+
+
+def translate_query(query: str, shell_name: str, session_manager) -> Dict:
+    """
+    Translate natural language query to shell command.
+    
+    Args:
+        query: User's natural language query (e.g., "find large files")
+        shell_name: Target shell (PowerShell, bash, etc.)
+        session_manager: SessionManager instance for logging
+        
+    Returns:
+        dict: {
+            'success': True/False,
+            'command': 'translated command',
+            'explanation': 'what it does',
+            'error': 'error message if failed'
+        }
+    """
+    # Check if AI is enabled in config
+    if not session_manager.config.get('ai_enabled', False):
+        return {
+            'success': False,
+            'error': 'AI integration disabled. Enable in ~/.isaac/config.json'
+        }
+    
+    # Check if API key exists
+    api_key = session_manager.config.get('claude_api_key', '')
+    if not api_key:
+        return {
+            'success': False,
+            'error': 'Missing claude_api_key in ~/.isaac/config.json. Get key from: https://console.anthropic.com/'
+        }
+    
+    # Initialize Claude client
+    try:
+        model = session_manager.config.get('ai_model', 'claude-sonnet-4-5-20250929')
+        client = ClaudeClient(api_key, model=model)
+    except Exception as e:
+        return {
+            'success': False,
+            'error': f'Failed to initialize AI client: {str(e)}'
+        }
+    
+    # Validate query is shell-related
+    if not _is_shell_related(query):
+        return {
+            'success': False,
+            'error': "Query doesn't appear to be shell-related. Isaac only handles shell commands."
+        }
+    
+    # Call Claude API
+    print("Isaac > Translating...")
+    result = client.translate_to_shell(query, shell_name)
+    
+    if not result['success']:
+        return {
+            'success': False,
+            'error': f"AI translation failed: {result.get('error', 'Unknown error')}"
+        }
+    
+    # Check confidence threshold
+    confidence = result.get('confidence', 0.5)
+    if confidence < 0.6:
+        return {
+            'success': False,
+            'error': f"Low confidence ({confidence:.0%}). Please rephrase your query."
+        }
+    
+    # Success - return translated command
+    command = result['command']
+    explanation = result.get('explanation', 'No explanation provided')
+    
+    print(f"Isaac > Command: {command}")
+    print(f"Isaac > Explanation: {explanation}")
+    print(f"Isaac > Confidence: {confidence:.0%}")
+    
+    return {
+        'success': True,
+        'command': command,
+        'explanation': explanation,
+        'confidence': confidence
+    }
+
+
+def _is_shell_related(query: str) -> bool:
+    """
+    Check if query is related to shell commands.
+    
+    Args:
+        query: User's query
+        
+    Returns:
+        bool: True if shell-related, False otherwise
+    """
+    # Shell-related keywords
+    shell_keywords = [
+        'find', 'list', 'search', 'delete', 'remove', 'move', 'copy',
+        'create', 'make', 'directory', 'folder', 'file', 'files',
+        'process', 'kill', 'start', 'stop', 'show', 'display',
+        'check', 'test', 'run', 'execute', 'install', 'update',
+        'download', 'upload', 'compress', 'extract', 'archive',
+        'permission', 'owner', 'disk', 'space', 'memory', 'cpu',
+        'network', 'port', 'service', 'log', 'logs', 'error',
+        'backup', 'restore', 'sync', 'grep', 'sed', 'awk'
+    ]
+    
+    query_lower = query.lower()
+    
+    # Check for shell keywords
+    for keyword in shell_keywords:
+        if keyword in query_lower:
+            return True
+    
+    # Non-shell queries (reject these)
+    non_shell_keywords = [
+        'weather', 'news', 'joke', 'story', 'recipe', 'translate',
+        'calculate', 'math', 'convert', 'define', 'explain'
+    ]
+    
+    for keyword in non_shell_keywords:
+        if keyword in query_lower:
+            return False
+    
+    # Default: assume shell-related
+    return True
+```
+
+---
+
+## Verification Steps
+
+After implementation:
+
+```bash
+# 1. Check syntax
+python -m py_compile isaac/ai/translator.py
+
+# 2. Test import
+python -c "from isaac.ai.translator import translate_query; print('✅ Import successful')"
+```
+
+**Expected Output:**
+```
+✅ Import successful
+```
+
+---
+
+## Common Pitfalls
+
+⚠️ **Pitfall 1: Not checking AI enabled**
+- Symptom: Errors when AI disabled in config
+- Fix: Check `session_manager.config.get('ai_enabled')` first
+
+⚠️ **Pitfall 2: Missing API key**
+- Symptom: KeyError or API 401
+- Fix: Check for `claude_api_key` in config, return friendly error
+
+⚠️ **Pitfall 3: Low confidence commands**
+- Symptom: Incorrect translations executed
+- Fix: Confidence threshold of 0.6 rejects unclear queries
+
+⚠️ **Pitfall 4: Non-shell queries**
+- Symptom: "What's the weather?" → nonsense command
+- Fix: `_is_shell_related()` validates before translation
+
+---
+
+## Testing
+
+**Test 1: Shell-related query**
+```python
+from isaac.ai.translator import _is_shell_related
+
+assert _is_shell_related("find large files") == True
+assert _is_shell_related("list directory contents") == True
+```
+
+**Test 2: Non-shell query**
+```python
+assert _is_shell_related("what's the weather") == False
+assert _is_shell_related("tell me a joke") == False
+```
+
+---
+
+**END OF IMPLEMENTATION**

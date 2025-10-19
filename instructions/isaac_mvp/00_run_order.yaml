@@ -1,0 +1,141 @@
+# Isaac 2.0 MVP - Implementation Run Order
+
+project: isaac
+version: 2.0.0-mvp
+target: Multi-platform shell assistant with cloud sync
+estimated_time: 3-4 hours
+
+execution_order:
+  - file: 01_feature_brief.md
+    type: overview
+    read_first: true
+    
+  - file: 02_impl_bootstrap.md
+    type: implementation
+    creates:
+      - setup.py
+      - requirements.txt
+      - Project structure (directories)
+    estimated_time: 15 minutes
+    
+  - file: 03_impl_data_files.md
+    type: implementation
+    creates:
+      - isaac/data/tier_defaults.json
+      - isaac/data/splash_art.txt
+      - isaac/data/help_text.txt
+    estimated_time: 10 minutes
+    dependencies: [02_impl_bootstrap.md]
+    
+  - file: 04_impl_shell_adapters.md
+    type: implementation
+    creates:
+      - isaac/adapters/base_adapter.py
+      - isaac/adapters/powershell_adapter.py
+      - isaac/adapters/bash_adapter.py
+      - isaac/adapters/shell_detector.py
+    estimated_time: 30 minutes
+    dependencies: [02_impl_bootstrap.md]
+    
+  - file: 05_impl_models.md
+    type: implementation
+    creates:
+      - isaac/models/preferences.py
+      - isaac/models/command_history.py
+    estimated_time: 20 minutes
+    dependencies: [02_impl_bootstrap.md]
+    
+  - file: 06_impl_core_logic.md
+    type: implementation
+    creates:
+      - isaac/core/tier_validator.py
+      - isaac/core/command_router.py
+      - isaac/core/session_manager.py
+    estimated_time: 45 minutes
+    dependencies: [03_impl_data_files.md, 04_impl_shell_adapters.md, 05_impl_models.md]
+    
+  - file: 07_impl_terminal_ui.md
+    type: implementation
+    creates:
+      - isaac/ui/terminal_control.py
+      - isaac/ui/splash_screen.py
+      - isaac/ui/header_display.py
+      - isaac/ui/prompt_handler.py
+    estimated_time: 40 minutes
+    dependencies: [03_impl_data_files.md, 06_impl_core_logic.md]
+    
+  - file: 08_impl_main_entry.md
+    type: implementation
+    creates:
+      - isaac/__main__.py
+      - isaac/__init__.py (all packages)
+    estimated_time: 30 minutes
+    dependencies: [06_impl_core_logic.md, 07_impl_terminal_ui.md]
+    
+  - file: 09_impl_php_api.md
+    type: implementation
+    creates:
+      - php_api/config.php
+      - php_api/save_session.php
+      - php_api/get_session.php
+      - php_api/health_check.php
+      - php_api/.htaccess
+    estimated_time: 20 minutes
+    note: "User uploads to GoDaddy manually after VSCode agent builds files"
+    
+  - file: 10_impl_tests.md
+    type: testing
+    creates:
+      - tests/test_tier_validator.py
+      - tests/conftest.py
+      - tests/pytest.ini
+    estimated_time: 15 minutes
+    dependencies: [06_impl_core_logic.md]
+    
+  - file: 11_deployment.md
+    type: deployment_guide
+    actions:
+      - Install Python package
+      - Upload PHP to GoDaddy
+      - Configure API credentials
+      - Test multi-machine sync
+    estimated_time: 30 minutes
+    
+  - file: XX_completion_report.md
+    type: completion_template
+    fill_after: all_files_created
+    
+critical_notes:
+  - "Build files IN ORDER - dependencies matter"
+  - "Test after each implementation file (checkpoints provided)"
+  - "Data files MUST be created before core logic (tier_defaults.json)"
+  - "Shell adapters MUST work before command router"
+  - "PHP files built locally, user uploads to GoDaddy"
+  - "Run pytest after building test_tier_validator.py"
+  
+success_criteria:
+  - "pip install -e . succeeds"
+  - "isaac --start launches"
+  - "Splash displays for 5.5 seconds"
+  - "Header shows shell + machine"
+  - "ls executes instantly (Tier 1)"
+  - "git status prompts for confirmation (Tier 3)"
+  - "exit quits cleanly"
+  - "pytest tests/test_tier_validator.py passes 100%"
+  
+mvp_scope:
+  included:
+    - "Multi-platform (PowerShell + bash)"
+    - "5-tier command system"
+    - "Splash screen + header lock"
+    - "Local session management"
+    - "Cloud sync client (Python code)"
+    - "PHP API endpoints"
+    - "Basic tier validator tests"
+  excluded:
+    - "AI integration (Phase 2)"
+    - "Task mode (Phase 2)"
+    - "Learning engine (Phase 2)"
+    - "Arrow key history (use basic input() for MVP)"
+    - "Offline queue (Phase 2)"
+    - "Versioning/rollback (Phase 3)"
