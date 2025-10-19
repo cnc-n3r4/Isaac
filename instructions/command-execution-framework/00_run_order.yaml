@@ -1,0 +1,103 @@
+# Command Execution Framework - Implementation Run Order
+
+feature_name: command-execution-framework
+estimated_hours: 6-8
+priority: HIGH
+
+# Execute in this exact order:
+run_order:
+  - file: 01_feature_brief.md
+    type: reference
+    action: Read for context
+    
+  - file: 02_command_router_impl.md
+    type: implementation
+    action: Create core/command_router.py
+    dependencies: []
+    estimated_time: 60min
+    
+  - file: 03_backup_handler_impl.md
+    type: implementation
+    action: Create commands/backup.py
+    dependencies:
+      - 02_command_router_impl.md
+    estimated_time: 45min
+    
+  - file: 04_restore_handler_impl.md
+    type: implementation
+    action: Create commands/restore.py
+    dependencies:
+      - 02_command_router_impl.md
+    estimated_time: 45min
+    
+  - file: 05_list_handler_impl.md
+    type: implementation
+    action: Create commands/list.py
+    dependencies:
+      - 02_command_router_impl.md
+    estimated_time: 30min
+    
+  - file: 06_help_handler_impl.md
+    type: implementation
+    action: Create commands/help.py
+    dependencies:
+      - 02_command_router_impl.md
+    estimated_time: 30min
+    
+  - file: 07_repl_integration_impl.md
+    type: implementation
+    action: Modify isaac/__main__.py (integrate REPL)
+    dependencies:
+      - 02_command_router_impl.md
+      - 03_backup_handler_impl.md
+      - 04_restore_handler_impl.md
+      - 05_list_handler_impl.md
+      - 06_help_handler_impl.md
+    estimated_time: 60min
+    
+  - file: 08_ai_translation_impl.md
+    type: implementation
+    action: Create core/ai_translator.py
+    dependencies:
+      - 02_command_router_impl.md
+    estimated_time: 90min
+    
+  - file: XX_COMPLETION_REPORT.md
+    type: documentation
+    action: Fill out after all implementation complete
+    
+# Verification checkpoints:
+checkpoints:
+  - after: 02_command_router_impl.md
+    verify: CommandRouter class exists and imports successfully
+    
+  - after: 06_help_handler_impl.md
+    verify: All handlers in commands/ package
+    
+  - after: 07_repl_integration_impl.md
+    verify: "isaac" command enters REPL with isaac> prompt
+    
+  - after: 08_ai_translation_impl.md
+    verify: Natural language commands translate to actual paths
+
+# Final validation:
+final_tests:
+  - test: isaac backup my-folder
+    expected: Prompts for destination, executes backup
+    
+  - test: isaac (no args)
+    expected: Enters REPL mode with isaac> prompt
+    
+  - test: isaac --help
+    expected: Shows scannable command list
+    
+  - test: Natural language in REPL
+    expected: AI translates to executable command with confirmation
+
+# Notes:
+notes: |
+  - All handlers must integrate with existing SessionManager
+  - Error messages must include suggestions
+  - All commands logged (success/fail/cancelled)
+  - REPL uses simple "isaac>" prompt
+  - AI translation layer is critical for path resolution
