@@ -1,0 +1,29 @@
+# Isaac Test Suite Integration - Run Order
+
+phase: "Test Integration"
+feature: "Integrate comprehensive test suite into build process"
+estimated_time: "30 minutes"
+complexity: "SIMPLE"
+priority: "CRITICAL"
+
+## Execution Order
+
+files_to_read_first:
+  - 01_test_integration_brief.md
+  - 02_test_execution_instructions.md
+  - 03_completion_report_template.md
+
+execution_sequence:
+  1. Read feature brief
+  2. Follow test execution instructions
+  3. Verify all tests pass (67/67)
+  4. Check coverage targets met
+  5. Complete report template
+
+critical_requirements:
+  - All 67 tests must pass before deployment
+  - Coverage: tier_validator.py (100%), cloud_client.py (90%+), ai/*.py (85%+)
+  - Zero safety test failures allowed
+  - No regressions between phases
+
+success_signal: "67/67 tests passing, coverage targets met, completion report filled"

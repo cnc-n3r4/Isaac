@@ -1,0 +1,4 @@
+requests==2.31.0
+colorama==0.4.6
+prompt-toolkit==3.0.43
+pytest==7.4.3

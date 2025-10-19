@@ -1,0 +1,35 @@
+# Phase 2.5 CloudClient Integration - Run Order
+
+phase: "2.5 - CloudClient Integration"
+feature: "Cloud sync for multi-machine command history"
+estimated_time: "1-2 hours"
+complexity: "SIMPLE"
+priority: "HIGH"
+
+## Execution Order
+
+files_to_read_first:
+  - 01_feature_brief.md
+  - 02_impl_cloud_client.md
+  - 03_impl_session_manager.md
+  - 04_impl_entry_point.md
+  - 05_test_instructions.md
+  - 06_completion_report_template.md
+
+execution_sequence:
+  1. Read feature brief
+  2. Create CloudClient class (isaac/api/cloud_client.py)
+  3. Modify SessionManager (isaac/core/session_manager.py)
+  4. Update entry point (isaac/__main__.py)
+  5. Test local-only mode
+  6. Test cloud sync mode
+  7. Verify multi-machine sync
+  8. Complete report template
+
+critical_requirements:
+  - All cloud operations are optional (local saves always happen)
+  - Error handling prevents crashes if cloud fails
+  - Health check on startup disables cloud if unreachable
+  - Last-write-wins for MVP (no conflict resolution)
+
+success_signal: "Commands sync to GoDaddy, multi-machine sync works, offline mode functional"
