@@ -1,0 +1,1 @@
+# Isaac 2.0 - Multi-platform shell assistant

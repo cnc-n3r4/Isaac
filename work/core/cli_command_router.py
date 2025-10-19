@@ -272,8 +272,7 @@ class CommandRouter:
                 print(f"  Confidence: {translation.confidence:.0%}\n")
 
                 # Handle different translation types
-                translated_cmd = translation.translated
-                if translated_cmd in ["chat", "query", "info"] or translated_cmd.startswith("query "):
+                if translation.translated in ["chat", "query", "info"]:
                     # These are conversational responses, not commands to execute
                     return CommandResult(
                         success=True,
