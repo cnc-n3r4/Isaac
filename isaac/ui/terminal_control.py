@@ -7,8 +7,23 @@ import os
 import sys
 import time
 import datetime
+import threading
+import xml.etree.ElementTree as ET
 from typing import Optional, Tuple
 from pathlib import Path
+
+try:
+    import requests
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
+
+try:
+    import colorama
+    colorama.init()
+    HAS_COLORAMA = True
+except ImportError:
+    HAS_COLORAMA = False
 
 
 class TerminalControl:
@@ -24,10 +39,80 @@ class TerminalControl:
         self.connection_status = "Online"
         self.session_id = self._generate_session_id()
         self.is_windows = os.name == 'nt'
+        
+        # x.ai status tracking
+        self.xai_status = "Loading..."
+        self.xai_status_thread = None
+        self._start_xai_status_monitor()
 
     def _generate_session_id(self) -> str:
-        """Generate a unique session identifier."""
-        return f"Session-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        """Generate a short unique session identifier."""
+        import hashlib
+        import secrets
+
+        # Create a unique string from timestamp and random bytes
+        timestamp = str(int(datetime.datetime.now().timestamp()))
+        random_bytes = secrets.token_bytes(4)  # 8 hex chars
+
+        # Hash and take first 6 hex chars for a short ID
+        unique_string = f"{timestamp}{random_bytes.hex()}"
+        session_hash = hashlib.md5(unique_string.encode()).hexdigest()[:6]
+
+        return f"i{session_hash}"
+
+    def _start_xai_status_monitor(self):
+        """Start background thread to monitor x.ai status."""
+        if not HAS_REQUESTS:
+            self.xai_status = "No requests lib"
+            return
+            
+        self.xai_status_thread = threading.Thread(
+            target=self._monitor_xai_status, 
+            daemon=True
+        )
+        self.xai_status_thread.start()
+
+    def _monitor_xai_status(self):
+        """Background thread to periodically fetch x.ai status."""
+        while True:
+            try:
+                self._fetch_xai_status()
+            except Exception as e:
+                self.xai_status = f"Error: {str(e)[:15]}"
+            time.sleep(300)  # Update every 5 minutes
+
+    def _fetch_xai_status(self):
+        """Fetch current status from x.ai RSS feed."""
+        try:
+            response = requests.get("https://status.x.ai/feed.xml", timeout=10)
+            response.raise_for_status()
+            
+            # Parse RSS feed
+            root = ET.fromstring(response.content)
+            
+            # Find the most recent item
+            items = root.findall(".//item")
+            if items:
+                latest_item = items[0]
+                title = latest_item.find("title")
+                if title is not None and title.text:
+                    # Extract status from title (typically "All Systems Operational" or similar)
+                    status_text = title.text.strip()
+                    # Truncate if too long for status bar
+                    if len(status_text) > 20:
+                        status_text = status_text[:17] + "..."
+                    self.xai_status = status_text
+                else:
+                    self.xai_status = "No status found"
+            else:
+                self.xai_status = "No items"
+                
+        except requests.exceptions.RequestException as e:
+            self.xai_status = f"Net error: {str(e)[:10]}"
+        except ET.ParseError:
+            self.xai_status = "Parse error"
+        except Exception as e:
+            self.xai_status = f"Error: {str(e)[:10]}"
 
     def setup_terminal(self):
         """Set up the terminal for traditional Isaac experience."""
@@ -88,16 +173,17 @@ class TerminalControl:
         else:
             print("\033[1;1H", end="", flush=True)
 
-        # Line 1: Session info
+        # Line 1: Session info (left) and x.ai status (right)
         session_line = f"Isaac Session: {self.session_id}"
-        self._print_status_line(session_line, 0)
+        xai_status_line = f"x.ai: {self.xai_status}"
+        self._print_status_line_dual(session_line, xai_status_line, 0)
 
         # Line 2: Current tier and status
         tier_line = f"Tier: {self.current_tier} | Status: Active"
         self._print_status_line(tier_line, 1)
 
-        # Line 3: Connection and shell info
-        shell_info = f"Shell: {self._get_shell_type()} | Online: {self.connection_status}"
+        # Line 3: Connection and shell info with current directory
+        shell_info = f"Shell: {self._get_shell_type()} | Dir: {self.working_directory} | Online: {self.connection_status}"
         self._print_status_line(shell_info, 2)
 
         # Position cursor below status bar
@@ -108,14 +194,46 @@ class TerminalControl:
 
     def _print_status_line(self, text: str, line_num: int):
         """Print a status line with background color."""
+        # Cyan blue background, white text for status lines
+        padded_text = text.ljust(self.terminal_width)
         if not self.is_windows:
-            # Blue background, white text for status lines
-            padded_text = text.ljust(self.terminal_width)
-            print(f"\033[{line_num + 1};1H\033[1;37;44m{padded_text}\033[0m", end="", flush=True)
+            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", end="", flush=True)
         else:
-            # Windows - simpler approach
-            padded_text = text.ljust(self.terminal_width)
-            print(f"\033[{line_num + 1};1H{padded_text}", flush=True)
+            # Windows - use ANSI colors (modern Windows terminals support them)
+            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
+
+    def _print_status_line_dual(self, left_text: str, right_text: str, line_num: int):
+        """Print a status line with left and right aligned text."""
+        # Calculate available space for text
+        total_width = self.terminal_width
+        left_width = len(left_text)
+        right_width = len(right_text)
+        
+        # If combined text is too long, truncate right text first
+        if left_width + right_width + 3 > total_width:  # +3 for " | "
+            available_for_right = total_width - left_width - 3
+            if available_for_right > 0:
+                right_text = right_text[:available_for_right]
+                right_width = len(right_text)
+            else:
+                right_text = ""
+                right_width = 0
+        
+        # Create the combined line
+        if right_text:
+            combined_text = f"{left_text} | {right_text}"
+        else:
+            combined_text = left_text
+            
+        # Pad to full width
+        padded_text = combined_text.ljust(total_width)
+        
+        # Print with colors
+        if not self.is_windows:
+            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", end="", flush=True)
+        else:
+            # Windows - use ANSI colors (modern Windows terminals support them)
+            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
 
     def _get_shell_type(self) -> str:
         """Get current shell type."""
@@ -165,18 +283,12 @@ class TerminalControl:
 
     def get_prompt_string(self) -> str:
         """Get the current prompt string for the terminal."""
-        if self.is_windows:
-            # PowerShell style prompt
-            return f"PS {self.working_directory}> "
+        if HAS_COLORAMA:
+            # Green text on black background for entire prompt
+            return f"\033[40;32m$.\033[0m\033[32m>\033[0m "
         else:
-            # Bash style prompt
-            try:
-                import platform
-                username = os.environ.get('USER', 'user')
-                hostname = platform.node()
-                return f"{username}@{hostname}:{self.working_directory}$ "
-            except:
-                return f"bash:{self.working_directory}$ "
+            # Fallback without colors
+            return "$.> "
 
     def update_working_directory(self, new_path: str):
         """Update the current working directory display."""

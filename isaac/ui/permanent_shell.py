@@ -7,6 +7,7 @@ import sys
 import signal
 import platform
 import os
+import json
 from typing import Optional
 from pathlib import Path
 from isaac.ui.terminal_control import TerminalControl
@@ -14,6 +15,13 @@ from isaac.core.tier_validator import TierValidator
 from isaac.core.session_manager import SessionManager
 from isaac.adapters.shell_detector import detect_shell
 from isaac.models.preferences import Preferences
+
+try:
+    import colorama
+    colorama.init()
+    HAS_COLORAMA = True
+except ImportError:
+    HAS_COLORAMA = False
 
 
 class PermanentShell:
@@ -114,7 +122,11 @@ class PermanentShell:
                 self._print_output_line("")
                 continue
             except Exception as e:
-                error_msg = f"Error: {str(e)}"
+                if HAS_COLORAMA:
+                    # Red text for errors
+                    error_msg = f"\033[31mError: {str(e)}\033[0m"
+                else:
+                    error_msg = f"Error: {str(e)}"
                 self._print_output_line(error_msg)
 
     def _get_user_input(self) -> str:
@@ -221,30 +233,280 @@ class PermanentShell:
             return
 
         try:
-            # Use AI client to process the query
-            response = self.ai_client._call_api(f"Process this user query and provide a helpful response: {command}")
+            # Get recent command history for context
+            command_history = self.session_manager.get_recent_commands(10)  # Last 10 commands
+
+            # Build comprehensive system prompt
+            system_prompt = self._build_system_prompt(command_history)
+
+            # Create user message with command and context
+            user_message = f"Current directory: {self.current_directory}\nCommand/Query: {command}"
+
+            # Use AI client with enhanced prompt
+            response = self.ai_client._call_api_with_system_prompt(system_prompt, user_message)
+
             if response.get('success'):
                 ai_response = response.get('text', 'No response from AI')
-                # Split multi-line response into separate lines for proper cursor positioning
-                response_lines = ai_response.splitlines()
 
-                # Batch all AI response lines to avoid display corruption
-                for line in response_lines:
-                    self.output_buffer.append(f"isaac> {line}")
-                    if len(self.output_buffer) > self.max_buffer_lines:
-                        self.output_buffer.pop(0)
-
-                # Refresh display only once after all lines are added
-                if self.terminal.is_windows:
-                    self._refresh_display()
+                # Check if response is JSON (command validation) or text (AI query)
+                if ai_response.strip().startswith('{') and ai_response.strip().endswith('}'):
+                    # Parse JSON validation response
+                    self._handle_validation_response(command, ai_response)
                 else:
-                    # On non-Windows, print all lines at once
-                    output_text = '\n'.join(f"isaac> {line}" for line in response_lines)
-                    self.terminal.print_normal_output(output_text)
+                    # Handle as regular AI response
+                    self._handle_text_response(ai_response)
             else:
-                self._print_output_line(f"isaac> AI error: {response.get('error', 'Unknown error')}")
+                if HAS_COLORAMA:
+                    ai_error_msg = f"\033[31misaac> AI error: {response.get('error', 'Unknown error')}\033[0m"
+                else:
+                    ai_error_msg = f"isaac> AI error: {response.get('error', 'Unknown error')}"
+                self._print_output_line(ai_error_msg)
         except Exception as e:
-            self._print_output_line(f"isaac> AI query failed: {e}")
+            if HAS_COLORAMA:
+                ai_fail_msg = f"\033[31misaac> AI query failed: {e}\033[0m"
+            else:
+                ai_fail_msg = f"isaac> AI query failed: {e}"
+            self._print_output_line(ai_fail_msg)
+
+    def _build_system_prompt(self, command_history: list) -> str:
+        """Build comprehensive system prompt with context and history."""
+        history_text = "\n".join([f"- {cmd}" for cmd in command_history]) if command_history else "No recent commands"
+
+        return f"""You are Isaac, an intelligent cross-platform command-line assistant. You help users with shell commands and general queries.
+
+CONTEXT:
+- User is running commands on their own machine (Windows PowerShell or Linux bash)
+- Current working directory: {self.current_directory}
+- Recent command history:
+{history_text}
+
+YOUR CAPABILITIES:
+1. For shell commands: Analyze safety, suggest corrections, provide explanations
+2. For general queries: Provide helpful, accurate information
+3. For ambiguous inputs: Ask clarifying questions or make reasonable assumptions
+
+COMMAND ANALYSIS RULES:
+- Be cautious but not paranoid (user knows what they're doing)
+- Flag destructive operations (rm *, del /s, format, etc.)
+- Flag operations on system directories (/etc, /sys, C:\\Windows, C:\\Program Files)
+- Allow normal development operations (git, npm, pip, file operations in user directories)
+- Suggest safer alternatives when appropriate
+
+RESPONSE GUIDELINES:
+- For command validation: Return JSON with safety assessment
+- For general queries: Return natural language responses
+- For incorrect commands: Provide the corrected command in "Suggestion:" format
+- When suggesting corrections: Use the exact command syntax for the user's shell
+- Keep explanations concise and actionable
+- Use the command history to understand context and provide relevant suggestions
+
+COMMAND CORRECTION EXAMPLES:
+- User: "list files" → Suggestion: dir (Windows) or ls (Linux)
+- User: "delete file.txt" → Suggestion: del file.txt (Windows) or rm file.txt (Linux)
+- User: "show directory" → Suggestion: dir (Windows) or pwd (Linux)
+
+Always provide the most helpful response based on the user's intent."""
+
+    def _handle_validation_response(self, command: str, ai_response: str) -> None:
+        """Handle JSON validation response from AI."""
+        try:
+            validation = json.loads(ai_response)
+
+            if validation.get('safe', False):
+                self._print_output_line("isaac> Command validated as safe - executing...")
+                self._execute_normal_command(command)
+            else:
+                reason = validation.get('reason', 'Unknown risk')
+                suggestion = validation.get('suggestion', '')
+
+                self._print_output_line(f"isaac> Command flagged: {reason}")
+                if suggestion:
+                    self._print_output_line(f"isaac> Suggestion: {suggestion}")
+
+                # Ask for confirmation
+                self._print_output_line("isaac> Proceed anyway? (y/n)")
+                try:
+                    response = input().strip().lower()
+                    if response in ['y', 'yes']:
+                        self._execute_normal_command(command)
+                    else:
+                        self._print_output_line("isaac> Command cancelled.")
+                except (EOFError, KeyboardInterrupt):
+                    self._print_output_line("isaac> Command cancelled.")
+
+        except json.JSONDecodeError:
+            # Fallback to text response if JSON parsing fails
+            self._handle_text_response(f"AI validation response: {ai_response}")
+
+    def _handle_text_response(self, ai_response: str) -> None:
+        """Handle regular text response from AI."""
+        # Check if AI is suggesting a corrected command
+        if "Suggestion:" in ai_response and ("Get-ChildItem" in ai_response or "ls" in ai_response or "dir" in ai_response):
+            # Extract the suggested command from the response
+            lines = ai_response.split('\n')
+            suggested_command = None
+            for line in lines:
+                if line.strip().startswith("Suggestion:"):
+                    # Extract command from suggestion
+                    suggestion = line.replace("Suggestion:", "").strip()
+                    # Take the first command before any parentheses or additional text
+                    if " (" in suggestion:
+                        suggested_command = suggestion.split(" (")[0].strip()
+                    else:
+                        suggested_command = suggestion.strip()
+                    break
+
+            if suggested_command:
+                self._print_output_line(f"isaac> Executing corrected command: {suggested_command}")
+                self._execute_normal_command(suggested_command)
+                return
+
+        # Split multi-line response into separate lines for proper cursor positioning
+        response_lines = ai_response.splitlines()
+
+        # Batch all AI response lines to avoid display corruption
+        for i, line in enumerate(response_lines):
+            if i == 0:
+                # First line gets "isaac> " prefix
+                self.output_buffer.append(f"isaac> {line}")
+            else:
+                # Subsequent lines get indentation to align with the text
+                self.output_buffer.append(f"       {line}")
+            if len(self.output_buffer) > self.max_buffer_lines:
+                self.output_buffer.pop(0)
+
+        # Refresh display only once after all lines are added
+        if self.terminal.is_windows:
+            self._refresh_display()
+        else:
+            # On non-Windows, print all lines at once
+            formatted_lines = []
+            for i, line in enumerate(response_lines):
+                if i == 0:
+                    formatted_lines.append(f"isaac> {line}")
+                else:
+                    formatted_lines.append(f"       {line}")
+            output_text = '\n'.join(formatted_lines)
+            self.terminal.print_normal_output(output_text)
+
+    def _build_system_prompt(self, command_history: list) -> str:
+        """Build comprehensive system prompt with context."""
+        history_text = "\n".join([f"- {cmd}" for cmd in command_history[-5:]]) if command_history else "No recent commands"
+
+        return f"""You are Isaac, an intelligent cross-platform shell assistant. You help users with both general questions and shell command execution.
+
+CONTEXT:
+- User is running commands on their own machine (Windows PowerShell or Linux Bash)
+- Current working directory: {self.current_directory}
+- Recent command history:
+{history_text}
+
+YOUR CAPABILITIES:
+1. Answer general questions and provide helpful information
+2. Analyze shell commands for safety and provide validation
+3. Execute safe commands or suggest alternatives
+4. Understand user intent from context and history
+
+COMMAND ANALYSIS (when user wants to execute commands):
+- Analyze commands for potential risks (overwrites, deletions, system changes)
+- Check wildcards, system directories, destructive operations
+- Be cautious but not paranoid - users know what they're doing
+- Flag operations without backups, system directory modifications
+
+RESPONSE FORMATS:
+
+For GENERAL QUESTIONS (what, how, explain, tell me, etc.):
+- Provide helpful, accurate information
+- Be concise but informative
+- Use natural, conversational language
+
+For COMMAND VALIDATION (when user wants to execute shell commands):
+Return JSON only:
+{{
+  "type": "command_validation",
+  "safe": true/false,
+  "reason": "Brief explanation under 50 words",
+  "warnings": ["warning1", "warning2"],
+  "suggestion": "Alternative safer command (optional)",
+  "execute": true/false
+}}
+
+COMMAND EXECUTION RULES:
+- Safe commands (cp, mv, mkdir, ls, etc.) → execute: true
+- Destructive commands (rm, overwrite, system dirs) → execute: false, provide warnings
+- Unknown commands → execute: false, suggest verification
+- Commands with wildcards in dangerous contexts → execute: false
+
+EXAMPLES:
+
+General Query: "what is the capital of France?"
+Response: Paris is the capital and most populous city of France.
+
+Command: "save my images to backup folder"
+Response: {{"type": "command_validation", "safe": true, "reason": "Copying images to backup directory", "warnings": [], "suggestion": null, "execute": true}}
+
+Command: "delete all log files"
+Response: {{"type": "command_validation", "safe": false, "reason": "Deleting files with wildcards can be dangerous", "warnings": ["May delete important files", "No backup mentioned"], "suggestion": "find . -name '*.log' -exec ls -la {{}} \\; (preview first)", "execute": false}}
+
+Be helpful, accurate, and prioritize user safety while understanding their intent from context."""
+
+    def _handle_validation_response(self, original_command: str, json_response: str) -> None:
+        """Handle JSON validation response from AI."""
+        try:
+            import json
+            validation = json.loads(json_response)
+
+            if validation.get('type') == 'command_validation':
+                safe = validation.get('safe', False)
+                reason = validation.get('reason', 'Unknown')
+                warnings = validation.get('warnings', [])
+                suggestion = validation.get('suggestion')
+                should_execute = validation.get('execute', False)
+
+                # Display validation results
+                self._print_output_line(f"isaac> {reason}")
+
+                if warnings:
+                    for warning in warnings:
+                        self._print_output_line(f"isaac> Warning: {warning}")
+
+                if suggestion:
+                    self._print_output_line(f"isaac> Suggestion: {suggestion}")
+
+                # Execute if safe
+                if should_execute and safe:
+                    self._print_output_line("isaac> Executing command...")
+                    self._execute_normal_command(original_command)
+                elif not safe:
+                    self._print_output_line("isaac> Command blocked for safety.")
+                else:
+                    self._print_output_line("isaac> Command requires manual execution.")
+            else:
+                # Fallback to text response
+                self._handle_text_response(json_response)
+
+        except json.JSONDecodeError:
+            # If JSON parsing fails, treat as text response
+            self._handle_text_response(json_response)
+
+    def _handle_text_response(self, ai_response: str) -> None:
+        """Handle regular text AI response."""
+        # Split multi-line response into separate lines for proper cursor positioning
+        response_lines = ai_response.splitlines()
+
+        # Batch all AI response lines to avoid display corruption
+        for line in response_lines:
+            self.output_buffer.append(f"isaac> {line}")
+            if len(self.output_buffer) > self.max_buffer_lines:
+                self.output_buffer.pop(0)
+
+        # Refresh display only once after all lines are added
+        if self.terminal.is_windows:
+            self._refresh_display()
+        else:
+            # On non-Windows, print all lines at once
+            output_text = '\n'.join(f"isaac> {line}" for line in response_lines)
+            self.terminal.print_normal_output(output_text)
 
     def _handle_tier3_command(self, command: str, tier: float) -> None:
         """Handle Tier 3+ commands with confirmation."""
@@ -261,16 +523,6 @@ class PermanentShell:
             self._print_output_line("isaac> Command cancelled.")
         except EOFError:
             self._print_output_line("isaac> Command cancelled.")
-
-    def _execute_normal_command(self, command: str) -> None:
-        """Execute a normal shell command."""
-        if not self.shell_adapter:
-            self._print_output_line("isaac> No shell adapter available")
-            return
-
-        # Handle special commands that interfere with our UI
-        if self._handle_special_command(command):
-            return
 
     def _execute_normal_command(self, command: str) -> None:
         """Execute a normal shell command."""

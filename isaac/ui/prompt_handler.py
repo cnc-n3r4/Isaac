@@ -10,6 +10,13 @@ from isaac.ui.advanced_input import AdvancedInputHandler
 from isaac.ui.visual_enhancer import VisualEnhancer
 from isaac.core.tier_validator import TierValidator
 
+try:
+    import colorama
+    colorama.init()
+    HAS_COLORAMA = True
+except ImportError:
+    HAS_COLORAMA = False
+
 
 class PromptHandler:
     """Handle Isaac's command prompt interface."""
@@ -57,7 +64,12 @@ class PromptHandler:
 
         # Show user> prompt with command
         tier_indicator = self._get_tier_indicator(tier)
-        user_prompt = f"user> {tier_indicator} {command}"
+        if HAS_COLORAMA:
+            # Yellow background (U.) with white text for user prompt
+            user_prompt = f"\033[43;37mU.\033[0m\033[33m>\033[0m {tier_indicator} {command}"
+        else:
+            # Fallback without colors
+            user_prompt = f"U.> {tier_indicator} {command}"
         print(user_prompt, flush=True)
 
     def show_confirmation_prompt(self, command: str, tier: float) -> bool:

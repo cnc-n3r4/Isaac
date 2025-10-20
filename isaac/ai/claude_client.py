@@ -53,8 +53,41 @@ class ClaudeClient:
         Returns:
             dict: Response data or error dict
         """
+        return self._call_api_with_messages([{'role': 'user', 'content': prompt}], max_tokens, temperature)
+
+    def _call_api_with_system_prompt(self, system_prompt: str, user_prompt: str, max_tokens: int = 1024, temperature: float = 0) -> Dict:
+        """
+        Call AI API with separate system and user prompts.
+        
+        Args:
+            system_prompt: System/instruction prompt
+            user_prompt: User query
+            max_tokens: Maximum response tokens
+            temperature: Creativity (0 = deterministic)
+            
+        Returns:
+            dict: Response data or error dict
+        """
+        messages = [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_prompt}
+        ]
+        return self._call_api_with_messages(messages, max_tokens, temperature)
+
+    def _call_api_with_messages(self, messages: list, max_tokens: int = 1024, temperature: float = 0) -> Dict:
+        """
+        Internal method to call AI API with custom messages (supports Claude, OpenAI, and compatible APIs).
+        
+        Args:
+            messages: List of message dicts with 'role' and 'content'
+            max_tokens: Maximum response tokens
+            temperature: Creativity (0 = deterministic)
+            
+        Returns:
+            dict: Response data or error dict
+        """
         try:
-            # Build headers based on provider
+            # Build headers and payload based on provider
             if self.provider == 'claude':
                 headers = {
                     'x-api-key': self.api_key,
@@ -65,7 +98,7 @@ class ClaudeClient:
                     'model': self.model,
                     'max_tokens': max_tokens,
                     'temperature': temperature,
-                    'messages': [{'role': 'user', 'content': prompt}]
+                    'messages': messages
                 }
             elif self.provider == 'openai':
                 headers = {
@@ -76,7 +109,7 @@ class ClaudeClient:
                     'model': self.model,
                     'max_tokens': max_tokens,
                     'temperature': temperature,
-                    'messages': [{'role': 'user', 'content': prompt}]
+                    'messages': messages
                 }
             else:  # custom provider - try Claude format first
                 headers = {
@@ -90,7 +123,7 @@ class ClaudeClient:
                     'model': self.model,
                     'max_tokens': max_tokens,
                     'temperature': temperature,
-                    'messages': [{'role': 'user', 'content': prompt}]
+                    'messages': messages
                 }
             
             response = requests.post(
@@ -121,8 +154,9 @@ class ClaudeClient:
                         return {'success': False, 'error': 'Unknown response format'}
                 
                 return {'success': True, 'text': text}
+            
             else:
-                return {'success': False, 'error': f'API error: {response.status_code}'}
+                return {'success': False, 'error': f'API error {response.status_code}: {response.text}'}
                 
         except requests.exceptions.Timeout:
             return {'success': False, 'error': f'API timeout ({self.timeout} seconds)'}

@@ -205,14 +205,8 @@ class SessionManager:
     def get_config(self) -> Dict[str, Any]:
         """Get the loaded configuration."""
         return self.config
-        # Local save
-        task_file = self.isaac_dir / 'task_history.json'
-        with open(task_file, 'w') as f:
-            json.dump(self.task_history.to_dict(), f, indent=2)
 
-        # Cloud sync
-        if self.cloud:
-            try:
-                self.cloud.save_session_file('task_history.json', self.task_history.to_dict())
-            except Exception:
-                pass
+    def get_recent_commands(self, limit: int = 10) -> list:
+        """Get recent commands from history."""
+        recent = self.command_history.commands[-limit:] if self.command_history.commands else []
+        return [cmd['command'] for cmd in recent]

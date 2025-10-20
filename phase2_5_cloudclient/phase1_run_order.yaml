@@ -1,0 +1,130 @@
+phase: 1
+name: "Command Prefix Foundation"
+description: "Establish parsing and routing infrastructure for / and ! command prefixes while maintaining backward compatibility"
+
+stages:
+  - id: "1.1"
+    name: "Analyze Current Command Flow"
+    description: "Map out the current command processing pipeline in permanent_shell.py to understand where prefix detection should be inserted"
+    tasks:
+      - "Review permanent_shell.py _main_loop() method"
+      - "Identify where user input is received and parsed"
+      - "Document current tier validation flow"
+      - "Note existing AI query detection logic"
+    dependencies: []
+    files:
+      - "isaac/ui/permanent_shell.py"
+    estimated_time: "2 hours"
+
+  - id: "1.2"
+    name: "Design Command Prefix Detection"
+    description: "Create the logic to detect /, !, and no-prefix commands with proper validation"
+    tasks:
+      - "Implement _detect_command_prefix() method"
+      - "Add validation for prefix combinations (e.g., no '/*' or '!/')"
+      - "Handle edge cases like whitespace and empty commands"
+      - "Ensure backward compatibility with existing commands"
+    dependencies: ["1.1"]
+    files:
+      - "isaac/ui/permanent_shell.py"
+    estimated_time: "3 hours"
+
+  - id: "1.3"
+    name: "Create Local Command Handler (/ commands)"
+    description: "Build the routing infrastructure for local meta-commands starting with /"
+    tasks:
+      - "Create _handle_local_command() method"
+      - "Define initial / command set: /help, /version, /status"
+      - "Implement command parsing for /command [args]"
+      - "Add error handling for invalid / commands"
+    dependencies: ["1.2"]
+    files:
+      - "isaac/ui/permanent_shell.py"
+    estimated_time: "4 hours"
+
+  - id: "1.4"
+    name: "Create Distributed Command Handler (! commands)"
+    description: "Build the foundation for remote operations starting with ! (placeholder implementation)"
+    tasks:
+      - "Create _handle_distributed_command() method"
+      - "Add placeholder responses for ! commands (not yet implemented)"
+      - "Implement basic ! command parsing structure"
+      - "Add validation for machine names and command syntax"
+    dependencies: ["1.2"]
+    files:
+      - "isaac/ui/permanent_shell.py"
+    estimated_time: "3 hours"
+
+  - id: "1.5"
+    name: "Integrate Prefix Routing into Main Loop"
+    description: "Modify the main command processing loop to use prefix detection and routing"
+    tasks:
+      - "Update _main_loop() to call prefix detection first"
+      - "Route commands based on prefix to appropriate handlers"
+      - "Ensure unprefixed commands still go through existing tier validation"
+      - "Maintain AI query detection for unprefixed commands"
+    dependencies: ["1.3", "1.4"]
+    files:
+      - "isaac/ui/permanent_shell.py"
+    estimated_time: "2 hours"
+
+  - id: "1.6"
+    name: "Add Configuration Support"
+    description: "Add configuration flags to enable/disable distributed features"
+    tasks:
+      - "Add 'distributed_mode' config option to session_manager.py"
+      - "Update config loading to support new flags"
+      - "Add runtime checks for distributed feature availability"
+      - "Create /config command to view current settings"
+    dependencies: ["1.5"]
+    files:
+      - "isaac/core/session_manager.py"
+      - "isaac/ui/permanent_shell.py"
+    estimated_time: "2 hours"
+
+  - id: "1.7"
+    name: "Testing and Validation"
+    description: "Test the prefix system and ensure backward compatibility"
+    tasks:
+      - "Test all three command types: /, !, and unprefixed"
+      - "Verify AI queries still work without prefix"
+      - "Test edge cases: empty commands, invalid prefixes, whitespace"
+      - "Run existing test suite to ensure no regressions"
+      - "Manual testing of command correction and tier validation"
+    dependencies: ["1.6"]
+    files:
+      - "tests/test_permanent_shell.py"
+      - "tests/test_tier_validator.py"
+    estimated_time: "4 hours"
+
+  - id: "1.8"
+    name: "Documentation Update"
+    description: "Update help system and documentation for new command prefixes"
+    tasks:
+      - "Update /help command to show available / commands"
+      - "Add inline help for ! command syntax"
+      - "Update README.md with prefix usage examples"
+      - "Document configuration options for distributed features"
+    dependencies: ["1.7"]
+    files:
+      - "README.md"
+      - "isaac/ui/permanent_shell.py"
+    estimated_time: "2 hours"
+
+success_criteria:
+  - "All command types (/ ! none) are properly detected and routed"
+  - "Backward compatibility maintained for existing functionality"
+  - "AI queries work without prefix changes"
+  - "Basic /help, /version, /status commands functional"
+  - "Configuration system supports distributed mode flags"
+  - "All existing tests pass"
+  - "No breaking changes to current user experience"
+
+rollback_plan:
+  - "Configuration flags can disable distributed features"
+  - "Prefix detection can be bypassed if needed"
+  - "All changes are additive, not replacing existing logic"
+  - "Git revert can restore previous state if necessary"
+
+estimated_total_time: "22 hours"
+estimated_total_effort: "1-2 weeks"
