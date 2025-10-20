@@ -37,9 +37,9 @@ def demo_traditional_terminal():
     print()
 
     # Example 1: Normal command
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> ls")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> ls")
     terminal.print_normal_output("")
-    terminal.print_normal_output("    Directory: C:\\Users\\ndemi\\.claude")
+    terminal.print_normal_output("    Directory: C:\\Users\\ndemi\\\.isaac")
     terminal.print_normal_output("")
     terminal.print_normal_output("Mode                 LastWriteTime         Length Name")
     terminal.print_normal_output("----                 -------------         ------ ----")
@@ -49,18 +49,18 @@ def demo_traditional_terminal():
     print()
 
     # Example 2: AI query
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> isaac who won the baseball game?")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> isaac who won the baseball game?")
     terminal.print_isaac_response("isaac> The Chicago Cubs won the World Series in 2016.")
     print()
 
     # Example 3: Unknown command with correction
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> ks")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> ks")
     terminal.print_isaac_response("isaac> unknown command 'ks', did you mean 'ls' to list the directory? type (y/n)")
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> y")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> y")
     terminal.print_isaac_response("isaac> executing...")
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> ls")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> ls")
     terminal.print_normal_output("")
-    terminal.print_normal_output("    Directory: C:\\Users\\ndemi\\.claude")
+    terminal.print_normal_output("    Directory: C:\\Users\\ndemi\\\.isaac")
     terminal.print_normal_output("")
     terminal.print_normal_output("Mode                 LastWriteTime         Length Name")
     terminal.print_normal_output("----                 -------------         ------ ----")
@@ -68,11 +68,11 @@ def demo_traditional_terminal():
     print()
 
     # Example 4: AI query with whois
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> whois babe ruth?")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> whois babe ruth?")
     terminal.print_isaac_response("isaac> unknown command. was this an 'AIQuery'? type (y/n)")
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> y")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> y")
     terminal.print_isaac_response("isaac> I have a name.")
-    terminal.print_normal_output("PS C:\\Users\\ndemi\\.claude> isaac who is babe ruth?")
+    terminal.print_normal_output("PS C:\\Users\\ndemi\\\.isaac> isaac who is babe ruth?")
     terminal.print_isaac_response("isaac> Babe Ruth was a baseball player")
     print()
 

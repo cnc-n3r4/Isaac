@@ -98,7 +98,7 @@ pytest tests/test_ai_integration.py -k "translation_through_tier" -v
 ```
 
 ### Test Categories
-- Claude API Client: 6 tests
+- x.ai API Client: 6 tests
 - Natural Language Translation: 6 tests
 - Auto-Correction: 6 tests
 - AI Validation (Tier 3): 5 tests

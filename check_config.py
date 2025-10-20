@@ -27,7 +27,7 @@ def check_isaac_config():
             print(json.dumps(config, indent=2))
 
             # Check for AI-related keys
-            ai_keys = ['claude_api_key', 'claude_api_url', 'ai_enabled']
+            ai_keys = ['xai_api_key', 'xai_api_url', 'ai_enabled']
             print(f"\nAI-related keys found:")
             for key in ai_keys:
                 if key in config:

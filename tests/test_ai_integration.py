@@ -77,7 +77,7 @@ def mock_ai_enabled():
     return {
         'machine_id': 'TEST-MACHINE',
         'ai_enabled': True,
-        'xai_api_key': 'test_claude_key',
+        'xai_api_key': 'test_xai_key',
         'auto_correct_tier2': True,
         'sync_enabled': False
     }
@@ -210,7 +210,7 @@ def test_correct_typo_high_confidence(mock_post):
     AI detects and corrects typos with high confidence.
     
     Test Coverage:
-    - Mock Claude detects typo ("grp" → "grep")
+    - Mock x.ai detects typo ("grp" → "grep")
     - correct_typo() returns corrected command + confidence 0.9
     - Original command preserved in response
     - Risk if fails: Tier 2 auto-correction broken
@@ -245,7 +245,7 @@ def test_plan_task_success(mock_post):
     AI breaks task into multi-step plan.
     
     Test Coverage:
-    - Mock Claude breaks task into steps
+    - Mock x.ai breaks task into steps
     - plan_task() returns list of steps with tiers
     - Each step has command + tier classification
     - Risk if fails: Task mode planning broken
@@ -283,7 +283,7 @@ def test_api_network_failure(mock_post):
     
     Test Coverage:
     - Mock requests library raises ConnectionError
-    - All Claude client methods return error dicts (not exceptions)
+    - All x.ai client methods return error dicts (not exceptions)
     - Logged for debugging
     - Risk if fails: Isaac crashes on network issues
     """
@@ -318,7 +318,7 @@ def test_translation_basic(mock_translate):
     
     Test Coverage:
     - Input: "isaac find large files"
-    - Translator calls Claude API
+    - Translator calls x.ai API
     - Returns valid find command
     - Command is shell-appropriate (bash vs PowerShell)
     - Risk if fails: NL translation broken
@@ -814,7 +814,7 @@ def test_task_planning_basic(mock_plan):
     
     Test Coverage:
     - Input: "isaac task: backup project files"
-    - Task planner calls Claude API
+    - Task planner calls x.ai API
     - Returns multi-step plan
     - Each step has command + tier
     - Risk if fails: Task mode doesn't work
@@ -1253,7 +1253,7 @@ Test Suite Summary:
 Total Tests: 38
 
 Coverage Breakdown:
-- Claude API Client: 6 tests (translate, validate, correct, plan, network)
+- x.ai API Client: 6 tests (translate, validate, correct, plan, network)
 - Natural Language Translation: 6 tests (basic, tier system, invalid, privacy, disabled)
 - Auto-Correction: 6 tests (tier 2, tier 2.5, confidence, preserve, disabled)
 - AI Validation (Tier 3): 5 tests (warnings, safe, fallback, suggestions, abort)

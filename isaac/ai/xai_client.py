@@ -34,12 +34,8 @@ class XaiClient:
         # Auto-detect provider if not specified
         if provider:
             self.provider = provider.lower()
-        elif 'x.ai' in self.api_url or 'grok' in self.model.lower():
-            self.provider = 'xai'
-        elif 'openai.com' in self.api_url or 'gpt' in self.model.lower():
-            self.provider = 'openai'
         else:
-            self.provider = 'custom'
+            self.provider = 'xai'  # Default to x.ai
     
     def _call_api(self, prompt: str, max_tokens: int = 1024, temperature: float = 0) -> Dict:
         """
@@ -76,7 +72,7 @@ class XaiClient:
 
     def _call_api_with_messages(self, messages: list, max_tokens: int = 1024, temperature: float = 0) -> Dict:
         """
-        Internal method to call AI API with custom messages (supports Claude, OpenAI, and compatible APIs).
+        Internal method to call x.ai API with custom messages.
         
         Args:
             messages: List of message dicts with 'role' and 'content'
@@ -87,44 +83,19 @@ class XaiClient:
             dict: Response data or error dict
         """
         try:
-            # Build headers and payload based on provider
-            if self.provider == 'claude':
-                headers = {
-                    'x-api-key': self.api_key,
-                    'anthropic-version': self.api_version,
-                    'content-type': 'application/json'
-                }
-                payload = {
-                    'model': self.model,
-                    'max_tokens': max_tokens,
-                    'temperature': temperature,
-                    'messages': messages
-                }
-            elif self.provider == 'openai':
-                headers = {
-                    'Authorization': f'Bearer {self.api_key}',
-                    'content-type': 'application/json'
-                }
-                payload = {
-                    'model': self.model,
-                    'max_tokens': max_tokens,
-                    'temperature': temperature,
-                    'messages': messages
-                }
-            else:  # custom provider - try Claude format first
-                headers = {
-                    'x-api-key': self.api_key,
-                    'Authorization': f'Bearer {self.api_key}',  # Include both
-                    'content-type': 'application/json'
-                }
-                if self.api_version:
-                    headers['anthropic-version'] = self.api_version
-                payload = {
-                    'model': self.model,
-                    'max_tokens': max_tokens,
-                    'temperature': temperature,
-                    'messages': messages
-                }
+            # Build headers for x.ai API
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'content-type': 'application/json'
+            }
+            
+            # x.ai uses OpenAI-compatible format
+            payload = {
+                'model': self.model,
+                'max_tokens': max_tokens,
+                'temperature': temperature,
+                'messages': messages
+            }
             
             response = requests.post(
                 self.api_url,
@@ -136,22 +107,11 @@ class XaiClient:
             if response.status_code == 200:
                 data = response.json()
                 
-                # Parse response based on provider
-                text = None
-                if self.provider == 'claude' or 'content' in data:
-                    # Claude format: data['content'][0]['text']
-                    text = data['content'][0]['text']
-                elif self.provider == 'openai' or 'choices' in data:
-                    # OpenAI format: data['choices'][0]['message']['content']
+                # Parse x.ai response (OpenAI-compatible format)
+                if 'choices' in data and data['choices']:
                     text = data['choices'][0]['message']['content']
                 else:
-                    # Try both formats
-                    if 'content' in data:
-                        text = data['content'][0]['text']
-                    elif 'choices' in data:
-                        text = data['choices'][0]['message']['content']
-                    else:
-                        return {'success': False, 'error': 'Unknown response format'}
+                    return {'success': False, 'error': 'Invalid response format'}
                 
                 return {'success': True, 'text': text}
             
@@ -202,7 +162,7 @@ Only respond with the JSON, no other text."""
             return result  # Return error dict
         
         try:
-            # Parse JSON from Claude's response
+            # Parse JSON from x.ai response
             parsed = json.loads(result['text'])
             return {
                 'success': True,

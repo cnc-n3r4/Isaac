@@ -235,7 +235,7 @@ class PermanentShell:
     def _handle_ai_query(self, command: str) -> None:
         """Handle AI query in traditional style."""
         if not self.ai_client:
-            self._print_output_line("isaac> AI client not configured. Please set api_key and api_url in preferences.")
+            self._print_output_line("isaac> AI client not configured. Please set xai_api_key and xai_api_url in preferences.")
             return
 
         try:
