@@ -23,9 +23,40 @@ class PermanentShell:
         """Initialize the permanent shell."""
         # Core components
         self.terminal = TerminalControl()
-        self.preferences = Preferences(machine_id=platform.node())
+        
+        # Initialize session manager (it will load config from ~/.isaac/config.json)
+        self.session_manager = SessionManager()
+        
+        # Get the loaded preferences from session manager
+        self.preferences = self.session_manager.get_preferences()
+        
+        # Get the loaded config from session manager
+        self.config = self.session_manager.get_config()
+        
         self.tier_validator = TierValidator(self.preferences)
-        self.session_manager = SessionManager(self.preferences.to_dict())
+
+        # Output buffering for Windows scrolling simulation
+        self.output_buffer = []
+        self.max_buffer_lines = 100
+
+        # Initialize AI client if configured
+        self.ai_client = None
+        claude_api_key = self.config.get('claude_api_key')
+        claude_api_url = self.config.get('claude_api_url')
+        ai_model = self.config.get('ai_model', 'grok')
+        if claude_api_key and claude_api_url:
+            try:
+                from isaac.ai.claude_client import ClaudeClient
+                self.ai_client = ClaudeClient(
+                    api_key=claude_api_key,
+                    api_url=claude_api_url,
+                    model=ai_model
+                )
+                self._print_output_line("isaac> AI client initialized successfully")
+            except Exception as e:
+                self._print_output_line(f"isaac> Failed to initialize AI client: {e}")
+        else:
+            self._print_output_line("isaac> AI client not configured (missing claude_api_key or claude_api_url in config)")
 
         # Shell detection
         self.shell_adapter = None
@@ -78,6 +109,10 @@ class PermanentShell:
                 # Process the command
                 self._process_command(command)
 
+            except KeyboardInterrupt:
+                # Handle Ctrl+C gracefully - just print newline and continue
+                self._print_output_line("")
+                continue
             except Exception as e:
                 error_msg = f"Error: {str(e)}"
                 self._print_output_line(error_msg)
@@ -85,9 +120,19 @@ class PermanentShell:
     def _get_user_input(self) -> str:
         """Get user input with traditional prompt."""
         prompt = self.terminal.get_prompt_string()
-        # Ensure cursor is at the start of the scroll region (line 4)
-        scroll_start = self.terminal.status_lines + 1  # Line 4
-        if not self.terminal.is_windows:
+        # Ensure cursor is positioned correctly for input
+        if self.terminal.is_windows:
+            # On Windows, position cursor at the bottom of the visible area
+            available_lines = self.terminal.terminal_height - self.terminal.status_lines - 1
+            start_idx = max(0, len(self.output_buffer) - available_lines)
+            displayed_lines = len(self.output_buffer) - start_idx
+            bottom_line = self.terminal.status_lines + 1 + displayed_lines
+            if bottom_line > self.terminal.terminal_height:
+                bottom_line = self.terminal.terminal_height
+            print(f"\033[{bottom_line};1H", end="", flush=True)
+        else:
+            # On non-Windows, use scroll region positioning
+            scroll_start = self.terminal.status_lines + 1  # Line 4
             print(f"\033[{scroll_start};1H", end="", flush=True)
         try:
             return input(prompt).strip()
@@ -111,6 +156,12 @@ class PermanentShell:
 
     def _execute_command_logic(self, command: str) -> None:
         """Execute the command logic."""
+        # Handle isaac-prefixed commands as direct shell execution
+        if command.lower().startswith("isaac "):
+            actual_command = command[6:].strip()  # Remove "isaac " prefix
+            self._handle_isaac_command(actual_command)
+            return
+
         # Validate command tier
         tier = self.tier_validator.get_tier(command)
 
@@ -122,27 +173,78 @@ class PermanentShell:
         else:
             self._execute_normal_command(command)
 
+    def _handle_isaac_command(self, command: str) -> None:
+        """Handle isaac-prefixed commands as direct shell execution."""
+        # Check if command is valid (basic validation)
+        if not command:
+            self._print_output_line("isaac> No command provided")
+            return
+
+        # For now, treat all isaac commands as valid and execute them
+        # TODO: Add history-based validation later
+        self._print_output_line("isaac> Valid command, executing..")
+        self._execute_normal_command(command)
+
     def _is_ai_query(self, command: str) -> bool:
         """Check if command is an AI query."""
-        ai_prefixes = ["isaac", "ai", "tell me", "what is", "how do", "why does"]
-        return any(command.lower().startswith(prefix) for prefix in ai_prefixes)
+        # Commands starting with "isaac " are shell commands, not AI queries
+        if command.lower().startswith("isaac "):
+            return False
+
+        command_lower = command.lower().strip()
+
+        # Check for question patterns
+        question_words = ["what", "where", "when", "why", "how", "who", "which", "can you", "could you", "would you", "do you", "are you", "is it", "does it"]
+        if any(command_lower.startswith(word) for word in question_words):
+            return True
+
+        # Check for conversational patterns
+        conversational_starts = ["tell me", "explain", "describe", "help me", "i need", "i want", "can i", "should i"]
+        if any(phrase in command_lower for phrase in conversational_starts):
+            return True
+
+        # Check for AI-specific prefixes
+        ai_prefixes = ["ai", "grok", "hey isaac"]
+        if any(command_lower.startswith(prefix) for prefix in ai_prefixes):
+            return True
+
+        # If it contains question marks or is longer than typical commands, likely AI query
+        if "?" in command or len(command.split()) > 3:
+            return True
+
+        return False
 
     def _handle_ai_query(self, command: str) -> None:
         """Handle AI query in traditional style."""
-        # For now, just show a placeholder response
-        # This would integrate with the AI system
-        self._print_output_line(f"isaac> I understand you're asking about: {command}")
+        if not self.ai_client:
+            self._print_output_line("isaac> AI client not configured. Please set api_key and api_url in preferences.")
+            return
 
-        # Simulate AI processing
-        if "who won the baseball game" in command.lower():
-            self._print_output_line("isaac> The Chicago Cubs won the World Series in 2016.")
-        elif "whois" in command.lower():
-            # Simulate whois command
-            self._print_output_line("isaac> Executing whois lookup...")
-            # In real implementation, this would run actual whois
-            self._execute_normal_command("whois babe-ruth.com")
-        else:
-            self._print_output_line("isaac> I'm processing your AI query...")
+        try:
+            # Use AI client to process the query
+            response = self.ai_client._call_api(f"Process this user query and provide a helpful response: {command}")
+            if response.get('success'):
+                ai_response = response.get('text', 'No response from AI')
+                # Split multi-line response into separate lines for proper cursor positioning
+                response_lines = ai_response.splitlines()
+
+                # Batch all AI response lines to avoid display corruption
+                for line in response_lines:
+                    self.output_buffer.append(f"isaac> {line}")
+                    if len(self.output_buffer) > self.max_buffer_lines:
+                        self.output_buffer.pop(0)
+
+                # Refresh display only once after all lines are added
+                if self.terminal.is_windows:
+                    self._refresh_display()
+                else:
+                    # On non-Windows, print all lines at once
+                    output_text = '\n'.join(f"isaac> {line}" for line in response_lines)
+                    self.terminal.print_normal_output(output_text)
+            else:
+                self._print_output_line(f"isaac> AI error: {response.get('error', 'Unknown error')}")
+        except Exception as e:
+            self._print_output_line(f"isaac> AI query failed: {e}")
 
     def _handle_tier3_command(self, command: str, tier: float) -> None:
         """Handle Tier 3+ commands with confirmation."""
@@ -154,8 +256,21 @@ class PermanentShell:
                 self._execute_normal_command(command)
             else:
                 self._print_output_line("isaac> Command cancelled.")
+        except KeyboardInterrupt:
+            self._print_output_line("")
+            self._print_output_line("isaac> Command cancelled.")
         except EOFError:
             self._print_output_line("isaac> Command cancelled.")
+
+    def _execute_normal_command(self, command: str) -> None:
+        """Execute a normal shell command."""
+        if not self.shell_adapter:
+            self._print_output_line("isaac> No shell adapter available")
+            return
+
+        # Handle special commands that interfere with our UI
+        if self._handle_special_command(command):
+            return
 
     def _execute_normal_command(self, command: str) -> None:
         """Execute a normal shell command."""
@@ -193,6 +308,10 @@ class PermanentShell:
             if result.success:
                 self.session_manager.log_command(command, result.exit_code)
 
+        except KeyboardInterrupt:
+            # Handle Ctrl+C during command execution
+            self._print_output_line("^C")
+            self._print_output_line("isaac> Command interrupted")
         except Exception as e:
             self._print_output_line(f"isaac> Execution failed: {str(e)}")
 
@@ -221,11 +340,13 @@ class PermanentShell:
         available_lines = self.terminal.terminal_height - self.terminal.status_lines - 1
         start_idx = max(0, len(self.output_buffer) - available_lines)
 
-        for line in self.output_buffer[start_idx:]:
-            print(line)
+        # Print all lines at once to avoid corruption
+        output_text = '\n'.join(self.output_buffer[start_idx:])
+        print(output_text)
 
         # Position cursor at bottom for next input
-        bottom_line = self.terminal.status_lines + 1 + (len(self.output_buffer) - start_idx)
+        displayed_lines = len(self.output_buffer) - start_idx
+        bottom_line = self.terminal.status_lines + 1 + displayed_lines
         if bottom_line > self.terminal.terminal_height:
             bottom_line = self.terminal.terminal_height
         print(f"\033[{bottom_line};1H", end="", flush=True)

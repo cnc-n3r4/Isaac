@@ -36,7 +36,7 @@ class ClaudeClient:
             self.provider = provider.lower()
         elif 'anthropic.com' in self.api_url or 'claude' in self.model.lower():
             self.provider = 'claude'
-        elif 'openai.com' in self.api_url or 'gpt' in self.model.lower():
+        elif 'openai.com' in self.api_url or 'gpt' in self.model.lower() or 'x.ai' in self.api_url:
             self.provider = 'openai'
         else:
             self.provider = 'custom'

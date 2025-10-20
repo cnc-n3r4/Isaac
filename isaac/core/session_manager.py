@@ -61,6 +61,9 @@ class SessionManager:
         self.config = config or {}
         self.shell_adapter = shell_adapter
 
+        # Load config from disk if it exists
+        self._load_config()
+
         # Generate machine ID if not provided
         if 'machine_id' not in self.config:
             self.config['machine_id'] = str(uuid.uuid4())[:8]
@@ -120,6 +123,18 @@ class SessionManager:
                     self.task_history = TaskHistory.from_dict(data)
             except Exception:
                 pass  # Use empty task history if file corrupted
+
+    def _load_config(self):
+        """Load config from config.json file."""
+        config_file = self.isaac_dir / 'config.json'
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    file_config = json.load(f)
+                    # Merge file config with passed config (file takes precedence)
+                    self.config.update(file_config)
+            except Exception:
+                pass  # Use defaults if file corrupted
 
     def log_command(self, command: str, exit_code: int = 0, shell_name: str = "unknown"):
         """Log executed command to history."""
@@ -183,8 +198,13 @@ class SessionManager:
         """Alias for log_ai_query for backward compatibility."""
         self.log_ai_query(query, translated_command, shell_name=shell_name)
 
-    def save_task_history(self):
-        """Save task history to local and cloud."""
+    def get_preferences(self) -> 'Preferences':
+        """Get the loaded preferences."""
+        return self.preferences
+
+    def get_config(self) -> Dict[str, Any]:
+        """Get the loaded configuration."""
+        return self.config
         # Local save
         task_file = self.isaac_dir / 'task_history.json'
         with open(task_file, 'w') as f:
