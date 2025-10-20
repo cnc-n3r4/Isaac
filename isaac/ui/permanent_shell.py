@@ -80,7 +80,7 @@ class PermanentShell:
 
             except Exception as e:
                 error_msg = f"Error: {str(e)}"
-                self.terminal.print_isaac_response(error_msg)
+                self._print_output_line(error_msg)
 
     def _get_user_input(self) -> str:
         """Get user input with traditional prompt."""
@@ -131,37 +131,36 @@ class PermanentShell:
         """Handle AI query in traditional style."""
         # For now, just show a placeholder response
         # This would integrate with the AI system
-        response = f"isaac> I understand you're asking about: {command}"
-        self.terminal.print_isaac_response(response)
+        self._print_output_line(f"isaac> I understand you're asking about: {command}")
 
         # Simulate AI processing
         if "who won the baseball game" in command.lower():
-            self.terminal.print_isaac_response("isaac> The Chicago Cubs won the World Series in 2016.")
+            self._print_output_line("isaac> The Chicago Cubs won the World Series in 2016.")
         elif "whois" in command.lower():
             # Simulate whois command
-            self.terminal.print_isaac_response("isaac> Executing whois lookup...")
+            self._print_output_line("isaac> Executing whois lookup...")
             # In real implementation, this would run actual whois
             self._execute_normal_command("whois babe-ruth.com")
         else:
-            self.terminal.print_isaac_response("isaac> I'm processing your AI query...")
+            self._print_output_line("isaac> I'm processing your AI query...")
 
     def _handle_tier3_command(self, command: str, tier: float) -> None:
         """Handle Tier 3+ commands with confirmation."""
-        self.terminal.print_isaac_response(f"isaac> Tier {tier} command requires confirmation. Proceed? (y/n)")
+        self._print_output_line(f"isaac> Tier {tier} command requires confirmation. Proceed? (y/n)")
 
         try:
             response = input().strip().lower()
             if response in ['y', 'yes']:
                 self._execute_normal_command(command)
             else:
-                self.terminal.print_isaac_response("isaac> Command cancelled.")
+                self._print_output_line("isaac> Command cancelled.")
         except EOFError:
-            self.terminal.print_isaac_response("isaac> Command cancelled.")
+            self._print_output_line("isaac> Command cancelled.")
 
     def _execute_normal_command(self, command: str) -> None:
         """Execute a normal shell command."""
         if not self.shell_adapter:
-            self.terminal.print_isaac_response("isaac> No shell adapter available")
+            self._print_output_line("isaac> No shell adapter available")
             return
 
         # Handle special commands that interfere with our UI
@@ -195,7 +194,7 @@ class PermanentShell:
                 self.session_manager.log_command(command, result.exit_code)
 
         except Exception as e:
-            self.terminal.print_isaac_response(f"isaac> Execution failed: {str(e)}")
+            self._print_output_line(f"isaac> Execution failed: {str(e)}")
 
     def _print_output_line(self, line: str):
         """Print a line of output, handling buffering for Windows."""

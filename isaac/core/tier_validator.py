@@ -17,15 +17,34 @@ class TierValidator:
         self.tier_defaults = self._load_tier_defaults()
     
     def _load_tier_defaults(self) -> Dict[str, list]:
-        """Load default tier classifications."""
-        # For now, hardcode the defaults from tests
-        return {
-            "1": ["ls", "cd", "pwd", "echo", "cat", "type", "Get-ChildItem", "Set-Location"],
-            "2": ["grep", "Select-String", "head", "tail"],
-            "2.5": ["find", "sed", "awk", "Where-Object"],
-            "3": ["cp", "mv", "git", "npm", "pip", "Copy-Item", "Move-Item"],
-            "4": ["rm", "del", "format", "dd", "Remove-Item", "Format-Volume"]
-        }
+        """Load default tier classifications from JSON file."""
+        try:
+            data_dir = Path(__file__).parent.parent / 'data'
+            tier_file = data_dir / 'tier_defaults.json'
+            
+            if tier_file.exists():
+                with open(tier_file, 'r') as f:
+                    data = json.load(f)
+                    # Convert string keys to lists
+                    return {tier: commands for tier, commands in data.items()}
+            else:
+                # Fallback to hardcoded defaults if file not found
+                return {
+                    "1": ["ls", "cd", "clear", "cls", "pwd", "echo", "cat", "type", "Get-ChildItem", "Set-Location", "Get-Location"],
+                    "2": ["grep", "Select-String", "head", "tail", "sort", "uniq"],
+                    "2.5": ["find", "sed", "awk", "Where-Object", "ForEach-Object"],
+                    "3": ["cp", "mv", "git", "npm", "pip", "reset", "Copy-Item", "Move-Item", "New-Item", "Remove-Item"],
+                    "4": ["rm", "del", "format", "dd", "Remove-Item", "Format-Volume", "Clear-Disk"]
+                }
+        except Exception:
+            # Fallback on any error
+            return {
+                "1": ["ls", "cd", "clear", "cls", "pwd", "echo", "cat", "type", "Get-ChildItem", "Set-Location", "Get-Location"],
+                "2": ["grep", "Select-String", "head", "tail", "sort", "uniq"],
+                "2.5": ["find", "sed", "awk", "Where-Object", "ForEach-Object"],
+                "3": ["cp", "mv", "git", "npm", "pip", "reset", "Copy-Item", "Move-Item", "New-Item", "Remove-Item"],
+                "4": ["rm", "del", "format", "dd", "Remove-Item", "Format-Volume", "Clear-Disk"]
+            }
     
     def get_tier(self, command: str) -> float:
         """
