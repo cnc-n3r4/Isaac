@@ -1,44 +1,32 @@
 """
 Isaac - AI-Enhanced Command-Line Assistant
 
-Entry point for both CLI and interactive REPL modes.
+Entry point for permanent shell mode.
 """
 
 import sys
-from isaac.core.session_manager import SessionManager
-from isaac.core.cli_command_router import create_router
+from isaac.ui.permanent_shell import PermanentShell
 
 
 def main():
     """
     Main entry point.
 
-    Modes:
-    - CLI: isaac <command> <args>  (executes and exits)
-    - REPL: isaac  (enters interactive loop)
+    Launches Isaac's permanent shell interface with locked header UI.
     """
-    # Initialize session
-    session = SessionManager()
-    session.load_from_local()
-    session.load_from_cloud()
+    try:
+        shell = PermanentShell()
+        shell.start()
+    except KeyboardInterrupt:
+        print("\nIsaac terminated by user.")
+        sys.exit(0)
+    except Exception as e:
+        print(f"Isaac failed to start: {e}")
+        sys.exit(1)
 
-    # Create command router
-    router = create_router(session)
 
-    print("Isaac > Ready.")
-
-    # Determine mode based on arguments
-    if len(sys.argv) > 1:
-        # CLI mode - execute single command and exit
-        command = ' '.join(sys.argv[1:])
-        result = router.execute(command)
-        print(result)
-
-        # Exit with appropriate status code
-        sys.exit(0 if result.success else 1)
-    else:
-        # REPL mode - interactive loop
-        repl_loop(router)
+if __name__ == "__main__":
+    main()
 
 
 def repl_loop(router):

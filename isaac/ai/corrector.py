@@ -7,7 +7,32 @@ from typing import Dict, Optional
 from isaac.ai.claude_client import ClaudeClient
 
 
-def correct_command(command: str, shell_name: str, config: Optional[Dict] = None) -> Dict:
+def detect_typo(command: str) -> Dict:
+    """
+    Detect if command contains typos (simplified version).
+    
+    Args:
+        command: Command to check
+        
+    Returns:
+        dict: {'has_typo': bool}
+    """
+    # Simple heuristic - check for common typos
+    common_typos = {
+        'grp': 'grep',
+        'gerp': 'grep', 
+        'lsit': 'list',
+        'cd..': 'cd ..'
+    }
+    
+    first_word = command.split()[0] if command.split() else ''
+    
+    return {
+        'has_typo': first_word in common_typos
+    }
+
+
+def correct_command(command: str, shell_name: str = "bash", config: Optional[Dict] = None) -> Dict:
     """
     Detect and correct typos in shell command.
     

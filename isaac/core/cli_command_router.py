@@ -139,7 +139,7 @@ class CommandRouter:
             CommandResult with status and message
         """
         # Log command attempt
-        self.session._log_command(command_string)
+        self.session.log_command(command_string)
 
         # Parse command
         cmd_type, tokens = self.parse(command_string)

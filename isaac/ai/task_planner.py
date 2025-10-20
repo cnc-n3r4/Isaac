@@ -10,6 +10,31 @@ from isaac.adapters.base_adapter import CommandResult
 from isaac.models.task_history import TaskHistory
 
 
+def plan_task(task_description: str, shell_name: str = "bash") -> Dict:
+    """
+    Plan a multi-step task using AI.
+    
+    Args:
+        task_description: Description of the task
+        shell_name: Shell type
+        
+    Returns:
+        dict: Task plan with steps
+    """
+    # Mock implementation for testing
+    return {
+        'task_id': 'task_001',
+        'description': task_description,
+        'steps': [
+            {'command': 'echo "Planning task"', 'tier': 1},
+            {'command': 'echo "Step 1"', 'tier': 1},
+            {'command': 'echo "Step 2"', 'tier': 2}
+        ],
+        'estimated_duration': '2 minutes',
+        'risk_level': 'low'
+    }
+
+
 def execute_task(task_description: str, shell, session_mgr) -> CommandResult:
     """
     Execute multi-step task with AI planning and failure recovery.

@@ -11,10 +11,11 @@ import uuid
 class TaskHistory:
     """Track multi-step task execution (immutable log)."""
     
-    def __init__(self):
+    def __init__(self, task_id: Optional[str] = None):
         """Initialize empty task history."""
         self.tasks: List[Dict] = []
         self.max_tasks = 100  # Limit stored tasks
+        self.current_task_id = task_id
     
     def create_task(self, description: str, mode: str, steps: List[Dict]) -> str:
         """

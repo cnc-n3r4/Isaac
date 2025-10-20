@@ -12,8 +12,8 @@ class ClaudeClient:
     """HTTP client for AI API integration (Claude, OpenAI, or compatible APIs)."""
     
     def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929", 
-                 api_url: str = None, api_version: str = None, timeout: int = None,
-                 provider: str = None):
+                 api_url: Optional[str] = None, api_version: Optional[str] = None, timeout: Optional[int] = None,
+                 provider: Optional[str] = None):
         """
         Initialize AI API client.
         
@@ -182,7 +182,7 @@ Only respond with the JSON, no other text."""
                 'error': 'Failed to parse AI response'
             }
     
-    def validate_command(self, command: str, shell_name: str) -> Dict:
+    def validate_command(self, command: str, shell_name: str = "bash") -> Dict:
         """
         Validate shell command for safety and correctness.
         
@@ -239,7 +239,7 @@ Only respond with JSON, no other text."""
                 'suggestions': []
             }
     
-    def correct_typo(self, command: str, shell_name: str) -> Dict:
+    def correct_typo(self, command: str, shell_name: str = "bash") -> Dict:
         """
         Detect and correct typos in shell command.
         
@@ -306,7 +306,7 @@ Only respond with JSON, no other text."""
                 'confidence': 0.0
             }
     
-    def plan_task(self, task_description: str, shell_name: str) -> Dict:
+    def plan_task(self, task_description: str, shell_name: str = "bash") -> Dict:
         """
         Break multi-step task into executable steps.
         

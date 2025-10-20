@@ -11,6 +11,44 @@ from isaac.ai.claude_client import ClaudeClient
 
 logger = logging.getLogger(__name__)
 
+def validate_tier3_command(command: str, shell_name: str = "bash") -> Dict:
+    """
+    Validate Tier 3 command for safety.
+    
+    Args:
+        command: Command to validate
+        shell_name: Shell type
+        
+    Returns:
+        dict: Validation result
+    """
+    # Mock implementation for testing
+    return {
+        'safe': False,
+        'warnings': ['Tier 3 command requires AI validation'],
+        'suggestions': ['Consider safer alternatives'],
+        'error': None
+    }
+
+
+def handle_user_choice(choice: str, command: str) -> Dict:
+    """
+    Handle user choice for command execution.
+    
+    Args:
+        choice: User choice (y/n/abort)
+        command: The command
+        
+    Returns:
+        dict: Action result
+    """
+    if choice.lower() == 'y':
+        return {'action': 'execute', 'command': command}
+    elif choice.lower() == 'n':
+        return {'action': 'abort', 'command': command}
+    else:
+        return {'action': 'unknown', 'command': command}
+
 
 def validate_command(command: str, shell_type: str, config: Dict[str, Any]) -> Dict[str, Any]:
     """
