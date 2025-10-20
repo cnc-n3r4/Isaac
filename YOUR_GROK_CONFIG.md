@@ -17,11 +17,11 @@ Save this to `C:\Users\ndemi\.isaac\config.json`:
   "api_key": "isaac_prod_a8f3k2m9x7q4w1p5z6n8v2c3b7",
   "user_id": "ndemi",
   "ai_enabled": true,
-  "claude_api_key": "xai-UDuUicTFELExGh86kIifPbh4FVWzrU8rDB23wt3w0mFRMaJQXNetRH8RaiKmNtNxnBHMMy2b4le2OP7L",
-  "claude_api_url": "https://api.x.ai/v1/chat/completions",
+  "xai_api_key": "xai-UDuUicTFELExGh86kIifPbh4FVWzrU8rDB23wt3w0mFRMaJQXNetRH8RaiKmNtNxnBHMMy2b4le2OP7L",
+  "xai_api_url": "https://api.x.ai/v1/chat/completions",
   "ai_model": "grok-4-fast-reasoning",
-  "ai_provider": "openai",
-  "claude_timeout": 10,
+  "ai_provider": "xai",
+  "xai_timeout": 10,
   "task_mode_enabled": true,
   "auto_correct_tier2": true,
   "ai_min_confidence": 0.7
@@ -33,10 +33,10 @@ Save this to `C:\Users\ndemi\.isaac\config.json`:
 ## 🔧 WHAT I CHANGED
 
 ### ❌ Removed:
-- `claude_api_version: "2023-06-01"` - Grok doesn't use this
+- `xai_api_version: "2023-06-01"` - Grok doesn't use this
 
 ### ✅ Added:
-- `ai_provider: "openai"` - Forces OpenAI-compatible mode
+- `ai_provider: "xai"` - Forces x.ai mode
 
 ### ✅ Kept:
 - Your Grok API key (valid - starts with `xai-`)
@@ -54,7 +54,7 @@ Authorization: Bearer xai-UDuUicTFELExGh86kIifPbh4FVWzrU8rDB23wt3w0mFRMaJQXNetRH
 Content-Type: application/json
 ```
 
-**NO `anthropic-version` header** - because `ai_provider: "openai"`
+**NO `anthropic-version` header** - because `ai_provider: "xai"`
 
 ### Request Format:
 ```json
@@ -72,7 +72,7 @@ Content-Type: application/json
 ```
 data['choices'][0]['message']['content']
 ```
-**OpenAI format** - not Claude format
+**x.ai format** - not Claude format
 
 ---
 
@@ -82,7 +82,7 @@ From xAI docs:
 
 **Endpoint:** ✅ `https://api.x.ai/v1/chat/completions`  
 **Auth:** ✅ `Authorization: Bearer xai-...`  
-**Format:** ✅ OpenAI-compatible  
+**Format:** ✅ x.ai-compatible  
 **Model:** ✅ `grok-4-fast-reasoning` (valid model name)
 
 **Your config matches perfectly!**
@@ -178,8 +178,8 @@ ls
 - Your model has `grok-` → would detect as custom
 - Your URL has `x.ai` → not recognized
 
-**Explicit `ai_provider: "openai"` fixes this:**
-- ✅ Forces OpenAI header format
+**Explicit `ai_provider: "xai"` fixes this:**
+- ✅ Forces x.ai header format
 - ✅ Skips `anthropic-version` header
 - ✅ Uses correct response parsing
 - ✅ Works perfectly with Grok!
@@ -193,15 +193,15 @@ ls
 - Verify key is active at console.x.ai
 
 ### "Response parsing error"
-- Make sure `ai_provider: "openai"` is set
-- Grok uses OpenAI format, not Claude
+- Make sure `ai_provider: "xai"` is set
+- Grok uses x.ai format, not Claude
 
 ### "Model not found"
 - Model name: `grok-4-fast-reasoning` (with hyphens)
 - Alternative: `grok-4-fast-non-reasoning` (faster, no reasoning)
 
 ### Slow responses
-- Increase timeout: `"claude_timeout": 30`
+- Increase timeout: `"xai_timeout": 30`
 - Reasoning mode takes longer (it thinks!)
 - Try `grok-4-fast-non-reasoning` for speed
 

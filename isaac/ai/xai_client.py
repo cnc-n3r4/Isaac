@@ -1,5 +1,5 @@
 """
-ClaudeClient - HTTP wrapper for Claude AI API
+XaiClient - HTTP wrapper for x.ai/Grok AI API
 Enables natural language translation, validation, correction, and task planning
 """
 
@@ -8,34 +8,34 @@ import json
 from typing import Dict, List, Optional
 
 
-class ClaudeClient:
-    """HTTP client for AI API integration (Claude, OpenAI, or compatible APIs)."""
+class XaiClient:
+    """HTTP client for x.ai/Grok API integration."""
     
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-5-20250929", 
-                 api_url: str = None, api_version: str = None, timeout: int = None,
-                 provider: str = None):
+    def __init__(self, api_key: str, model: str = "grok-beta", 
+                 api_url: Optional[str] = None, api_version: Optional[str] = None, timeout: Optional[int] = None,
+                 provider: Optional[str] = None):
         """
-        Initialize AI API client.
+        Initialize x.ai/Grok API client.
         
         Args:
-            api_key: API key (Anthropic, OpenAI, etc.)
-            model: Model to use
-            api_url: API endpoint URL (default: Anthropic official)
-            api_version: API version header (only for Claude/Anthropic)
+            api_key: x.ai API key
+            model: Model to use (default: grok-beta)
+            api_url: API endpoint URL (default: x.ai official)
+            api_version: API version header (not used for x.ai)
             timeout: Request timeout in seconds (default: 10)
-            provider: API provider type ('claude', 'openai', 'custom') - auto-detected if not set
+            provider: API provider type ('xai', 'openai', 'custom') - auto-detected if not set
         """
         self.api_key = api_key
         self.model = model
-        self.api_url = api_url or "https://api.anthropic.com/v1/messages"
+        self.api_url = api_url or "https://api.x.ai/v1/chat/completions"
         self.timeout = timeout or 10
         self.api_version = api_version or "2023-06-01"
         
         # Auto-detect provider if not specified
         if provider:
             self.provider = provider.lower()
-        elif 'anthropic.com' in self.api_url or 'claude' in self.model.lower():
-            self.provider = 'claude'
+        elif 'x.ai' in self.api_url or 'grok' in self.model.lower():
+            self.provider = 'xai'
         elif 'openai.com' in self.api_url or 'gpt' in self.model.lower():
             self.provider = 'openai'
         else:
@@ -43,7 +43,7 @@ class ClaudeClient:
     
     def _call_api(self, prompt: str, max_tokens: int = 1024, temperature: float = 0) -> Dict:
         """
-        Internal method to call AI API (supports Claude, OpenAI, and compatible APIs).
+        Internal method to call x.ai/Grok API (supports x.ai and OpenAI-compatible APIs).
         
         Args:
             prompt: User prompt
@@ -53,8 +53,41 @@ class ClaudeClient:
         Returns:
             dict: Response data or error dict
         """
+        return self._call_api_with_messages([{'role': 'user', 'content': prompt}], max_tokens, temperature)
+
+    def _call_api_with_system_prompt(self, system_prompt: str, user_prompt: str, max_tokens: int = 1024, temperature: float = 0) -> Dict:
+        """
+        Call AI API with separate system and user prompts.
+        
+        Args:
+            system_prompt: System/instruction prompt
+            user_prompt: User query
+            max_tokens: Maximum response tokens
+            temperature: Creativity (0 = deterministic)
+            
+        Returns:
+            dict: Response data or error dict
+        """
+        messages = [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_prompt}
+        ]
+        return self._call_api_with_messages(messages, max_tokens, temperature)
+
+    def _call_api_with_messages(self, messages: list, max_tokens: int = 1024, temperature: float = 0) -> Dict:
+        """
+        Internal method to call AI API with custom messages (supports Claude, OpenAI, and compatible APIs).
+        
+        Args:
+            messages: List of message dicts with 'role' and 'content'
+            max_tokens: Maximum response tokens
+            temperature: Creativity (0 = deterministic)
+            
+        Returns:
+            dict: Response data or error dict
+        """
         try:
-            # Build headers based on provider
+            # Build headers and payload based on provider
             if self.provider == 'claude':
                 headers = {
                     'x-api-key': self.api_key,
@@ -65,7 +98,7 @@ class ClaudeClient:
                     'model': self.model,
                     'max_tokens': max_tokens,
                     'temperature': temperature,
-                    'messages': [{'role': 'user', 'content': prompt}]
+                    'messages': messages
                 }
             elif self.provider == 'openai':
                 headers = {
@@ -76,7 +109,7 @@ class ClaudeClient:
                     'model': self.model,
                     'max_tokens': max_tokens,
                     'temperature': temperature,
-                    'messages': [{'role': 'user', 'content': prompt}]
+                    'messages': messages
                 }
             else:  # custom provider - try Claude format first
                 headers = {
@@ -90,7 +123,7 @@ class ClaudeClient:
                     'model': self.model,
                     'max_tokens': max_tokens,
                     'temperature': temperature,
-                    'messages': [{'role': 'user', 'content': prompt}]
+                    'messages': messages
                 }
             
             response = requests.post(
@@ -121,8 +154,9 @@ class ClaudeClient:
                         return {'success': False, 'error': 'Unknown response format'}
                 
                 return {'success': True, 'text': text}
+            
             else:
-                return {'success': False, 'error': f'API error: {response.status_code}'}
+                return {'success': False, 'error': f'API error {response.status_code}: {response.text}'}
                 
         except requests.exceptions.Timeout:
             return {'success': False, 'error': f'API timeout ({self.timeout} seconds)'}
@@ -182,7 +216,7 @@ Only respond with the JSON, no other text."""
                 'error': 'Failed to parse AI response'
             }
     
-    def validate_command(self, command: str, shell_name: str) -> Dict:
+    def validate_command(self, command: str, shell_name: str = "bash") -> Dict:
         """
         Validate shell command for safety and correctness.
         
@@ -239,7 +273,7 @@ Only respond with JSON, no other text."""
                 'suggestions': []
             }
     
-    def correct_typo(self, command: str, shell_name: str) -> Dict:
+    def correct_typo(self, command: str, shell_name: str = "bash") -> Dict:
         """
         Detect and correct typos in shell command.
         
@@ -306,7 +340,7 @@ Only respond with JSON, no other text."""
                 'confidence': 0.0
             }
     
-    def plan_task(self, task_description: str, shell_name: str) -> Dict:
+    def plan_task(self, task_description: str, shell_name: str = "bash") -> Dict:
         """
         Break multi-step task into executable steps.
         

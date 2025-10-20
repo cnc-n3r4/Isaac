@@ -1,10 +1,10 @@
 """
 Corrector - Typo detection and correction for shell commands
-Uses ClaudeClient to detect and fix common typos
+Uses XaiClient to detect and fix common typos
 """
 
 from typing import Dict, Optional
-from isaac.ai.claude_client import ClaudeClient
+from isaac.ai.xai_client import XaiClient
 
 
 def correct_command(command: str, shell_name: str, config: Optional[Dict] = None) -> Dict:
@@ -36,7 +36,7 @@ def correct_command(command: str, shell_name: str, config: Optional[Dict] = None
         }
     
     # Check if API key exists
-    api_key = config.get('claude_api_key', '')
+    api_key = config.get('xai_api_key', '')
     if not api_key:
         return {
             'corrected': None,
@@ -44,14 +44,14 @@ def correct_command(command: str, shell_name: str, config: Optional[Dict] = None
             'confidence': 1.0
         }
     
-    # Initialize Claude client
+    # Initialize x.ai client
     try:
-        model = config.get('ai_model', 'claude-sonnet-4-5-20250929')
-        api_url = config.get('claude_api_url')
-        api_version = config.get('claude_api_version')
-        timeout = config.get('claude_timeout')
+        model = config.get('ai_model', 'grok-beta')
+        api_url = config.get('xai_api_url')
+        api_version = config.get('xai_api_version')
+        timeout = config.get('xai_timeout')
         provider = config.get('ai_provider')
-        client = ClaudeClient(
+        client = XaiClient(
             api_key, 
             model=model,
             api_url=api_url,
@@ -66,7 +66,7 @@ def correct_command(command: str, shell_name: str, config: Optional[Dict] = None
             'confidence': 1.0
         }
     
-    # Call Claude API
+    # Call x.ai API
     try:
         result = client.correct_typo(command, shell_name)
         

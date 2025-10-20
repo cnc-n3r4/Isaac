@@ -23,8 +23,8 @@ import json
 # ============================================================================
 
 @pytest.fixture
-def mock_claude_api():
-    """Mock Claude API responses for all AI operations"""
+def mock_xai_api():
+    """Mock x.ai API responses for all AI operations"""
     mock = Mock()
     
     # Default translation response
@@ -77,7 +77,7 @@ def mock_ai_enabled():
     return {
         'machine_id': 'TEST-MACHINE',
         'ai_enabled': True,
-        'claude_api_key': 'test_claude_key',
+        'xai_api_key': 'test_claude_key',
         'auto_correct_tier2': True,
         'sync_enabled': False
     }
@@ -110,21 +110,21 @@ def tier_defaults():
 
 
 # ============================================================================
-# CLAUDE API CLIENT TESTS (6 tests)
+# X.AI API CLIENT TESTS (6 tests)
 # ============================================================================
 
 @patch('requests.post')
 def test_translate_to_shell_success(mock_post):
     """
-    Claude API translates natural language to shell command.
+    x.ai API translates natural language to shell command.
     
     Test Coverage:
-    - Mock Claude API returns valid command
+    - Mock x.ai API returns valid command
     - translate_to_shell() returns dict with command + explanation
     - Confidence score >= 0.8
     - Risk if fails: Translation functionality broken
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     
     mock_response = Mock()
     mock_response.status_code = 200
@@ -139,7 +139,7 @@ def test_translate_to_shell_success(mock_post):
     }
     mock_post.return_value = mock_response
     
-    client = ClaudeClient(api_key='test_key')
+    client = XaiClient(api_key='test_key')
     result = client.translate_to_shell("find all log files", "bash")
     
     assert result['success'] == True
@@ -158,12 +158,12 @@ def test_translate_to_shell_timeout(mock_post):
     - No crash, graceful failure
     - Risk if fails: Isaac crashes on AI API timeout
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     import requests
     
     mock_post.side_effect = requests.Timeout("API timeout after 10s")
     
-    client = ClaudeClient(api_key='test_key')
+    client = XaiClient(api_key='test_key')
     result = client.translate_to_shell("find files", "bash")
     
     assert result['success'] == False
@@ -176,12 +176,12 @@ def test_validate_command_success(mock_post):
     AI validation returns safety warnings.
     
     Test Coverage:
-    - Mock Claude API returns safety analysis
+    - Mock x.ai API returns safety analysis
     - validate_command() returns dict with safe=True/False + warnings
     - Suggestions list populated
     - Risk if fails: Tier 3 validation broken
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     
     mock_response = Mock()
     mock_response.status_code = 200
@@ -196,7 +196,7 @@ def test_validate_command_success(mock_post):
     }
     mock_post.return_value = mock_response
     
-    client = ClaudeClient(api_key='test_key')
+    client = XaiClient(api_key='test_key')
     result = client.validate_command("git push -f origin main")
     
     assert 'safe' in result
@@ -215,7 +215,7 @@ def test_correct_typo_high_confidence(mock_post):
     - Original command preserved in response
     - Risk if fails: Tier 2 auto-correction broken
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     
     mock_response = Mock()
     mock_response.status_code = 200
@@ -231,7 +231,7 @@ def test_correct_typo_high_confidence(mock_post):
     }
     mock_post.return_value = mock_response
     
-    client = ClaudeClient(api_key='test_key')
+    client = XaiClient(api_key='test_key')
     result = client.correct_typo("grp pattern file.txt")
     
     assert result['corrected'] == 'grep pattern file.txt'
@@ -250,7 +250,7 @@ def test_plan_task_success(mock_post):
     - Each step has command + tier classification
     - Risk if fails: Task mode planning broken
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     
     mock_response = Mock()
     mock_response.status_code = 200
@@ -268,7 +268,7 @@ def test_plan_task_success(mock_post):
     }
     mock_post.return_value = mock_response
     
-    client = ClaudeClient(api_key='test_key')
+    client = XaiClient(api_key='test_key')
     result = client.plan_task("backup and delete all log files")
     
     assert 'steps' in result
@@ -287,12 +287,12 @@ def test_api_network_failure(mock_post):
     - Logged for debugging
     - Risk if fails: Isaac crashes on network issues
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     import requests
     
     mock_post.side_effect = requests.ConnectionError("Network unreachable")
     
-    client = ClaudeClient(api_key='test_key')
+    client = XaiClient(api_key='test_key')
     
     # Test all methods handle network failure
     result1 = client.translate_to_shell("find files", "bash")
@@ -311,7 +311,7 @@ def test_api_network_failure(mock_post):
 # NATURAL LANGUAGE TRANSLATION TESTS (6 tests)
 # ============================================================================
 
-@patch('isaac.ai.claude_client.ClaudeClient.translate_to_shell')
+@patch('isaac.ai.xai_client.XaiClient.translate_to_shell')
 def test_translation_basic(mock_translate):
     """
     Basic natural language translation works.
@@ -344,7 +344,7 @@ def test_translation_basic(mock_translate):
     assert 'find' in result['command']
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.translate_to_shell')
+@patch('isaac.ai.xai_client.XaiClient.translate_to_shell')
 @patch('isaac.core.tier_validator.TierValidator.get_tier')
 def test_translation_through_tier_system(mock_get_tier, mock_translate, tier_defaults, monkeypatch):
     """
@@ -363,7 +363,7 @@ def test_translation_through_tier_system(mock_get_tier, mock_translate, tier_def
     from isaac.core.session_manager import SessionManager
     from isaac.adapters.bash_adapter import BashAdapter
     
-    # Mock Claude to return dangerous command
+    # Mock x.ai to return dangerous command
     mock_translate.return_value = {
         'success': True,
         'command': 'rm -rf *.log',  # DANGEROUS (Tier 4)
@@ -374,7 +374,7 @@ def test_translation_through_tier_system(mock_get_tier, mock_translate, tier_def
     # Mock tier validator to return Tier 4
     mock_get_tier.return_value = 4  # LOCKDOWN
     
-    config = {'machine_id': 'TEST', 'ai_enabled': True, 'claude_api_key': 'test'}
+    config = {'machine_id': 'TEST', 'ai_enabled': True, 'xai_api_key': 'test'}
     shell = BashAdapter()
     session_mgr = SessionManager(config, shell)
     router = CommandRouter(session_mgr, shell)
@@ -388,7 +388,7 @@ def test_translation_through_tier_system(mock_get_tier, mock_translate, tier_def
     # For now, verify tier system was invoked
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.translate_to_shell')
+@patch('isaac.ai.xai_client.XaiClient.translate_to_shell')
 def test_translation_invalid_query(mock_translate):
     """
     Invalid queries rejected (non-shell tasks).
@@ -483,14 +483,14 @@ def test_translation_no_api_key():
     Missing API key handled gracefully.
     
     Test Coverage:
-    - Config missing claude_api_key
+    - Config missing xai_api_key
     - Translation attempts return error
     - Isaac continues in non-AI mode
     - Risk if fails: Crashes when API key missing
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     
-    client = ClaudeClient(api_key='')  # Empty API key
+    client = XaiClient(api_key='')  # Empty API key
     
     result = client.translate_to_shell("find files", "bash")
     
@@ -502,7 +502,7 @@ def test_translation_no_api_key():
 # AUTO-CORRECTION TESTS (6 tests)
 # ============================================================================
 
-@patch('isaac.ai.claude_client.ClaudeClient.correct_typo')
+@patch('isaac.ai.xai_client.XaiClient.correct_typo')
 @patch('isaac.core.tier_validator.TierValidator.get_tier')
 def test_tier2_auto_correct_execute(mock_get_tier, mock_correct):
     """
@@ -542,7 +542,7 @@ def test_tier2_auto_correct_execute(mock_get_tier, mock_correct):
     mock_correct.assert_called_once()
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.correct_typo')
+@patch('isaac.ai.xai_client.XaiClient.correct_typo')
 @patch('isaac.core.tier_validator.TierValidator.get_tier')
 def test_tier2_5_correct_then_confirm(mock_get_tier, mock_correct):
     """
@@ -581,7 +581,7 @@ def test_tier2_5_correct_then_confirm(mock_get_tier, mock_correct):
     mock_correct.assert_called_once()
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.correct_typo')
+@patch('isaac.ai.xai_client.XaiClient.correct_typo')
 def test_auto_correct_low_confidence(mock_correct):
     """
     Low-confidence corrections require user confirmation.
@@ -626,7 +626,7 @@ def test_no_typo_execute_as_is():
     # Original command should be unchanged
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.correct_typo')
+@patch('isaac.ai.xai_client.XaiClient.correct_typo')
 def test_correction_preserves_arguments(mock_correct):
     """
     Typo correction preserves command arguments.
@@ -678,7 +678,7 @@ def test_ai_correction_disabled():
 # AI VALIDATION (TIER 3) TESTS (5 tests)
 # ============================================================================
 
-@patch('isaac.ai.claude_client.ClaudeClient.validate_command')
+@patch('isaac.ai.xai_client.XaiClient.validate_command')
 @patch('isaac.core.tier_validator.TierValidator.get_tier')
 def test_tier3_validation_shows_warnings(mock_get_tier, mock_validate):
     """
@@ -710,7 +710,7 @@ def test_tier3_validation_shows_warnings(mock_get_tier, mock_validate):
     assert 'Force push' in result['warnings'][0]
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.validate_command')
+@patch('isaac.ai.xai_client.XaiClient.validate_command')
 def test_tier3_safe_command_minimal_warnings(mock_validate):
     """
     Safe Tier 3 commands get minimal warnings.
@@ -736,7 +736,7 @@ def test_tier3_safe_command_minimal_warnings(mock_validate):
     assert len(result['warnings']) == 0
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.validate_command')
+@patch('isaac.ai.xai_client.XaiClient.validate_command')
 def test_tier3_ai_offline_fallback(mock_validate):
     """
     Tier 3 falls back to simple confirmation when AI offline.
@@ -758,7 +758,7 @@ def test_tier3_ai_offline_fallback(mock_validate):
     assert 'error' in result or result['safe'] == False
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.validate_command')
+@patch('isaac.ai.xai_client.XaiClient.validate_command')
 def test_validation_suggestions_displayed(mock_validate):
     """
     AI suggestions shown to user.
@@ -807,7 +807,7 @@ def test_tier3_validation_respects_abort():
 # TASK MODE TESTS (7 tests)
 # ============================================================================
 
-@patch('isaac.ai.claude_client.ClaudeClient.plan_task')
+@patch('isaac.ai.xai_client.XaiClient.plan_task')
 def test_task_planning_basic(mock_plan):
     """
     Task planning breaks input into steps.
@@ -1150,20 +1150,20 @@ def test_ai_disabled_mvp_behavior():
     # No AI features, but basic functionality intact
 
 
-def test_no_claude_api_key_error():
+def test_no_xai_api_key_error():
     """
     Missing API key shows error, non-AI features work.
     
     Test Coverage:
-    - Config missing claude_api_key
+    - Config missing xai_api_key
     - AI features show error message
     - Non-AI features work normally
     - User informed to add API key
     - Risk if fails: Cryptic errors or crashes
     """
-    from isaac.ai.claude_client import ClaudeClient
+    from isaac.ai.xai_client import XaiClient
     
-    client = ClaudeClient(api_key=None)
+    client = XaiClient(api_key=None)
     
     result = client.translate_to_shell("find files", "bash")
     
@@ -1171,7 +1171,7 @@ def test_no_claude_api_key_error():
     # Should have clear error about missing API key
 
 
-@patch('isaac.ai.claude_client.ClaudeClient.validate_command')
+@patch('isaac.ai.xai_client.XaiClient.validate_command')
 def test_ai_timeout_fallback(mock_validate):
     """
     AI timeout falls back to non-AI behavior.

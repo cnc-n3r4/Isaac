@@ -15,6 +15,7 @@ from isaac.core.tier_validator import TierValidator
 from isaac.core.session_manager import SessionManager
 from isaac.adapters.shell_detector import detect_shell
 from isaac.models.preferences import Preferences
+from isaac.commands.togrok_handler import TogrokHandler
 
 try:
     import colorama
@@ -43,28 +44,31 @@ class PermanentShell:
         
         self.tier_validator = TierValidator(self.preferences)
 
+        # Initialize Togrok handler for x.ai collections
+        self.togrok_handler = TogrokHandler(self.session_manager)
+
         # Output buffering for Windows scrolling simulation
         self.output_buffer = []
         self.max_buffer_lines = 100
 
         # Initialize AI client if configured
         self.ai_client = None
-        claude_api_key = self.config.get('claude_api_key')
-        claude_api_url = self.config.get('claude_api_url')
-        ai_model = self.config.get('ai_model', 'grok')
-        if claude_api_key and claude_api_url:
+        xai_api_key = self.config.get('xai_api_key')
+        xai_api_url = self.config.get('xai_api_url')
+        ai_model = self.config.get('ai_model', 'grok-beta')
+        if xai_api_key and xai_api_url:
             try:
-                from isaac.ai.claude_client import ClaudeClient
-                self.ai_client = ClaudeClient(
-                    api_key=claude_api_key,
-                    api_url=claude_api_url,
+                from isaac.ai.xai_client import XaiClient
+                self.ai_client = XaiClient(
+                    api_key=xai_api_key,
+                    api_url=xai_api_url,
                     model=ai_model
                 )
                 self._print_output_line("isaac> AI client initialized successfully")
             except Exception as e:
                 self._print_output_line(f"isaac> Failed to initialize AI client: {e}")
         else:
-            self._print_output_line("isaac> AI client not configured (missing claude_api_key or claude_api_url in config)")
+            self._print_output_line("isaac> AI client not configured (missing xai_api_key or xai_api_url in config)")
 
         # Shell detection
         self.shell_adapter = None
@@ -178,7 +182,9 @@ class PermanentShell:
         tier = self.tier_validator.get_tier(command)
 
         # Handle different command types
-        if self._is_ai_query(command):
+        if command.startswith("/togrok"):
+            self._handle_togrok_command(command)
+        elif self._is_ai_query(command):
             self._handle_ai_query(command)
         elif tier >= 3.0:
             self._handle_tier3_command(command, tier)
@@ -671,6 +677,21 @@ Be helpful, accurate, and prioritize user safety while understanding their inten
             return "4 (Lockdown)"
         else:
             return f"{tier} (Unknown)"
+
+    def _handle_togrok_command(self, command: str) -> None:
+        """Handle /togrok commands for x.ai collection management."""
+        try:
+            # Parse command into args, removing "/togrok" prefix
+            parts = command.strip().split()
+            if parts and parts[0].lower() == "/togrok":
+                args = parts[1:]  # Remove "/togrok" prefix
+            else:
+                args = parts
+
+            result = self.togrok_handler.handle_command(args)
+            self._print_output_line(result)
+        except Exception as e:
+            self._print_output_line(f"Error handling togrok command: {e}")
 
     def _signal_handler(self, signum, frame) -> None:
         """Handle termination signals."""

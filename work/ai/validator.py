@@ -1,13 +1,13 @@
 """
 AI Command Validation Module for Isaac
 
-Provides intelligent command safety validation using Claude AI.
+Provides intelligent command safety validation using x.ai/Grok AI.
 Returns warnings and suggestions for potentially dangerous commands.
 """
 
 import logging
 from typing import Dict, List, Any
-from isaac.ai.claude_client import ClaudeClient
+from isaac.ai.xai_client import XaiClient
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +38,14 @@ def validate_command(command: str, shell_type: str, config: Dict[str, Any]) -> D
         }
 
     try:
-        # Initialize Claude client
-        api_key = config.get('claude_api_key', '')
-        model = config.get('ai_model', 'claude-sonnet-4-5-20250929')
-        api_url = config.get('claude_api_url')
-        api_version = config.get('claude_api_version')
-        timeout = config.get('claude_timeout')
+        # Initialize x.ai client
+        api_key = config.get('xai_api_key', '')
+        model = config.get('ai_model', 'grok-beta')
+        api_url = config.get('xai_api_url')
+        api_version = config.get('xai_api_version')
+        timeout = config.get('xai_timeout')
         provider = config.get('ai_provider')
-        claude = ClaudeClient(
+        xai_client = XaiClient(
             api_key, 
             model,
             api_url=api_url,
@@ -55,7 +55,7 @@ def validate_command(command: str, shell_type: str, config: Dict[str, Any]) -> D
         )
 
         # Call validation API
-        result = claude.validate_command(command, shell_type)
+        result = xai_client.validate_command(command, shell_type)
 
         # Handle API errors
         if 'error' in result:
