@@ -150,6 +150,8 @@ class PermanentShell:
         # Position cursor at the fixed prompt line (line 6)
         prompt_line = self.terminal.status_lines + 1  # Line 6
         print(f"\033[{prompt_line};1H", end="", flush=True)
+        # Clear the line to remove any previous command
+        print(f"\033[2K", end="", flush=True)
         try:
             return input(prompt).strip()
         except EOFError:
@@ -205,6 +207,10 @@ class PermanentShell:
         if not command:
             return
 
+        # Clear screen for each new command to prevent output overlap
+        os.system('cls')
+        self.terminal._draw_status_bar()
+
         # Validate command tier
         tier = self.tier_validator.get_tier(command)
 
@@ -257,9 +263,22 @@ class PermanentShell:
         elif command_lower == 'config':
             self.terminal.enter_config_mode()
         elif command_lower.startswith('ask'):
-            # Handle /ask <question> - explicit AI queries
-            question = command[3:].strip() if len(command) > 3 else ""
+            # Handle /ask command - extract question after 'ask'
+            question = command[3:].strip()  # Remove 'ask' and any spaces
             self._handle_explicit_ai_query(question)
+        elif command_lower.startswith('scroll'):
+            # Handle scrolling commands
+            scroll_cmd = command[6:].strip().lower()
+            if scroll_cmd == 'up':
+                self.terminal.scroll_output_up()
+            elif scroll_cmd == 'down':
+                self.terminal.scroll_output_down()
+            elif scroll_cmd == 'top':
+                self.terminal.scroll_to_top()
+            elif scroll_cmd == 'bottom':
+                self.terminal.scroll_to_bottom()
+            else:
+                self._print_output_line("isaac> Usage: /scroll up|down|top|bottom")
         else:
             self._print_output_line(f"isaac> Unknown local command: /{command}")
             self._print_output_line("isaac> Available commands: /help, /version, /status, /config, /ask")
@@ -338,6 +357,11 @@ Local Meta-Commands (/):
   /status   - Show current status
   /config   - Show current configuration
   /ask      - Ask AI questions (e.g., /ask what is the capital of France?)
+  /scroll   - Scroll through command output:
+             /scroll up     - Scroll up (show older output)
+             /scroll down   - Scroll down (show newer output)
+             /scroll top    - Jump to top of output
+             /scroll bottom - Jump to bottom of output (latest)
 
 AI Integration:
   /togrok create <name> - Create x.ai collection
@@ -725,18 +749,25 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
                 self.output_buffer.pop(0)
 
         # Refresh display only once after all lines are added
-        if self.terminal.is_windows:
-            self._refresh_display()
-        else:
-            # On non-Windows, print all lines at once
-            formatted_lines = []
-            for i, line in enumerate(response_lines):
-                if i == 0:
-                    formatted_lines.append(f"isaac> {line}")
-                else:
-                    formatted_lines.append(f"       {line}")
-            output_text = '\n'.join(formatted_lines)
-            self.terminal.print_normal_output(output_text)
+        # For Windows, clear screen first, then print directly to avoid display corruption with scroll regions
+        os.system('cls')
+        self.terminal._draw_status_bar()
+        
+        formatted_lines = []
+        for i, line in enumerate(response_lines):
+            if i == 0:
+                formatted_lines.append(f"isaac> {line}")
+            else:
+                formatted_lines.append(f"       {line}")
+        output_text = '\n'.join(formatted_lines)
+        # Print a newline first to move past any existing text
+        print("", flush=True)
+        print(output_text, flush=True)
+        # Add to buffer for consistency
+        for line in formatted_lines:
+            self.output_buffer.append(line)
+            if len(self.output_buffer) > self.max_buffer_lines:
+                self.output_buffer.pop(0)
 
     def _handle_tier3_command(self, command: str, tier: float) -> None:
         """Handle Tier 3+ commands with confirmation."""
@@ -773,7 +804,9 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
             # Show output as normal terminal output
             if result.output.strip():
                 for line in result.output.splitlines():
-                    self._print_output_line(line)
+                    is_blank = len(line.strip()) == 0
+                    if not is_blank:
+                        self._print_output_line(line)
 
             # Update working directory if cd command
             if command.startswith("cd "):
@@ -809,12 +842,8 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
 
         # Only update screen if terminal is set up (not during __init__)
         if hasattr(self, 'running') and self.running:
-            if self.terminal.is_windows:
-                # On Windows, use efficient screen update
-                self.terminal.update_screen()
-            else:
-                # On non-Windows, just print (scroll region handles scrolling)
-                print(line)
+            # On Windows, use efficient screen update
+            self.terminal.update_screen()
 
     def _refresh_display(self):
         """Refresh the entire display for Windows (simulate scroll region)."""
@@ -823,6 +852,9 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
 
         # Redraw status bar
         self.terminal._draw_status_bar()
+
+        # Position cursor at start of output area (line 6) before printing output
+        print(f"\033[6;1H", end="", flush=True)
 
         # Print buffered output, limited to available lines
         available_lines = self.terminal.terminal_height - self.terminal.status_lines - 1
@@ -848,10 +880,7 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
         self.output_buffer.clear()
 
         # Refresh the display (clears screen and redraws status bar)
-        if self.terminal.is_windows:
-            self._refresh_display()
-        else:
-            self.terminal.clear_main_area()
+        self._refresh_display()
 
     def _handle_reset_command(self) -> None:
         """Handle reset command by clearing output buffer and refreshing display."""
@@ -862,11 +891,7 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
         self.output_buffer.clear()
 
         # Refresh the display
-        if self.terminal.is_windows:
-            self._refresh_display()
-        else:
-            self.terminal.clear_main_area()
-            self.terminal._draw_status_bar()
+        self._refresh_display()
 
     def _handle_special_command(self, command: str) -> bool:
         """Handle commands that need special treatment to preserve UI.
@@ -888,10 +913,7 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
 
     def _get_clear_command_name(self) -> str:
         """Get the appropriate clear command name for current shell."""
-        if self.terminal.is_windows:
-            return "cls"
-        else:
-            return "clear"
+        return "cls"
 
     def _format_tier_display(self, tier: float) -> str:
         """Format tier for status display."""

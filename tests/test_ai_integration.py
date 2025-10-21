@@ -129,12 +129,14 @@ def test_translate_to_shell_success(mock_post):
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
-        'content': [{
-            'text': json.dumps({
-                'command': 'find . -name "*.log"',
-                'explanation': 'Finds all log files in current directory',
-                'confidence': 0.92
-            })
+        'choices': [{
+            'message': {
+                'content': json.dumps({
+                    'command': 'find . -name "*.log"',
+                    'explanation': 'Finds all log files in current directory',
+                    'confidence': 0.92
+                })
+            }
         }]
     }
     mock_post.return_value = mock_response
