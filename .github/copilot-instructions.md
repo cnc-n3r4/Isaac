@@ -1,155 +1,97 @@
 # Isaac - AI-Enhanced Multi-Platform Shell Assistant
 
-## Architecture Overview
-Isaac is a sophisticated shell wrapper that provides AI-enhanced command execution with cloud-synced sessions across Windows (PowerShell) and Unix-like systems (bash). The system implements a 5-tier command safety classification and features a locked terminal UI with real-time status monitoring.
+## Quick Start for AI Agents
 
-**Core Architecture:**
-- **Safety-Critical Design**: 5-tier command validation (1=instant execution, 4=lockdown requiring confirmation)
-- **Cross-Platform Shell Abstraction**: Unified interface over PowerShell/bash via adapter pattern
-- **Cloud Session Roaming**: PHP API backend enables seamless session sync across machines
-- **AI Command Processing**: Natural language queries, command correction, and task planning
-- **Terminal UI**: Locked header with status indicators, command history, and config panel
+### Essential Commands
+```bash
+# Development setup
+pip install -e .              # Install with entry point 'isaac'
+isaac --start                 # Launch interactive shell
 
-**Data Flow:** User Input → Command Prefix Detection (`/` local, `!` distributed) → Tier Validation → AI Processing → Shell Execution → Cloud Sync
-
-## Command System Architecture
-
-### Modular Command Plugin System
-Isaac implements a file-based plugin system where each `/` command is defined by a YAML manifest and optional handler script. Commands can be dispatched locally or routed to remote agents via `!alias`.
-
-**Directory Structure**:
-```
-isaac/commands/              # Userland commands
-├─ add/command.yaml          # Manifest with metadata, args, security
-├─ add/run.py               # Optional handler script
-├─ grep/command.yaml        # Pipe-compatible commands
-├─ ask/command.yaml         # AI-powered commands
-└─ ...
+# Testing (safety-critical - always run after tier changes)
+pytest tests/test_tier_validator.py -v           # Tier safety tests
+pytest tests/test_cloud_client.py -v             # Cloud sync tests  
+pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 ```
 
-**Manifest Schema** (YAML):
-```yaml
-name: add
-version: 1.0.0
-summary: "Add an item to a list"
-triggers: ["/add"]
-args:
-  - name: list
-    type: string
-    required: true
-    pattern: "^[A-Za-z0-9._-]{1,32}$"
-  - name: item
-    type: string
-    required: true
-    min_length: 1
-    max_length: 256
-stdin: false
-stdout: { type: text }
-security:
-  scope: user
-  allow_remote: true
-  resources: { timeout_ms: 5000, max_stdout_kib: 64 }
-runtime:
-  entry: "run.py"
-  interpreter: "python"
+### Command Flow (Safety-Critical)
+```
+User Input → Classification → Tier Check → [AI Validation if Tier≥3] → Execution → Logging
+```
+- **Tier 1** (ls, cd, pwd): Instant execution, no validation
+- **Tier 2** (grep, head): Auto-execute with optional typo correction
+- **Tier 3** (cp, mv, git): AI validation before execution
+- **Tier 4** (rm, format, dd): Lockdown mode - explicit confirmation required
+
+### Architecture in 3 Layers
+
+**1. Shell Abstraction** (`isaac/adapters/`):
+- `BaseShellAdapter`: Abstract interface defining `execute(command) -> CommandResult`
+- `PowerShellAdapter` / `BashAdapter`: Platform-specific implementations
+- `CommandResult` dataclass: Never raises exceptions, always returns structured result
+
+**2. Command Orchestration** (`isaac/core/`):
+- `CommandRouter`: Prefix detection (`/` meta-commands, `isaac` natural language), tier routing
+- `TierValidator`: JSON-based safety classification from `isaac/data/tier_defaults.json`
+- `SessionManager`: Config, preferences, cloud sync, AI query logging
+
+**3. Terminal UI** (`isaac/ui/`):
+- `TerminalControl`: 5-line locked header with status indicators (cloud/AI/VPN/CPU/network)
+- `PermanentShell`: Main REPL loop with scrolling output and config mode
+- Dirty flags (`header_dirty`, `body_dirty`) optimize screen redraws
+
+## Meta-Commands System
+
+### Current Implementation (`isaac/commands/`)
+Isaac currently has **simple Python scripts** for meta-commands, not the full YAML plugin system:
+- `help.py`: Display available commands and usage
+- `list.py`: List management functions
+- `backup.py` / `restore.py`: Configuration backup/restore
+- `togrok_handler.py`: x.ai API integration for vector search collections
+
+### Command Types by Prefix
+
+**1. Local Meta-Commands** (`/command`):
+```python
+# Handled in command_router.py before shell execution
+if input_text.startswith('/'):
+    # Built-in Isaac commands like /help, /status, /config
+    # See isaac/commands/ directory for implementations
 ```
 
-### Command Categories & Ecosystem
-
-#### Core Utilities
-- `/echo`, `/time`, `/status`, `/log`, `/exec`
-
-#### History & Search
-- `/history`, `/search`, `/summary`
-
-#### Task & Note Management
-- `/add`, `/list`, `/done`, `/note`
-
-#### Communication / Messaging
-- `/msg`, `/inbox`, `/broadcast`
-
-#### Files & Data
-- `/push`, `/pull`, `/grep`, `/cat`
-
-#### System Control
-- `/reboot`, `/shutdown`, `/update`, `/sync`
-
-#### Monitoring & Automation
-- `/watch`, `/schedule`, `/alert`
-
-#### AI and Knowledge
-- `/ask`, `/analyze`, `/explain`, `/learn`
-
-#### Developer Utilities
-- `/git`, `/test`, `/lint`, `/deploy`
-
-### Pipe Semantics & Chaining
-Commands support Unix-style piping: `/grep "error" /log | /analyze`
-- Isaac detects pipes and streams output from first command to second
-- Only commands with `stdin: true` can receive piped input
-- Output normalization ensures compatibility across command types
-
-### Return Envelope Contract
-All commands return a standardized JSON envelope:
-```json
-{
-  "ok": true,
-  "kind": "text",
-  "stdout": "command output here",
-  "meta": {
-    "command": "/add",
-    "args": {"list":"grocery","item":"apples"},
-    "duration_ms": 42,
-    "truncated": false
-  }
-}
+**2. Natural Language** (`isaac <query>`):
+```python
+# Requires "isaac" prefix to trigger AI translation
+if input_text.lower().startswith('isaac '):
+    query = input_text[6:].strip()
+    result = translate_query(query, shell_name, session)
+    # Translated command goes through normal tier validation
 ```
 
-### Security & Validation
-- **Platform allowlists**: Restrict external binaries by OS
-- **Resource limits**: Timeout and output size caps per command
-- **Redaction patterns**: Sanitize sensitive data from logs
-- **Scope enforcement**: user/worker/root execution contexts
-- **Remote routing**: Controlled agent-to-agent command dispatch
-
-### Plugin Specification Details
-Commands are validated against a JSON Schema on load. Each command folder may include `test.yaml` for automated testing:
-
-```yaml
-cases:
-  - name: add-basic
-    input: "/add grocery apples"
-    expect:
-      ok: true
-      contains: "apples"
-  - name: add-inject
-    input: "/add grocery 'foo; rm -rf /'"
-    expect:
-      ok: false
+**3. Task Mode** (`isaac task: <description>`):
+```python
+# Multi-step task planning and execution
+if input_text.lower().startswith('isaac task:'):
+    from isaac.ai.task_planner import execute_task
+    return execute_task(task_desc, shell, session)
 ```
 
-**Error Envelope** (for failed commands):
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "invalid list name",
-    "hint": "Allowed: letters, digits, ., _, -"
-  },
-  "meta": { "duration_ms": 2 }
-}
+**4. Regular Shell Commands** (no prefix):
+```python
+# Standard shell commands go through tier validation
+tier = validator.get_tier(command)  # Returns 1-4 based on tier_defaults.json
+if tier <= 2:
+    execute_immediately()
+else:
+    route_to_ai_validation()
 ```
 
-**Testing Template**: Each command includes validation test cases that can be executed against a sandbox dispatcher.
-
-### Dispatcher Contract
-- **Resolve trigger**: First token starting with `/` selects command
-- **Parse args**: Map positional args to `args[]` in manifest, then validate
-- **Piping**: If `cmdA | cmdB`, feed `cmdA` stdout to `cmdB` stdin when `stdin: true`
-- **Routing**: Leading `!alias` routes the composed command to target agent
-- **Timeouts**: Enforce `security.resources.timeout_ms` per command
-- **Stdout cap**: Truncate or spill to artifact when output exceeds `max_stdout_kib`
+### Future Plugin Architecture
+The full YAML-based plugin system is documented in `docs/command_plugin_spec.md` but not yet implemented. When building this:
+- Place manifests in `isaac/commands/<name>/command.yaml`
+- Implement dispatcher in `isaac/runtime/dispatcher.py`
+- Support piping with `stdin: true` flag
+- Enforce `security.resources` limits (timeout_ms, max_stdout_kib)
 
 ## Command Orchestration Flow
 ```
@@ -273,7 +215,7 @@ Output area: Scroll region beneath header + prompt line
 ### Build & Setup
 ```bash
 pip install -e .  # Install in development mode with entry point 'isaac'
-pytest tests/ --cov=isaac --cov-report=term-missing  # Run full test suite with coverage
+pytest tests/ --cov=isaac --cov-report=term      # Full test suite with coverage
 ```
 
 ### Testing Patterns
@@ -297,9 +239,12 @@ pytest tests/ --cov=isaac --cov-report=term-missing  # Run full test suite with 
 - **Integration Tests**: Located in `instructions/test_integration/` with completion templates
 
 ### Debugging Terminal UI
-- **Screen Updates**: TerminalControl uses dirty flags (`header_dirty`, `body_dirty`) for efficient redraws
-- **Cursor Positioning**: Fixed prompt at line 6, output lines 8-17, logs lines 20+
-- **Status Monitoring**: Background thread updates cloud/AI/VPN status every 10 seconds
+- **Screen Updates**: `TerminalControl` uses dirty flags (`header_dirty`, `body_dirty`)
+- **Terminal Size**: Dynamically calculated via `_update_terminal_size()`, not hardcoded
+- **Header Layout**: Fixed 5 lines (3 content + 2 borders) with column-aligned cells
+- **Output Area**: Scrollable region with `output_scroll_offset` for history navigation
+- **Config Mode**: Toggle with special key, uses `config_items` array with cursor navigation
+- **Status Thread**: Background `_update_status_thread()` refreshes indicators every 10 seconds
 
 ## Project Conventions
 
@@ -455,4 +400,4 @@ class BaseShellAdapter(ABC):
 #### Resource Monitoring
 - Track CPU, memory, and network usage per command execution
 - Implement per-agent resource quotas and throttling</content>
-<parameter name="filePath">c:\Projects\Isaac-1\.github\copilot-instructions.md
+<parameter name="filePath">c:\Projects\Isaac\.github\copilot-instructions.md

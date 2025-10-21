@@ -86,7 +86,7 @@
 │User: <name> @ <machine name>        ║Last: '<cmd>'                ║ #hist  ║ #Log   ║ Val>2  │
 │PWD: <cwd>                           ║IP ADDRESS                   ║ #CPU % ║ #Net   ║ WW:80  │
 ╞═════════════════════════════════════╩═════════════════════════════╩════════╩════════╩════════╡
-│$> _                                                                                          │
+♦$> _                                                                                          │
 ╞══════════════════════════════════════════════════════════════════════════════════════════════╡
 │I> [OUTPUT]                                                                                 ▲ │
 │I> … command output scrolls here …                                                          ░ │
@@ -96,7 +96,7 @@
 
 
 # MAXIMUM STATUS COLUMNS EXAMPLE
-
+₦
                                                                                   (maximum width of status area)
 
                                                                                         ### IMPORTANT ###

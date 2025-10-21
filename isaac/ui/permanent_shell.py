@@ -17,6 +17,8 @@ from isaac.adapters.shell_detector import detect_shell
 from isaac.models.preferences import Preferences
 from isaac.commands.togrok_handler import TogrokHandler
 from isaac.ui.advanced_input import AdvancedInputHandler
+if os.name == 'nt':
+    import msvcrt
 
 try:
     import colorama
@@ -47,6 +49,9 @@ class PermanentShell:
 
         # Initialize advanced input handler for config mode
         self.advanced_input = AdvancedInputHandler(self.tier_validator)
+        
+        # Command history navigation
+        self.history_index = -1  # -1 means not browsing history
 
         # Initialize Togrok handler for x.ai collections
         self.togrok_handler = TogrokHandler(self.session_manager)
@@ -68,11 +73,11 @@ class PermanentShell:
                     api_url=xai_api_url,
                     model=ai_model
                 )
-                self._print_output_line("\033[92m♦ >\033[0m AI client initialized successfully")
+                self._print_output_line("\033[92m♦\033[0m AI client initialized successfully")
             except Exception as e:
-                self._print_output_line(f"\033[92m♦ >\033[0m Failed to initialize AI client: {e}")
+                self._print_output_line(f"\033[92m♦\033[0m Failed to initialize AI client: {e}")
         else:
-            self._print_output_line("\033[92m♦ >\033[0m AI client not configured (missing xai_api_key or xai_api_url in config)")
+            self._print_output_line("\033[92m♦\033[0m AI client not configured (missing xai_api_key or xai_api_url in config)")
 
         # Shell detection
         self.shell_adapter = None
@@ -152,10 +157,91 @@ class PermanentShell:
         print(f"\033[{prompt_line};1H", end="", flush=True)
         # Clear the line to remove any previous command
         print(f"\033[2K", end="", flush=True)
-        try:
-            return input(prompt).strip()
-        except EOFError:
-            return "exit"
+        
+        # Build input character by character, checking for special keys
+        if os.name == 'nt':
+            command_buffer = []
+            self.history_index = -1  # Reset history browsing
+            print(prompt, end="", flush=True)
+            
+            while True:
+                if msvcrt.kbhit():
+                    key = msvcrt.getch()
+                    
+                    # Extended key (arrows, PageUp/Down, etc.)
+                    if key == b'\xe0' or key == b'\x00':
+                        ext_key = msvcrt.getch()
+                        if ext_key == b'I':  # PageUp - scroll output up by full page
+                            page_size = self.terminal.max_visible_output_lines - 1
+                            self.terminal.scroll_output_up(max(1, page_size))
+                            # Redraw prompt line after scroll
+                            print(f"\033[{prompt_line};1H\033[2K", end="", flush=True)
+                            print(prompt + "".join(command_buffer), end="", flush=True)
+                        elif ext_key == b'Q':  # PageDown - scroll output down by full page
+                            page_size = self.terminal.max_visible_output_lines - 1
+                            self.terminal.scroll_output_down(max(1, page_size))
+                            print(f"\033[{prompt_line};1H\033[2K", end="", flush=True)
+                            print(prompt + "".join(command_buffer), end="", flush=True)
+                        elif ext_key == b'G':  # Home - jump to top
+                            self.terminal.scroll_to_top()
+                            print(f"\033[{prompt_line};1H\033[2K", end="", flush=True)
+                            print(prompt + "".join(command_buffer), end="", flush=True)
+                        elif ext_key == b'O':  # End - jump to bottom
+                            self.terminal.scroll_to_bottom()
+                            print(f"\033[{prompt_line};1H\033[2K", end="", flush=True)
+                            print(prompt + "".join(command_buffer), end="", flush=True)
+                        elif ext_key == b'H':  # Up Arrow - previous command in history
+                            recent_commands = self.session_manager.get_recent_commands(50)
+                            if recent_commands:
+                                self.history_index = min(self.history_index + 1, len(recent_commands) - 1)
+                                command_buffer = list(recent_commands[self.history_index])
+                                print(f"\033[{prompt_line};1H\033[2K", end="", flush=True)
+                                print(prompt + "".join(command_buffer), end="", flush=True)
+                        elif ext_key == b'P':  # Down Arrow - next command in history
+                            recent_commands = self.session_manager.get_recent_commands(50)
+                            if self.history_index >= 0:
+                                self.history_index -= 1
+                                if self.history_index >= 0:
+                                    command_buffer = list(recent_commands[self.history_index])
+                                else:
+                                    command_buffer = []  # Back to empty prompt
+                                print(f"\033[{prompt_line};1H\033[2K", end="", flush=True)
+                                print(prompt + "".join(command_buffer), end="", flush=True)
+                        continue
+                    
+                    # Enter key
+                    if key == b'\r' or key == b'\n':
+                        print()  # New line
+                        self.history_index = -1  # Reset for next input
+                        return "".join(command_buffer).strip()
+                    
+                    # Backspace
+                    elif key == b'\x08':
+                        if command_buffer:
+                            command_buffer.pop()
+                            print(f"\033[{prompt_line};1H\033[2K", end="", flush=True)
+                            print(prompt + "".join(command_buffer), end="", flush=True)
+                    
+                    # Ctrl+C
+                    elif key == b'\x03':
+                        raise KeyboardInterrupt
+                    
+                    # Ctrl+D (EOF)
+                    elif key == b'\x04':
+                        return "exit"
+                    
+                    # Regular character - typing resets history browsing
+                    elif key >= b' ' and key <= b'~':
+                        self.history_index = -1
+                        char = key.decode('utf-8', errors='ignore')
+                        command_buffer.append(char)
+                        print(char, end="", flush=True)
+        else:
+            # Unix fallback - use standard input
+            try:
+                return input(prompt).strip()
+            except EOFError:
+                return "exit"
 
     def _get_config_input(self) -> str:
         """Get input for config mode navigation."""
@@ -249,7 +335,7 @@ class PermanentShell:
     def _handle_local_command(self, command: str) -> None:
         """Handle local meta-commands starting with /."""
         if not command:
-            self._print_output_line("\033[92m♦ >\033[0m No command provided after /")
+            self._print_output_line("\033[92m♦\033[0m No command provided after /")
             return
             
         command_lower = command.lower()
@@ -278,20 +364,20 @@ class PermanentShell:
             elif scroll_cmd == 'bottom':
                 self.terminal.scroll_to_bottom()
             else:
-                self._print_output_line("\033[92m♦ >\033[0m Usage: /scroll up|down|top|bottom")
+                self._print_output_line("\033[92m♦\033[0m Usage: /scroll up|down|top|bottom")
         else:
-            self._print_output_line(f"\033[92m♦ >\033[0m Unknown local command: /{command}")
-            self._print_output_line("\033[92m♦ >\033[0m Available commands: /help, /version, /status, /config, /ask")
+            self._print_output_line(f"\033[92m♦\033[0m Unknown local command: /{command}")
+            self._print_output_line("\033[92m♦\033[0m Available commands: /help, /version, /status, /config, /ask")
 
     def _handle_explicit_ai_query(self, question: str) -> None:
         """Handle explicit AI queries from /ask command."""
         if not question:
-            self._print_output_line("\033[92m♦ >\033[0m Usage: /ask <your question>")
-            self._print_output_line("\033[92m♦ >\033[0m Example: /ask what is the capital of France?")
+            self._print_output_line("\033[92m♦\033[0m Usage: /ask <your question>")
+            self._print_output_line("\033[92m♦\033[0m Example: /ask what is the capital of France?")
             return
 
         if not self.ai_client:
-            self._print_output_line("\033[92m♦ >\033[0m AI client not configured. Please set xai_api_key and xai_api_url in config.")
+            self._print_output_line("\033[92m♦\033[0m AI client not configured. Please set xai_api_key and xai_api_url in config.")
             return
 
         try:
@@ -319,31 +405,31 @@ class PermanentShell:
                     self._handle_text_response(ai_response)
             else:
                 if HAS_COLORAMA:
-                    ai_error_msg = f"\033[31misaac> AI error: {response.get('error', 'Unknown error')}\033[0m"
+                    ai_error_msg = f"\033[31m♦ AI error: {response.get('error', 'Unknown error')}\033[0m"
                 else:
-                    ai_error_msg = f"isaac> AI error: {response.get('error', 'Unknown error')}"
+                    ai_error_msg = f"♦ AI error: {response.get('error', 'Unknown error')}"
                 self._print_output_line(ai_error_msg)
         except Exception as e:
             if HAS_COLORAMA:
-                ai_fail_msg = f"\033[31misaac> AI query failed: {e}\033[0m"
+                ai_fail_msg = f"\033[31m♦ AI query failed: {e}\033[0m"
             else:
-                ai_fail_msg = f"isaac> AI query failed: {e}"
+                ai_fail_msg = f"♦ AI query failed: {e}"
             self._print_output_line(ai_fail_msg)
 
     def _handle_distributed_command(self, command: str) -> None:
         """Handle distributed commands starting with ! (placeholder implementation)."""
         if not command:
-            self._print_output_line("\033[92m♦ >\033[0m No command provided after !")
+            self._print_output_line("\033[92m♦\033[0m No command provided after !")
             return
             
         # Placeholder implementation - distributed commands not yet implemented
-        self._print_output_line(f"\033[92m♦ >\033[0m Distributed commands (!{command}) are not yet implemented")
-        self._print_output_line("\033[92m♦ >\033[0m This feature will allow remote command execution across machines")
+        self._print_output_line(f"\033[92m♦\033[0m Distributed commands (!{command}) are not yet implemented")
+        self._print_output_line("\033[92m♦\033[0m This feature will allow remote command execution across machines")
 
     def _show_help(self) -> None:
         """Show help for available commands."""
         help_text = """
-isaac> Available Commands:
+\033[92m♦\033[0m Available Commands:
 
 Regular Commands (no prefix):
   - Any shell command (ls, dir, cd, etc.)
@@ -381,10 +467,10 @@ Type shell commands normally, or use /ask for AI assistance.
     def _show_version(self) -> None:
         """Show Isaac version information."""
         version_info = """
-isaac> Isaac 2.0 MVP
-isaac> Multi-platform shell assistant with AI integration
-isaac> x.ai/Grok collections support
-isaac> Distributed command system (coming soon)
+\033[92m♦\033[0m Isaac 2.0 MVP
+\033[92m♦\033[0m Multi-platform shell assistant with AI integration
+\033[92m♦\033[0m x.ai/Grok collections support
+\033[92m♦\033[0m Distributed command system (coming soon)
 """
         for line in version_info.strip().split('\n'):
             self._print_output_line(line)
@@ -392,12 +478,12 @@ isaac> Distributed command system (coming soon)
     def _show_status(self) -> None:
         """Show current system status."""
         status_lines = [
-            "isaac> System Status:",
-            f"isaac> Current Directory: {self.current_directory}",
-            f"isaac> Shell: {type(self.shell_adapter).__name__ if self.shell_adapter else 'None'}",
-            f"isaac> AI Client: {'Configured' if self.ai_client else 'Not configured'}",
-            f"isaac> Session Manager: {'Active' if self.session_manager else 'Inactive'}",
-            f"isaac> Distributed Mode: {'Enabled' if self.config.get('distributed_mode', False) else 'Disabled (coming soon)'}"
+            "\033[92m♦\033[0m System Status:",
+            f"\033[92m♦\033[0m Current Directory: {self.current_directory}",
+            f"\033[92m♦\033[0m Shell: {type(self.shell_adapter).__name__ if self.shell_adapter else 'None'}",
+            f"\033[92m♦\033[0m AI Client: {'Configured' if self.ai_client else 'Not configured'}",
+            f"\033[92m♦\033[0m Session Manager: {'Active' if self.session_manager else 'Inactive'}",
+            f"\033[92m♦\033[0m Distributed Mode: {'Enabled' if self.config.get('distributed_mode', False) else 'Disabled (coming soon)'}"
         ]
         
         for line in status_lines:
@@ -406,11 +492,11 @@ isaac> Distributed command system (coming soon)
     def _show_config(self) -> None:
         """Show current configuration (safe, no secrets)."""
         config_lines = [
-            "isaac> Current Configuration:",
-            f"isaac> AI Model: {self.config.get('ai_model', 'Not set')}",
-            f"isaac> Distributed Mode: {self.config.get('distributed_mode', 'false')}",
-            f"isaac> API Keys: {'x.ai configured' if self.config.get('xai_api_key') else 'x.ai not configured'}",
-            f"isaac> PHP API: {'Configured' if self.config.get('api_key') and self.config.get('api_url') else 'Not configured'}"
+            "\033[92m♦\033[0m Current Configuration:",
+            f"\033[92m♦\033[0m AI Model: {self.config.get('ai_model', 'Not set')}",
+            f"\033[92m♦\033[0m Distributed Mode: {self.config.get('distributed_mode', 'false')}",
+            f"\033[92m♦\033[0m API Keys: {'x.ai configured' if self.config.get('xai_api_key') else 'x.ai not configured'}",
+            f"\033[92m♦\033[0m PHP API: {'Configured' if self.config.get('api_key') and self.config.get('api_url') else 'Not configured'}"
         ]
         
         for line in config_lines:
@@ -430,9 +516,9 @@ isaac> Distributed command system (coming soon)
         # Delegate to the TogrokHandler
         try:
             result = self.togrok_handler.handle_command(args)
-            self._print_output_line(f"isaac> {result}")
+            self._print_output_line(f"\033[92m♦\033[0m {result}")
         except Exception as e:
-            self._print_output_line(f"isaac> Error handling togrok command: {e}")
+            self._print_output_line(f"\033[92m♦\033[0m Error handling togrok command: {e}")
 
     def _execute_command_logic(self, command: str) -> None:
         """Execute the command logic."""
@@ -498,28 +584,28 @@ isaac> Distributed command system (coming soon)
                     self._handle_validation_response(command, ai_response)
                 else:
                     # If AI doesn't return JSON, assume command is safe and execute
-                    self._print_output_line("isaac> Command validated - executing...")
+                    self._print_output_line("\033[92m♦\033[0m Command validated - executing...")
                     self._execute_normal_command(command)
             else:
                 # If AI validation fails, execute anyway but warn
-                self._print_output_line("isaac> AI validation unavailable - executing command...")
+                self._print_output_line("\033[92m♦\033[0m AI validation unavailable - executing command...")
                 self._execute_normal_command(command)
 
         except Exception as e:
             # If AI validation fails, execute anyway
-            self._print_output_line(f"isaac> AI validation failed ({e}) - executing command...")
+            self._print_output_line(f"\033[92m♦\033[0m AI validation failed ({e}) - executing command...")
             self._execute_normal_command(command)
 
     def _handle_isaac_command(self, command: str) -> None:
         """Handle isaac-prefixed commands as direct shell execution."""
         # Check if command is valid (basic validation)
         if not command:
-            self._print_output_line("isaac> No command provided")
+            self._print_output_line("\033[92m♦\033[0m No command provided")
             return
 
         # For now, treat all isaac commands as valid and execute them
         # TODO: Add history-based validation later
-        self._print_output_line("isaac> Valid command, executing..")
+        self._print_output_line("\033[92m♦\033[0m Valid command, executing..")
         self._execute_normal_command(command)
 
     def _is_ai_query(self, command: str) -> bool:
@@ -554,7 +640,7 @@ isaac> Distributed command system (coming soon)
     def _handle_ai_query(self, command: str) -> None:
         """Handle AI query in traditional style."""
         if not self.ai_client:
-            self._print_output_line("isaac> AI client not configured. Please set api_key and api_url in preferences.")
+            self._print_output_line("\033[92m♦\033[0m AI client not configured. Please set api_key and api_url in preferences.")
             return
 
         try:
@@ -582,15 +668,15 @@ isaac> Distributed command system (coming soon)
                     self._handle_text_response(ai_response)
             else:
                 if HAS_COLORAMA:
-                    ai_error_msg = f"\033[31misaac> AI error: {response.get('error', 'Unknown error')}\033[0m"
+                    ai_error_msg = f"\033[31m♦ AI error: {response.get('error', 'Unknown error')}\033[0m"
                 else:
-                    ai_error_msg = f"isaac> AI error: {response.get('error', 'Unknown error')}"
+                    ai_error_msg = f"♦ AI error: {response.get('error', 'Unknown error')}"
                 self._print_output_line(ai_error_msg)
         except Exception as e:
             if HAS_COLORAMA:
-                ai_fail_msg = f"\033[31misaac> AI query failed: {e}\033[0m"
+                ai_fail_msg = f"\033[31m♦ AI query failed: {e}\033[0m"
             else:
-                ai_fail_msg = f"isaac> AI query failed: {e}"
+                ai_fail_msg = f"♦ AI query failed: {e}"
             self._print_output_line(ai_fail_msg)
 
     def _build_system_prompt(self, command_history: list) -> str:
@@ -686,26 +772,26 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
             validation = json.loads(ai_response)
 
             if validation.get('safe', False):
-                self._print_output_line("isaac> Command validated as safe - executing...")
+                self._print_output_line("\033[92m♦\033[0m Command validated as safe - executing...")
                 self._execute_normal_command(command)
             else:
                 reason = validation.get('reason', 'Unknown risk')
                 suggestion = validation.get('suggestion', '')
 
-                self._print_output_line(f"isaac> Command flagged: {reason}")
+                self._print_output_line(f"\033[92m♦\033[0m Command flagged: {reason}")
                 if suggestion:
-                    self._print_output_line(f"isaac> Suggestion: {suggestion}")
+                    self._print_output_line(f"\033[92m♦\033[0m Suggestion: {suggestion}")
 
                 # Ask for confirmation
-                self._print_output_line("isaac> Proceed anyway? (y/n)")
+                self._print_output_line("\033[92m♦\033[0m Proceed anyway? (y/n)")
                 try:
                     response = input().strip().lower()
                     if response in ['y', 'yes']:
                         self._execute_normal_command(command)
                     else:
-                        self._print_output_line("isaac> Command cancelled.")
+                        self._print_output_line("\033[92m♦\033[0m Command cancelled.")
                 except (EOFError, KeyboardInterrupt):
-                    self._print_output_line("isaac> Command cancelled.")
+                    self._print_output_line("\033[92m♦\033[0m Command cancelled.")
 
         except json.JSONDecodeError:
             # Fallback to text response if JSON parsing fails
@@ -730,7 +816,7 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
                     break
 
             if suggested_command:
-                self._print_output_line(f"isaac> Executing corrected command: {suggested_command}")
+                self._print_output_line(f"\033[92m♦\033[0m Executing corrected command: {suggested_command}")
                 self._execute_normal_command(suggested_command)
                 return
 
@@ -746,9 +832,9 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
         # Add AI response lines to both buffers and the framed terminal body
         for i, line in enumerate(response_lines):
             if i == 0:
-                formatted = f"isaac> {line}"
+                formatted = f"\033[92m♦\033[0m {line}"
             else:
-                formatted = f"       {line}"
+                formatted = f"        {line}"
 
             # Keep legacy buffer for history
             self.output_buffer.append(formatted)
@@ -764,24 +850,24 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
 
     def _handle_tier3_command(self, command: str, tier: float) -> None:
         """Handle Tier 3+ commands with confirmation."""
-        self._print_output_line(f"isaac> Tier {tier} command requires confirmation. Proceed? (y/n)")
+        self._print_output_line(f"\033[92m♦\033[0m Tier {tier} command requires confirmation. Proceed? (y/n)")
 
         try:
             response = input().strip().lower()
             if response in ['y', 'yes']:
                 self._execute_normal_command(command)
             else:
-                self._print_output_line("isaac> Command cancelled.")
+                self._print_output_line("\033[92m♦\033[0m Command cancelled.")
         except KeyboardInterrupt:
             self._print_output_line("")
-            self._print_output_line("isaac> Command cancelled.")
+            self._print_output_line("\033[92m♦\033[0m Command cancelled.")
         except EOFError:
-            self._print_output_line("isaac> Command cancelled.")
+            self._print_output_line("\033[92m♦\033[0m Command cancelled.")
 
     def _execute_normal_command(self, command: str) -> None:
         """Execute a normal shell command."""
         if not self.shell_adapter:
-            self._print_output_line("isaac> No shell adapter available")
+            self._print_output_line("\033[92m♦\033[0m No shell adapter available")
             return
 
         # Handle special commands that interfere with our UI
@@ -819,9 +905,9 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
         except KeyboardInterrupt:
             # Handle Ctrl+C during command execution
             self._print_output_line("^C")
-            self._print_output_line("isaac> Command interrupted")
+            self._print_output_line("\033[92m♦\033[0m Command interrupted")
         except Exception as e:
-            self._print_output_line(f"isaac> Execution failed: {str(e)}")
+            self._print_output_line(f"\033[92m♦\033[0m Execution failed: {str(e)}")
 
     def _print_output_line(self, line: str):
         """Print a line of output, handling buffering for Windows."""
