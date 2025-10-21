@@ -8,6 +8,7 @@ import sys
 import time
 import datetime
 import threading
+import re
 import xml.etree.ElementTree as ET
 from typing import Optional, Tuple
 from pathlib import Path
@@ -30,6 +31,9 @@ try:
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
+
+# Regex for stripping ANSI escape codes
+ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 
 
 class TerminalControl:
@@ -71,7 +75,8 @@ class TerminalControl:
         
         # Scrolling support
         self.output_scroll_offset = 0  # How many lines to scroll back
-        self.max_visible_output_lines = 0  # Calculated based on terminal size
+        # Calculate max visible output lines: terminal height - header(5) - prompt(1) - separator(1) - bottom(1) - spacing(1)
+        self.max_visible_output_lines = max(1, self.terminal_height - 9)
         
         # Config mode state
         self.config_mode = False
@@ -121,8 +126,8 @@ class TerminalControl:
 
     def _draw_status_bar(self):
         """Draw the full Unicode box-drawn header and frame with exact spacing."""
-        # Move cursor to top-left
-        print("\033[1;1H", end="", flush=True)
+        # Hide cursor and move to top-left
+        print("\033[?25l\033[1;1H", end="", flush=True)
 
         # Ensure minimum width
         total_width = max(self.terminal_width, 80)
@@ -131,16 +136,16 @@ class TerminalControl:
         # Compute column widths:
         # - 5 columns in header rows
         # - Final 3 status columns have capped widths
-        #   per-col: min 6, max 8; total status inner width capped [18, 24]
-        status_inner_max = 24
-        status_inner_min = 20
+        #   per-col: min 6, max 10; total status inner width capped [18, 30]
+        status_inner_max = 30
+        status_inner_min = 26
 
         # Start with desired status area ~28% of inner width
         desired_status = int(inner_width * 0.28)
         status_inner = max(status_inner_min, min(status_inner_max, desired_status))
 
         # Split status area evenly into 3 columns within per-col caps
-        per_col = max(6, min(8, status_inner // 3))
+        per_col = max(6, min(10, status_inner // 3))
         # Recompute status_inner from per_col to keep symmetry
         status_inner = per_col * 3
 
@@ -326,7 +331,8 @@ class TerminalControl:
 
     def _clear_screen(self):
         """Clear the entire screen."""
-        os.system('cls')
+        # Use ANSI escape codes instead of os.system for better control
+        print("\033[2J\033[H", end="", flush=True)  # Clear screen and move cursor to home
 
     def _setup_scroll_region(self):
         """Set up scroll region for the main terminal area."""
@@ -448,8 +454,10 @@ class TerminalControl:
         # Strip the text to remove any trailing newlines
         text = text.rstrip('\n\r')
         
-        # Wrap text to terminal width
-        wrapped_lines = self._wrap_text(text, self.wrap_width - 2)  # -2 for margin
+        # Wrap text to fit inside frame with gutter: inner_width - 1 for gutter
+        # inner_width = terminal_width - 2 (for borders), so max text = terminal_width - 3
+        max_text_width = self.wrap_width - 3  # -2 for borders, -1 for gutter
+        wrapped_lines = self._wrap_text(text, max_text_width)
         
         self.current_output.extend(wrapped_lines)
         
@@ -497,6 +505,9 @@ class TerminalControl:
 
         total_width = frame['total_width']
         inner_width = frame['inner_width']
+        
+        # DEBUG: Print actual widths (will appear in terminal)
+        # print(f"\033[30;1HDEBUG: total_width={total_width}, inner_width={inner_width}", end="", flush=True)
 
         # Body geometry
         body_start = self.status_lines + 1  # Line 6
@@ -506,13 +517,17 @@ class TerminalControl:
         # 1) Prompt line (with borders)
         prompt_line = body_start
         prompt_inside = f"$> _"
-        # Fill inside, leaving last column for border
-        prompt_content = prompt_inside.ljust(inner_width)
-        print(f"\033[{prompt_line};1H" + "│" + prompt_content[:inner_width] + "│", end="", flush=True)
+        # Pad to exactly inner_width
+        prompt_content = prompt_inside.ljust(inner_width)[:inner_width]
+        prompt_line_str = "│" + prompt_content + "│"
+        print(f"\033[{prompt_line};1H" + prompt_line_str, end="", flush=True)
+        sys.stdout.flush()
 
         # 2) Prompt separator (heavy full-width)
         sep_line_idx = prompt_line + 1
-        print(f"\033[{sep_line_idx};1H" + ("╞" + ("═" * inner_width) + "╡"), end="", flush=True)
+        sep_line = "╞" + ("═" * inner_width) + "╡"
+        print(f"\033[{sep_line_idx};1H" + sep_line, end="", flush=True)
+        sys.stdout.flush()
 
         # 3) Output area starts two lines below header (line 8)
         output_start = sep_line_idx + 1
@@ -540,28 +555,41 @@ class TerminalControl:
             else:
                 content = ""
 
-            # Prepare inside content: left-anchored text with one-space margin if desired
-            line_inside_width = inner_width
-            text = content[: max(0, line_inside_width - 2)]  # leave space for gutter near right
+            # Strip ANSI codes to measure visible width properly
+            visible_content = ANSI_ESCAPE.sub('', content)
+            
+            # Reserve 1 char for gutter at the right edge
+            max_text_width = inner_width - 1
+            
+            # Truncate visible content if needed, keeping original with ANSI codes if it fits
+            if len(visible_content) <= max_text_width:
+                text = content  # Keep ANSI codes
+            else:
+                # Content too long, truncate the visible part (strips ANSI codes)
+                text = visible_content[:max_text_width]
+            
             # Determine gutter indicator arrows
             is_top_row = (i == 0)
-            is_bottom_row = (row == output_end - 1)
+            is_bottom_row = (i == len(visible_lines) - 1) or (i == self.max_visible_output_lines - 1)
             show_up = start_idx > 0
             show_down = end_idx < total_lines
             gutter = gutter_char
             if is_top_row and show_up:
-                gutter = "▲"
+                gutter = "+"
             elif is_bottom_row and show_down:
-                gutter = "▼"
+                gutter = "-"
 
-            # Build inside: text padded to inner_width-1, then gutter in last column
-            pad_width = max(0, line_inside_width - 1)
-            inside = (text.ljust(pad_width)) + gutter
-            print(f"\033[{row};1H" + "│" + inside[:inner_width] + "│", end="", flush=True)
+            # Build inside: pad visible width to exactly inner_width-1, then add gutter
+            visible_text = ANSI_ESCAPE.sub('', text)
+            padding_needed = max_text_width - len(visible_text)
+            text_padded = text + (' ' * padding_needed)
+            inside = text_padded + gutter
+            print(f"\033[{row};1H│" + inside + "│", end="", flush=True)
 
         # 4) Bottom border of the frame
         bottom_line = "└" + ("─" * inner_width) + "┘"
         print(f"\033[{self.terminal_height};1H" + bottom_line, end="", flush=True)
+        sys.stdout.flush()
 
     def enter_config_mode(self):
         """Enter configuration mode."""
@@ -682,15 +710,25 @@ class TerminalControl:
         self.body_dirty = True
 
     def _wrap_text(self, text: str, width: int) -> list:
-        """Wrap text to specified width."""
+        """Wrap text to specified width, accounting for ANSI escape codes."""
         lines = []
         for line in text.split('\n'):
-            while len(line) > width:
-                lines.append(line[:width])
-                line = line[width:]
-            # Only append if line has non-whitespace content
-            if line.strip():  # This filters out blank and whitespace-only lines
-                lines.append(line)
+            # Strip ANSI codes to measure visible width
+            visible_line = ANSI_ESCAPE.sub('', line)
+            
+            if len(visible_line) <= width:
+                # Line fits, keep it as-is with ANSI codes
+                if line.strip():
+                    lines.append(line)
+            else:
+                # Line is too long, need to wrap
+                # For simplicity, strip ANSI codes when wrapping
+                # (More complex: preserve ANSI codes across wrapped lines)
+                while len(visible_line) > width:
+                    lines.append(visible_line[:width])
+                    visible_line = visible_line[width:]
+                if visible_line.strip():
+                    lines.append(visible_line)
         return lines
 
     def restore_terminal(self):
