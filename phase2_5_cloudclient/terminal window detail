@@ -1,0 +1,112 @@
+Terminal Window Details"
+
+
+
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
++------------------------------------------------------------------------------+
+| ISAAC v3.4.2 | SID:9f2a      [pad] | [RUNNING]   [pad] | Cloud | AI | VPN:ON |
++------------------------------------------------------------------------------+
+
+Notes
+
+The line above is exactly 80 chars wide including borders.
+Each line’s interior is split into Left (26) | Center (26) | Right (26).
+Top line content:
+Left: ISAAC version + Session ID
+Center: System state (e.g., READY/RUNNING/ERROR)
+Right: Cloud, AI, VPN status
+
+
+
++------------------------------------------------------------------------------+
+| ISAAC vX.Y.Z | SID:xxxx       | [READY]          | Cloud:OK | AI:OK | VPN:ON |
+| User: <name> | Mode: <EXEC>   | PWD: <cwd>      | Hist:### | Log:on | Val>T2 |
+| Last: '<cmd>' ✓/✖             | Time: hh:mm:ss   CPU:##% | Net:OK | Wrap:80 |
++------------------------------------------------------------------------------+
+| > _                                                                          |
+|                                                                              |
+| [OUTPUT]                                                                     |
+|   … command output scrolls here …                                            |
+|                                                                              |
+| [LOG]                                                                        |
+|   18:03:12 T1 exec: ls -la                                                   |
+|   18:03:44 T2 exec: docker ps                                                |
+|   18:04:12 T2 exec: git pull (auto-exec)                                     |
+|   18:06:05 T3 check: terraform plan (awaiting confirm)                       |
+|                                                                              |
++------------------------------------------------------------------------------+
+
+
+
+
+
+
+┌──────────────────────── Screen Draw Loop ────────────────────────┐
+│ 1) Draw HEADER once (3 lines, fixed positions)                   │
+│ 2) Draw a rule line (the border)                                 │
+│ 3) Draw BODY region (scrollable)                                 │
+│ 4) On update:                                                    │
+│    - Repaint HEADER only if its fields changed                   │
+│    - Append OUTPUT to BODY with hard-wrapping at column 80       │
+│    - Place PROMPT after the last wrapped line                    │
+│    - Avoid full-screen clear; update only dirty regions          │
+└──────────────────────────────────────────────────────────────────┘
+
+
+INPUT (any length) → split into tokens → wrap to 80 columns (visible width)
+→ emit lines to BODY → write newline → place prompt at col 1 of next line
+
+
+
+
+
+
+
+
+Daemon heartbeat → header status data
+
+┌─────────────── Daemon (every ~10s) ───────────────┐
+│  Ping Cloud  ──▶ cloud_status (OK/DEGRADED/OFF)   │
+│  Ping AI     ──▶ ai_status (OK/DELAYED/OFF)       │
+│  Check VPN   ──▶ vpn_status (ON/OFF)              │
+│  (Optional)  ──▶ cpu_load, net_status             │
+└───────────────┬───────────────────────────────────┘
+                │ publish (shared state / message bus)
+                ▼
+┌─────────────────────── CLI Renderer ────────────────────────────┐
+│ Map statuses to colors (e.g., Checking=yellow, OK=white, OFF=grey) │
+│ Update only header fields that changed (no full redraw)          │
+│ Keep center zone for [STATE]; move last-cmd to line 3            │
+└──────────────────────────────────────────────────────────────────┘
+
+
+
+
+
+
+
+
+┌──────────────┐        /config         ┌────────────────────┐
+│ TERMINAL MODE│ ─────────────────────▶ │ CONFIG PANEL MODE  │
+│  - header    │                        │  - header stays    │
+│  - body logs │ ◀────── save/exit ─────│  - body replaced   │
+└──────────────┘                        │    by static UI    │
+                                        └────────────────────┘
+
+
++------------------------------------------------------------------------------+
+| ISAAC vX.Y.Z | SID:xxxx       | [CONFIG]                | Cloud:OK | AI:OK | VPN:ON |
+| User: <name> | Mode: CONFIG   | Workspace: <path>       | Hist:### | Log:on | Val>T2 |
+| Last: —                       | Time: hh:mm:ss          | CPU:—    | Net:OK | Wrap:80 |
++------------------------------------------------------------------------------+
+|  [ ] Enable auto-validate (T>2)                                              |
+|  [ ] Show CPU in header                                                      |
+|  [ ] Color states by availability (Checking=Y, OK=W, OFF=Grey)               |
+|                                                                              |
+|  Cloud storage:  [ GoDaddy      ]   AI provider: [ gpt-x        ]           |
+|  Workspace root: [ ~/projects   ]   VPN required: [ Yes/No      ]           |
+|                                                                              |
+|  <Tab> move   <Space> toggle   <Enter> save   <Esc> cancel                    |
++------------------------------------------------------------------------------+
+

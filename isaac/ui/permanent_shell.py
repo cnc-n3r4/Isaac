@@ -16,6 +16,7 @@ from isaac.core.session_manager import SessionManager
 from isaac.adapters.shell_detector import detect_shell
 from isaac.models.preferences import Preferences
 from isaac.commands.togrok_handler import TogrokHandler
+from isaac.ui.advanced_input import AdvancedInputHandler
 
 try:
     import colorama
@@ -30,11 +31,11 @@ class PermanentShell:
 
     def __init__(self):
         """Initialize the permanent shell."""
-        # Core components
-        self.terminal = TerminalControl()
-        
-        # Initialize session manager (it will load config from ~/.isaac/config.json)
+        # Initialize session manager first (it will load config from ~/.isaac/config.json)
         self.session_manager = SessionManager()
+        
+        # Core components
+        self.terminal = TerminalControl(self.session_manager)
         
         # Get the loaded preferences from session manager
         self.preferences = self.session_manager.get_preferences()
@@ -43,6 +44,9 @@ class PermanentShell:
         self.config = self.session_manager.get_config()
         
         self.tier_validator = TierValidator(self.preferences)
+
+        # Initialize advanced input handler for config mode
+        self.advanced_input = AdvancedInputHandler(self.tier_validator)
 
         # Initialize Togrok handler for x.ai collections
         self.togrok_handler = TogrokHandler(self.session_manager)
@@ -134,26 +138,67 @@ class PermanentShell:
                 self._print_output_line(error_msg)
 
     def _get_user_input(self) -> str:
+        """Get user input, handling config mode specially."""
+        if self.terminal.config_mode:
+            return self._get_config_input()
+        else:
+            return self._get_normal_input()
+
+    def _get_normal_input(self) -> str:
         """Get user input with traditional prompt."""
         prompt = self.terminal.get_prompt_string()
-        # Ensure cursor is positioned correctly for input
-        if self.terminal.is_windows:
-            # On Windows, position cursor at the bottom of the visible area
-            available_lines = self.terminal.terminal_height - self.terminal.status_lines - 1
-            start_idx = max(0, len(self.output_buffer) - available_lines)
-            displayed_lines = len(self.output_buffer) - start_idx
-            bottom_line = self.terminal.status_lines + 1 + displayed_lines
-            if bottom_line > self.terminal.terminal_height:
-                bottom_line = self.terminal.terminal_height
-            print(f"\033[{bottom_line};1H", end="", flush=True)
-        else:
-            # On non-Windows, use scroll region positioning
-            scroll_start = self.terminal.status_lines + 1  # Line 4
-            print(f"\033[{scroll_start};1H", end="", flush=True)
+        # Position cursor at the fixed prompt line (line 6)
+        prompt_line = self.terminal.status_lines + 1  # Line 6
+        print(f"\033[{prompt_line};1H", end="", flush=True)
         try:
             return input(prompt).strip()
         except EOFError:
             return "exit"
+
+    def _get_config_input(self) -> str:
+        """Get input for config mode navigation."""
+        while True:
+            try:
+                # Read single character
+                char = self._get_char()
+                
+                if char == '\t':  # Tab - move to next item
+                    self.terminal.navigate_config("next")
+                    self.terminal.mark_body_dirty()
+                elif char == ' ':  # Space - toggle current item
+                    self.terminal.toggle_config_item()
+                    self.terminal.mark_body_dirty()
+                elif char == '\r' or char == '\n':  # Enter - save and exit
+                    self.terminal.exit_config_mode(save=True)
+                    return ""  # Return empty to continue main loop
+                elif char == '\x1b':  # Escape - cancel and exit
+                    self.terminal.exit_config_mode(save=False)
+                    return ""  # Return empty to continue main loop
+                # Ignore other characters
+                
+            except KeyboardInterrupt:
+                # Handle Ctrl+C - cancel config mode
+                self.terminal.exit_config_mode(save=False)
+                return ""
+
+    def _get_char(self) -> str:
+        """Get a single character from stdin."""
+        if os.name == 'nt':  # Windows
+            import msvcrt
+            return msvcrt.getch().decode('utf-8', errors='ignore')
+        else:  # Unix-like
+            import tty
+            import termios
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(sys.stdin.fileno())
+                ch = sys.stdin.read(1)
+                if ch == '\x1b':  # Escape sequence
+                    ch += sys.stdin.read(2)
+                return ch
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
     def _process_command(self, command: str) -> None:
         """Process a command in traditional terminal style."""
@@ -170,25 +215,275 @@ class PermanentShell:
         # Process the command
         self._execute_command_logic(command)
 
+    def _detect_command_prefix(self, command: str) -> tuple[str, str]:
+        """
+        Detect command prefix and return (prefix_type, stripped_command).
+        
+        Returns:
+            ('/', command) - Local meta-command
+            ('!', command) - Distributed command  
+            ('', command) - Regular command (no prefix)
+        """
+        command = command.strip()
+        
+        if not command:
+            return ('', '')
+            
+        # Check for local commands (/)
+        if command.startswith('/'):
+            return ('/', command[1:].strip())
+            
+        # Check for distributed commands (!)
+        if command.startswith('!'):
+            return ('!', command[1:].strip())
+            
+        # No prefix - regular command
+        return ('', command)
+
+    def _handle_local_command(self, command: str) -> None:
+        """Handle local meta-commands starting with /."""
+        if not command:
+            self._print_output_line("isaac> No command provided after /")
+            return
+            
+        command_lower = command.lower()
+        
+        if command_lower == 'help':
+            self._show_help()
+        elif command_lower == 'version':
+            self._show_version()
+        elif command_lower == 'status':
+            self._show_status()
+        elif command_lower == 'config':
+            self.terminal.enter_config_mode()
+        elif command_lower.startswith('ask'):
+            # Handle /ask <question> - explicit AI queries
+            question = command[3:].strip() if len(command) > 3 else ""
+            self._handle_explicit_ai_query(question)
+        else:
+            self._print_output_line(f"isaac> Unknown local command: /{command}")
+            self._print_output_line("isaac> Available commands: /help, /version, /status, /config, /ask")
+
+    def _handle_explicit_ai_query(self, question: str) -> None:
+        """Handle explicit AI queries from /ask command."""
+        if not question:
+            self._print_output_line("isaac> Usage: /ask <your question>")
+            self._print_output_line("isaac> Example: /ask what is the capital of France?")
+            return
+
+        if not self.ai_client:
+            self._print_output_line("isaac> AI client not configured. Please set xai_api_key and xai_api_url in config.")
+            return
+
+        try:
+            # Get recent command history for context
+            command_history = self.session_manager.get_recent_commands(10)
+
+            # Build comprehensive system prompt
+            system_prompt = self._build_system_prompt(command_history)
+
+            # Create user message with question
+            user_message = f"Question: {question}"
+
+            # Use AI client with enhanced prompt
+            response = self.ai_client._call_api_with_system_prompt(system_prompt, user_message)
+
+            if response.get('success'):
+                ai_response = response.get('text', 'No response from AI')
+
+                # Check if response is JSON (command validation) or text (AI query)
+                if ai_response.strip().startswith('{') and ai_response.strip().endswith('}'):
+                    # Parse JSON validation response
+                    self._handle_validation_response(question, ai_response)
+                else:
+                    # Handle as regular AI response
+                    self._handle_text_response(ai_response)
+            else:
+                if HAS_COLORAMA:
+                    ai_error_msg = f"\033[31misaac> AI error: {response.get('error', 'Unknown error')}\033[0m"
+                else:
+                    ai_error_msg = f"isaac> AI error: {response.get('error', 'Unknown error')}"
+                self._print_output_line(ai_error_msg)
+        except Exception as e:
+            if HAS_COLORAMA:
+                ai_fail_msg = f"\033[31misaac> AI query failed: {e}\033[0m"
+            else:
+                ai_fail_msg = f"isaac> AI query failed: {e}"
+            self._print_output_line(ai_fail_msg)
+
+    def _handle_distributed_command(self, command: str) -> None:
+        """Handle distributed commands starting with ! (placeholder implementation)."""
+        if not command:
+            self._print_output_line("isaac> No command provided after !")
+            return
+            
+        # Placeholder implementation - distributed commands not yet implemented
+        self._print_output_line(f"isaac> Distributed commands (!{command}) are not yet implemented")
+        self._print_output_line("isaac> This feature will allow remote command execution across machines")
+
+    def _show_help(self) -> None:
+        """Show help for available commands."""
+        help_text = """
+isaac> Available Commands:
+
+Regular Commands (no prefix):
+  - Any shell command (ls, dir, cd, etc.)
+  - Tier 1-2 commands execute immediately
+  - Tier 3+ commands get AI validation for safety and corrections
+  - isaac <command> - Direct shell execution (bypasses validation)
+
+Local Meta-Commands (/):
+  /help     - Show this help
+  /version  - Show Isaac version
+  /status   - Show current status
+  /config   - Show current configuration
+  /ask      - Ask AI questions (e.g., /ask what is the capital of France?)
+
+AI Integration:
+  /togrok create <name> - Create x.ai collection
+  /togrok upload <name> <file> - Upload file to collection
+  /togrok search <name> <query> - Search collection
+  /togrok list - List collections
+
+Distributed Commands (!) - Coming Soon:
+  !machine command  - Execute on remote machine
+  !list             - List available machines
+
+Type shell commands normally, or use /ask for AI assistance.
+"""
+        for line in help_text.strip().split('\n'):
+            self._print_output_line(line)
+
+    def _show_version(self) -> None:
+        """Show Isaac version information."""
+        version_info = """
+isaac> Isaac 2.0 MVP
+isaac> Multi-platform shell assistant with AI integration
+isaac> x.ai/Grok collections support
+isaac> Distributed command system (coming soon)
+"""
+        for line in version_info.strip().split('\n'):
+            self._print_output_line(line)
+
+    def _show_status(self) -> None:
+        """Show current system status."""
+        status_lines = [
+            "isaac> System Status:",
+            f"isaac> Current Directory: {self.current_directory}",
+            f"isaac> Shell: {type(self.shell_adapter).__name__ if self.shell_adapter else 'None'}",
+            f"isaac> AI Client: {'Configured' if self.ai_client else 'Not configured'}",
+            f"isaac> Session Manager: {'Active' if self.session_manager else 'Inactive'}",
+            f"isaac> Distributed Mode: {'Enabled' if self.config.get('distributed_mode', False) else 'Disabled (coming soon)'}"
+        ]
+        
+        for line in status_lines:
+            self._print_output_line(line)
+
+    def _show_config(self) -> None:
+        """Show current configuration (safe, no secrets)."""
+        config_lines = [
+            "isaac> Current Configuration:",
+            f"isaac> AI Model: {self.config.get('ai_model', 'Not set')}",
+            f"isaac> Distributed Mode: {self.config.get('distributed_mode', 'false')}",
+            f"isaac> API Keys: {'x.ai configured' if self.config.get('xai_api_key') else 'x.ai not configured'}",
+            f"isaac> PHP API: {'Configured' if self.config.get('api_key') and self.config.get('api_url') else 'Not configured'}"
+        ]
+        
+        for line in config_lines:
+            self._print_output_line(line)
+
+    def _handle_togrok_command(self, command: str) -> None:
+        """Handle /togrok commands by delegating to TogrokHandler."""
+        # Remove the "/togrok " prefix to get the arguments
+        if command.lower().startswith("togrok "):
+            args_str = command[7:].strip()  # Remove "togrok "
+        else:
+            args_str = command.strip()
+        
+        # Split the arguments
+        args = args_str.split() if args_str else []
+        
+        # Delegate to the TogrokHandler
+        try:
+            result = self.togrok_handler.handle_command(args)
+            self._print_output_line(f"isaac> {result}")
+        except Exception as e:
+            self._print_output_line(f"isaac> Error handling togrok command: {e}")
+
     def _execute_command_logic(self, command: str) -> None:
         """Execute the command logic."""
+        # First, detect command prefix
+        prefix_type, stripped_command = self._detect_command_prefix(command)
+        
+        # Route based on prefix
+        if prefix_type == '/':
+            self._handle_local_command(stripped_command)
+            return
+        elif prefix_type == '!':
+            self._handle_distributed_command(stripped_command)
+            return
+        
+        # No prefix - handle as regular command
         # Handle isaac-prefixed commands as direct shell execution
-        if command.lower().startswith("isaac "):
-            actual_command = command[6:].strip()  # Remove "isaac " prefix
+        if stripped_command.lower().startswith("isaac "):
+            actual_command = stripped_command[6:].strip()  # Remove "isaac " prefix
             self._handle_isaac_command(actual_command)
             return
 
         # Validate command tier
-        tier = self.tier_validator.get_tier(command)
+        tier = self.tier_validator.get_tier(stripped_command)
+
+        # Validate command tier
+        tier = self.tier_validator.get_tier(stripped_command)
 
         # Handle different command types
-        if command.startswith("/togrok"):
-            self._handle_togrok_command(command)
-        elif self._is_ai_query(command):
-            self._handle_ai_query(command)
+        if stripped_command.startswith("/togrok"):
+            self._handle_togrok_command(stripped_command)
         elif tier >= 3.0:
-            self._handle_tier3_command(command, tier)
+            self._handle_tier3_command(stripped_command, tier)
         else:
+            # For tier 1-2 commands, execute immediately without AI validation
+            self._execute_normal_command(stripped_command)
+
+    def _handle_ai_validated_command(self, command: str) -> None:
+        """Handle commands with AI validation for safety and corrections."""
+        if not self.ai_client:
+            # If no AI client, execute directly
+            self._execute_normal_command(command)
+            return
+
+        try:
+            # Get recent command history for context
+            command_history = self.session_manager.get_recent_commands(10)
+
+            # Build system prompt for command validation
+            system_prompt = self._build_command_validation_prompt(command_history)
+
+            # Create validation request
+            user_message = f"Current directory: {self.current_directory}\nCommand to validate: {command}"
+
+            # Get AI validation
+            response = self.ai_client._call_api_with_system_prompt(system_prompt, user_message)
+
+            if response.get('success'):
+                ai_response = response.get('text', '')
+
+                # Check if response is JSON validation
+                if ai_response.strip().startswith('{') and ai_response.strip().endswith('}'):
+                    # Parse JSON validation response
+                    self._handle_validation_response(command, ai_response)
+                else:
+                    # If AI doesn't return JSON, assume command is safe and execute
+                    self._print_output_line("isaac> Command validated - executing...")
+                    self._execute_normal_command(command)
+            else:
+                # If AI validation fails, execute anyway but warn
+                self._print_output_line("isaac> AI validation unavailable - executing command...")
+                self._execute_normal_command(command)
+
+        except Exception as e:
+            # If AI validation fails, execute anyway
+            self._print_output_line(f"isaac> AI validation failed ({e}) - executing command...")
             self._execute_normal_command(command)
 
     def _handle_isaac_command(self, command: str) -> None:
@@ -235,7 +530,7 @@ class PermanentShell:
     def _handle_ai_query(self, command: str) -> None:
         """Handle AI query in traditional style."""
         if not self.ai_client:
-            self._print_output_line("isaac> AI client not configured. Please set xai_api_key and xai_api_url in preferences.")
+            self._print_output_line("isaac> AI client not configured. Please set api_key and api_url in preferences.")
             return
 
         try:
@@ -312,6 +607,54 @@ COMMAND CORRECTION EXAMPLES:
 - User: "show directory" → Suggestion: dir (Windows) or pwd (Linux)
 
 Always provide the most helpful response based on the user's intent."""
+
+    def _build_command_validation_prompt(self, command_history: list) -> str:
+        """Build system prompt specifically for command validation and safety checking."""
+        history_text = "\n".join([f"- {cmd}" for cmd in command_history]) if command_history else "No recent commands"
+
+        return f"""You are Isaac's command safety validator. Your role is to analyze shell commands for safety and provide corrections when needed.
+
+CONTEXT:
+- User is running commands on their own machine (Windows PowerShell or Linux bash)
+- Current working directory: {self.current_directory}
+- Recent command history:
+{history_text}
+
+VALIDATION TASK:
+Analyze the provided command for safety and correctness. Return a JSON response with this exact structure:
+{{
+  "safe": true/false,
+  "reason": "brief explanation if unsafe",
+  "suggestion": "corrected command if needed, empty string if safe"
+}}
+
+SAFETY RULES:
+- Allow normal file operations in user directories
+- Allow development tools (git, npm, pip, python, node, etc.)
+- Allow directory navigation and listing
+- Flag destructive operations (rm -rf /, del /s /q, format, etc.)
+- Flag operations on system directories (/etc, /sys, C:\\Windows, C:\\Program Files)
+- Flag operations that could cause data loss or system instability
+- Be cautious but not paranoid - users know what they're doing
+
+COMMAND CORRECTION GUIDELINES:
+- If command syntax is wrong, provide the corrected version
+- Use appropriate syntax for the user's shell environment
+- If command is safe but could be improved, suggest the better version
+- Only suggest corrections for actual errors or significant improvements
+
+RESPONSE FORMAT:
+- Always return valid JSON
+- Set "safe": true for commands that are safe to execute
+- Set "safe": false for risky or incorrect commands
+- Include brief reason for unsafe commands
+- Include corrected command in "suggestion" field when applicable
+- Leave "suggestion" as empty string for safe commands
+
+EXAMPLES:
+Safe command: {{"safe": true, "reason": "", "suggestion": ""}}
+Unsafe command: {{"safe": false, "reason": "Deletes all files recursively", "suggestion": "rm specific_file.txt"}}
+Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
 
     def _handle_validation_response(self, command: str, ai_response: str) -> None:
         """Handle JSON validation response from AI."""
@@ -395,125 +738,6 @@ Always provide the most helpful response based on the user's intent."""
             output_text = '\n'.join(formatted_lines)
             self.terminal.print_normal_output(output_text)
 
-    def _build_system_prompt(self, command_history: list) -> str:
-        """Build comprehensive system prompt with context."""
-        history_text = "\n".join([f"- {cmd}" for cmd in command_history[-5:]]) if command_history else "No recent commands"
-
-        return f"""You are Isaac, an intelligent cross-platform shell assistant. You help users with both general questions and shell command execution.
-
-CONTEXT:
-- User is running commands on their own machine (Windows PowerShell or Linux Bash)
-- Current working directory: {self.current_directory}
-- Recent command history:
-{history_text}
-
-YOUR CAPABILITIES:
-1. Answer general questions and provide helpful information
-2. Analyze shell commands for safety and provide validation
-3. Execute safe commands or suggest alternatives
-4. Understand user intent from context and history
-
-COMMAND ANALYSIS (when user wants to execute commands):
-- Analyze commands for potential risks (overwrites, deletions, system changes)
-- Check wildcards, system directories, destructive operations
-- Be cautious but not paranoid - users know what they're doing
-- Flag operations without backups, system directory modifications
-
-RESPONSE FORMATS:
-
-For GENERAL QUESTIONS (what, how, explain, tell me, etc.):
-- Provide helpful, accurate information
-- Be concise but informative
-- Use natural, conversational language
-
-For COMMAND VALIDATION (when user wants to execute shell commands):
-Return JSON only:
-{{
-  "type": "command_validation",
-  "safe": true/false,
-  "reason": "Brief explanation under 50 words",
-  "warnings": ["warning1", "warning2"],
-  "suggestion": "Alternative safer command (optional)",
-  "execute": true/false
-}}
-
-COMMAND EXECUTION RULES:
-- Safe commands (cp, mv, mkdir, ls, etc.) → execute: true
-- Destructive commands (rm, overwrite, system dirs) → execute: false, provide warnings
-- Unknown commands → execute: false, suggest verification
-- Commands with wildcards in dangerous contexts → execute: false
-
-EXAMPLES:
-
-General Query: "what is the capital of France?"
-Response: Paris is the capital and most populous city of France.
-
-Command: "save my images to backup folder"
-Response: {{"type": "command_validation", "safe": true, "reason": "Copying images to backup directory", "warnings": [], "suggestion": null, "execute": true}}
-
-Command: "delete all log files"
-Response: {{"type": "command_validation", "safe": false, "reason": "Deleting files with wildcards can be dangerous", "warnings": ["May delete important files", "No backup mentioned"], "suggestion": "find . -name '*.log' -exec ls -la {{}} \\; (preview first)", "execute": false}}
-
-Be helpful, accurate, and prioritize user safety while understanding their intent from context."""
-
-    def _handle_validation_response(self, original_command: str, json_response: str) -> None:
-        """Handle JSON validation response from AI."""
-        try:
-            import json
-            validation = json.loads(json_response)
-
-            if validation.get('type') == 'command_validation':
-                safe = validation.get('safe', False)
-                reason = validation.get('reason', 'Unknown')
-                warnings = validation.get('warnings', [])
-                suggestion = validation.get('suggestion')
-                should_execute = validation.get('execute', False)
-
-                # Display validation results
-                self._print_output_line(f"isaac> {reason}")
-
-                if warnings:
-                    for warning in warnings:
-                        self._print_output_line(f"isaac> Warning: {warning}")
-
-                if suggestion:
-                    self._print_output_line(f"isaac> Suggestion: {suggestion}")
-
-                # Execute if safe
-                if should_execute and safe:
-                    self._print_output_line("isaac> Executing command...")
-                    self._execute_normal_command(original_command)
-                elif not safe:
-                    self._print_output_line("isaac> Command blocked for safety.")
-                else:
-                    self._print_output_line("isaac> Command requires manual execution.")
-            else:
-                # Fallback to text response
-                self._handle_text_response(json_response)
-
-        except json.JSONDecodeError:
-            # If JSON parsing fails, treat as text response
-            self._handle_text_response(json_response)
-
-    def _handle_text_response(self, ai_response: str) -> None:
-        """Handle regular text AI response."""
-        # Split multi-line response into separate lines for proper cursor positioning
-        response_lines = ai_response.splitlines()
-
-        # Batch all AI response lines to avoid display corruption
-        for line in response_lines:
-            self.output_buffer.append(f"isaac> {line}")
-            if len(self.output_buffer) > self.max_buffer_lines:
-                self.output_buffer.pop(0)
-
-        # Refresh display only once after all lines are added
-        if self.terminal.is_windows:
-            self._refresh_display()
-        else:
-            # On non-Windows, print all lines at once
-            output_text = '\n'.join(f"isaac> {line}" for line in response_lines)
-            self.terminal.print_normal_output(output_text)
-
     def _handle_tier3_command(self, command: str, tier: float) -> None:
         """Handle Tier 3+ commands with confirmation."""
         self._print_output_line(f"isaac> Tier {tier} command requires confirmation. Proceed? (y/n)")
@@ -558,7 +782,7 @@ Be helpful, accurate, and prioritize user safety while understanding their inten
                     try:
                         os.chdir(new_path)
                         self.current_directory = Path.cwd()
-                        self.terminal.update_working_directory(str(self.current_directory))
+                        self.terminal.working_directory = self.current_directory
                     except:
                         pass  # Keep current directory on error
 
@@ -579,12 +803,18 @@ Be helpful, accurate, and prioritize user safety while understanding their inten
         if len(self.output_buffer) > self.max_buffer_lines:
             self.output_buffer.pop(0)
 
-        if self.terminal.is_windows:
-            # On Windows, refresh the entire display to simulate scroll region
-            self._refresh_display()
-        else:
-            # On non-Windows, just print (scroll region handles scrolling)
-            self.terminal.print_normal_output(line)
+        # Add to terminal body for new UI
+        self.terminal.add_output(line)
+        self.terminal.mark_body_dirty()
+
+        # Only update screen if terminal is set up (not during __init__)
+        if hasattr(self, 'running') and self.running:
+            if self.terminal.is_windows:
+                # On Windows, use efficient screen update
+                self.terminal.update_screen()
+            else:
+                # On non-Windows, just print (scroll region handles scrolling)
+                print(line)
 
     def _refresh_display(self):
         """Refresh the entire display for Windows (simulate scroll region)."""
@@ -677,21 +907,6 @@ Be helpful, accurate, and prioritize user safety while understanding their inten
             return "4 (Lockdown)"
         else:
             return f"{tier} (Unknown)"
-
-    def _handle_togrok_command(self, command: str) -> None:
-        """Handle /togrok commands for x.ai collection management."""
-        try:
-            # Parse command into args, removing "/togrok" prefix
-            parts = command.strip().split()
-            if parts and parts[0].lower() == "/togrok":
-                args = parts[1:]  # Remove "/togrok" prefix
-            else:
-                args = parts
-
-            result = self.togrok_handler.handle_command(args)
-            self._print_output_line(result)
-        except Exception as e:
-            self._print_output_line(f"Error handling togrok command: {e}")
 
     def _signal_handler(self, signum, frame) -> None:
         """Handle termination signals."""
