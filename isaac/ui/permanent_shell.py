@@ -68,11 +68,11 @@ class PermanentShell:
                     api_url=xai_api_url,
                     model=ai_model
                 )
-                self._print_output_line("isaac> AI client initialized successfully")
+                self._print_output_line("\033[92m♦ >\033[0m AI client initialized successfully")
             except Exception as e:
-                self._print_output_line(f"isaac> Failed to initialize AI client: {e}")
+                self._print_output_line(f"\033[92m♦ >\033[0m Failed to initialize AI client: {e}")
         else:
-            self._print_output_line("isaac> AI client not configured (missing xai_api_key or xai_api_url in config)")
+            self._print_output_line("\033[92m♦ >\033[0m AI client not configured (missing xai_api_key or xai_api_url in config)")
 
         # Shell detection
         self.shell_adapter = None
@@ -249,7 +249,7 @@ class PermanentShell:
     def _handle_local_command(self, command: str) -> None:
         """Handle local meta-commands starting with /."""
         if not command:
-            self._print_output_line("isaac> No command provided after /")
+            self._print_output_line("\033[92m♦ >\033[0m No command provided after /")
             return
             
         command_lower = command.lower()
@@ -278,20 +278,20 @@ class PermanentShell:
             elif scroll_cmd == 'bottom':
                 self.terminal.scroll_to_bottom()
             else:
-                self._print_output_line("isaac> Usage: /scroll up|down|top|bottom")
+                self._print_output_line("\033[92m♦ >\033[0m Usage: /scroll up|down|top|bottom")
         else:
-            self._print_output_line(f"isaac> Unknown local command: /{command}")
-            self._print_output_line("isaac> Available commands: /help, /version, /status, /config, /ask")
+            self._print_output_line(f"\033[92m♦ >\033[0m Unknown local command: /{command}")
+            self._print_output_line("\033[92m♦ >\033[0m Available commands: /help, /version, /status, /config, /ask")
 
     def _handle_explicit_ai_query(self, question: str) -> None:
         """Handle explicit AI queries from /ask command."""
         if not question:
-            self._print_output_line("isaac> Usage: /ask <your question>")
-            self._print_output_line("isaac> Example: /ask what is the capital of France?")
+            self._print_output_line("\033[92m♦ >\033[0m Usage: /ask <your question>")
+            self._print_output_line("\033[92m♦ >\033[0m Example: /ask what is the capital of France?")
             return
 
         if not self.ai_client:
-            self._print_output_line("isaac> AI client not configured. Please set xai_api_key and xai_api_url in config.")
+            self._print_output_line("\033[92m♦ >\033[0m AI client not configured. Please set xai_api_key and xai_api_url in config.")
             return
 
         try:
@@ -333,12 +333,12 @@ class PermanentShell:
     def _handle_distributed_command(self, command: str) -> None:
         """Handle distributed commands starting with ! (placeholder implementation)."""
         if not command:
-            self._print_output_line("isaac> No command provided after !")
+            self._print_output_line("\033[92m♦ >\033[0m No command provided after !")
             return
             
         # Placeholder implementation - distributed commands not yet implemented
-        self._print_output_line(f"isaac> Distributed commands (!{command}) are not yet implemented")
-        self._print_output_line("isaac> This feature will allow remote command execution across machines")
+        self._print_output_line(f"\033[92m♦ >\033[0m Distributed commands (!{command}) are not yet implemented")
+        self._print_output_line("\033[92m♦ >\033[0m This feature will allow remote command execution across machines")
 
     def _show_help(self) -> None:
         """Show help for available commands."""
@@ -734,40 +734,33 @@ Corrected command: {{"safe": true, "reason": "", "suggestion": "dir /w"}}"""
                 self._execute_normal_command(suggested_command)
                 return
 
-        # Split multi-line response into separate lines for proper cursor positioning
+        # Split multi-line response
         response_lines = ai_response.splitlines()
 
-        # Batch all AI response lines to avoid display corruption
+        # Add a required blank separator line between command output and AI reply
+        self.output_buffer.append("")
+        if len(self.output_buffer) > self.max_buffer_lines:
+            self.output_buffer.pop(0)
+        self.terminal.add_output("")
+
+        # Add AI response lines to both buffers and the framed terminal body
         for i, line in enumerate(response_lines):
             if i == 0:
-                # First line gets "isaac> " prefix
-                self.output_buffer.append(f"isaac> {line}")
+                formatted = f"isaac> {line}"
             else:
-                # Subsequent lines get indentation to align with the text
-                self.output_buffer.append(f"       {line}")
+                formatted = f"       {line}"
+
+            # Keep legacy buffer for history
+            self.output_buffer.append(formatted)
             if len(self.output_buffer) > self.max_buffer_lines:
                 self.output_buffer.pop(0)
 
-        # Refresh display only once after all lines are added
-        # For Windows, clear screen first, then print directly to avoid display corruption with scroll regions
-        os.system('cls')
-        self.terminal._draw_status_bar()
-        
-        formatted_lines = []
-        for i, line in enumerate(response_lines):
-            if i == 0:
-                formatted_lines.append(f"isaac> {line}")
-            else:
-                formatted_lines.append(f"       {line}")
-        output_text = '\n'.join(formatted_lines)
-        # Print a newline first to move past any existing text
-        print("", flush=True)
-        print(output_text, flush=True)
-        # Add to buffer for consistency
-        for line in formatted_lines:
-            self.output_buffer.append(line)
-            if len(self.output_buffer) > self.max_buffer_lines:
-                self.output_buffer.pop(0)
+            # Add to framed body; TerminalControl will wrap to fit inner width
+            self.terminal.add_output(formatted)
+
+        # Mark body dirty and update once to redraw inside frame
+        self.terminal.mark_body_dirty()
+        self.terminal.update_screen()
 
     def _handle_tier3_command(self, command: str, tier: float) -> None:
         """Handle Tier 3+ commands with confirmation."""

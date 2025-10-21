@@ -119,70 +119,154 @@ class TerminalControl:
         )
         self.status_thread.start()
 
-    def _monitor_statuses(self):
-        """Background thread to periodically update all service statuses."""
-        while True:
-            try:
-                self._update_cloud_status()
-                self._update_ai_status() 
-                self._update_vpn_status()
-                self._update_system_stats()
-                
-                # Mark header as dirty to trigger redraw
-                self.mark_header_dirty()
-                
-            except Exception as e:
-                # Don't crash the thread on errors
-                pass
-            
-            time.sleep(10)  # Update every 10 seconds
+    def _draw_status_bar(self):
+        """Draw the full Unicode box-drawn header and frame with exact spacing."""
+        # Move cursor to top-left
+        print("\033[1;1H", end="", flush=True)
+
+        # Ensure minimum width
+        total_width = max(self.terminal_width, 80)
+        inner_width = total_width - 2  # account for side borders
+
+        # Compute column widths:
+        # - 5 columns in header rows
+        # - Final 3 status columns have capped widths
+        #   per-col: min 6, max 8; total status inner width capped [18, 24]
+        status_inner_max = 24
+        status_inner_min = 20
+
+        # Start with desired status area ~28% of inner width
+        desired_status = int(inner_width * 0.28)
+        status_inner = max(status_inner_min, min(status_inner_max, desired_status))
+
+        # Split status area evenly into 3 columns within per-col caps
+        per_col = max(6, min(8, status_inner // 3))
+        # Recompute status_inner from per_col to keep symmetry
+        status_inner = per_col * 3
+
+        # Header has 4 connectors between 5 columns
+        connectors = 4
+        remaining = max(0, inner_width - connectors - status_inner)
+
+        # Split remaining between col1/col2; let col1 ~60%, col2 ~40%
+        w1 = int(remaining * 0.6)
+        w2 = remaining - w1
+        w3 = per_col
+        w4 = per_col
+        w5 = per_col
+
+        # Helper to build top/bottom header lines
+        def header_top_line():
+            return (
+                "┌" +
+                ("─" * w1) + "╥" +
+                ("─" * w2) + "╥" +
+                ("─" * w3) + "╥" +
+                ("─" * w4) + "╥" +
+                ("─" * w5) +
+                "┐"
+            )
+
+        def header_sep_line():
+            return (
+                "╞" +
+                ("═" * w1) + "╩" +
+                ("═" * w2) + "╩" +
+                ("═" * w3) + "╩" +
+                ("═" * w4) + "╩" +
+                ("═" * w5) +
+                "╡"
+            )
+
+        # Print top header border
+        print(header_top_line(), end="", flush=True)
+        # Move to next line
+        print("\033[2;1H", end="", flush=True)
+
+        # Build header content lines
+        machine_name = os.getenv('COMPUTERNAME', 'machine')
+        ip_address = self._get_ip_address()
+
+        # Content for three lines
+        left1 = f"ISAAC v{self.version}".ljust(w1)
+        center1 = f"SID:{self.session_id}".ljust(w2)
+        right1a = f" #{self.cloud_status}".ljust(w3)
+        right1b = f" #{self.ai_status}".ljust(w4)
+        right1c = f" #{self.vpn_status}".ljust(w5)
+
+        left2 = f"{self.user_name}@{machine_name}".ljust(w1)
+        last_cmd = self.last_command
+        if len(last_cmd) > w2 - 8:
+            last_cmd = last_cmd[: max(0, w2 - 11)] + "..."
+        center2 = f"Last:'{last_cmd}'".ljust(w2)
+        right2a = f" #hist".ljust(w3)
+        right2b = f" #Log".ljust(w4)
+        right2c = f" {self.validation_level}".ljust(w5)
+
+        wd_label = self.working_directory.as_posix()
+        if len(wd_label) > w1 - 4:
+            wd_label = wd_label[: max(0, w1 - 7)] + "..."
+        left3 = f"PWD:{wd_label}".ljust(w1)
+        center3 = f"IP:{ip_address}".ljust(w2)
+        right3a = f" #{self.cpu_usage}%".ljust(w3)
+        right3b = f" #{self.network_status}".ljust(w4)
+        right3c = f" Wrap:{self.wrap_width}".ljust(w5)
+
+        # Helper to print a header row with separators
+        def print_header_row(l, c, r1, r2, r3, row_idx):
+            line = (
+                "│" + l[:w1] + "║" + c[:w2] + "║" + r1[:w3] + "║" + r2[:w4] + "║" + r3[:w5] + "│"
+            )
+            print(f"\033[{row_idx};1H" + line, end="", flush=True)
+
+        # Three header rows
+        print_header_row(left1, center1, right1a, right1b, right1c, 2)
+        print_header_row(left2, center2, right2a, right2b, right2c, 3)
+        print_header_row(left3, center3, right3a, right3b, right3c, 4)
+
+        # Header separator (heavy)
+        print(f"\033[5;1H" + header_sep_line(), end="", flush=True)
+
+        # Save computed widths for later body rendering
+        self._frame_cached = {
+            'total_width': total_width,
+            'inner_width': inner_width,
+            'w1': w1, 'w2': w2, 'w3': w3, 'w4': w4, 'w5': w5
+        }
+
+        # Position cursor for body start (line 6)
+        print(f"\033[6;1H", end="", flush=True)
 
     def _update_cloud_status(self):
-        """Update cloud service status."""
+        """Update cloud service status (lightweight, no network in tests)."""
         try:
-            # For now, simulate cloud status check
-            # In real implementation, this would ping GoDaddy API or similar
+            # Placeholder logic; real impl would ping backend
             self.cloud_status = "OK"
         except Exception:
             self.cloud_status = "ERR"
 
     def _update_ai_status(self):
-        """Update AI service status (x.ai)."""
+        """Update AI service status (x.ai) with optional network check."""
         if not HAS_REQUESTS:
-            self.ai_status = "No requests"
+            # Keep neutral state when requests isn't available
+            self.ai_status = "UNK"
             return
-            
         try:
-            response = requests.get("https://status.x.ai/feed.xml", timeout=5)
-            response.raise_for_status()
-            
-            # Parse RSS feed
-            root = ET.fromstring(response.content)
-            
-            # Find the most recent item
-            items = root.findall(".//item")
-            if items:
-                latest_item = items[0]
-                title = latest_item.find("title")
-                if title is not None and title.text:
-                    # Extract status from title (typically "All Systems Operational" or similar)
-                    status_text = title.text.strip()
-                    # Map to simple status
-                    if "operational" in status_text.lower():
-                        self.ai_status = "OK"
-                    elif "degraded" in status_text.lower():
-                        self.ai_status = "DEG"
-                    else:
-                        self.ai_status = "UNK"
-                else:
-                    self.ai_status = "UNK"
+            import requests  # type: ignore
+            resp = requests.get("https://status.x.ai/feed.xml", timeout=5)
+            if resp.status_code != 200:
+                self.ai_status = "OFF"
+                return
+            # Minimal parse without strict XML reliance
+            text = resp.text.lower()
+            if "operational" in text or "all systems" in text:
+                self.ai_status = "OK"
+            elif "degraded" in text:
+                self.ai_status = "DEG"
             else:
                 self.ai_status = "UNK"
-                
-        except requests.exceptions.RequestException:
-            self.ai_status = "OFF"
         except Exception:
-            self.ai_status = "ERR"
+            self.ai_status = "OFF"
 
     def _update_vpn_status(self):
         """Update VPN status."""
@@ -198,8 +282,11 @@ class TerminalControl:
         try:
             # Update CPU usage (simplified)
             if HAS_PSUTIL:
-                import psutil
-                self.cpu_usage = f"{psutil.cpu_percent(interval=0.1):.0f}"
+                try:
+                    import psutil  # type: ignore
+                    self.cpu_usage = f"{psutil.cpu_percent(interval=0.1):.0f}"
+                except Exception:
+                    self.cpu_usage = "--"
             else:
                 self.cpu_usage = "--"
         except Exception:
@@ -268,115 +355,18 @@ class TerminalControl:
         # For Windows, position at start of scroll region
         print(f"\033[{scroll_start};1H", end="", flush=True)
 
-    def _draw_status_bar(self):
-        """Draw the 3-line header in the new format."""
-        # Move cursor to top
-        print("\033[1;1H", end="", flush=True)
-
-        # Draw top border
-        border = "+" + "-" * (self.terminal_width - 2) + "+"
-        self._print_header_line(border, 0, color_code="1;37;44")  # Blue background
-
-        # Line 1: ISAAC vX.Y.Z | SID:xxxx     | [cloud] [AI] [VPN]
-        left1 = f"ISAAC v{self.version}"
-        center1 = f"SID:{self.session_id}"
-        right1 = f"[{self.cloud_status}] [{self.ai_status}] [{self.vpn_status}]"
-        self._print_header_line_3col(left1, center1, right1, "", 1)
-
-        # Line 2: <user>@<machine> | Last:'x' | Hist:### [log] [Tier]
-        machine_name = os.getenv('COMPUTERNAME', 'machine')
-        left2 = f"{self.user_name}@{machine_name}"
-        center2 = f"Last:'{self.last_command[:10]}{'...' if len(self.last_command) > 10 else ''}'"
-        right2 = f"Hist:{self.history_count:3d} [{'on' if self.log_enabled else 'off'}] [{self.validation_level}]"
-        self._print_header_line_3col(left2, center2, right2, "", 2)
-
-        # Line 3: PWD:<cwd> | IP:<ip>         | [CPU] [Net] Wrap:80
-        ip_address = self._get_ip_address()
-        left3 = f"PWD:{self.working_directory.name[:20]}{'...' if len(self.working_directory.name) > 20 else ''}"
-        center3 = f"IP:{ip_address}"
-        right3 = f"[{self.cpu_usage}%] [{self.network_status}] Wrap:{self.wrap_width}"
-        self._print_header_line_3col(left3, center3, right3, "", 3)
-
-        # Draw bottom border
-        self._print_header_line(border, 4, color_code="1;37;44")  # Blue background
-
-        # Position cursor below header (line 6)
-        print(f"\033[6;1H", end="", flush=True)
-
-    def _print_status_line(self, text: str, line_num: int):
-        """Print a status line with background color."""
-        # Cyan blue background, white text for status lines
-        padded_text = text.ljust(self.terminal_width)
-        # Windows - use ANSI colors (modern Windows terminals support them)
-        print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
-
-    def _print_status_line_dual(self, left_text: str, right_text: str, line_num: int):
-        """Print a status line with left and right aligned text."""
-        # Calculate available space for text
-        total_width = self.terminal_width
-        left_width = len(left_text)
-        right_width = len(right_text)
-        
-        # If combined text is too long, truncate right text first
-        if left_width + right_width + 3 > total_width:  # +3 for " | "
-            available_for_right = total_width - left_width - 3
-            if available_for_right > 0:
-                right_text = right_text[:available_for_right]
-                right_width = len(right_text)
-            else:
-                right_text = ""
-                right_width = 0
-        
-        # Create the combined line
-        if right_text:
-            combined_text = f"{left_text} | {right_text}"
-        else:
-            combined_text = left_text
-            
-        # Pad to full width
-        padded_text = combined_text.ljust(total_width)
-        
-        # Print with colors
-        # Windows - use ANSI colors (modern Windows terminals support them)
-        print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
-
-    def _print_header_line(self, text: str, line_num: int, color_code: str = "1;37;44"):
-        """Print a header line with specified color."""
-        padded_text = text.ljust(self.terminal_width)
-        print(f"\033[{line_num + 1};1H\033[{color_code}m{padded_text}\033[0m", flush=True)
-
-    def _print_header_line_3col(self, left: str, center: str, right: str, status: str, line_num: int):
-        """Print a header line with 3 proportional columns."""
-        # Calculate proportional column widths based on terminal width
-        # Left: 40%, Center: 35%, Right: 25%
-        total_width = self.terminal_width
-        left_width = int(total_width * 0.40)
-        center_width = int(total_width * 0.35)
-        right_width = total_width - left_width - center_width  # Remaining space
-        
-        # Ensure minimum widths
-        left_width = max(left_width, 20)
-        center_width = max(center_width, 15)
-        right_width = max(right_width, 10)
-        
-        # Adjust if we exceed total width
-        total_calculated = left_width + center_width + right_width
-        if total_calculated > total_width:
-            # Reduce proportionally
-            scale = total_width / total_calculated
-            left_width = int(left_width * scale)
-            center_width = int(center_width * scale)
-            right_width = total_width - left_width - center_width
-
-        # Format columns
-        left_padded = left.ljust(left_width)[:left_width]
-        center_padded = center.ljust(center_width)[:center_width]
-        right_padded = right.ljust(right_width)[:right_width]
-
-        line = f"{left_padded}{center_padded}{right_padded}"[:total_width]
-        line = line.ljust(total_width)
-
-        print(f"\033[{line_num + 1};1H\033[1;37;44m{line}\033[0m", flush=True)
+    def _monitor_statuses(self):
+        """Background thread to periodically update all service statuses."""
+        while True:
+            try:
+                self._update_cloud_status()
+                self._update_ai_status()
+                self._update_vpn_status()
+                self._update_system_stats()
+                self.mark_header_dirty()
+            except Exception:
+                pass
+            time.sleep(10)
 
     @property
     def is_windows(self) -> bool:
@@ -417,8 +407,8 @@ class TerminalControl:
     def get_prompt_string(self) -> str:
         """Get the current prompt string for the terminal."""
         if HAS_COLORAMA:
-            # Green text on black background for entire prompt
-            return f"\033[40;32m$.\033[0m\033[32m>\033[0m "
+            # Yellow prompt for user
+            return f"\033[33m$.>\033[0m "
         else:
             # Fallback without colors
             return "$.> "
@@ -499,55 +489,79 @@ class TerminalControl:
 
     def draw_normal_body(self):
         """Draw the normal body area (output/logs)."""
-        # Clear body area (lines 6+)
+        # Retrieve cached frame widths (fallback if not set)
+        frame = getattr(self, '_frame_cached', None)
+        if not frame:
+            self._draw_status_bar()
+            frame = self._frame_cached
+
+        total_width = frame['total_width']
+        inner_width = frame['inner_width']
+
+        # Body geometry
         body_start = self.status_lines + 1  # Line 6
-        body_height = self.terminal_height - body_start
-        
-        for line in range(body_start, self.terminal_height + 1):
-            print(f"\033[{line};1H\033[K", end="", flush=True)
-        
-        # Calculate how many output lines we can show
-        self.max_visible_output_lines = self.terminal_height - self.status_lines - 8  # Leave room for prompt and logs
-        
-        # Draw prompt (line 6)
+        # Lines available for body including prompt, separator, output, bottom border
+        max_rows = self.terminal_height
+
+        # 1) Prompt line (with borders)
         prompt_line = body_start
-        prompt_text = f"{self.command_prompt}_"
-        print(f"\033[{prompt_line};1H{prompt_text}", end="", flush=True)
-        
-        # Draw output section (starting line 8)
-        output_start = body_start + 2  # Line 8
-        if self.current_output:
-            # Calculate which lines to show based on scroll offset
-            total_lines = len(self.current_output)
-            start_idx = max(0, total_lines - self.max_visible_output_lines - self.output_scroll_offset)
-            end_idx = min(total_lines, start_idx + self.max_visible_output_lines)
-            
-            visible_lines = self.current_output[start_idx:end_idx]
-            
-            for i, line in enumerate(visible_lines):
-                output_line = output_start + i
-                if output_line <= self.terminal_height - 6:  # Leave room for logs (6 lines)
-                    print(f"\033[{output_line};1H{line}", end="", flush=True)
-            
-            # Show scroll indicator if there's more content
-            if start_idx > 0 or end_idx < total_lines:
-                indicator_line = output_start + len(visible_lines)
-                if indicator_line <= self.terminal_height - 6:
-                    if start_idx > 0 and end_idx < total_lines:
-                        indicator = f"[↑↓ More content available, {total_lines} total lines]"
-                    elif start_idx > 0:
-                        indicator = f"[↑ More content above, {total_lines} total lines]"
-                    else:
-                        indicator = f"[↓ More content below, {total_lines} total lines]"
-                    print(f"\033[{indicator_line};1H{indicator}", end="", flush=True)
-        
-        # Draw log section (bottom area)
-        log_start = output_start + self.max_visible_output_lines + 2  # Start logs after output area
-        if log_start + self.max_log_entries <= self.terminal_height:  # Only if there's space
-            for i, entry in enumerate(self.log_entries[-self.max_log_entries:]):
-                log_line = log_start + i
-                if log_line <= self.terminal_height:
-                    print(f"\033[{log_line};1H{entry}", end="", flush=True)
+        prompt_inside = f"$> _"
+        # Fill inside, leaving last column for border
+        prompt_content = prompt_inside.ljust(inner_width)
+        print(f"\033[{prompt_line};1H" + "│" + prompt_content[:inner_width] + "│", end="", flush=True)
+
+        # 2) Prompt separator (heavy full-width)
+        sep_line_idx = prompt_line + 1
+        print(f"\033[{sep_line_idx};1H" + ("╞" + ("═" * inner_width) + "╡"), end="", flush=True)
+
+        # 3) Output area starts two lines below header (line 8)
+        output_start = sep_line_idx + 1
+        output_end = max_rows - 1  # Reserve last row for bottom border
+
+        # Shade gutter column index (second to last char inside frame)
+        gutter_char = "░"
+
+        # Compute max visible output lines between output_start and output_end-1 (inclusive)
+        self.max_visible_output_lines = max(0, (output_end - output_start))
+
+        # Calculate visible slice based on scroll offset
+        total_lines = len(self.current_output)
+        start_idx = max(0, total_lines - self.max_visible_output_lines - self.output_scroll_offset)
+        end_idx = min(total_lines, start_idx + self.max_visible_output_lines)
+        visible_lines = self.current_output[start_idx:end_idx] if total_lines > 0 else []
+
+        # Draw output lines within frame
+        for i in range(self.max_visible_output_lines):
+            row = output_start + i
+            if row >= output_end:
+                break
+            if i < len(visible_lines):
+                content = visible_lines[i]
+            else:
+                content = ""
+
+            # Prepare inside content: left-anchored text with one-space margin if desired
+            line_inside_width = inner_width
+            text = content[: max(0, line_inside_width - 2)]  # leave space for gutter near right
+            # Determine gutter indicator arrows
+            is_top_row = (i == 0)
+            is_bottom_row = (row == output_end - 1)
+            show_up = start_idx > 0
+            show_down = end_idx < total_lines
+            gutter = gutter_char
+            if is_top_row and show_up:
+                gutter = "▲"
+            elif is_bottom_row and show_down:
+                gutter = "▼"
+
+            # Build inside: text padded to inner_width-1, then gutter in last column
+            pad_width = max(0, line_inside_width - 1)
+            inside = (text.ljust(pad_width)) + gutter
+            print(f"\033[{row};1H" + "│" + inside[:inner_width] + "│", end="", flush=True)
+
+        # 4) Bottom border of the frame
+        bottom_line = "└" + ("─" * inner_width) + "┘"
+        print(f"\033[{self.terminal_height};1H" + bottom_line, end="", flush=True)
 
     def enter_config_mode(self):
         """Enter configuration mode."""
