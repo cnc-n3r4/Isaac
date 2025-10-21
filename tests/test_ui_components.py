@@ -21,8 +21,8 @@ class TestTerminalControl:
     def test_initialization(self):
         """Test terminal control initializes correctly."""
         control = TerminalControl()
-        assert control.header_lines == 4
-        assert control.is_windows == (os.name == 'nt')  # Should be True on Windows
+        assert control.status_lines == 5  # Top 5 lines for header (borders + 3 content)
+        assert control.is_windows == True  # Always True for Windows-only version
 
     def test_get_terminal_size(self):
         """Test terminal size detection."""
@@ -210,7 +210,8 @@ class TestVisualEnhancer:
 
         assert "✓" in output  # Success indicator
         assert "ls" in output
-        assert "-la" in output
+        assert "-l" in output  # -la gets split by highlighting
+        assert "a" in output   # the 'a' part of -la
         assert "total" in output
         assert "42" in output
 

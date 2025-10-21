@@ -71,8 +71,7 @@
 
 
    ────────────────────────────────────────────────────────────────────────────────
-   SEARCH & CONTEXT FLOWS
-   ────────────────────────────────────────────────────────────────────────────────
+   SEARCH eggege
    • `/search "ffmpeg"` (from any shell or Telegram)
        └─► CLOUD: MERGED_QUERY_LAYER → queries AI_CHAT_HISTORY + CMD_HISTORY_DB
              - filters: kind=(chat|cmd|both), terminal_id=?, time range, text FTS

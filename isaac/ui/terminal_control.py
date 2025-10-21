@@ -38,14 +38,13 @@ class TerminalControl:
     def __init__(self, session_manager=None):
         """Initialize terminal control."""
         self.session_manager = session_manager
-        self.terminal_width = 80
-        self.terminal_height = 24
+        # Get actual terminal size instead of hardcoding
+        self._update_terminal_size()
         self.status_lines = 5  # Top 5 lines for header (borders + 3 content)
         self.working_directory = Path.cwd()
         self.current_tier = "1 (Safe)"
         self.connection_status = "Online"
         self.session_id = self._generate_session_id()
-        self.is_windows = os.name == 'nt'
         
         # New header status fields
         self.version = "3.4.2"  # Will be set from package version
@@ -62,13 +61,17 @@ class TerminalControl:
         self.last_command_status = ""
         self.cpu_usage = "--"
         self.network_status = "OK"
-        self.wrap_width = 80
+        self.wrap_width = self.terminal_width  # Use actual terminal width
         
         # Body content management
         self.command_prompt = "> "
         self.current_output = []
         self.log_entries = []
         self.max_log_entries = 10
+        
+        # Scrolling support
+        self.output_scroll_offset = 0  # How many lines to scroll back
+        self.max_visible_output_lines = 0  # Calculated based on terminal size
         
         # Config mode state
         self.config_mode = False
@@ -204,6 +207,7 @@ class TerminalControl:
 
     def setup_terminal(self):
         """Set up the terminal for Isaac experience."""
+        # Don't force terminal size - use whatever the user has
         self._update_terminal_size()
         self._clear_screen()
         self._setup_scroll_region()
@@ -221,27 +225,21 @@ class TerminalControl:
     def _update_terminal_size(self):
         """Get current terminal dimensions."""
         try:
-            if self.is_windows:
-                import shutil
-                size = shutil.get_terminal_size()
-                self.terminal_width = size.columns
-                self.terminal_height = size.lines
-            else:
-                import shutil
-                size = shutil.get_terminal_size()
-                self.terminal_width = size.columns
-                self.terminal_height = size.lines
-        except:
-            # Default fallback
+            import shutil
+            size = shutil.get_terminal_size()
+            self.terminal_width = size.columns
+            self.terminal_height = size.lines
+            # Update wrap width to match terminal width
+            self.wrap_width = self.terminal_width
+        except Exception:
+            # Fallback to reasonable defaults if terminal size detection fails
             self.terminal_width = 80
-            self.terminal_height = 24
+            self.terminal_height = 25
+            self.wrap_width = 80
 
     def _clear_screen(self):
         """Clear the entire screen."""
-        if self.is_windows:
-            os.system('cls')
-        else:
-            print("\033[2J\033[H", end="", flush=True)
+        os.system('cls')
 
     def _setup_scroll_region(self):
         """Set up scroll region for the main terminal area."""
@@ -251,69 +249,66 @@ class TerminalControl:
         if scroll_end > scroll_start:
             print(f"\033[{scroll_start};{scroll_end}r", end="", flush=True)
 
+    def _get_ip_address(self) -> str:
+        """Get the local IP address."""
+        try:
+            import socket
+            # Get the local IP by connecting to a dummy address
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))  # Connect to Google DNS
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "127.0.0.1"
+
     def _position_cursor_for_input(self):
         """Position cursor at the start of the scroll region for input."""
         scroll_start = self.status_lines + 1  # Line 6
-        if not self.is_windows:
-            # Move cursor to start of scroll region (line 6)
-            print(f"\033[{scroll_start};1H", end="", flush=True)
-        else:
-            # For Windows, position at start of scroll region
-            print(f"\033[{scroll_start};1H", end="", flush=True)
+        # For Windows, position at start of scroll region
+        print(f"\033[{scroll_start};1H", end="", flush=True)
 
     def _draw_status_bar(self):
         """Draw the 3-line header in the new format."""
         # Move cursor to top
-        if not self.is_windows:
-            print("\033[H", end="", flush=True)
-        else:
-            print("\033[1;1H", end="", flush=True)
+        print("\033[1;1H", end="", flush=True)
 
         # Draw top border
-        border = "+" + "-" * 78 + "+"
+        border = "+" + "-" * (self.terminal_width - 2) + "+"
         self._print_header_line(border, 0, color_code="1;37;44")  # Blue background
 
-        # Line 1: ISAAC vX.Y.Z | SID:xxxx | [READY] | Cloud:OK | AI:OK | VPN:ON
+        # Line 1: ISAAC vX.Y.Z | SID:xxxx     | [cloud] [AI] [VPN]
         left1 = f"ISAAC v{self.version}"
         center1 = f"SID:{self.session_id}"
-        right1 = f"[{self.system_state}]"
-        status1 = f"Cloud:{self.cloud_status} | AI:{self.ai_status} | VPN:{self.vpn_status}"
-        self._print_header_line_3col(left1, center1, right1, status1, 1)
+        right1 = f"[{self.cloud_status}] [{self.ai_status}] [{self.vpn_status}]"
+        self._print_header_line_3col(left1, center1, right1, "", 1)
 
-        # Line 2: User: <name> | Mode: <EXEC> | PWD: <cwd> | Hist:### | Log:on | Val>T2
-        left2 = f"User: {self.user_name}"
-        center2 = f"Mode: {self.current_mode}"
-        right2 = f"PWD: {self.working_directory.name[:20]}"  # Truncate if too long
-        status2 = f"Hist:{self.history_count:3d} | Log:{'on' if self.log_enabled else 'off'} | Val>{self.validation_level}"
-        self._print_header_line_3col(left2, center2, right2, status2, 2)
+        # Line 2: <user>@<machine> | Last:'x' | Hist:### [log] [Tier]
+        machine_name = os.getenv('COMPUTERNAME', 'machine')
+        left2 = f"{self.user_name}@{machine_name}"
+        center2 = f"Last:'{self.last_command[:10]}{'...' if len(self.last_command) > 10 else ''}'"
+        right2 = f"Hist:{self.history_count:3d} [{'on' if self.log_enabled else 'off'}] [{self.validation_level}]"
+        self._print_header_line_3col(left2, center2, right2, "", 2)
 
-        # Line 3: Last: '<cmd>' ✓/✖ | Time: hh:mm:ss | CPU:##% | Net:OK | Wrap:80
-        import datetime
-        current_time = datetime.datetime.now().strftime("%H:%M:%S")
-        left3 = f"Last: '{self.last_command[:15]}{'...' if len(self.last_command) > 15 else ''}' {self.last_command_status}"
-        center3 = f"Time: {current_time}"
-        right3 = f"CPU:{self.cpu_usage}%"
-        status3 = f"Net:{self.network_status} | Wrap:{self.wrap_width}"
-        self._print_header_line_3col(left3, center3, right3, status3, 3)
+        # Line 3: PWD:<cwd> | IP:<ip>         | [CPU] [Net] Wrap:80
+        ip_address = self._get_ip_address()
+        left3 = f"PWD:{self.working_directory.name[:20]}{'...' if len(self.working_directory.name) > 20 else ''}"
+        center3 = f"IP:{ip_address}"
+        right3 = f"[{self.cpu_usage}%] [{self.network_status}] Wrap:{self.wrap_width}"
+        self._print_header_line_3col(left3, center3, right3, "", 3)
 
         # Draw bottom border
         self._print_header_line(border, 4, color_code="1;37;44")  # Blue background
 
         # Position cursor below header (line 6)
-        if not self.is_windows:
-            print(f"\033[6;1H", end="", flush=True)
-        else:
-            print(f"\033[6;1H", end="", flush=True)
+        print(f"\033[6;1H", end="", flush=True)
 
     def _print_status_line(self, text: str, line_num: int):
         """Print a status line with background color."""
         # Cyan blue background, white text for status lines
         padded_text = text.ljust(self.terminal_width)
-        if not self.is_windows:
-            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", end="", flush=True)
-        else:
-            # Windows - use ANSI colors (modern Windows terminals support them)
-            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
+        # Windows - use ANSI colors (modern Windows terminals support them)
+        print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
 
     def _print_status_line_dual(self, left_text: str, right_text: str, line_num: int):
         """Print a status line with left and right aligned text."""
@@ -342,42 +337,51 @@ class TerminalControl:
         padded_text = combined_text.ljust(total_width)
         
         # Print with colors
-        if not self.is_windows:
-            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", end="", flush=True)
-        else:
-            # Windows - use ANSI colors (modern Windows terminals support them)
-            print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
+        # Windows - use ANSI colors (modern Windows terminals support them)
+        print(f"\033[{line_num + 1};1H\033[1;37;46m{padded_text}\033[0m", flush=True)
 
     def _print_header_line(self, text: str, line_num: int, color_code: str = "1;37;44"):
         """Print a header line with specified color."""
-        padded_text = text.ljust(80)
-        if not self.is_windows:
-            print(f"\033[{line_num + 1};1H\033[{color_code}m{padded_text}\033[0m", end="", flush=True)
-        else:
-            print(f"\033[{line_num + 1};1H\033[{color_code}m{padded_text}\033[0m", flush=True)
+        padded_text = text.ljust(self.terminal_width)
+        print(f"\033[{line_num + 1};1H\033[{color_code}m{padded_text}\033[0m", flush=True)
 
     def _print_header_line_3col(self, left: str, center: str, right: str, status: str, line_num: int):
-        """Print a header line with 3 columns (26 chars each) plus status."""
-        # Format: Left (26) | Center (26) | Right (26) | Status
-        left_padded = left.ljust(26)[:26]
-        center_padded = center.ljust(26)[:26]
-        right_padded = right.ljust(26)[:26]
-        status_padded = status.ljust(26)[:26]
+        """Print a header line with 3 proportional columns."""
+        # Calculate proportional column widths based on terminal width
+        # Left: 40%, Center: 35%, Right: 25%
+        total_width = self.terminal_width
+        left_width = int(total_width * 0.40)
+        center_width = int(total_width * 0.35)
+        right_width = total_width - left_width - center_width  # Remaining space
+        
+        # Ensure minimum widths
+        left_width = max(left_width, 20)
+        center_width = max(center_width, 15)
+        right_width = max(right_width, 10)
+        
+        # Adjust if we exceed total width
+        total_calculated = left_width + center_width + right_width
+        if total_calculated > total_width:
+            # Reduce proportionally
+            scale = total_width / total_calculated
+            left_width = int(left_width * scale)
+            center_width = int(center_width * scale)
+            right_width = total_width - left_width - center_width
 
-        line = f"{left_padded[:26]}{center_padded[:26]}{right_padded[:26]}{status_padded[:26]}"[:80]
-        line = line.ljust(80)
+        # Format columns
+        left_padded = left.ljust(left_width)[:left_width]
+        center_padded = center.ljust(center_width)[:center_width]
+        right_padded = right.ljust(right_width)[:right_width]
 
-        if not self.is_windows:
-            print(f"\033[{line_num + 1};1H\033[1;37;44m{line}\033[0m", end="", flush=True)
-        else:
-            print(f"\033[{line_num + 1};1H\033[1;37;44m{line}\033[0m", flush=True)
+        line = f"{left_padded}{center_padded}{right_padded}"[:total_width]
+        line = line.ljust(total_width)
 
-    def _get_shell_type(self) -> str:
-        """Get current shell type."""
-        if self.is_windows:
-            return "PowerShell"
-        else:
-            return "Bash"
+        print(f"\033[{line_num + 1};1H\033[1;37;44m{line}\033[0m", flush=True)
+
+    @property
+    def is_windows(self) -> bool:
+        """Always return True since this is Windows-only."""
+        return True
 
     def update_status(self, tier: Optional[str] = None, status: Optional[str] = None,
                      connection: Optional[str] = None):
@@ -396,19 +400,11 @@ class TerminalControl:
         """Clear everything below the status bar."""
         scroll_start = self.status_lines + 1  # Line 4
 
-        if not self.is_windows:
-            # Clear from status bar down to end of scroll region
-            for line in range(scroll_start, self.terminal_height + 1):
-                print(f"\033[{line};1H\033[K", end="", flush=True)
-
-            # Position cursor at start of cleared area (line 4)
-            print(f"\033[{scroll_start};1H", end="", flush=True)
-        else:
-            # Windows - clear entire screen and redraw status bar
-            os.system('cls')
-            self._draw_status_bar()
-            # Position cursor at start of scroll region (line 4)
-            print(f"\033[{scroll_start};1H", end="", flush=True)
+        # Windows - clear entire screen and redraw status bar
+        os.system('cls')
+        self._draw_status_bar()
+        # Position cursor at start of scroll region (line 4)
+        print(f"\033[{scroll_start};1H", end="", flush=True)
 
     def print_normal_output(self, text: str):
         """Print text as normal terminal output (no special formatting)."""
@@ -431,20 +427,56 @@ class TerminalControl:
         """Update the current working directory display."""
         self.working_directory = Path(new_path)
 
-    def get_terminal_size(self) -> Tuple[int, int]:
-        """Get current terminal size."""
-        return (self.terminal_width, self.terminal_height)
+    def scroll_output_up(self, lines: int = 1):
+        """Scroll output up (show older content)."""
+        max_scroll = max(0, len(self.current_output) - self.max_visible_output_lines)
+        self.output_scroll_offset = min(max_scroll, self.output_scroll_offset + lines)
+        self.mark_body_dirty()
+        self.update_screen()
+
+    def scroll_output_down(self, lines: int = 1):
+        """Scroll output down (show newer content)."""
+        self.output_scroll_offset = max(0, self.output_scroll_offset - lines)
+        self.mark_body_dirty()
+        self.update_screen()
+
+    def scroll_to_top(self):
+        """Scroll to the top of the output."""
+        max_scroll = max(0, len(self.current_output) - self.max_visible_output_lines)
+        self.output_scroll_offset = max_scroll
+        self.mark_body_dirty()
+        self.update_screen()
+
+    def scroll_to_bottom(self):
+        """Scroll to the bottom of the output (latest content)."""
+        self.output_scroll_offset = 0
+        self.mark_body_dirty()
+        self.update_screen()
 
     def add_output(self, text: str):
         """Add text to the output area."""
+        # Strip the text to remove any trailing newlines
+        text = text.rstrip('\n\r')
+        
         # Wrap text to terminal width
         wrapped_lines = self._wrap_text(text, self.wrap_width - 2)  # -2 for margin
+        
         self.current_output.extend(wrapped_lines)
         
-        # Keep only recent output
+        # Auto-scroll to show latest output
+        self.output_scroll_offset = 0
+        
+        # Keep only recent output (but allow scrolling back)
         max_output_lines = self.terminal_height - self.status_lines - 8  # Leave room for prompt and logs
-        if len(self.current_output) > max_output_lines:
-            self.current_output = self.current_output[-max_output_lines:]
+        if len(self.current_output) > max_output_lines * 2:  # Keep 2x the visible amount for scrolling
+            # Remove oldest lines but keep enough for scrolling
+            excess = len(self.current_output) - (max_output_lines * 2)
+            self.current_output = self.current_output[excess:]
+            # Adjust scroll offset if we removed lines
+            if self.output_scroll_offset > excess:
+                self.output_scroll_offset -= excess
+            else:
+                self.output_scroll_offset = 0
 
     def add_log_entry(self, entry_type: str, tier: str, message: str):
         """Add an entry to the chronological log."""
@@ -466,46 +498,56 @@ class TerminalControl:
             self.draw_normal_body()
 
     def draw_normal_body(self):
-        """Draw the normal body area (output and logs)."""
+        """Draw the normal body area (output/logs)."""
         # Clear body area (lines 6+)
         body_start = self.status_lines + 1  # Line 6
         body_height = self.terminal_height - body_start
         
         for line in range(body_start, self.terminal_height + 1):
-            if not self.is_windows:
-                print(f"\033[{line};1H\033[K", end="", flush=True)
-            else:
-                print(f"\033[{line};1H\033[K", end="", flush=True)
+            print(f"\033[{line};1H\033[K", end="", flush=True)
+        
+        # Calculate how many output lines we can show
+        self.max_visible_output_lines = self.terminal_height - self.status_lines - 8  # Leave room for prompt and logs
         
         # Draw prompt (line 6)
         prompt_line = body_start
         prompt_text = f"{self.command_prompt}_"
-        if not self.is_windows:
-            print(f"\033[{prompt_line};1H{prompt_text}", end="", flush=True)
-        else:
-            print(f"\033[{prompt_line};1H{prompt_text}", end="", flush=True)
+        print(f"\033[{prompt_line};1H{prompt_text}", end="", flush=True)
         
         # Draw output section (starting line 8)
         output_start = body_start + 2  # Line 8
         if self.current_output:
-            for i, line in enumerate(self.current_output[-10:]):  # Show last 10 lines
+            # Calculate which lines to show based on scroll offset
+            total_lines = len(self.current_output)
+            start_idx = max(0, total_lines - self.max_visible_output_lines - self.output_scroll_offset)
+            end_idx = min(total_lines, start_idx + self.max_visible_output_lines)
+            
+            visible_lines = self.current_output[start_idx:end_idx]
+            
+            for i, line in enumerate(visible_lines):
                 output_line = output_start + i
                 if output_line <= self.terminal_height - 6:  # Leave room for logs (6 lines)
-                    if not self.is_windows:
-                        print(f"\033[{output_line};1H{line}", end="", flush=True)
+                    print(f"\033[{output_line};1H{line}", end="", flush=True)
+            
+            # Show scroll indicator if there's more content
+            if start_idx > 0 or end_idx < total_lines:
+                indicator_line = output_start + len(visible_lines)
+                if indicator_line <= self.terminal_height - 6:
+                    if start_idx > 0 and end_idx < total_lines:
+                        indicator = f"[↑↓ More content available, {total_lines} total lines]"
+                    elif start_idx > 0:
+                        indicator = f"[↑ More content above, {total_lines} total lines]"
                     else:
-                        print(f"\033[{output_line};1H{line}", end="", flush=True)
+                        indicator = f"[↓ More content below, {total_lines} total lines]"
+                    print(f"\033[{indicator_line};1H{indicator}", end="", flush=True)
         
         # Draw log section (bottom area)
-        log_start = output_start + 12  # Start logs after output area (8 + 10 + 2 buffer = 20)
+        log_start = output_start + self.max_visible_output_lines + 2  # Start logs after output area
         if log_start + self.max_log_entries <= self.terminal_height:  # Only if there's space
             for i, entry in enumerate(self.log_entries[-self.max_log_entries:]):
                 log_line = log_start + i
                 if log_line <= self.terminal_height:
-                    if not self.is_windows:
-                        print(f"\033[{log_line};1H{entry}", end="", flush=True)
-                    else:
-                        print(f"\033[{log_line};1H{entry}", end="", flush=True)
+                    print(f"\033[{log_line};1H{entry}", end="", flush=True)
 
     def enter_config_mode(self):
         """Enter configuration mode."""
@@ -573,10 +615,7 @@ class TerminalControl:
         # Clear body area
         body_start = self.status_lines + 1
         for line in range(body_start, self.terminal_height):
-            if not self.is_windows:
-                print(f"\033[{line};1H\033[K", end="", flush=True)
-            else:
-                print(f"\033[{line};1H\033[K", end="", flush=True)
+            print(f"\033[{line};1H\033[K", end="", flush=True)
         
         # Draw config items
         for i, item in enumerate(self.config_items):
@@ -592,18 +631,12 @@ class TerminalControl:
             else:  # text field
                 text = f"{cursor} {item['label']} [{item['value']}]"
             
-            if not self.is_windows:
-                print(f"\033[{line_num};1H{text}", end="", flush=True)
-            else:
-                print(f"\033[{line_num};1H{text}", end="", flush=True)
+            print(f"\033[{line_num};1H{text}", end="", flush=True)
         
         # Draw help text
         help_line = self.terminal_height - 1
         help_text = "Tab: move   Space: toggle   Enter: save   Esc: cancel"
-        if not self.is_windows:
-            print(f"\033[{help_line};1H{help_text}", end="", flush=True)
-        else:
-            print(f"\033[{help_line};1H{help_text}", end="", flush=True)
+        print(f"\033[{help_line};1H{help_text}", end="", flush=True)
 
     def _calculate_header_hash(self) -> str:
         """Calculate a hash of current header state to detect changes."""
@@ -641,17 +674,18 @@ class TerminalControl:
             while len(line) > width:
                 lines.append(line[:width])
                 line = line[width:]
-            if line:
+            # Only append if line has non-whitespace content
+            if line.strip():  # This filters out blank and whitespace-only lines
                 lines.append(line)
         return lines
 
     def restore_terminal(self):
         """Restore terminal to normal state."""
-        if not self.is_windows:
-            # Clear status lines
-            for line in range(1, self.status_lines + 1):
-                print(f"\033[{line};1H\033[K", end="", flush=True)
-            # Reset scroll region
-            print("\033[r", end="", flush=True)
-            # Show cursor
-            print("\033[?25h", end="", flush=True)
+        # Windows - clear screen and show cursor
+        os.system('cls')
+        print("\033[?25h", end="", flush=True)
+
+    def get_terminal_size(self):
+        """Get current terminal dimensions as (width, height)."""
+        self._update_terminal_size()
+        return self.terminal_width, self.terminal_height
