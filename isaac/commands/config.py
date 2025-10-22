@@ -99,7 +99,9 @@ class ConfigCommand:
         # Try to ping the API
         try:
             # This is pseudocode - adapt to your actual client
-            api_key = self.session.config.get('xai_api_key')
+            xai_config = self.session.config.get('xai', {})
+            chat_config = xai_config.get('chat', {})
+            api_key = chat_config.get('api_key') or self.session.config.get('xai_api_key')
             api_url = self.session.config.get('xai_api_url')
             if api_key and api_url:
                 client = XaiClient(

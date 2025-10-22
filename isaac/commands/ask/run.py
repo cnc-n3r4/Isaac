@@ -5,8 +5,6 @@
 Unlike translation mode (isaac <query>), this sends queries directly to AI
 and returns text responses without executing commands.
 """
-from typing import Optional
-
 import sys
 import json
 from pathlib import Path
@@ -15,121 +13,22 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from isaac.ai.xai_client import XaiClient
-from isaac.ai.xai_collections_client import XaiCollectionsClient
 from isaac.core.session_manager import SessionManager
-
-
-def _classify_query_intent(query: str) -> tuple[str, Optional[str]]:
-    """
-    Classify user query intent and determine collection.
-    
-    Returns:
-        ('intent', 'collection_name')
-        - intent: 'file_history' | 'chat'
-        - collection: 'tc_logs' | 'cpf_logs' | None
-    """
-    query_lower = query.lower()
-    
-    # CPF-specific keywords (project snapshots, backups)
-    cpf_keywords = ['snapshot', 'cpf', 'project backup', 'image backup']
-    if any(kw in query_lower for kw in cpf_keywords):
-        return ('file_history', 'cpf_logs')
-    
-    # TC file operation keywords
-    tc_keywords = [
-        'moved', 'copied', 'deleted', 'renamed',
-        'transfer', 'file', 'folder', 'directory'
-    ]
-    if any(kw in query_lower for kw in tc_keywords):
-        return ('file_history', 'tc_logs')
-    
-    # Generic history questions - use default collection
-    history_keywords = [
-        'where did i', 'when did i', 'show me', 'find',
-        'last week', 'yesterday', 'ago'
-    ]
-    if any(kw in query_lower for kw in history_keywords):
-        return ('file_history', 'tc_logs')  # Default to TC logs
-    
-    # Regular chat
-    return ('chat', None)
-
-
-def _search_file_history(query: str, collection_name: Optional[str], 
-                         config: dict, session: SessionManager) -> str:
-    """
-    Search file history logs via xAI Collections.
-    
-    Args:
-        query: Natural language search query
-        collection_name: 'tc_logs' | 'cpf_logs'
-        config: Configuration dict
-        session: SessionManager instance
-    
-    Returns formatted response with file operation results.
-    """
-    # Get Collections config
-    api_key = config.get('xai_api_key') or config.get('api_key')
-    
-    if not api_key:
-        return "Error: xAI API key not configured. Set it in ~/.isaac/config.json"
-    
-    if not collection_name:
-        return "Error: No collection specified for file history search"
-    
-    # Map collection name to UUID
-    collection_map = {
-        'tc_logs': config.get('tc_log_collection_id'),
-        'cpf_logs': config.get('cpf_log_collection_id')
-    }
-    
-    collection_id = collection_map.get(collection_name)
-    
-    if not collection_id:
-        return (f"Error: {collection_name} collection not configured. "
-                f"Set '{collection_name}_collection_id' in ~/.isaac/config.json")
-    
-    try:
-        # Initialize Collections client
-        collections = XaiCollectionsClient(api_key=api_key)
-        
-        # Search collection
-        results = collections.search_collection(
-            collection_id=collection_id,
-            query=query,
-            top_k=5
-        )
-        
-        # Format response
-        if not results.get('results'):
-            return "I couldn't find any matching file operations in your logs."
-        
-        response = "Here's what I found in your file history:\n\n"
-        
-        for i, result in enumerate(results['results'], 1):
-            content = result.get('content', '')
-            metadata = result.get('metadata', {})
-            score = result.get('score', 0)
-            
-            response += f"{i}. {content}\n"
-            if metadata.get('timestamp'):
-                response += f"   Date: {metadata['timestamp']}\n"
-            response += f"   (Relevance: {score:.2%})\n\n"
-        
-        return response.strip()
-        
-    except Exception as e:
-        # Fallback to chat mode if Collections fails
-        return f"Collections search unavailable: {e}\n\nTrying chat mode instead..."
 
 
 def _handle_chat_query(query: str, config: dict, session: SessionManager) -> str:
     """Handle regular chat queries (existing logic)"""
-    # Get API configuration
-    api_key = config.get('xai_api_key') or config.get('api_key')
+    # Get Chat API configuration - use nested structure
+    xai_config = config.get('xai', {})
+    chat_config = xai_config.get('chat', {})
+    api_key = chat_config.get('api_key')
+    
+    # Fallback to old flat structure for backward compatibility
+    if not api_key:
+        api_key = config.get('xai_api_key') or config.get('api_key')
     
     if not api_key:
-        raise Exception("xAI API key not configured. Set it in ~/.isaac/config.json")
+        raise Exception("xAI Chat API key not configured. Set it in ~/.isaac/config.json under xai.chat.api_key")
     
     # Initialize xAI client
     client = XaiClient(
@@ -151,43 +50,65 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager) -> str
 def main():
     """Main entry point for ask command"""
     try:
-        # Read payload from stdin
-        payload = json.loads(sys.stdin.read()) if not sys.stdin.isatty() else {}
-        
-        # Extract query from the command string
-        # Dispatcher provides: {"command": "/ask where is iowa?", "args": {...}, ...}
-        command = payload.get('command', '')
-        
-        # Strip the trigger to get the query
-        query = ''
-        if command.startswith('/ask '):
-            query = command[5:].strip()
-        elif command.startswith('/a '):
-            query = command[3:].strip()
+        # Check if we're being called through dispatcher (stdin has JSON) or standalone
+        if not sys.stdin.isatty():
+            # Called through dispatcher - read JSON payload from stdin
+            payload = json.loads(sys.stdin.read())
+            command = payload.get('command', '')
+            
+            # Strip the trigger to get the query
+            query = ''
+            if command.startswith('/ask '):
+                query = command[5:].strip()
+            elif command.startswith('/a '):
+                query = command[3:].strip()
+        else:
+            # Standalone execution - get query from command line args
+            if len(sys.argv) < 2:
+                print("Usage: python -m isaac.commands.ask.run <query>")
+                print("Or: /ask <query> (within Isaac shell)")
+                sys.exit(1)
+            query = ' '.join(sys.argv[1:])
         
         if not query:
-            print(json.dumps({
-                "ok": False,
-                "kind": "text",
-                "stdout": "Error: No query provided. Usage: /ask <question>",
-                "meta": {}
-            }))
+            if not sys.stdin.isatty():
+                # Dispatcher mode - return JSON error
+                print(json.dumps({
+                    "ok": False,
+                    "kind": "text",
+                    "stdout": "Error: No query provided. Usage: /ask <question>",
+                    "meta": {}
+                }))
+            else:
+                # Standalone mode - print error directly
+                print("Error: No query provided. Usage: python -m isaac.commands.ask.run <query>")
             return
         
         # Get session
         session = SessionManager()
         
-        # Get API configuration
+        # Get API configuration - use nested structure for chat
         config = session.get_config()
-        api_key = config.get('xai_api_key') or config.get('api_key')
+        xai_config = config.get('xai', {})
+        chat_config = xai_config.get('chat', {})
+        api_key = chat_config.get('api_key')
+        
+        # Fallback to old flat structure for backward compatibility
+        if not api_key:
+            api_key = config.get('xai_api_key') or config.get('api_key')
         
         if not api_key:
-            print(json.dumps({
-                "ok": False,
-                "kind": "text",
-                "stdout": "Error: xAI API key not configured. Set it in ~/.isaac/config.json",
-                "meta": {}
-            }))
+            if not sys.stdin.isatty():
+                # Dispatcher mode - return JSON error
+                print(json.dumps({
+                    "ok": False,
+                    "kind": "text",
+                    "stdout": "Error: xAI Chat API key not configured. Set it in ~/.isaac/config.json under xai.chat.api_key",
+                    "meta": {}
+                }))
+            else:
+                # Standalone mode - print error directly
+                print("Error: xAI Chat API key not configured. Set it in ~/.isaac/config.json under xai.chat.api_key")
             return
         
         # Initialize xAI client
@@ -197,40 +118,43 @@ def main():
             model=config.get('xai_model', 'grok-3')
         )
         
-        # Classify query intent and determine collection
-        intent, collection_name = _classify_query_intent(query)
-        
-        if intent == 'file_history':
-            # Route to Collections search
-            response = _search_file_history(query, collection_name, config, session)
-        else:
-            # Route to chat mode (existing logic)
-            response = _handle_chat_query(query, config, session)
+        # Handle as chat query (collections logic removed - now chat-only)
+        response = _handle_chat_query(query, config, session)
         
         # Log query to AI history
         session.log_ai_query(
             query=query,
-            translated_command='[chat_mode]' if intent == 'chat' else '[collection_search]',
+            translated_command='[chat_mode]',
             explanation=response[:100],
             executed=False,
-            shell_name=intent
+            shell_name='chat'
         )
         
         # Return response
-        print(json.dumps({
-            "ok": True,
-            "kind": "text",
-            "stdout": response,
-            "meta": {"intent": intent}
-        }))
+        if not sys.stdin.isatty():
+            # Dispatcher mode - return JSON
+            print(json.dumps({
+                "ok": True,
+                "kind": "text",
+                "stdout": response,
+                "meta": {"mode": "chat"}
+            }))
+        else:
+            # Standalone mode - print response directly
+            print(response)
     
     except Exception as e:
-        print(json.dumps({
-            "ok": False,
-            "kind": "text",
-            "stdout": f"Error: {e}",
-            "meta": {}
-        }))
+        if not sys.stdin.isatty():
+            # Dispatcher mode - return JSON error
+            print(json.dumps({
+                "ok": False,
+                "kind": "text",
+                "stdout": f"Error: {e}",
+                "meta": {}
+            }))
+        else:
+            # Standalone mode - print error directly
+            print(f"Error: {e}")
 
 
 def _build_chat_preprompt(session: SessionManager, current_query: str) -> str:

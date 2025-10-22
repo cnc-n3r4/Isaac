@@ -304,14 +304,16 @@ class CommandRouter:
         try:
             from isaac.ai.xai_client import XaiClient
             
-            # Get API configuration
+            # Get API configuration - use chat API key
             config = self.session.get_config()
-            api_key = config.get('xai_api_key') or config.get('api_key')
+            xai_config = config.get('xai', {})
+            chat_config = xai_config.get('chat', {})
+            api_key = chat_config.get('api_key') or config.get('xai_api_key') or config.get('api_key')
             
             if not api_key:
                 return CommandResult(
                     success=False,
-                    output="Isaac > xAI API key not configured. Set it in ~/.isaac/config.json",
+                    output="Isaac > xAI Chat API key not configured. Set it in ~/.isaac/config.json under xai.chat.api_key",
                     exit_code=-1
                 )
             

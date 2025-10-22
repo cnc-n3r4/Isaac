@@ -40,7 +40,14 @@ class PermanentShell:
         session_id = self.session.config.get('machine_id', 'unknown')[:6]
 
         cloud_status = "✓" if self.session.cloud else "✗"
-        ai_status = "✓" if self.session.config.get('xai_api_key') else "✗"
+        
+        # Check for API keys in new nested structure or old flat structure
+        xai_config = self.session.config.get('xai', {})
+        chat_config = xai_config.get('chat', {})
+        collections_config = xai_config.get('collections', {})
+        has_chat_key = chat_config.get('api_key') or self.session.config.get('xai_api_key')
+        has_collections_key = collections_config.get('api_key') or self.session.config.get('xai_api_key')
+        ai_status = "✓" if (has_chat_key or has_collections_key) else "✗"
 
         print("=" * 60)
         print(f"ISAAC v{version}")

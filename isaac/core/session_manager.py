@@ -168,6 +168,20 @@ class SessionManager:
             except Exception:
                 pass  # Use defaults if file corrupted
 
+    def _save_config(self):
+        """Save config to config.json file."""
+        config_file = self.isaac_dir / 'config.json'
+        try:
+            with open(config_file, 'w') as f:
+                json.dump(self.config, f, indent=2)
+        except Exception:
+            pass  # Don't fail if save fails
+
+    def set_config(self, key: str, value: Any):
+        """Set a configuration value and save to disk."""
+        self.config[key] = value
+        self._save_config()
+
     def log_command(self, command: str, exit_code: int = 0, shell_name: str = "unknown"):
         """Log executed command to history."""
         import time
@@ -306,7 +320,9 @@ class SessionManager:
         self.totalcmd_parser = TotalCommanderParser(log_path)
         
         # Initialize collection manager
-        api_key = self.config.get('xai_api_key') or self.config.get('api_key')
+        xai_config = self.config.get('xai', {})
+        collections_config = xai_config.get('collections', {})
+        api_key = collections_config.get('api_key') or self.config.get('xai_api_key') or self.config.get('api_key')
         if api_key:
             from isaac.integrations.xai_collections import FileHistoryCollectionManager
             from isaac.ai.xai_client import XaiClient
