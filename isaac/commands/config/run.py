@@ -182,6 +182,9 @@ def set_config(session, key, value):
         'collections_enabled': lambda v: v.lower() in ['true', '1', 'yes'],
         'tc_log_collection_id': str,
         'cpf_log_collection_id': str,
+        'xai_management_api_key': str,
+        'xai_api_host': str,
+        'xai_management_api_host': str,
     }
 
     if key not in allowed_keys:
@@ -192,8 +195,29 @@ def set_config(session, key, value):
         converter = allowed_keys[key]
         converted_value = converter(value)
 
-        # In a real implementation, this would persist to SessionManager
-        # For now, just acknowledge
+        # Load existing config
+        import os
+        from pathlib import Path
+        isaac_dir = Path.home() / '.isaac'
+        isaac_dir.mkdir(exist_ok=True)
+        config_file = isaac_dir / 'config.json'
+        
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+            except:
+                config = {}
+        else:
+            config = {}
+        
+        # Update the config
+        config[key] = converted_value
+        
+        # Save back to file
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+
         return f"✓ Set {key} = {converted_value}"
     except Exception as e:
         return f"✗ Error setting {key}: {str(e)}"

@@ -1,0 +1,33 @@
+name: mine
+version: 1.0.0
+summary: Personal file history and collection search
+description: |
+  Search your personal file history (Total Commander logs, project snapshots)
+  using xAI Collections. This is YOUR stuff, not internet knowledge.
+
+triggers:
+  - /mine
+
+aliases:
+  - /mine
+
+args: []
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 1024
+  capabilities:
+    - network
+
+examples:
+  - "/mine list - List all collections"
+  - "/mine create mydocs - Create new collection"
+  - "/mine upload file.txt - Upload file to active collection"
+  - "/mine query what is machine learning? - Search active collection"

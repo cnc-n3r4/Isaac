@@ -16,6 +16,8 @@ setup(
     entry_points={
         'console_scripts': [
             'isaac=isaac.__main__:main',
+            'ask=isaac.commands.ask.run:main',
+            'mine=isaac.commands.mine.run:main',
         ],
     },
     package_data={
