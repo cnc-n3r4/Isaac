@@ -124,6 +124,37 @@ class CommandRouter:
         Returns:
             CommandResult with execution results
         """
+        # Handle cd (change directory) specially - must change Isaac's working directory
+        import os
+        if input_text.strip().startswith('cd ') or input_text.strip() == 'cd':
+            parts = input_text.strip().split(maxsplit=1)
+            if len(parts) == 1:
+                # Just 'cd' - go to home directory
+                target = str(Path.home())
+            else:
+                target = parts[1].strip('"').strip("'")  # Remove quotes
+                # Expand ~ and environment variables
+                target = os.path.expanduser(target)
+                target = os.path.expandvars(target)
+            
+            try:
+                os.chdir(target)
+                new_dir = os.getcwd()
+                return CommandResult(success=True, output=new_dir, exit_code=0)
+            except Exception as e:
+                return CommandResult(success=False, output=f"cd: {e}", exit_code=1)
+        
+        # Check for force execution prefix (/f or /force)
+        if input_text.startswith('/f ') or input_text.startswith('/force '):
+            # Extract actual command (skip /f or /force prefix)
+            if input_text.startswith('/f '):
+                actual_command = input_text[3:]  # Skip '/f '
+            else:
+                actual_command = input_text[7:]  # Skip '/force '
+            
+            print(f"Isaac > Force executing (bypassing AI validation): {actual_command}")
+            return self.shell.execute(actual_command)
+        
         # Check for meta-commands first
         if input_text.startswith('/'):
             # Handle special cases that don't go through dispatcher

@@ -1,0 +1,51 @@
+                    $> /mine use tc-logs
+  (ERROR??)         Warning: xai_sdk not available. Install with: pip install xai-sdk
+                    Switched to collection: tc-logs
+                    
+                    $> /mine help
+                    
+                    Isaac x.ai Collection Manager (/mine)
+                    
+                    CORE COMMANDS:
+                      /mine list                    List all collections
+                      /mine use <name>              Switch active collection
+                      /mine use <name> dig <text>   Switch collection and dig in one command
+                      /mine create <name>           Create new collection
+                      /mine cast <file>             Cast file into active collection
+                      /mine dig <question>          Dig up answers from active collection
+                      /mine delete <name>           Delete collection
+                      /mine info                    Show active collection details
+                    
+                    SMART PROJECT COMMANDS:
+                      /mine grokbug <project>       Create debugging collection for project
+                      /mine grokrefactor <project>  Create refactoring collection for project
+                    
+                    UTILITY:
+                      /mine help                    Show this help
+                      /mine status                  Show system status
+                    
+                    EXAMPLES:
+                      /mine create myproject
+                      /mine cast ~/docs/api.pdf
+                      /mine grokbug ~/code/myapp
+                      /mine dig "How does authentication work?"
+                    
+                    
+ (BUT IT SWITCHED)  $> /mine list
+                    Available Collections (API):
+                    • tc-logs (1 docs, created: 2025-10-21) [ACTIVE]
+                    • cpf-logs (9 docs, created: 2025-10-21)
+                    • cnc-info (1 docs, created: 2025-10-22)
+                    
+                    
+                    $> /mine info
+                    Active Collection: tc-logs
+                    ID: collection_ea35fd69-106d-4ded-9359-e31248430774
+                    Documents: 1
+                    Created: 2025-10-21 23:09:55
+                    
+                    Documents:
+                    • totalcmd.log
+                    
+                    
+                    $>
