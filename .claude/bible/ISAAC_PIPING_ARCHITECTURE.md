@@ -12,9 +12,9 @@ Isaac is a composable data-flow shell where commands transform data blobs throug
 **Primary Syntax:** `|` (Unix-style pipe character)
 
 ```bash
-/mine query "deleted files" | /filter "4000" | /save cleanup_report.txt
+/mine dig "deleted files" | /filter "4000" | /save cleanup_report.txt
 /ask "what is kubernetes?" | /summarize | /save k8s_notes.md
-/mine query "backups" | /analyze trends | /chart bar_graph.png
+/mine dig "backups" | /analyze trends | /chart bar_graph.png
 ```
 
 **Parser Behavior:**
@@ -57,7 +57,10 @@ Get-Process | /save processes.txt
 # Complex hybrid chains
 find . -name "*.log" | /mine cast | /count
 # Mixed
-cat log.txt | /analyze | grep "memory" | /save diagnosis.md
+**Examples:**
+- Shell → Isaac: `ls | /save`
+- Isaac → shell: `/mine dig | grep`
+- Mixed: `cat log | /analyze | grep "memory" | /save diagnosis.md`
 find . -name "*.log" | /mine cast
 ```
 
@@ -111,7 +114,7 @@ def _execute_command(self, cmd: str, stdin_blob: dict = None) -> dict:
   "kind": "text|json|binary|error",
   "content": "<primary payload>",
   "meta": {
-    "source_command": "/mine query",
+    "source_command": "/mine dig",
     "timestamp": "2025-10-22T14:30:00Z",
     "encoding": "utf-8",
     "mime_type": "text/plain",
@@ -127,7 +130,7 @@ def _execute_command(self, cmd: str, stdin_blob: dict = None) -> dict:
 {
   "kind": "text",
   "content": "Search results:\n- file1.txt deleted\n- file2.log removed",
-  "meta": {"source_command": "/mine query", "line_count": 2}
+  "meta": {"source_command": "/mine dig", "line_count": 2}
 }
 ```
 
@@ -136,7 +139,7 @@ def _execute_command(self, cmd: str, stdin_blob: dict = None) -> dict:
 {
   "kind": "json",
   "content": {"files": ["a.txt", "b.log"], "total": 2},
-  "meta": {"source_command": "/mine query", "schema": "file_list"}
+  "meta": {"source_command": "/mine dig", "schema": "file_list"}
 }
 ```
 
@@ -215,7 +218,7 @@ Isaac commands provide capabilities that shell lacks. Don't reimplement native t
 - Purpose: Intelligent file saving (auto-naming, versioning, cloud sync)
 - Input: Any blob type
 - Output: Confirmation message (kind: "text")
-- Example: `/mine query "foo" | /save results.txt`
+- Example: `/mine dig "foo" | /save results.txt`
 
 **`/analyze [prompt]`**
 - Purpose: AI analysis of previous output
@@ -255,19 +258,19 @@ Isaac commands provide capabilities that shell lacks. Don't reimplement native t
 - Purpose: Pretty-print output (json, markdown, table, etc.)
 - Input: Text or JSON blob
 - Output: Formatted text blob
-- Example: `/mine query "logs" | /format table`
+- Example: `/mine dig "logs" | /format table`
 
 **`/chart <type> <file>`**
 - Purpose: Generate visualization from data
 - Input: JSON blob with numeric data
 - Output: Binary blob (PNG/SVG) saved to file
-- Example: `/mine query "usage stats" | /extract numbers | /chart bar usage.png`
+- Example: `/mine dig "usage stats" | /extract numbers | /chart bar usage.png`
 
 **`/alert [condition]`**
 - Purpose: Send notification if condition met
 - Input: Any blob
 - Output: Pass-through blob + side-effect notification
-- Example: `/mine query "errors" | /alert "if count > 10"`
+- Example: `/mine dig "errors" | /alert "if count > 10"`
 
 ---
 
@@ -404,11 +407,11 @@ def route_command(self, user_input: str) -> dict:
 
 **User Experience:**
 ```powershell
-isaac> grep "error" app.log
+$> grep "error" app.log
 [Translated: Select-String "error" app.log]
 app.log:42: Error: Connection timeout
 
-isaac> find . -name "*.py" | /count
+$> find . -name "*.py" | /count
 [Translated: Get-ChildItem -Recurse -Filter "*.py"]
 Found 47 Python files
 ```
@@ -558,7 +561,10 @@ def route_command(self, user_input: str) -> dict:
 
 **Example Error Flow:**
 ```bash
-/mine query "foo" | /filter "bar" | /nonexistent | /save out.txt
+**Example Error Pipeline:**
+```bash
+/mine dig "foo" | /filter "bar" | /nonexistent | /save out.txt
+```
 
 # Pipeline stops at /nonexistent:
 {
@@ -696,7 +702,7 @@ def route_command(self, user_input: str) -> dict:
 
 **Integration Tests:**
 - Shell → Isaac: `ls | /save`
-- Isaac → shell: `/mine query | grep`
+- Isaac → shell: `/mine dig | grep`
 - Mixed chain: `cat | /analyze | grep | /save`
 - Error handling in pipelines
 - Unix alias translation on Windows

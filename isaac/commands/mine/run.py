@@ -49,15 +49,24 @@ class MineHandler:
                 if not management_api_key:
                     management_api_key = self.session_manager.config.get('xai_management_api_key')
                 
+                # Strip whitespace from API keys (common config issue)
                 if api_key:
-                    # Initialize client with both API keys (management key is optional)
-                    # Use configurable hosts if specified, otherwise use defaults
-                    api_host = self.session_manager.config.get('xai_api_host', 'api.x.ai')
-                    management_api_host = self.session_manager.config.get('xai_management_api_host', 'management-api.x.ai')
+                    api_key = api_key.strip()
+                if management_api_key:
+                    management_api_key = management_api_key.strip()
+                
+                if api_key:
+                    # Initialize xAI Collections client
+                    # NOTE: Collections API requires a COLLECTIONS-SPECIFIC API key, NOT the Chat API key
+                    # api_key: Collections API key (gRPC) - required for search, upload, document access
+                    # management_api_key: Management API key (REST) - required for list, create, delete collections
+                    # Get both keys from console.x.ai - they must be Collections API keys, not Chat API keys
+                    api_host = collections_config.get('api_host') or self.session_manager.config.get('xai_api_host', 'api.x.ai')
+                    management_api_host = collections_config.get('management_api_host') or self.session_manager.config.get('xai_management_api_host', 'management-api.x.ai')
                     
                     self.client = Client(
                         api_key=api_key,
-                        management_api_key=management_api_key,
+                        management_api_key=management_api_key or api_key,  # Use same key if management key not specified
                         api_host=api_host,
                         management_api_host=management_api_host,
                         timeout=3600  # Extended timeout for reasoning models
@@ -88,8 +97,6 @@ class MineHandler:
                 json.dump(config, f, indent=2)
         except Exception:
             pass  # Silently fail
-        else:
-            print("Warning: xai_sdk not available. Install with: pip install xai-sdk")
 
     def handle_command(self, args: List[str]) -> str:
         """Main command dispatcher for /mine commands."""
@@ -109,8 +116,10 @@ class MineHandler:
             'list': self._handle_list,
             'use': self._handle_use,
             'create': self._handle_create,
-            'upload': self._handle_upload,
-            'query': self._handle_query,
+            'cast': self._handle_cast,
+            'upload': self._handle_cast,  # Alias for backward compatibility
+            'dig': self._handle_dig,
+            'query': self._handle_dig,  # Alias for backward compatibility
             'delete': self._handle_delete,
             'info': self._handle_info,
             'grokbug': self._handle_grokbug,
@@ -131,10 +140,10 @@ Isaac x.ai Collection Manager (/mine)
 CORE COMMANDS:
   /mine list                    List all collections
   /mine use <name>              Switch active collection
-  /mine use <name> query <text> Switch collection and query in one command
+  /mine use <name> dig <text>   Switch collection and dig in one command
   /mine create <name>           Create new collection
-  /mine upload <file>           Upload file to active collection
-  /mine query <question>        Query active collection
+  /mine cast <file>             Cast file into active collection
+  /mine dig <question>          Dig up answers from active collection
   /mine delete <name>           Delete collection
   /mine info                    Show active collection details
 
@@ -148,9 +157,9 @@ UTILITY:
 
 EXAMPLES:
   /mine create myproject
-  /mine upload ~/docs/api.pdf
+  /mine cast ~/docs/api.pdf
   /mine grokbug ~/code/myapp
-  /mine query "How does authentication work?"
+  /mine dig "How does authentication work?"
 """
 
     def _show_status(self, args=None) -> str:
@@ -180,7 +189,7 @@ EXAMPLES:
                 except:
                     doc_count = "?"
 
-                active_marker = " ← active" if coll.collection_id == self.active_collection_id else ""
+                active_marker = " [ACTIVE]" if coll.collection_id == self.active_collection_id else ""
                 # Handle protobuf Timestamp
                 created_date = "?"
                 if hasattr(coll, 'created_at') and coll.created_at:
@@ -199,37 +208,48 @@ EXAMPLES:
                 config = self.session_manager.config
                 configured_collections = []
                 
-                tc_collection_id = config.get('tc_log_collection_id')
-                if tc_collection_id:
-                    configured_collections.append(("tc_logs", tc_collection_id))
+                # Get collections from xai.collections config (supports any collection names)
+                xai_config = config.get('xai', {})
+                collections_config = xai_config.get('collections', {})
                 
-                cpf_collection_id = config.get('cpf_log_collection_id') 
-                if cpf_collection_id:
-                    configured_collections.append(("cpf_logs", cpf_collection_id))
+                # Type check: collections_config must be a dict
+                if collections_config and isinstance(collections_config, dict):
+                    # Filter out non-collection keys (enabled, api_key, etc.)
+                    reserved_keys = {'enabled', 'api_key', 'management_api_key', 'management_api_host', 
+                                   'default_collection', 'active_collection_id', 'active_collection_name'}
+                    
+                    for coll_name, coll_id in collections_config.items():
+                        # Skip reserved config keys, only process collection mappings
+                        if coll_name not in reserved_keys and coll_id and isinstance(coll_id, str):
+                            configured_collections.append((coll_name, coll_id))
                 
                 if configured_collections:
-                    result = "Configured Collections (limited access - management API key required for full listing):\n"
+                    result = "Configured Collections (from config):\n"
                     for name, coll_id in configured_collections:
-                        active_marker = " ← active" if coll_id == self.active_collection_id else ""
-                        result += f"• {name} (ID: {coll_id}){active_marker}\n"
-                    result += "\nTo get full collection management, obtain a management API key from x.ai"
+                        active_marker = " [ACTIVE]" if coll_id == self.active_collection_id else ""
+                        result += f"• {name} (ID: {coll_id[:8]}...){active_marker}\n"
+                    result += "\nNote: Using config-based collections. For full API listing, add 'xai_management_api_key' to config."
                     return result
                 else:
-                    return ("Error listing collections: Please provide a management API key.\n"
-                           "Get one from https://console.x.ai and set 'xai_management_api_key' in ~/.isaac/config.json")
+                    return ("Error: No collections configured.\n"
+                           "Add collections to ~/.isaac/config.json under xai.collections:\n"
+                           '  "xai": {\n'
+                           '    "collections": {\n'
+                           '      "tc-logs": "your-collection-uuid",\n'
+                           '      "cpf-logs": "your-collection-uuid",\n'
+                           '      "cnc-info": "your-collection-uuid"\n'
+                           '    }\n'
+                           '  }')
             else:
                 return f"Error listing collections: {e}"
-
-            return result.strip()
-        except Exception as e:
-            return f"Error listing collections: {e}"
 
     def _handle_use(self, args: List[str]) -> str:
         """Switch active collection."""
         if not args:
-            return "Usage: /mine use <collection_name> [query <query_text>]"
+            return "Usage: /mine use <collection_name> [dig <query_text>]"
 
-        collection_name = args[0]
+        # Remove quotes from collection name if present
+        collection_name = args[0].strip('"').strip("'")
 
         try:
             # Try to get collections from API first
@@ -249,10 +269,8 @@ EXAMPLES:
             # Fallback: use configured collections from config
             if "management" in str(e).lower() or "api key" in str(e).lower():
                 config = self.session_manager.get_config()
-                configured_collections = {
-                    'tc_logs': config.get('tc_log_collection_id'),
-                    'cpf_logs': config.get('cpf_log_collection_id')
-                }
+                xai_config = config.get('xai', {})
+                configured_collections = xai_config.get('collections', {})
 
                 if collection_name in configured_collections:
                     collection_id = configured_collections[collection_name]
@@ -273,13 +291,13 @@ EXAMPLES:
                 return f"Error switching collection: {e}"
 
         # Check if there's a follow-up command
-        if len(args) > 1 and args[1].lower() == 'query':
-            query_args = args[2:]
-            if query_args:
-                query_result = self._handle_query(query_args)
-                return f"{result}\n{query_result}"
+        if len(args) > 1 and args[1].lower() in ['dig', 'query']:
+            dig_args = args[2:]
+            if dig_args:
+                dig_result = self._handle_dig(dig_args)
+                return f"{result}\n{dig_result}"
             else:
-                return f"{result}\nUsage: /mine use <collection_name> query <query_text>"
+                return f"{result}\nUsage: /mine use <collection_name> dig <query_text>"
 
         return result
 
@@ -303,10 +321,10 @@ EXAMPLES:
         except Exception as e:
             return f"Error creating collection: {e}"
 
-    def _handle_upload(self, args: List[str]) -> str:
-        """Upload file to active collection."""
+    def _handle_cast(self, args: List[str]) -> str:
+        """Cast file into active collection (down the mine)."""
         if not args:
-            return "Usage: /mine upload <file_path>"
+            return "Usage: /mine cast <file_path>"
 
         if not self.active_collection_id:
             return "No active collection. Use /mine use <name> first."
@@ -314,10 +332,24 @@ EXAMPLES:
         file_path = args[0]
 
         try:
-            # Expand user path and check if file exists
-            expanded_path = Path(file_path).expanduser()
+            # Remove quotes if present
+            file_path = file_path.strip('"').strip("'")
+            
+            # Expand user path (~) and environment variables
+            import os
+            expanded_path = os.path.expanduser(file_path)
+            expanded_path = os.path.expandvars(expanded_path)
+            
+            # Convert to Path and resolve relative to current working directory
+            expanded_path = Path(expanded_path)
+            if not expanded_path.is_absolute():
+                expanded_path = Path.cwd() / expanded_path
+            
+            # Resolve to absolute path (handles .., ., etc.)
+            expanded_path = expanded_path.resolve()
+            
             if not expanded_path.exists():
-                return f"File not found: {file_path}"
+                return f"File not found: {file_path} (resolved to: {expanded_path})"
 
             if not expanded_path.is_file():
                 return f"Not a file: {file_path}"
@@ -334,14 +366,14 @@ EXAMPLES:
                 content_type=self._guess_content_type(expanded_path)
             )
 
-            return f"Uploaded: {expanded_path.name} to {self.active_collection_name}"
+            return f"Cast into mine: {expanded_path.name} -> {self.active_collection_name}"
         except Exception as e:
-            return f"Error uploading file: {e}"
+            return f"Error casting file: {e}"
 
-    def _handle_query(self, args: List[str]) -> str:
-        """Query active collection."""
+    def _handle_dig(self, args: List[str]) -> str:
+        """Dig up answers from active collection."""
         if not args:
-            return "Usage: /mine query <question>"
+            return "Usage: /mine dig <question>"
 
         if not self.active_collection_id:
             return "No active collection. Use /mine use <name> first."
@@ -446,19 +478,19 @@ EXAMPLES:
             # Create collection if it doesn't exist
             collection = self._ensure_collection(collection_name)
 
-            # Select and upload relevant files for debugging
+            # Select and cast relevant files for debugging
             files = self._select_relevant_files(project_path, "debug")
             if not files:
                 return f"No relevant files found in {project_path}"
 
-            # Upload files
-            uploaded_count = self._upload_files_batch(collection.collection_id, files)
+            # Cast files into collection
+            cast_count = self._cast_files_batch(collection.collection_id, files)
 
             # Set as active collection
             self.active_collection_id = collection.collection_id
             self.active_collection_name = collection.collection_name
 
-            return f"Debug collection ready: {collection.collection_name}\nUploaded {uploaded_count} files for debugging"
+            return f"Debug collection ready: {collection.collection_name}\nCast {cast_count} files into mine for debugging"
 
         except Exception as e:
             return f"Error creating debug collection: {e}"
@@ -478,19 +510,19 @@ EXAMPLES:
             # Create collection if it doesn't exist
             collection = self._ensure_collection(collection_name)
 
-            # Select and upload relevant files for refactoring
+            # Select and cast relevant files for refactoring
             files = self._select_relevant_files(project_path, "refactor")
             if not files:
                 return f"No relevant files found in {project_path}"
 
-            # Upload files
-            uploaded_count = self._upload_files_batch(collection.collection_id, files)
+            # Cast files into collection
+            cast_count = self._cast_files_batch(collection.collection_id, files)
 
             # Set as active collection
             self.active_collection_id = collection.collection_id
             self.active_collection_name = collection.collection_name
 
-            return f"Refactor collection ready: {collection.collection_name}\nUploaded {uploaded_count} files for refactoring analysis"
+            return f"Refactor collection ready: {collection.collection_name}\nCast {cast_count} files into mine for refactoring analysis"
 
         except Exception as e:
             return f"Error creating refactor collection: {e}"
@@ -549,9 +581,9 @@ EXAMPLES:
         unique_files.sort(key=lambda f: f.stat().st_size)
         return unique_files[:50]  # Limit to 50 files to prevent overload
 
-    def _upload_files_batch(self, collection_id: str, files: List[Path]) -> int:
-        """Upload multiple files to a collection."""
-        uploaded = 0
+    def _cast_files_batch(self, collection_id: str, files: List[Path]) -> int:
+        """Cast multiple files into a collection."""
+        cast = 0
         for file_path in files:
             try:
                 with open(file_path, 'rb') as f:
@@ -567,12 +599,12 @@ EXAMPLES:
                     data=content,
                     content_type=self._guess_content_type(file_path)
                 )
-                uploaded += 1
+                cast += 1
             except Exception as e:
                 # Continue with other files if one fails
                 continue
 
-        return uploaded
+        return cast
 
     def _extract_project_name(self, project_path: str) -> str:
         """Extract project name from path."""
@@ -625,31 +657,11 @@ def main():
         handler = MineHandler(session)
         result = handler.handle_command(args)
         
-        # Return response
-        if not sys.stdin.isatty():
-            # Dispatcher mode - return JSON
-            print(json.dumps({
-                "ok": True,
-                "kind": "text",
-                "stdout": result,
-                "meta": {}
-            }))
-        else:
-            # Standalone mode - print result directly
-            print(result)
+        # Always print plain text - dispatcher will wrap in JSON if needed
+        print(result)
     
     except Exception as e:
-        if not sys.stdin.isatty():
-            # Dispatcher mode - return JSON error
-            print(json.dumps({
-                "ok": False,
-                "kind": "text",
-                "stdout": f"Error: {e}",
-                "meta": {}
-            }))
-        else:
-            # Standalone mode - print error directly
-            print(f"Error: {e}")
+        print(f"Error: {e}")
 
 
 if __name__ == "__main__":

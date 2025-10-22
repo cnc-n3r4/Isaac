@@ -4,6 +4,9 @@ Implements a simple prompt/output loop with meta-commands
 """
 
 import sys
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.styles import Style
 from isaac.core.command_router import CommandRouter
 from isaac.core.session_manager import SessionManager
 from isaac.adapters.powershell_adapter import PowerShellAdapter
@@ -15,10 +18,34 @@ class PermanentShell:
         self.session = SessionManager()
         self.shell = self._detect_shell()
         self.router = CommandRouter(self.session, self.shell)
+        
+        # Initialize prompt_toolkit with history support
+        self.history = InMemoryHistory()
+        self.prompt_session = PromptSession(history=self.history)
+        
+        # Load command history from session
+        self._load_command_history()
 
         # Setup sync completion callback
         self._setup_sync_callback()
 
+    def _load_command_history(self):
+        """Load command history from session into prompt_toolkit history."""
+        try:
+            commands = self.session.command_history.commands
+            for cmd in commands[-100:]:  # Load last 100 commands
+                if isinstance(cmd, dict):
+                    command_text = cmd.get('command', '')
+                elif isinstance(cmd, str):
+                    command_text = cmd
+                else:
+                    continue
+                
+                if command_text:
+                    self.history.append_string(command_text)
+        except Exception:
+            pass  # Ignore errors loading history
+    
     def _setup_sync_callback(self):
         """Register callback for sync completion notifications."""
         def on_sync_complete(count: int):
@@ -79,12 +106,20 @@ class PermanentShell:
 
         while True:
             try:
-                # Print prompt with queue status
-                prompt = self._get_prompt()
-                print(prompt, end="", flush=True)
+                # Build prompt text
+                queue_status = self.session.get_queue_status()
+                pending_count = queue_status['pending']
+                
+                if pending_count > 0:
+                    prompt_text = f"$ [OFFLINE: {pending_count} queued]> "
+                else:
+                    prompt_text = "$> "
 
-                # Get user input
-                user_input = input().strip()
+                # Get user input with history support (arrow keys work!)
+                user_input = self.prompt_session.prompt(
+                    prompt_text,
+                    style=Style.from_dict({'prompt': '#ffff00'})  # Yellow prompt
+                ).strip()
 
                 # Skip empty input
                 if not user_input:
