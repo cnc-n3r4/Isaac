@@ -210,6 +210,11 @@ class CommandRouter:
                 import os
                 os.system('cls' if os.name == 'nt' else 'clear')
                 return CommandResult(success=True, output="", exit_code=0)
+            if input_text == '/config console':
+                # Launch the config console TUI
+                from isaac.ui.config_console import show_config_console
+                message = show_config_console(self.session)
+                return CommandResult(success=True, output=message, exit_code=0)
 
             # All other / commands go through dispatcher
             return self._handle_meta_command(input_text)

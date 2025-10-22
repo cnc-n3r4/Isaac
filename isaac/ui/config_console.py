@@ -14,6 +14,7 @@ from prompt_toolkit.widgets import TextArea, Checkbox, Button, Frame
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout.containers import WindowAlign
 from prompt_toolkit.application import get_app
+from prompt_toolkit.styles import Style
 import asyncio
 
 
@@ -73,50 +74,54 @@ class ConfigConsole:
     def _create_ui(self):
         """Create the TUI interface"""
 
-        # ASCII Art Header
+        # ISAAC 2.0 ASCII Art Header - THE signature element
         header_text = """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                           ISAAC /mine CONFIG CONSOLE                       ║
-║                                                                            ║
-║  Configure collections search parameters for optimal performance          ║
-║                                                                            ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  ┳┏┓┏┓┏┓┏┓  ┏┓ ┏┓                                                            │
+├─ ┃┗┓┣┫┣┫┃   ┏┛ ┃┃ ─────────────── COLLECTIONS ───────────── CONTROL CONSOLE ─┤
+│  ┻┗┛┛┗┛┗┗┛  ┗━•┗┛                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
 """
 
-        # Settings fields
+        # Settings fields with pale background styling
         self.max_chunk_size_field = TextArea(
             text=str(self.settings['max_chunk_size']),
             multiline=False,
             height=1,
-            width=10
+            width=10,
+            style='class:input-field'
         )
 
         self.match_preview_length_field = TextArea(
             text=str(self.settings['match_preview_length']),
             multiline=False,
             height=1,
-            width=10
+            width=10,
+            style='class:input-field'
         )
 
         self.multi_match_count_field = TextArea(
             text=str(self.settings['multi_match_count']),
             multiline=False,
             height=1,
-            width=10
+            width=10,
+            style='class:input-field'
         )
 
         self.piping_threshold_field = TextArea(
             text=str(self.settings['piping_threshold']),
             multiline=False,
             height=1,
-            width=10
+            width=10,
+            style='class:input-field'
         )
 
         self.piping_max_context_field = TextArea(
             text=str(self.settings['piping_max_context']),
             multiline=False,
             height=1,
-            width=10
+            width=10,
+            style='class:input-field'
         )
 
         self.show_scores_checkbox = Checkbox(
@@ -128,70 +133,95 @@ class ConfigConsole:
         save_button = Button("Save", handler=self._handle_save)
         cancel_button = Button("Cancel", handler=self._handle_cancel)
 
-        # Layout
+        # Layout - Fixed width for consistent display
         header_window = Window(
             content=FormattedTextControl(header_text.strip()),
             height=len(header_text.split('\n')),
-            align=WindowAlign.CENTER
+            width=80,  # Fixed width
+            dont_extend_width=True
         )
 
         settings_layout = HSplit([
+            Window(height=1),  # Spacing
+            
+            # Output Settings Section
+            Window(content=FormattedTextControl("  Output Settings:"), height=1, width=76),
+            
             # Max Chunk Size
             VSplit([
-                Window(content=FormattedTextControl("Max Chunk Size: "), width=20),
+                Window(content=FormattedTextControl("    max_chunk_size:       "), width=28, dont_extend_width=True),
                 self.max_chunk_size_field,
-                Window(content=FormattedTextControl("  Maximum characters per chunk"), width=35)
+                Window(content=FormattedTextControl(" chars (single match output)"), width=35, dont_extend_width=True)
             ]),
 
             # Match Preview Length
             VSplit([
-                Window(content=FormattedTextControl("Match Preview Length: "), width=25),
+                Window(content=FormattedTextControl("    match_preview_length: "), width=28, dont_extend_width=True),
                 self.match_preview_length_field,
-                Window(content=FormattedTextControl("  Characters to show in preview"), width=35)
+                Window(content=FormattedTextControl(" chars (preview per match)"), width=35, dont_extend_width=True)
             ]),
 
             # Multi Match Count
             VSplit([
-                Window(content=FormattedTextControl("Multi Match Count: "), width=20),
+                Window(content=FormattedTextControl("    multi_match_count:    "), width=28, dont_extend_width=True),
                 self.multi_match_count_field,
-                Window(content=FormattedTextControl("  Max matches per collection"), width=35)
+                Window(content=FormattedTextControl(" matches (how many to show)"), width=35, dont_extend_width=True)
             ]),
 
+            Window(height=1),  # Spacing
+            
+            # Piping Settings Section
+            Window(content=FormattedTextControl("  Piping Settings:"), height=1, width=76),
+            
             # Piping Threshold
             VSplit([
-                Window(content=FormattedTextControl("Piping Threshold: "), width=18),
+                Window(content=FormattedTextControl("    piping_threshold:     "), width=28, dont_extend_width=True),
                 self.piping_threshold_field,
-                Window(content=FormattedTextControl("  Min similarity for piping (0.0-1.0)"), width=40)
+                Window(content=FormattedTextControl(" chars (when /ask truncates)"), width=35, dont_extend_width=True)
             ]),
 
             # Piping Max Context
             VSplit([
-                Window(content=FormattedTextControl("Piping Max Context: "), width=20),
+                Window(content=FormattedTextControl("    piping_max_context:   "), width=28, dont_extend_width=True),
                 self.piping_max_context_field,
-                Window(content=FormattedTextControl("  Context lines for piping"), width=35)
+                Window(content=FormattedTextControl(" chars (max context to /ask)"), width=35, dont_extend_width=True)
             ]),
 
+            Window(height=1),  # Spacing
+            
+            # Display Options Section
+            Window(content=FormattedTextControl("  Display Options:"), height=1, width=76),
+            
             # Show Scores
             VSplit([
-                Window(content=FormattedTextControl(""), width=20),
+                Window(content=FormattedTextControl("    "), width=4, dont_extend_width=True),
                 self.show_scores_checkbox,
-                Window(content=FormattedTextControl("  Display similarity scores"), width=35)
+                Window(content=FormattedTextControl("    Show relevance scores with matches"), width=45, dont_extend_width=True)
             ]),
 
+            Window(height=2),  # Spacing
+            
             # Status
-            Window(content=FormattedTextControl(lambda: self.status_text), height=2),
+            Window(content=FormattedTextControl(lambda: "  " + self.status_text), height=2, width=76),
 
             # Buttons
             VSplit([
+                Window(width=30),  # Left padding for centering
                 save_button,
+                Window(width=2),
                 cancel_button
-            ], padding=2)
+            ]),
+            
+            Window(height=1)  # Bottom spacing
         ])
 
-        self.layout = Layout(HSplit([
+        # Create main container with fixed width
+        main_container = HSplit([
             header_window,
-            Frame(settings_layout, title="Collections Settings")
-        ]))
+            settings_layout
+        ], width=80)
+        
+        self.layout = Layout(main_container)
 
         # Key bindings
         self.kb = KeyBindings()
@@ -306,11 +336,18 @@ class ConfigConsole:
             # Event loop policy setting failed, continue with defaults
             pass
 
+        # Define style with pale input field backgrounds
+        style = Style.from_dict({
+            'input-field': 'bg:#f5f5f5 #000000',  # Very pale gray background, black text
+            'input-field.focused': 'bg:#ffffff #000000',  # White when focused
+        })
+
         try:
             app = Application(
                 layout=self.layout,
                 key_bindings=self.kb,
                 full_screen=True,
+                style=style,
                 # Use standard input/output for better Windows compatibility
                 input=None,
                 output=None
