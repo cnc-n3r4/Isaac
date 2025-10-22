@@ -12,11 +12,11 @@ def main():
     """
     Main entry point.
 
-    Launches Isaac's permanent shell interface with locked header UI.
+    Launches Isaac's simplified shell interface.
     """
     try:
         shell = PermanentShell()
-        shell.start()
+        shell.run()
     except KeyboardInterrupt:
         print("\nIsaac terminated by user.")
         sys.exit(0)

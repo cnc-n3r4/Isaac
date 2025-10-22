@@ -4,7 +4,7 @@ Uses ClaudeClient to detect and fix common typos
 """
 
 from typing import Dict, Optional
-from isaac.ai.claude_client import ClaudeClient
+from isaac.ai.xai_client import XaiClient
 
 
 def detect_typo(command: str) -> Dict:
@@ -69,20 +69,16 @@ def correct_command(command: str, shell_name: str = "bash", config: Optional[Dic
             'confidence': 1.0
         }
     
-    # Initialize Claude client
+    # Initialize xAI client
     try:
-        model = config.get('ai_model', 'claude-sonnet-4-5-20250929')
-        api_url = config.get('claude_api_url')
-        api_version = config.get('claude_api_version')
-        timeout = config.get('claude_timeout')
-        provider = config.get('ai_provider')
-        client = ClaudeClient(
-            api_key, 
+        model = config.get('ai_model', 'grok-beta')
+        api_url = config.get('xai_api_url')
+        timeout = config.get('xai_timeout')
+        client = XaiClient(
+            api_key=api_key, 
             model=model,
             api_url=api_url,
-            api_version=api_version,
-            timeout=timeout,
-            provider=provider
+            timeout=timeout
         )
     except Exception:
         return {

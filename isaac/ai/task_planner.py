@@ -5,7 +5,7 @@ Breaks complex tasks into steps, handles failures, provides recovery options
 
 import json
 from typing import Dict, List
-from isaac.ai.claude_client import ClaudeClient
+from isaac.ai.xai_client import XaiClient
 from isaac.adapters.base_adapter import CommandResult
 from isaac.models.task_history import TaskHistory
 
@@ -68,24 +68,20 @@ def execute_task(task_description: str, shell, session_mgr) -> CommandResult:
     if not api_key:
         return CommandResult(
             success=False,
-            output="Isaac > Claude API key not configured",
+            output="Isaac > xAI API key not configured",
             exit_code=-1
         )
     
-    # Initialize Claude client
+    # Initialize xAI client
     try:
-        model = session_mgr.config.get('ai_model', 'claude-sonnet-4-5-20250929')
-        api_url = session_mgr.config.get('claude_api_url')
-        api_version = session_mgr.config.get('claude_api_version')
-        timeout = session_mgr.config.get('claude_timeout')
-        provider = session_mgr.config.get('ai_provider')
-        client = ClaudeClient(
+        model = session_mgr.config.get('ai_model', 'grok-beta')
+        api_url = session_mgr.config.get('xai_api_url')
+        timeout = session_mgr.config.get('xai_timeout')
+        client = XaiClient(
             api_key=api_key, 
             model=model,
             api_url=api_url,
-            api_version=api_version,
-            timeout=timeout,
-            provider=provider
+            timeout=timeout
         )
     except Exception as e:
         return CommandResult(
@@ -254,7 +250,7 @@ def execute_task(task_description: str, shell, session_mgr) -> CommandResult:
 
 
 def _handle_step_failure(task_id: str, step_num: int, step: Dict, 
-                         error: str, client: ClaudeClient, shell, 
+                         error: str, client: XaiClient, shell, 
                          session_mgr) -> str:
     """
     Handle step failure with recovery options.
@@ -327,7 +323,7 @@ def _handle_step_failure(task_id: str, step_num: int, step: Dict,
 
 
 def _get_ai_fix_suggestion(command: str, error: str, shell_name: str, 
-                           client: ClaudeClient) -> Dict:
+                           client: XaiClient) -> Dict:
     """
     Get AI suggestion for fixing failed command.
     
@@ -335,7 +331,7 @@ def _get_ai_fix_suggestion(command: str, error: str, shell_name: str,
         command: Failed command
         error: Error message
         shell_name: Shell context
-        client: ClaudeClient
+        client: XaiClient
         
     Returns:
         dict: {'fixed_command': str, 'explanation': str}

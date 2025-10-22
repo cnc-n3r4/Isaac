@@ -34,6 +34,49 @@ class CommandRouter:
         
         return first_word not in obvious_commands
     
+    def _handle_meta_command(self, command: str) -> CommandResult:
+        """Handle /commands"""
+        parts = command[1:].split()  # Remove leading / and split
+        cmd_name = parts[0].lower()
+        args = parts[1:] if len(parts) > 1 else []
+        
+        # Import commands
+        from isaac.commands.config import ConfigCommand
+        from isaac.commands.status import StatusCommand
+        from isaac.commands.help import HelpHandler
+        
+        # Route to appropriate handler
+        if cmd_name == 'config':
+            handler = ConfigCommand(self.session)
+            output = handler.execute(args)
+        elif cmd_name == 'status':
+            handler = StatusCommand(self.session)
+            output = handler.execute(args)
+        elif cmd_name == 'help':
+            handler = HelpHandler(self.session)
+            result = handler.execute(args)
+            return CommandResult(
+                success=result.success,
+                output=result.message,
+                exit_code=0
+            )
+        elif cmd_name in ['exit', 'quit']:
+            # This will be handled in main loop
+            return CommandResult(success=True, output="", exit_code=0)
+        elif cmd_name == 'clear':
+            # Clear screen
+            import os
+            os.system('cls' if os.name == 'nt' else 'clear')
+            return CommandResult(success=True, output="", exit_code=0)
+        else:
+            output = f"Unknown command: /{cmd_name}\nType /help for available commands"
+        
+        return CommandResult(
+            success=True,
+            output=output,
+            exit_code=0
+        )
+    
     def route_command(self, input_text: str) -> CommandResult:
         """
         Route command through appropriate processing pipeline.
@@ -44,6 +87,10 @@ class CommandRouter:
         Returns:
             CommandResult with execution results
         """
+        # Check for meta-commands first
+        if input_text.startswith('/'):
+            return self._handle_meta_command(input_text)
+        
         # Task mode detection
         if input_text.lower().startswith('isaac task:'):
             task_desc = input_text[11:].strip()  # Remove "isaac task:"
