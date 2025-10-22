@@ -1013,7 +1013,7 @@ def test_task_mode_disabled():
 # AI QUERY PRIVACY TESTS (3 tests)
 # ============================================================================
 
-def test_ai_query_separate_history():
+def test_ai_query_separate_history(temp_isaac_dir, monkeypatch):
     """
     **CRITICAL PRIVACY TEST**
     
@@ -1026,8 +1026,12 @@ def test_ai_query_separate_history():
     - Arrow keys don't show AI queries
     - Risk if fails: PRIVACY BREACH (AI queries exposed)
     """
+    from pathlib import Path
     from isaac.core.session_manager import SessionManager
     from isaac.adapters.bash_adapter import BashAdapter
+    
+    # Mock Path.home() to return temp directory
+    monkeypatch.setattr(Path, 'home', lambda: temp_isaac_dir)
     
     config = {'machine_id': 'TEST', 'ai_enabled': True}
     shell = BashAdapter()
@@ -1037,11 +1041,11 @@ def test_ai_query_separate_history():
     session_mgr.add_ai_query("find large files", "AI translation result")
     
     # Verify separation
-    assert len(session_mgr.aiquery_history) == 1
-    assert len(session_mgr.command_history.entries) == 0
+    assert len(session_mgr.ai_query_history) == 1
+    assert len(session_mgr.command_history.commands) == 0
     
     # AI query should not be in command history
-    ai_entry = session_mgr.aiquery_history[0]
+    ai_entry = session_mgr.ai_query_history.queries[0]
     assert ai_entry['query'] == "find large files"
 
 

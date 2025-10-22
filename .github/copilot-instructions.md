@@ -1,44 +1,88 @@
+
 # Isaac - AI-Enhanced Multi-Platform Shell Assistant
 
 ## Quick Start for AI Agents
 
 ### Essential Commands
-```bash
+```powershell
 # Development setup
 pip install -e .              # Install with entry point 'isaac'
-isaac --start                 # Launch interactive shell
+isaac /start                 # Launch permanent shell assistant
 
-# Testing (safety-critical - always run after tier changes)
+# Testing (run after tier/config changes)
 pytest tests/test_tier_validator.py -v           # Tier safety tests
-pytest tests/test_cloud_client.py -v             # Cloud sync tests  
+pytest tests/test_cloud_client.py -v             # Cloud sync tests
 pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 ```
 
-### Command Flow (Safety-Critical)
-```
-User Input → Classification → Tier Check → [AI Validation if Tier≥3] → Execution → Logging
-```
-- **Tier 1** (ls, cd, pwd): Instant execution, no validation
-- **Tier 2** (grep, head): Auto-execute with optional typo correction
-- **Tier 3** (cp, mv, git): AI validation before execution
-- **Tier 4** (rm, format, dd): Lockdown mode - explicit confirmation required
+### Big Picture Architecture
 
-### Architecture in 3 Layers
+- **Permanent Shell Layer**: Isaac wraps the shell after launch (`isaac /start`), routing all commands through its engine. Natural language requires explicit "isaac" prefix.
+- **Session Roaming**: Cloud-based session persistence (GoDaddy PHP API), machine-aware command history, and privacy boundaries for AI queries.
+- **Tier System**: 4+ tiers (1: instant, 2: auto-correct, 2.5: confirm typo, 3: AI validation, 4: lockdown). User-customizable via config.
+- **Task Mode**: Multi-step command planning, safety-based approval, interactive failure recovery (auto-fix, retry, skip, abort, suggest).
+- **Auto-Fix Learning**: Isaac learns from user corrections, syncs patterns, tracks machine compatibility, and confidence scores.
+- **Dual History**: Command history (machine-aware, arrow keys) and AI query history (private, machine-agnostic).
+- **Session Data Structure**: Six cloud JSON files (preferences, command_history, aiquery_history, task_history, learned_autofixes, learned_patterns), versioning, and rollback system.
+- **UI Simplification**: Simple prompt/output loop, meta-commands for config/status/help, no locked header or complex screen management.
+- **Offline Mode**: Local queueing, auto-reconnect, batch sync, prompt indicator.
+- **Agent Ecosystem**: Isaac is the gatekeeper; other agents (Sarah, Daniel) have defined access boundaries.
 
-**1. Shell Abstraction** (`isaac/adapters/`):
-- `BaseShellAdapter`: Abstract interface defining `execute(command) -> CommandResult`
-- `PowerShellAdapter` / `BashAdapter`: Platform-specific implementations
-- `CommandResult` dataclass: Never raises exceptions, always returns structured result
+### Developer Workflows
 
-**2. Command Orchestration** (`isaac/core/`):
-- `CommandRouter`: Prefix detection (`/` meta-commands, `isaac` natural language), tier routing
-- `TierValidator`: JSON-based safety classification from `isaac/data/tier_defaults.json`
-- `SessionManager`: Config, preferences, cloud sync, AI query logging
+- **Build & Setup**: `pip install -e .` (editable), `isaac /start` to launch.
+- **Testing**: `pytest tests/` (≥85% coverage required), integration tests in `instructions/test_integration/`.
+- **Meta-Commands**: `/help`, `/status`, `/config`, `/clear` (see `isaac/commands/`). `/config` supports subcommands for status, AI, cloud, plugins, and settings.
+- **Task Mode**: Use `isaac /task: <goal>` for multi-step planning and execution. Failure recovery options: f/r/s/a/? (auto-fix, retry, skip, abort, suggest).
+- **Session Management**: All session data is cloud-synced; rollback via snapshots (manual or auto-triggered).
 
-**3. Terminal UI** (`isaac/ui/`):
-- `TerminalControl`: 5-line locked header with status indicators (cloud/AI/VPN/CPU/network)
-- `PermanentShell`: Main REPL loop with scrolling output and config mode
-- Dirty flags (`header_dirty`, `body_dirty`) optimize screen redraws
+### Project-Specific Conventions
+
+- **Tier Classification**: See `isaac/data/tier_defaults.json` for command tiers. Tier 2.5 (find/sed/awk) requires confirmation after typo correction.
+- **Error Handling**: All shell adapters return `CommandResult` (never raise exceptions).
+- **Config Management**: Path-based config loading, user preferences in `~/.isaac/config.json`.
+- **Privacy**: AI query history is private to user/Isaac; other agents have restricted access.
+- **Auto-Fix Patterns**: Learned fixes stored in `learned_autofixes.json`, with machine-specific compatibility and cross-platform translation.
+- **Versioning**: Last 3 auto-snapshots + manual, rollback triggers (time, command count, manual, machine switch).
+
+### Integration Points & Key Files
+
+- `isaac/core/command_router.py`: Command routing, meta-command handling, tier logic
+- `isaac/core/session_manager.py`: Session, config, cloud sync
+- `isaac/adapters/`: Shell abstraction (PowerShell, bash)
+- `isaac/commands/`: Meta-commands (`/help`, `/config`, `/status`, etc.)
+- `isaac/ui/permanent_shell.py`: Main shell loop (prompt/output)
+- `isaac/ai/`: AI validation, translation, task planning
+- `isaac/api/cloud_client.py`: Cloud sync (GoDaddy PHP API)
+- Session files: preferences.json, command_history.json, aiquery_history.json, task_history.json, learned_autofixes.json, learned_patterns.json
+
+### UI & User Experience
+
+- Simple prompt → output → prompt flow (no locked header)
+- Meta-commands for configuration and status
+- Natural language requires "isaac" prefix
+- Offline mode indicator: `isaac [OFFLINE]>`
+
+### Agent Ecosystem & Privacy
+
+- Isaac is the root key/gatekeeper for all agents
+- AI query history is private (not in arrow-key recall)
+
+### Roadmap & Open Design Questions
+
+- Shell abstraction: PowerShell vs bash detection, translation, tier lists
+- Startup sequence: splash screen, header locking, warm/cold start
+- Offline mode: queue management, reconnection logic, conflict resolution
+
+---
+For more details, see:
+- `VISUAL_20251018_isaac_design_session.md` (design session log)
+- `ui_simplification.md` (UI simplification instructions)
+- `decision flow chart.md` (command classification and execution swimlane)
+- `PORTING_NOTES.md` (platform notes)
+
+---
+**If unclear or incomplete, ask for feedback on specific sections to iterate.**
 
 ## Meta-Commands System
 
@@ -101,7 +145,7 @@ USER → ORCHESTRATOR → VALIDATOR → EXECUTOR → CHRONO-LOG → UI
 ### Command Classification
 Commands are classified into three types:
 - **Local** (`/ask`, `/help`): Meta-commands executed immediately
-- **Direct** (`isaac <cmd>`): Bypass validation, execute immediately
+- **Direct** (`isaac /f <cmd>`): Bypass validation, execute immediately
 - **Regular** (no prefix): Shell commands with tier-based safety validation
 
 ### Tier-Based Execution

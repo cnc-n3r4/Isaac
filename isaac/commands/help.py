@@ -259,3 +259,35 @@ NOTES:
             status_symbol='✓',
             suggestion=None
         )
+
+    def _show_meta_commands_help(self) -> CommandResult:
+        """
+        Show help for meta-commands.
+
+        Returns:
+            CommandResult with meta-command help
+        """
+        help_text = """
+Available Commands:
+  /help              - Show this help
+  /status            - Quick system status
+  /status -v         - Detailed status
+  /config            - Configuration overview
+  /config status     - System status check
+  /config ai         - AI provider details
+  /config cloud      - Cloud sync status
+  /config plugins    - List plugins
+  /config set <k> <v> - Change setting
+  /clear             - Clear screen
+  /exit, /quit       - Exit ISAAC
+
+Natural Language:
+  isaac <query>      - AI query or command translation
+""".strip()
+
+        return CommandResult(
+            success=True,
+            message=help_text,
+            status_symbol='✓',
+            suggestion=None
+        )

@@ -78,7 +78,7 @@ def validate_command(command: str, shell_type: str, config: Dict[str, Any]) -> D
     try:
         # Initialize xAI client
         api_key = config.get('xai_api_key', '')
-        model = config.get('ai_model', 'grok-beta')
+        model = config.get('ai_model', 'grok-3')
         api_url = config.get('xai_api_url')
         timeout = config.get('xai_timeout')
         xai_client = XaiClient(

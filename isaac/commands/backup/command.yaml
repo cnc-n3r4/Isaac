@@ -1,0 +1,35 @@
+name: backup
+version: 1.0.0
+summary: "Backup configuration and session data"
+
+triggers: ["/backup"]
+
+args:
+  - name: target
+    type: enum
+    enum: ["config", "session", "all"]
+    required: false
+    help: "What to backup (default: all)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 16
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/backup"
+  - "/backup config"

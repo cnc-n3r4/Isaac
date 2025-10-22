@@ -5,16 +5,27 @@ SAFETY-CRITICAL: Ensures all commands go through appropriate validation
 
 from isaac.adapters.base_adapter import CommandResult
 from isaac.core.tier_validator import TierValidator
+from isaac.runtime import CommandDispatcher
+from isaac.ai.query_classifier import QueryClassifier
+from pathlib import Path
 
 
 class CommandRouter:
     """Routes commands through tier validation and AI processing."""
-    
+
     def __init__(self, session_mgr, shell):
         """Initialize with session manager and shell adapter."""
         self.session = session_mgr
         self.shell = shell
         self.validator = TierValidator(self.session.preferences)
+        self.query_classifier = QueryClassifier()
+
+        # Initialize the plugin dispatcher
+        self.dispatcher = CommandDispatcher(session_mgr)
+        self.dispatcher.load_commands([
+            Path(__file__).parent.parent / 'commands',
+            Path.home() / '.isaac' / 'commands'
+        ])
     
     def _confirm(self, message: str) -> bool:
         """Get user confirmation (placeholder - always return True for now)."""
@@ -33,49 +44,75 @@ class CommandRouter:
         obvious_commands = ['ls', 'cd', 'pwd', 'grep', 'find', 'cat', 'echo', 'rm', 'cp', 'mv']
         
         return first_word not in obvious_commands
-    
-    def _handle_meta_command(self, command: str) -> CommandResult:
-        """Handle /commands"""
-        parts = command[1:].split()  # Remove leading / and split
-        cmd_name = parts[0].lower()
-        args = parts[1:] if len(parts) > 1 else []
-        
-        # Import commands
-        from isaac.commands.config import ConfigCommand
-        from isaac.commands.status import StatusCommand
-        from isaac.commands.help import HelpHandler
-        
-        # Route to appropriate handler
-        if cmd_name == 'config':
-            handler = ConfigCommand(self.session)
-            output = handler.execute(args)
-        elif cmd_name == 'status':
-            handler = StatusCommand(self.session)
-            output = handler.execute(args)
-        elif cmd_name == 'help':
-            handler = HelpHandler(self.session)
-            result = handler.execute(args)
+
+    def _route_device_command(self, input_text: str) -> CommandResult:
+        """Handle !alias device routing commands."""
+        # Parse device alias and command
+        parts = input_text[1:].split(None, 1)  # Remove ! and split on first space
+        if len(parts) != 2:
             return CommandResult(
-                success=result.success,
-                output=result.message,
-                exit_code=0
+                success=False,
+                output="Usage: !device_alias /command",
+                exit_code=1
             )
-        elif cmd_name in ['exit', 'quit']:
-            # This will be handled in main loop
-            return CommandResult(success=True, output="", exit_code=0)
-        elif cmd_name == 'clear':
-            # Clear screen
-            import os
-            os.system('cls' if os.name == 'nt' else 'clear')
-            return CommandResult(success=True, output="", exit_code=0)
-        else:
-            output = f"Unknown command: /{cmd_name}\nType /help for available commands"
-        
+
+        device_alias, device_cmd = parts
+
+        # Try immediate routing
+        try:
+            if self.session.cloud and self.session.cloud.is_available():
+                success = self.session.cloud.route_command(device_alias, device_cmd)
+                if success:
+                    return CommandResult(
+                        success=True,
+                        output=f"Command routed to {device_alias}",
+                        exit_code=0
+                    )
+        except Exception:
+            pass  # Fall through to queuing
+
+        # Queue for later sync if cloud unavailable
+        queue_id = self.session.queue.enqueue(
+            command=device_cmd,
+            command_type='device_route',
+            target_device=device_alias,
+            metadata={'tier': self._get_tier(device_cmd)}
+        )
+
         return CommandResult(
             success=True,
-            output=output,
+            output=f"Command queued (#{queue_id}) - will sync when online",
             exit_code=0
         )
+
+    def _get_tier(self, command: str) -> float:
+        """Get safety tier for command."""
+        return self.validator.get_tier(command)
+
+    def _handle_meta_command(self, command: str) -> CommandResult:
+        """Handle /commands using the plugin dispatcher"""
+        try:
+            # Check for pipes
+            if '|' in command:
+                parts = command.split('|')
+                result = self.dispatcher.chain_pipe(parts[0].strip(), parts[1].strip())
+            else:
+                # Single command
+                result = self.dispatcher.execute(command)
+
+            # Convert dispatcher result to CommandResult
+            return CommandResult(
+                success=result.get('ok', False),
+                output=result.get('stdout', ''),
+                exit_code=0 if result.get('ok', False) else 1
+            )
+
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                output=f"Command execution error: {str(e)}",
+                exit_code=1
+            )
     
     def route_command(self, input_text: str) -> CommandResult:
         """
@@ -89,8 +126,21 @@ class CommandRouter:
         """
         # Check for meta-commands first
         if input_text.startswith('/'):
+            # Handle special cases that don't go through dispatcher
+            if input_text in ['/exit', '/quit']:
+                return CommandResult(success=True, output="", exit_code=0)
+            if input_text == '/clear':
+                import os
+                os.system('cls' if os.name == 'nt' else 'clear')
+                return CommandResult(success=True, output="", exit_code=0)
+
+            # All other / commands go through dispatcher
             return self._handle_meta_command(input_text)
-        
+
+        # Check for device routing (!alias)
+        if input_text.startswith('!'):
+            return self._route_device_command(input_text)
+
         # Task mode detection
         if input_text.lower().startswith('isaac task:'):
             task_desc = input_text[11:].strip()  # Remove "isaac task:"
@@ -109,6 +159,11 @@ class CommandRouter:
             
             # AI translation (Phase 3.2)
             query = input_text[6:].strip()  # Remove "isaac " prefix
+            
+            # Check if query should route to chat mode (geographic/general info)
+            if self.query_classifier.is_chat_mode_query(query):
+                # Route to chat mode (like /ask command)
+                return self._handle_chat_query(query)
             
             from isaac.ai.translator import translate_query
             result = translate_query(query, self.shell.name, self.session)
@@ -235,3 +290,104 @@ class CommandRouter:
                 output="Isaac > Unknown command tier. Aborted for safety.",
                 exit_code=-1
             )
+    
+    def _handle_chat_query(self, query: str) -> CommandResult:
+        """
+        Handle chat-style query (no execution, just AI response).
+        
+        Args:
+            query: Natural language query
+        
+        Returns:
+            CommandResult with AI response
+        """
+        try:
+            from isaac.ai.xai_client import XaiClient
+            
+            # Get API configuration
+            config = self.session.get_config()
+            api_key = config.get('xai_api_key') or config.get('api_key')
+            
+            if not api_key:
+                return CommandResult(
+                    success=False,
+                    output="Isaac > xAI API key not configured. Set it in ~/.isaac/config.json",
+                    exit_code=-1
+                )
+            
+            # Initialize xAI client
+            client = XaiClient(
+                api_key=api_key,
+                api_url=config.get('xai_api_url', 'https://api.x.ai/v1/chat/completions'),
+                model=config.get('xai_model', 'grok-3')
+            )
+            
+            # Build chat preprompt
+            preprompt = self._build_chat_preprompt()
+            
+            # Query AI
+            response = client.chat(
+                prompt=query,
+                system_prompt=preprompt
+            )
+            
+            # Log query to AI history
+            self.session.log_ai_query(
+                query=query,
+                translated_command='[chat_mode_auto]',
+                explanation=response[:100],
+                executed=False,
+                shell_name='chat'
+            )
+            
+            return CommandResult(
+                success=True,
+                output=f"Isaac > {response}",
+                exit_code=0
+            )
+        
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                output=f"Isaac > Error querying AI: {e}",
+                exit_code=-1
+            )
+    
+    def _build_chat_preprompt(self) -> str:
+        """Build context-aware preprompt for chat mode."""
+        shell_name = self.shell.name if hasattr(self.shell, 'name') else 'PowerShell'
+        
+        from pathlib import Path
+        current_dir = Path.cwd()
+        
+        preprompt = f"""You are Isaac, an AI assistant integrated into the user's shell.
+
+CONTEXT:
+- Operating System: Windows
+- Current Shell: {shell_name}
+- Current Directory: {current_dir}
+
+IMPORTANT DISTINCTIONS:
+1. Geographic/General Questions: Answer directly
+   - "where is alaska?" → Geographic information
+   - "what is docker?" → Technical explanation
+   
+2. File/Command Questions: Mention the command but don't execute
+   - "where is alaska.exe?" → "You can search with: where.exe alaska.exe"
+   - "show me my files" → "You can list files with: ls or dir"
+
+3. Shell-Specific Awareness:
+   - User is on {shell_name}, so reference appropriate commands
+   - PowerShell: Get-*, Set-*, cmdlets
+   - Bash: ls, grep, awk, sed
+
+RESPONSE STYLE:
+- Conversational and helpful
+- Brief but complete answers
+- Reference shell commands when relevant
+- No command execution (this is chat mode)
+
+Current user query follows below:
+"""
+        
+        return preprompt

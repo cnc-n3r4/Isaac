@@ -16,6 +16,17 @@ class PermanentShell:
         self.shell = self._detect_shell()
         self.router = CommandRouter(self.session, self.shell)
 
+        # Setup sync completion callback
+        self._setup_sync_callback()
+
+    def _setup_sync_callback(self):
+        """Register callback for sync completion notifications."""
+        def on_sync_complete(count: int):
+            # Print notification to terminal
+            print(f"\n✅ {count} queued command(s) synced")
+
+        self.session.sync_worker.on_sync_complete = on_sync_complete
+
     def _detect_shell(self):
         """Detect and return appropriate shell adapter"""
         if sys.platform == "win32":
@@ -38,14 +49,32 @@ class PermanentShell:
         print("=" * 60)
         print()
 
+    def _get_prompt(self) -> str:
+        """Build prompt with queue status."""
+        base_prompt = "$"
+
+        # Check queue status
+        queue_status = self.session.get_queue_status()
+        pending_count = queue_status['pending']
+
+        if pending_count > 0:
+            # Show offline indicator with count
+            prompt = f"{base_prompt} [OFFLINE: {pending_count} queued]> "
+        else:
+            prompt = f"{base_prompt}> "
+
+        # Make prompt yellow
+        return f"\033[33m{prompt}\033[0m"
+
     def run(self):
         """Main shell loop - simplified"""
         self._print_welcome()
 
         while True:
             try:
-                # Print prompt
-                print("> ", end="", flush=True)
+                # Print prompt with queue status
+                prompt = self._get_prompt()
+                print(prompt, end="", flush=True)
 
                 # Get user input
                 user_input = input().strip()

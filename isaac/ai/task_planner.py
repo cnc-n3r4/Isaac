@@ -74,7 +74,7 @@ def execute_task(task_description: str, shell, session_mgr) -> CommandResult:
     
     # Initialize xAI client
     try:
-        model = session_mgr.config.get('ai_model', 'grok-beta')
+        model = session_mgr.config.get('ai_model', 'grok-3')
         api_url = session_mgr.config.get('xai_api_url')
         timeout = session_mgr.config.get('xai_timeout')
         client = XaiClient(

@@ -92,6 +92,28 @@ class SessionManager:
         # Load existing session data
         self._load_session_data()
 
+        # NEW: Initialize queue and sync worker
+        from isaac.queue.command_queue import CommandQueue
+        from isaac.queue.sync_worker import SyncWorker
+
+        queue_db = self.isaac_dir / 'queue.db'
+        self.queue = CommandQueue(queue_db)
+
+        self.sync_worker = SyncWorker(
+            queue=self.queue,
+            cloud_client=self.cloud,
+            check_interval=30  # Check every 30 seconds
+        )
+
+        # Start background sync
+        self.sync_worker.start()
+
+        # Initialize file history integration (Phase 3)
+        self.totalcmd_parser = None
+        self.file_history_manager = None
+        self.cron_manager = None
+        self._init_file_history()
+
     def _load_session_data(self):
         """Load session data from local files."""
         # Load preferences
@@ -123,6 +145,16 @@ class SessionManager:
                     self.task_history = TaskHistory.from_dict(data)
             except Exception:
                 pass  # Use empty task history if file corrupted
+
+        # Load AI query history
+        ai_history_file = self.isaac_dir / 'aiquery_history.json'
+        if ai_history_file.exists():
+            try:
+                with open(ai_history_file, 'r') as f:
+                    data = json.load(f)
+                    self.ai_query_history = AIQueryHistory.from_dict(data)
+            except Exception:
+                pass  # Use empty history if file corrupted
 
     def _load_config(self):
         """Load config from config.json file."""
@@ -171,6 +203,12 @@ class SessionManager:
         with open(history_file, 'w') as f:
             json.dump(self.command_history.to_dict(), f, indent=2)
 
+    def _save_ai_query_history(self):
+        """Save AI query history to local file."""
+        ai_history_file = self.isaac_dir / 'aiquery_history.json'
+        with open(ai_history_file, 'w') as f:
+            json.dump(self.ai_query_history.to_dict(), f, indent=2)
+
     def _save_preferences(self):
         """Save user preferences to disk."""
         prefs_file = self.isaac_dir / 'preferences.json'
@@ -193,6 +231,16 @@ class SessionManager:
             executed=executed,
             result='executed' if executed else 'translated'
         )
+        
+        # Save to disk
+        self._save_ai_query_history()
+        
+        # Cloud sync (async-style error handling)
+        if self.cloud:
+            try:
+                self.cloud.save_session_file('aiquery_history.json', self.ai_query_history.to_dict())
+            except Exception:
+                pass  # Don't block query logging if cloud fails
 
     def add_ai_query(self, query: str, translated_command: str, shell_name: str = "unknown"):
         """Alias for log_ai_query for backward compatibility."""
@@ -210,3 +258,101 @@ class SessionManager:
         """Get recent commands from history."""
         recent = self.command_history.commands[-limit:] if self.command_history.commands else []
         return [cmd['command'] for cmd in recent]
+
+    def shutdown(self):
+        """Graceful shutdown of session manager."""
+        # Stop sync worker
+        if hasattr(self, 'sync_worker'):
+            self.sync_worker.stop()
+        
+        # Stop cron manager
+        if hasattr(self, 'cron_manager') and self.cron_manager:
+            self.cron_manager.stop()
+
+    def get_queue_status(self) -> dict:
+        """Expose queue status for UI."""
+        return self.queue.get_queue_status()
+
+    def force_sync(self) -> bool:
+        """Force immediate synchronization of queued commands."""
+        if not self.cloud:
+            return False
+
+        try:
+            # Trigger immediate sync
+            synced_count = self.sync_worker.force_sync()
+            return synced_count > 0
+        except Exception:
+            return False
+    
+    def _init_file_history(self):
+        """Initialize Total Commander log integration."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Default log path (configurable via preferences)
+        log_path_str = self.preferences.data.get(
+            'totalcmd_log_path',
+            r'C:\Program Files\Total Commander\WINCMD.LOG'
+        )
+        log_path = Path(log_path_str)
+        
+        if not log_path.exists():
+            logger.info("Total Commander log not found, skipping file history")
+            return
+        
+        # Initialize parser
+        from isaac.integrations.totalcmd_parser import TotalCommanderParser
+        self.totalcmd_parser = TotalCommanderParser(log_path)
+        
+        # Initialize collection manager
+        api_key = self.config.get('xai_api_key') or self.config.get('api_key')
+        if api_key:
+            from isaac.integrations.xai_collections import FileHistoryCollectionManager
+            from isaac.ai.xai_client import XaiClient
+            
+            xai_client = XaiClient(
+                api_key=api_key,
+                api_url=self.config.get('xai_api_url', 'https://api.x.ai/v1/chat/completions'),
+                model=self.config.get('xai_model', 'grok-3')
+            )
+            
+            self.file_history_manager = FileHistoryCollectionManager(xai_client)
+            
+            # Initialize cron manager
+            from isaac.scheduler.cron_manager import CronManager
+            self.cron_manager = CronManager()
+            
+            # Register periodic upload task
+            upload_interval = self.preferences.data.get('file_history_upload_interval', 60)  # minutes
+            self.cron_manager.register_task(
+                name='upload_file_history',
+                func=self._upload_file_history,
+                interval_minutes=upload_interval,
+                run_immediately=False
+            )
+            
+            # Start cron manager
+            self.cron_manager.start()
+            
+            logger.info(f"File history sync enabled (every {upload_interval}m)")
+    
+    def _upload_file_history(self):
+        """Background task: Parse and upload new file operations."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        if not self.totalcmd_parser or not self.file_history_manager:
+            return
+        
+        try:
+            # Parse new operations (incremental)
+            operations = self.totalcmd_parser.parse_log(incremental=True)
+            
+            if operations:
+                # Upload to xAI collection
+                count = self.file_history_manager.upload_operations(operations)
+                logger.info(f"Synced {count} file operations to AI collection")
+        
+        except Exception as e:
+            logger.error(f"File history upload failed: {e}")

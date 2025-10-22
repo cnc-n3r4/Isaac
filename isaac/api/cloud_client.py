@@ -4,6 +4,11 @@ import requests
 from typing import Optional
 
 
+class CloudUnavailableError(Exception):
+    """Raised when cloud API is unreachable."""
+    pass
+
+
 class CloudClient:
     """HTTP client for syncing Isaac session data to GoDaddy cloud API.
     
@@ -128,10 +133,124 @@ class CloudClient:
     
     def is_available(self) -> bool:
         """Check if cloud sync is currently available.
-        
+
         Wrapper around health_check() for semantic clarity.
-        
+
         Returns:
             True if cloud API is reachable, False otherwise
         """
         return self.health_check()
+
+    def route_command(self, device_alias: str, command: str) -> bool:
+        """Route command to target device via cloud.
+
+        Args:
+            device_alias: Target device identifier (e.g., "laptop2")
+            command: Command to execute on target device
+
+        Returns:
+            True if routed successfully, False on error
+        """
+        try:
+            url = f"{self.api_url}/route_command.php"
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+
+            payload = {
+                'user_id': self.user_id,
+                'target_device': device_alias,
+                'command': command
+            }
+
+            response = requests.post(
+                url,
+                json=payload,
+                headers=headers,
+                timeout=self.timeout
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                return result.get('success', False)
+            else:
+                return False
+
+        except Exception:
+            return False
+
+    def execute_cloud_meta(self, command: str) -> bool:
+        """Execute cloud-dependent meta-command.
+
+        Args:
+            command: Meta-command that requires cloud (e.g., "/sync-history")
+
+        Returns:
+            True if executed successfully, False on error
+        """
+        try:
+            url = f"{self.api_url}/execute_meta.php"
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+
+            payload = {
+                'user_id': self.user_id,
+                'command': command
+            }
+
+            response = requests.post(
+                url,
+                json=payload,
+                headers=headers,
+                timeout=self.timeout
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                return result.get('success', False)
+            else:
+                return False
+
+        except Exception:
+            return False
+
+    def log_command_history(self, command: str) -> bool:
+        """Log command to cloud history for roaming.
+
+        Args:
+            command: Shell command to log
+
+        Returns:
+            True if logged successfully, False on error
+        """
+        try:
+            url = f"{self.api_url}/log_command.php"
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+
+            payload = {
+                'user_id': self.user_id,
+                'command': command,
+                'timestamp': None  # Let server set timestamp
+            }
+
+            response = requests.post(
+                url,
+                json=payload,
+                headers=headers,
+                timeout=self.timeout
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                return result.get('success', False)
+            else:
+                return False
+
+        except Exception:
+            return False
