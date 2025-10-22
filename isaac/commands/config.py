@@ -197,30 +197,28 @@ class ConfigCommand:
         # Read from setup.py or version file
         return "1.0.2"  # Hardcoded for now
 
-    def _check_cloud_status(self) -> str:
-        """Quick cloud status check"""
-        if not self.session.config.get('sync_enabled', False):
-            return "✗ Disabled"
-
-        try:
-            # Quick health check
-            if self.session.cloud:
-                return "✓ Connected"
-            else:
-                return "✗ Client not initialized"
-        except:
-            return "✗ Unreachable"
-
     def _check_ai_status(self) -> str:
         """Quick AI status check"""
         provider = self.session.config.get('ai_provider', 'xai')
         model = self.session.config.get('ai_model', 'grok-beta')
 
         try:
-            # Quick ping
             if self.session.config.get('xai_api_key'):
-                return f"✓ {provider} ({model})"
+                return f"\u2713 {provider} ({model})"
             else:
-                return f"✗ {provider} (no key)"
+                return f"\u2717 {provider} (no key)"
         except:
-            return f"✗ {provider} unreachable"
+            return f"\u2717 {provider} unreachable"
+
+    def _check_cloud_status(self) -> str:
+        """Quick cloud status check"""
+        if not self.session.config.get('sync_enabled', False):
+            return "\u2717 Disabled"
+
+        try:
+            if self.session.cloud:
+                return "\u2713 Connected"
+            else:
+                return "\u2717 Client not initialized"
+        except:
+            return "\u2717 Unreachable"

@@ -1,0 +1,36 @@
+name: list
+version: 1.0.0
+summary: "Manage named lists (shopping, todos, etc.)"
+
+triggers: ["/list"]
+aliases: ["/ls"]
+
+args:
+  - name: list_name
+    type: string
+    required: true
+    pattern: "^[A-Za-z0-9._-]{1,32}$"
+    help: "Name of the list (e.g., grocery, todos)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 3000
+    max_stdout_kib: 128
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: true
+
+examples:
+  - "/list grocery"
+  - "/list todos"

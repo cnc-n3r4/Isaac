@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 class XaiClient:
     """HTTP client for x.ai/Grok API integration."""
     
-    def __init__(self, api_key: str, model: str = "grok-beta", 
+    def __init__(self, api_key: str, model: str = "grok-3", 
                  api_url: Optional[str] = None, api_version: Optional[str] = None, timeout: Optional[int] = None,
                  provider: Optional[str] = None):
         """
@@ -19,7 +19,7 @@ class XaiClient:
         
         Args:
             api_key: x.ai API key
-            model: Model to use (default: grok-beta)
+            model: Model to use (default: grok-3)
             api_url: API endpoint URL (default: x.ai official)
             api_version: API version header (not used for x.ai)
             timeout: Request timeout in seconds (default: 10)
@@ -126,6 +126,39 @@ class XaiClient:
             return {'success': False, 'error': f'Response parsing error: {str(e)}'}
         except Exception as e:
             return {'success': False, 'error': f'Unexpected error: {str(e)}'}
+    
+    def chat(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """
+        Direct chat with AI (no command translation).
+        
+        Args:
+            prompt: User query
+            system_prompt: Optional system context
+        
+        Returns:
+            AI response text
+        
+        Raises:
+            Exception: If API call fails
+        """
+        if system_prompt:
+            result = self._call_api_with_system_prompt(
+                system_prompt=system_prompt,
+                user_prompt=prompt,
+                max_tokens=1024,
+                temperature=0.7
+            )
+        else:
+            result = self._call_api(
+                prompt=prompt,
+                max_tokens=1024,
+                temperature=0.7
+            )
+        
+        if not result['success']:
+            raise Exception(result.get('error', 'Unknown API error'))
+        
+        return result['text']
     
     def translate_to_shell(self, natural_language: str, shell_name: str) -> Dict:
         """

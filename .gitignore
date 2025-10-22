@@ -5,7 +5,6 @@ __pycache__/
 *.so
 .Python
 build/
-.claude/
 develop-eggs/
 dist/
 downloads/
@@ -21,6 +20,10 @@ wheels/
 .installed.cfg
 *.egg
 !./claude/bible/**
+.claude/logs/
+.claude/mail/
+.claude/status/
+
 
 # Virtual environments
 venv/

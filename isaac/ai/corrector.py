@@ -71,7 +71,7 @@ def correct_command(command: str, shell_name: str = "bash", config: Optional[Dic
     
     # Initialize xAI client
     try:
-        model = config.get('ai_model', 'grok-beta')
+        model = config.get('ai_model', 'grok-3')
         api_url = config.get('xai_api_url')
         timeout = config.get('xai_timeout')
         client = XaiClient(

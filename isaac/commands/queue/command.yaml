@@ -1,0 +1,32 @@
+name: queue
+version: 1.0.0
+summary: "View queued commands awaiting sync"
+description: |
+  Shows commands that are queued for sync when cloud connection is restored.
+
+triggers: ["/queue"]
+aliases: ["/q"]
+
+args: []
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 2000
+    max_stdout_kib: 16
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/queue"

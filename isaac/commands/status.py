@@ -20,8 +20,8 @@ class StatusCommand:
             return ConfigCommand(self.session)._show_status()
 
         # One-line summary
-        cloud = "✓" if self.session.cloud else "✗"
-        ai = "✓" if self.session.config.get('xai_api_key') else "✗"
+        cloud = "\u2713" if self.session.cloud else "\u2717"
+        ai = "\u2713" if self.session.config.get('xai_api_key') else "\u2717"
         hist = len(self.session.command_history.commands)
 
         return f"Session: {self.session.config.get('machine_id', 'unknown')[:6]} | Cloud: {cloud} | AI: {ai} | History: {hist}"

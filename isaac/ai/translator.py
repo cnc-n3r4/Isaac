@@ -48,7 +48,7 @@ def translate_query(query: str, shell_name: str, session_mgr) -> Dict:
     
     # Initialize xAI client
     try:
-        model = session_mgr.config.get('ai_model', 'grok-beta')
+        model = session_mgr.config.get('ai_model', 'grok-3')
         api_url = session_mgr.config.get('xai_api_url')
         timeout = session_mgr.config.get('xai_timeout')
         client = XaiClient(

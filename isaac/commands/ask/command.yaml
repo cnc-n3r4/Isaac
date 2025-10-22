@@ -1,0 +1,36 @@
+name: ask
+version: 1.0.0
+summary: Query AI for information (conversational, no command execution)
+description: |
+  Chat with AI directly without command execution.
+  Unlike translation mode (isaac <query>), this sends queries to AI
+  and returns text responses without executing commands.
+
+triggers:
+  - /ask
+  - /a
+
+aliases:
+  - /ask
+  - /a
+
+args: []
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 512
+  capabilities:
+    - network
+
+examples:
+  - "/ask where is alaska? - Geographic question"
+  - "/ask what is docker? - Technical explanation"
+  - "/ask explain kubernetes networking - Detailed information"
+  - "/a quick question - Short alias"
