@@ -7,7 +7,7 @@ Returns warnings and suggestions for potentially dangerous commands.
 
 import logging
 from typing import Dict, List, Any
-from isaac.ai.claude_client import ClaudeClient
+from isaac.ai.xai_client import XaiClient
 
 logger = logging.getLogger(__name__)
 
@@ -76,24 +76,20 @@ def validate_command(command: str, shell_type: str, config: Dict[str, Any]) -> D
         }
 
     try:
-        # Initialize Claude client
-        api_key = config.get('claude_api_key', '')
-        model = config.get('ai_model', 'claude-sonnet-4-5-20250929')
-        api_url = config.get('claude_api_url')
-        api_version = config.get('claude_api_version')
-        timeout = config.get('claude_timeout')
-        provider = config.get('ai_provider')
-        claude = ClaudeClient(
-            api_key, 
-            model,
+        # Initialize xAI client
+        api_key = config.get('xai_api_key', '')
+        model = config.get('ai_model', 'grok-beta')
+        api_url = config.get('xai_api_url')
+        timeout = config.get('xai_timeout')
+        xai_client = XaiClient(
+            api_key=api_key, 
+            model=model,
             api_url=api_url,
-            api_version=api_version,
-            timeout=timeout,
-            provider=provider
+            timeout=timeout
         )
 
         # Call validation API
-        result = claude.validate_command(command, shell_type)
+        result = xai_client.validate_command(command, shell_type)
 
         # Handle API errors
         if 'error' in result:

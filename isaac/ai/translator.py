@@ -4,7 +4,7 @@ Uses ClaudeClient to translate user queries to executable commands
 """
 
 from typing import Dict
-from isaac.ai.claude_client import ClaudeClient
+from isaac.ai.xai_client import XaiClient
 
 
 def translate_query(query: str, shell_name: str, session_mgr) -> Dict:
@@ -38,28 +38,24 @@ def translate_query(query: str, shell_name: str, session_mgr) -> Dict:
             'error': 'AI features disabled. Enable in config: ai_enabled: true'
         }
     
-    # Get Claude API key
-    api_key = session_mgr.config.get('claude_api_key', '')
+    # Get xAI API key
+    api_key = session_mgr.config.get('xai_api_key', '')
     if not api_key:
         return {
             'success': False,
-            'error': 'Claude API key not configured. Add to ~/.isaac/config.json'
+            'error': 'xAI API key not configured. Add to ~/.isaac/config.json'
         }
     
-    # Initialize Claude client
+    # Initialize xAI client
     try:
-        model = session_mgr.config.get('ai_model', 'claude-sonnet-4-5-20250929')
-        api_url = session_mgr.config.get('claude_api_url')
-        api_version = session_mgr.config.get('claude_api_version')
-        timeout = session_mgr.config.get('claude_timeout')
-        provider = session_mgr.config.get('ai_provider')  # 'claude', 'openai', or auto-detect
-        client = ClaudeClient(
+        model = session_mgr.config.get('ai_model', 'grok-beta')
+        api_url = session_mgr.config.get('xai_api_url')
+        timeout = session_mgr.config.get('xai_timeout')
+        client = XaiClient(
             api_key=api_key, 
             model=model,
             api_url=api_url,
-            api_version=api_version,
-            timeout=timeout,
-            provider=provider
+            timeout=timeout
         )
     except Exception as e:
         return {
@@ -67,7 +63,7 @@ def translate_query(query: str, shell_name: str, session_mgr) -> Dict:
             'error': f'Failed to initialize AI client: {str(e)}'
         }
     
-    # Call Claude API
+    # Call xAI API
     result = client.translate_to_shell(query, shell_name)
     
     if not result.get('success'):
