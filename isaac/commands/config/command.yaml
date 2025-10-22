@@ -7,7 +7,7 @@ triggers: ["/config"]
 args:
   - name: subcommand
     type: enum
-    enum: ["status", "ai", "cloud", "plugins", "set"]
+    enum: ["status", "ai", "cloud", "plugins", "collections", "console", "set"]
     required: false
     help: "Configuration section or action"
   - name: key

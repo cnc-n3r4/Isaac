@@ -45,6 +45,23 @@ class CommandRouter:
         
         return first_word not in obvious_commands
 
+    def _is_quoted_pipe(self, cmd: str) -> bool:
+        """Check if all pipes are inside quotes."""
+        in_quotes = False
+        quote_char = None
+        
+        for char in cmd:
+            if char in ('"', "'") and not in_quotes:
+                in_quotes = True
+                quote_char = char
+            elif char == quote_char and in_quotes:
+                in_quotes = False
+                quote_char = None
+            elif char == '|' and not in_quotes:
+                return False  # Found pipe outside quotes
+        
+        return True  # All pipes are quoted
+
     def _route_device_command(self, input_text: str) -> CommandResult:
         """Handle !alias device routing commands."""
         # Parse device alias and command
@@ -90,22 +107,39 @@ class CommandRouter:
         return self.validator.get_tier(command)
 
     def _handle_meta_command(self, command: str) -> CommandResult:
-        """Handle /commands using the plugin dispatcher"""
+        """Handle /commands using the plugin dispatcher or PipeEngine for pipes"""
         try:
-            # Check for pipes
-            if '|' in command:
-                parts = command.split('|')
-                result = self.dispatcher.chain_pipe(parts[0].strip(), parts[1].strip())
+            # Check for pipes - use PipeEngine for all piping
+            if '|' in command and not self._is_quoted_pipe(command):
+                from isaac.core.pipe_engine import PipeEngine
+                engine = PipeEngine(self.session, self.shell)
+                result_blob = engine.execute_pipeline(command)
+                
+                # Convert blob to CommandResult
+                if result_blob['kind'] == 'error':
+                    return CommandResult(success=False, output=result_blob['content'], exit_code=1)
+                else:
+                    return CommandResult(success=True, output=result_blob['content'], exit_code=0)
             else:
-                # Single command
+                # Single command - use dispatcher
                 result = self.dispatcher.execute(command)
 
-            # Convert dispatcher result to CommandResult
-            return CommandResult(
-                success=result.get('ok', False),
-                output=result.get('stdout', ''),
-                exit_code=0 if result.get('ok', False) else 1
-            )
+                # Convert dispatcher result to CommandResult
+                if result.get('ok', False):
+                    return CommandResult(
+                        success=True,
+                        output=result.get('stdout', ''),
+                        exit_code=0
+                    )
+                else:
+                    # Handle error case
+                    error_info = result.get('error', {})
+                    error_msg = error_info.get('message', 'Unknown error') if isinstance(error_info, dict) else str(error_info)
+                    return CommandResult(
+                        success=False,
+                        output=f"Command failed: {error_msg}",
+                        exit_code=1
+                    )
 
         except Exception as e:
             return CommandResult(
@@ -124,6 +158,18 @@ class CommandRouter:
         Returns:
             CommandResult with execution results
         """
+        # Check for pipe operator (not in quotes)
+        if '|' in input_text and not self._is_quoted_pipe(input_text):
+            from isaac.core.pipe_engine import PipeEngine
+            engine = PipeEngine(self.session, self.shell)
+            result_blob = engine.execute_pipeline(input_text)
+            
+            # Convert blob to CommandResult
+            if result_blob['kind'] == 'error':
+                return CommandResult(success=False, output=result_blob['content'], exit_code=1)
+            else:
+                return CommandResult(success=True, output=result_blob['content'], exit_code=0)
+        
         # Handle cd (change directory) specially - must change Isaac's working directory
         import os
         if input_text.strip().startswith('cd ') or input_text.strip() == 'cd':
@@ -319,6 +365,42 @@ class CommandRouter:
             return CommandResult(
                 success=False,
                 output="Isaac > Unknown command tier. Aborted for safety.",
+                exit_code=-1
+            )
+    
+    def _handle_meta_command(self, input_text: str) -> CommandResult:
+        """
+        Handle meta-commands (starting with /) by routing to dispatcher.
+        
+        Args:
+            input_text: The full command including the / prefix
+            
+        Returns:
+            CommandResult from the dispatcher
+        """
+        try:
+            # Route to dispatcher with the full command (including /)
+            result = self.dispatcher.execute(input_text)
+            
+            # Convert dispatcher result to CommandResult
+            if result.get('ok', False):
+                return CommandResult(
+                    success=True,
+                    output=result.get('stdout', ''),
+                    exit_code=0
+                )
+            else:
+                error = result.get('error', {})
+                return CommandResult(
+                    success=False,
+                    output=f"Isaac > {error.get('message', 'Unknown error')}",
+                    exit_code=-1
+                )
+                
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                output=f"Isaac > Meta-command error: {e}",
                 exit_code=-1
             )
     

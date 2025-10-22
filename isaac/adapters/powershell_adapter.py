@@ -5,6 +5,7 @@ Prefers PowerShell 7+ (pwsh) over Windows PowerShell 5.1 (powershell.exe).
 
 import subprocess
 import shutil
+from typing import Optional
 from isaac.adapters.base_adapter import BaseShellAdapter, CommandResult
 
 
@@ -20,12 +21,13 @@ class PowerShellAdapter(BaseShellAdapter):
         """Return shell name."""
         return 'PowerShell'
     
-    def execute(self, command: str) -> CommandResult:
+    def execute(self, command: str, stdin: Optional[str] = None) -> CommandResult:
         """
         Execute PowerShell command.
         
         Args:
             command: PowerShell command to execute
+            stdin: Optional text to pipe to command's stdin
             
         Returns:
             CommandResult with output and exit code
@@ -33,6 +35,7 @@ class PowerShellAdapter(BaseShellAdapter):
         try:
             result = subprocess.run(
                 [self.ps_exe, '-NoProfile', '-Command', command],
+                input=stdin,
                 capture_output=True,
                 text=True,
                 timeout=30  # Prevent hanging commands

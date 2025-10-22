@@ -18,6 +18,7 @@ class ConfigCommand:
             /config ai           - AI provider details
             /config cloud        - Cloud sync details
             /config plugins      - List plugins
+            /config console      - Launch /mine settings console
             /config set <k> <v>  - Set configuration value
         """
         if not args:
@@ -33,6 +34,8 @@ class ConfigCommand:
             return self._show_cloud_details()
         elif subcommand == 'plugins':
             return self._show_plugins()
+        elif subcommand == 'console':
+            return self._launch_console()
         elif subcommand == 'set':
             if len(args) < 3:
                 return "Usage: /config set <key> <value>"
@@ -54,6 +57,7 @@ class ConfigCommand:
         lines.append("  /config ai       - AI provider details")
         lines.append("  /config cloud    - Cloud sync status")
         lines.append("  /config plugins  - Available plugins")
+        lines.append("  /config console  - Launch /mine settings console")
         lines.append("  /config set <key> <value> - Change setting")
         return "\n".join(lines)
 
@@ -167,6 +171,16 @@ class ConfigCommand:
             lines.append(f"{status} {name:15} - {desc}")
 
         return "\n".join(lines)
+
+    def _launch_console(self) -> str:
+        """Launch the /mine settings console"""
+        try:
+            from isaac.ui.config_console import show_config_console
+            return show_config_console(self.session)
+        except ImportError:
+            return "✗ Config console not available. Install prompt_toolkit: pip install prompt_toolkit"
+        except Exception as e:
+            return f"✗ Error launching config console: {e}"
 
     def _set_config(self, key: str, value: str) -> str:
         """Set a configuration value"""
