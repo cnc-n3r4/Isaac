@@ -49,13 +49,29 @@ Available Commands:
   /clear             - Clear screen
   /exit, /quit       - Exit ISAAC
 
-Natural Language:
+Collections (xAI):
+  /mine list         - List all collections
+  /mine use <name>   - Switch active collection
+  /mine cast <file>  - Upload file to collection
+  /mine dig <query>  - Search active collection
+  /mine create <name> - Create new collection
+  /mine delete <name> - Delete collection
+  /mine info         - Show collection details
+
+AI Interaction:
+  /ask <question>    - Direct AI chat
   isaac <query>      - AI query or command translation
+
+Piping (Experimental):
+  <cmd> | <cmd>      - Chain commands together
+  /mine dig "query" | /ask "analyze this"
+  ls | /save files.txt
 
 Examples:
   /help /config      - Detailed help for config command
   /status -v         - Verbose system status
-  isaac list files   - AI translation to shell command
+  /mine use cnc-info - Switch to CNC manuals collection
+  /mine dig "g01" | /ask "explain this"
 """.strip()
 
 

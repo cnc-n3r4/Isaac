@@ -98,7 +98,7 @@ class MineHandler:
         except Exception:
             pass  # Silently fail
 
-    def handle_command(self, args: List[str]) -> str:
+    def handle_command(self, args: List[str], command: str = '/mine') -> str:
         """Main command dispatcher for /mine commands."""
         if not args:
             return self._show_help()
@@ -382,18 +382,47 @@ EXAMPLES:
 
         try:
             # Search the collection
+            # Note: xAI SDK has a hardcoded 10-second gRPC timeout for search operations
+            # SDK returns multiple matches by default
             response = self.client.collections.search(
                 query=question,
                 collection_ids=[self.active_collection_id]
             )
 
             if hasattr(response, 'matches') and response.matches:
-                # Return the first match
-                match = response.matches[0]
-                if hasattr(match, 'chunk_content'):
-                    return f"Answer: {match.chunk_content}"
+                # Return top matches with truncated content for piping-friendly output
+                # Collection chunks can be huge (user-configurable) - keep output manageable
+                matches = response.matches[:3]  # Top 3 matches
+                
+                if len(matches) == 1:
+                    # Single match - return with moderate truncation
+                    match = matches[0]
+                    if hasattr(match, 'chunk_content'):
+                        content = match.chunk_content
+                        # Truncate very large chunks (keep first 2000 chars)
+                        if len(content) > 2000:
+                            content = content[:2000] + "\n... [content truncated]"
+                        return f"Answer: {content}"
+                    else:
+                        return f"Found match: {match}"
                 else:
-                    return f"Found match: {match}"
+                    # Multiple matches - return summary with previews
+                    result = f"Found {len(response.matches)} matches:\n\n"
+                    for i, match in enumerate(matches, 1):
+                        if hasattr(match, 'chunk_content'):
+                            # Preview only for multiple matches (500 chars each)
+                            content = match.chunk_content[:500]
+                            if len(match.chunk_content) > 500:
+                                content += "..."
+                            
+                            # Include score if available
+                            score = getattr(match, 'score', None)
+                            score_text = f" (score: {score:.3f})" if score is not None else ""
+                            
+                            result += f"Match {i}{score_text}:\n{content}\n\n"
+                        else:
+                            result += f"Match {i}: {match}\n\n"
+                    return result.strip()
             else:
                 return "No answer found in collection"
         except Exception as e:
@@ -632,22 +661,71 @@ EXAMPLES:
 
 def main():
     """Main entry point for mine command"""
+    command = '/mine'  # Default command
+    return_blob = False  # Default to envelope format
     try:
         # Check if we're being called through dispatcher (stdin has JSON) or standalone
         if not sys.stdin.isatty():
             # Called through dispatcher - read JSON payload from stdin
-            payload = json.loads(sys.stdin.read())
-            command = payload.get('command', '')
+            stdin_data = sys.stdin.read()
             
-            # Strip the trigger to get args
-            args = []
-            if command.startswith('/mine '):
-                args = command[6:].strip().split()
-            elif command == '/mine':
-                args = []
+            # Try to parse as blob format first (for piping)
+            try:
+                blob = json.loads(stdin_data)
+                if isinstance(blob, dict) and 'kind' in blob:
+                    # This is piped input in blob format
+                    input_content = blob.get('content', '')
+                    input_kind = blob.get('kind', 'text')
+                    
+                    # For mine command, piped input could be used as query content
+                    # Extract command from blob meta if available
+                    command = blob.get('meta', {}).get('command', '/mine')
+                    
+                    # Parse command to get args
+                    args = []
+                    if command.startswith('/mine '):
+                        args = command[6:].strip().split()
+                    elif command == '/mine':
+                        args = []
+                    
+                    # If no args but we have piped content, treat content as query
+                    if not args and input_content.strip():
+                        args = ['dig'] + input_content.strip().split()
+                        
+                    # This is a pipe call - return blob format
+                    return_blob = True
+                elif isinstance(blob, dict) and 'manifest' in blob:
+                    # This is dispatcher payload
+                    payload = blob
+                    command = payload.get('command', '/mine')
+                    args = payload.get('args', [])
+                    
+                    # The dispatcher may send args as a dict or list
+                    # For mine command, we need args as a list of strings
+                    if isinstance(args, dict):
+                        # If args is a dict, extract positional args from command string
+                        if command.startswith('/mine '):
+                            args = command[6:].strip().split()
+                        else:
+                            args = []
+                    # If args is already a list, use it as-is
+                    
+                    # This is a dispatcher call - return envelope format
+                    return_blob = False
+                else:
+                    # Unknown JSON format, treat as plain text input for dig command
+                    args = ['dig'] + stdin_data.strip().split()
+                    command = '/mine'
+                    return_blob = True
+            except json.JSONDecodeError:
+                # Not JSON, treat as plain text input for dig command
+                args = ['dig'] + stdin_data.strip().split()
+                command = '/mine'
+                return_blob = True
         else:
             # Standalone execution - get args from command line
             args = sys.argv[1:] if len(sys.argv) > 1 else []
+            command = '/mine'
         
         # Get session manager
         from isaac.core.session_manager import SessionManager
@@ -655,13 +733,38 @@ def main():
         
         # Create handler and execute
         handler = MineHandler(session)
-        result = handler.handle_command(args)
+        result = handler.handle_command(args, command)
         
-        # Always print plain text - dispatcher will wrap in JSON if needed
-        print(result)
+        # Return result in appropriate format
+        if not sys.stdin.isatty():
+            if return_blob:
+                # Piped call - return blob
+                print(json.dumps({
+                    "kind": "text",
+                    "content": result,
+                    "meta": {"command": command}
+                }))
+            else:
+                # Dispatcher call - return envelope
+                print(json.dumps({
+                    "ok": True,
+                    "stdout": result
+                }))
+        else:
+            # Standalone mode - print result directly
+            print(result)
     
     except Exception as e:
-        print(f"Error: {e}")
+        if not sys.stdin.isatty():
+            # Piped/dispatcher mode - return blob error
+            print(json.dumps({
+                "kind": "error",
+                "content": f"Error: {e}",
+                "meta": {"command": command}
+            }))
+        else:
+            # Standalone mode - print error directly
+            print(f"Error: {e}")
 
 
 if __name__ == "__main__":

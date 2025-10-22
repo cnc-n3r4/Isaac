@@ -7,6 +7,8 @@ import sys
 import json
 import socket
 
+from isaac.ui.config_console import show_config_console
+
 
 def main():
     """Main entry point for config command"""
@@ -29,6 +31,8 @@ def main():
         output = show_plugins()
     elif subcommand == "collections":
         output = show_collections_config(session)
+    elif subcommand == "console":
+        output = show_config_console(session)
     elif subcommand == "set":
         key = args.get("key")
         value = args.get("value")
@@ -63,6 +67,7 @@ def show_overview(session):
     lines.append("  /config cloud      - Cloud sync status")
     lines.append("  /config plugins    - Available plugins")
     lines.append("  /config collections - xAI Collections status")
+    lines.append("  /config console     - Interactive /mine settings TUI")
     lines.append("  /config set <key> <value> - Change setting")
     return "\n".join(lines)
 

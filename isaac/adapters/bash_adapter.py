@@ -3,6 +3,7 @@ Bash adapter for Linux/macOS execution.
 """
 
 import subprocess
+from typing import Optional
 from isaac.adapters.base_adapter import BaseShellAdapter, CommandResult
 
 
@@ -14,12 +15,13 @@ class BashAdapter(BaseShellAdapter):
         """Return shell name."""
         return 'bash'
     
-    def execute(self, command: str) -> CommandResult:
+    def execute(self, command: str, stdin: Optional[str] = None) -> CommandResult:
         """
         Execute bash command.
         
         Args:
             command: Bash command to execute
+            stdin: Optional text to pipe to command's stdin
             
         Returns:
             CommandResult with output and exit code
@@ -27,6 +29,7 @@ class BashAdapter(BaseShellAdapter):
         try:
             result = subprocess.run(
                 ['bash', '-c', command],
+                input=stdin,
                 capture_output=True,
                 text=True,
                 timeout=30  # Prevent hanging commands
