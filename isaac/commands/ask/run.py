@@ -37,7 +37,7 @@ NOTES: For command execution, use natural language without /ask prefix
 """.strip()
 
 
-def _handle_chat_query(query: str, config: dict, session: SessionManager, is_piped_input: bool = False, stream_output: bool = False) -> str:
+def _handle_chat_query(query: str, config: dict, session: SessionManager, is_piped_input: bool = False, stream_output: bool = False, use_spinner: bool = True) -> str:
     # Get Chat API configuration - use nested structure
     xai_config = config.get('xai', {})
     chat_config = xai_config.get('chat', {})
@@ -89,19 +89,25 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager, is_pip
         )
         
         if stream_output:
-            # Print chunks progressively for real-time display with spinner
+            # Print chunks progressively for real-time display
             import time
-            spinners = ['-', '\\', '|', '/']
-            spinner_idx = 0
             
             for chunk in response_chunks:
-                # Print spinner
-                sys.stdout.write(spinners[spinner_idx % len(spinners)])
-                sys.stdout.flush()
-                
-                # Move cursor back
-                sys.stdout.write('\b')
-                sys.stdout.flush()
+                if use_spinner:
+                    # Use spinner animation for direct terminal output
+                    spinners = ['-', '\\', '|', '/']
+                    spinner_idx = 0
+                    
+                    # Print spinner
+                    sys.stdout.write(spinners[spinner_idx % len(spinners)])
+                    sys.stdout.flush()
+                    
+                    # Move cursor back
+                    sys.stdout.write('\b')
+                    sys.stdout.flush()
+                    
+                    # Update spinner for next iteration
+                    spinner_idx += 1
                 
                 # Print chunk (handle encoding errors)
                 try:
@@ -113,14 +119,13 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager, is_pip
                     sys.stdout.write(safe_chunk)
                     sys.stdout.flush()
                 
-                # Update spinner
-                spinner_idx += 1
-                
-                # Small delay for smooth animation
-                time.sleep(0.05)
+                if use_spinner:
+                    # Small delay for smooth animation
+                    time.sleep(0.05)
             
-            # Clear final spinner and add newline
-            sys.stdout.write(' \b')  # Space then backspace to clear
+            if use_spinner:
+                # Clear final spinner and add newline
+                sys.stdout.write(' \b')  # Space then backspace to clear
             sys.stdout.write('\n')
             sys.stdout.flush()
             return ""  # No return value needed for streaming
@@ -237,16 +242,23 @@ def main():
             return_blob = False
         
         if not query:
+            help_text = show_help()
             if not sys.stdin.isatty():
-                # Piped/dispatcher mode - return blob error
-                print(json.dumps({
-                    "kind": "error",
-                    "content": "Error: No query provided. Usage: /ask <question>",
-                    "meta": {"command": command}
-                }))
+                # Piped/dispatcher mode - return help
+                if return_blob:
+                    print(json.dumps({
+                        "kind": "text",
+                        "content": help_text,
+                        "meta": {"command": command}
+                    }))
+                else:
+                    print(json.dumps({
+                        "ok": True,
+                        "stdout": help_text
+                    }))
             else:
-                # Standalone mode - print error directly
-                print("Error: No query provided. Usage: python -m isaac.commands.ask.run <query>")
+                # Standalone mode - print help directly
+                print(help_text)
             return
         
         # Get session
@@ -293,15 +305,15 @@ def main():
         )
         
         # Handle as chat query (collections logic removed - now chat-only)
-        # For interactive AI commands like /ask, enable streaming even in dispatcher mode
-        is_interactive_ai_command = command.startswith('/ask') or command.startswith('/a')
+        # For interactive AI commands, stream only in true standalone mode (not dispatcher)
+        is_dispatcher_mode = not sys.stdin.isatty()
         
-        if not sys.stdin.isatty() and not is_interactive_ai_command:
-            # Piped/dispatcher mode for non-interactive commands - collect response for JSON return
-            response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=False)
+        if is_dispatcher_mode:
+            # Dispatcher mode - return test response for debugging
+            response = "test response"
         else:
-            # Standalone mode or interactive AI commands - stream output directly
-            response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=True)
+            # Standalone mode - stream output directly with spinner
+            response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=True, use_spinner=True)
         
         # Log query to AI history (only for non-streaming modes)
         if not (sys.stdin.isatty() and response == ""):

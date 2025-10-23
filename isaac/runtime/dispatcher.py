@@ -205,6 +205,7 @@ class CommandDispatcher:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                encoding='utf-8',
                 env=self.security.sanitize_env()
             )
 

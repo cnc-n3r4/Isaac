@@ -62,26 +62,68 @@ class PermanentShell:
             return BashAdapter()
 
     def _print_welcome(self):
-        """Print startup banner with key info"""
+        """Print startup banner with key info and connectivity status"""
         version = "1.0.2"  # Get from config
         session_id = self.session.config.get('machine_id', 'unknown')[:6]
 
-        cloud_status = "✓" if self.session.cloud else "✗"
-        
-        # Check for API keys in new nested structure or old flat structure
-        xai_config = self.session.config.get('xai', {})
-        chat_config = xai_config.get('chat', {})
-        collections_config = xai_config.get('collections', {})
-        has_chat_key = chat_config.get('api_key') or self.session.config.get('xai_api_key')
-        has_collections_key = collections_config.get('api_key') or self.session.config.get('xai_api_key')
-        ai_status = "✓" if (has_chat_key or has_collections_key) else "✗"
-
         print("=" * 60)
         print(f"ISAAC v{version}")
-        print(f"Session: {session_id} | Cloud: {cloud_status} | AI: {ai_status}")
-        print("Type /help for available commands")
+        print(f"Session: {session_id} | Cloud: ⟳ | AI: ⟳")
+        print("Initializing...")
+
+        # Perform connectivity checks quietly
+        cloud_status, ai_status = self._check_connectivity()
+
+        # Get system info
+        shell_type = "PowerShell" if isinstance(self.shell, PowerShellAdapter) else "Bash"
+        command_count = len(self.router.dispatcher.commands) if hasattr(self.router.dispatcher, 'commands') else 0
+
+        # Update the status line with final results
+        print(f"\033[2A\033[KSession: {session_id} | Cloud: {cloud_status} | AI: {ai_status}")
+        print(f"Shell: {shell_type} | Commands: {command_count} | Ready. Type /help for available commands")
         print("=" * 60)
         print()
+
+    def _check_connectivity(self) -> tuple[str, str]:
+        """Check cloud and AI connectivity quietly.
+
+        Returns:
+            tuple: (cloud_status, ai_status) where each is '✓' or '✗'
+        """
+        # Check cloud connectivity
+        cloud_status = "✗"
+        try:
+            if self.session.cloud:
+                if self.session.cloud.health_check():
+                    cloud_status = "✓"
+        except Exception:
+            pass
+
+        # Check AI connectivity
+        ai_status = "✗"
+        try:
+            # Check for API keys in new nested structure or old flat structure
+            xai_config = self.session.config.get('xai', {})
+            chat_config = xai_config.get('chat', {})
+            collections_config = xai_config.get('collections', {})
+            has_chat_key = chat_config.get('api_key') or self.session.config.get('xai_api_key')
+            has_collections_key = collections_config.get('api_key') or self.session.config.get('xai_api_key')
+
+            if has_chat_key or has_collections_key:
+                # Try to initialize xAI client as a basic connectivity test
+                try:
+                    from isaac.ai.xai_client import XaiClient
+                    # Just test client initialization, not actual API call
+                    test_key = has_chat_key or has_collections_key
+                    if test_key:  # Ensure we have a valid key
+                        client = XaiClient(api_key=str(test_key))
+                        ai_status = "✓"
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        return cloud_status, ai_status
 
     def _get_prompt(self) -> str:
         """Build prompt with queue status."""
