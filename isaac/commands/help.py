@@ -95,7 +95,7 @@ INTERACTIVE MODE:
   isaac              Enter interactive REPL
     isaac> backup documents
     isaac> list history
-    isaac> exit
+    isaac> /exit
 
 DETAILED HELP:
   isaac help backup   - Backup command details

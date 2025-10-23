@@ -23,6 +23,7 @@ wheels/
 .claude/logs/
 .claude/mail/
 .claude/status/
+claude/
 
 
 # Virtual environments

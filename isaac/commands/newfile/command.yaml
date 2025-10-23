@@ -1,0 +1,11 @@
+name: newfile
+version: 1.0.0
+summary: "Create files with templates and proper path handling"
+
+triggers: ["/newfile"]
+
+args:
+  - name: args
+    type: string
+    required: false
+    help: "Command arguments"

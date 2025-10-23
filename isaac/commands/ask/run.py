@@ -16,8 +16,28 @@ from isaac.ai.xai_client import XaiClient
 from isaac.core.session_manager import SessionManager
 
 
+def show_help() -> str:
+    """Show help for ask command"""
+    return """
+ISAAC AI Assistant - Natural language queries and AI interactions
+
+USAGE:
+  /ask <question>                    - Ask a question
+  /ask --async <question>            - Ask asynchronously (returns message ID)
+  /ask --model <model> <question>    - Use specific AI model
+  /ask --help                        - Show this help
+
+EXAMPLES:
+  /ask "write a python function"
+  /ask --async "analyze data" | /newfile report.md
+  /ask --model gpt-4 "complex analysis"
+
+ALIASES: /query, /q
+NOTES: For command execution, use natural language without /ask prefix
+""".strip()
+
+
 def _handle_chat_query(query: str, config: dict, session: SessionManager, is_piped_input: bool = False, stream_output: bool = False) -> str:
-    """Handle regular chat queries (existing logic)"""
     # Get Chat API configuration - use nested structure
     xai_config = config.get('xai', {})
     chat_config = xai_config.get('chat', {})
@@ -93,6 +113,16 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager, is_pip
 
 def main():
     """Main entry point for ask command"""
+    # Standard help pattern: show help when no arguments provided
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] in ['--help', '-h']):
+        help_text = show_help()
+        print(json.dumps({
+            "ok": True,
+            "stdout": help_text,
+            "meta": {"command": "/ask"}
+        }))
+        return
+    
     command = '/ask'  # Default command
     return_blob = False  # Default to envelope format
     try:
@@ -146,11 +176,30 @@ def main():
                     
                     # This is a dispatcher call - return envelope format
                     return_blob = False
-                else:
-                    # Unknown JSON format
-                    query = ''
+                elif isinstance(blob, dict) and 'args' in blob:
+                    # This is the new pipe dispatcher format
+                    args_data = blob.get('args', {})
+                    command_args = args_data.get('args', '')
+                    query = command_args.strip()
                     command = '/ask'
-                    return_blob = True
+                    return_blob = False  # First command in pipe returns envelope
+                else:
+                    # Unknown JSON format - check if it's a simple command format from PipeEngine
+                    command = blob.get('command', '')
+                    query = ''
+                    if command.startswith('/ask '):
+                        query = command[5:].strip()
+                    elif command.startswith('/a '):
+                        query = command[3:].strip()
+                    
+                    if query:
+                        # This is a simple command format from PipeEngine - return blob format
+                        return_blob = True
+                    else:
+                        # Truly unknown format
+                        query = ''
+                        command = '/ask'
+                        return_blob = True
             except json.JSONDecodeError:
                 # Not JSON, treat as plain text input
                 query = stdin_data.strip()

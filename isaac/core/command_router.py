@@ -8,6 +8,7 @@ from isaac.core.tier_validator import TierValidator
 from isaac.runtime import CommandDispatcher
 from isaac.ai.query_classifier import QueryClassifier
 from pathlib import Path
+from typing import Optional
 
 
 class CommandRouter:
@@ -170,6 +171,14 @@ class CommandRouter:
             else:
                 return CommandResult(success=True, output=result_blob['content'], exit_code=0)
         
+        # Enforce / prefix for exit commands
+        if input_text.strip().lower() in ['exit', 'quit']:
+            return CommandResult(
+                success=False,
+                output="Isaac > Use /exit or /quit to exit Isaac",
+                exit_code=1
+            )
+        
         # Handle cd (change directory) specially - must change Isaac's working directory
         import os
         if input_text.strip().startswith('cd ') or input_text.strip() == 'cd':
@@ -273,6 +282,22 @@ class CommandRouter:
                 )
         
         # Regular command processing
+        # First try direct shell execution
+        result = self.shell.execute(input_text)
+        if result.success:
+            return result
+        
+        # Command not found - check Unix alias table (Windows only)
+        if self._is_windows() and self._unix_aliases_enabled():
+            translated = self._try_unix_alias_translation(input_text)
+            if translated:
+                if self._show_translated_command():
+                    print(f"[Translated: {translated}]")
+                result = self.shell.execute(translated)
+                if result.success:
+                    return result
+        
+        # Fall back to tier system for safety validation
         tier = self.validator.get_tier(input_text)
         
         if tier == 1:
@@ -370,42 +395,6 @@ class CommandRouter:
             return CommandResult(
                 success=False,
                 output="Isaac > Unknown command tier. Aborted for safety.",
-                exit_code=-1
-            )
-    
-    def _handle_meta_command(self, input_text: str) -> CommandResult:
-        """
-        Handle meta-commands (starting with /) by routing to dispatcher.
-        
-        Args:
-            input_text: The full command including the / prefix
-            
-        Returns:
-            CommandResult from the dispatcher
-        """
-        try:
-            # Route to dispatcher with the full command (including /)
-            result = self.dispatcher.execute(input_text)
-            
-            # Convert dispatcher result to CommandResult
-            if result.get('ok', False):
-                return CommandResult(
-                    success=True,
-                    output=result.get('stdout', ''),
-                    exit_code=0
-                )
-            else:
-                error = result.get('error', {})
-                return CommandResult(
-                    success=False,
-                    output=f"Isaac > {error.get('message', 'Unknown error')}",
-                    exit_code=-1
-                )
-                
-        except Exception as e:
-            return CommandResult(
-                success=False,
-                output=f"Isaac > Meta-command error: {e}",
                 exit_code=-1
             )
     
@@ -520,3 +509,25 @@ Current user query follows below:
 """
         
         return preprompt
+    
+    def _is_windows(self) -> bool:
+        """Check if running on Windows"""
+        import platform
+        return platform.system() == 'Windows'
+    
+    def _unix_aliases_enabled(self) -> bool:
+        """Check if Unix alias translation is enabled"""
+        return self.session.config.get('enable_unix_aliases', True)
+    
+    def _show_translated_command(self) -> bool:
+        """Check if translated commands should be shown"""
+        return self.session.config.get('show_translated_command', True)
+    
+    def _try_unix_alias_translation(self, command: str) -> Optional[str]:
+        """Try to translate Unix command to PowerShell"""
+        from isaac.core.unix_aliases import UnixAliasTranslator
+        
+        if not hasattr(self, '_unix_translator'):
+            self._unix_translator = UnixAliasTranslator()
+        
+        return self._unix_translator.translate(command)

@@ -61,7 +61,7 @@
     ]
   },
   "wc": {
-    "powershell": "Measure-Object",
+    "powershell": "Get-Content | Measure-Object",
     "bash": "wc",
     "description": "Count lines/words/chars",
     "arg_mapping": {
@@ -74,23 +74,23 @@
     ]
   },
   "head": {
-    "powershell": "Select-Object -First",
+    "powershell": "Get-Content | Select-Object",
     "bash": "head",
     "description": "First N lines",
     "arg_mapping": {
-      "-n": ""
+      "-n": "-First"
     },
     "examples": [
       {"unix": "head -n 10 file.txt", "powershell": "Get-Content file.txt | Select-Object -First 10"}
     ]
   },
   "tail": {
-    "powershell": "Select-Object -Last",
+    "powershell": "Get-Content | Select-Object",
     "bash": "tail",
     "description": "Last N lines",
     "arg_mapping": {
-      "-n": "",
-      "-f": "(Get-Content -Wait)"
+      "-n": "-Last",
+      "-f": "-Wait"
     },
     "examples": [
       {"unix": "tail -n 10 file.txt", "powershell": "Get-Content file.txt | Select-Object -Last 10"},

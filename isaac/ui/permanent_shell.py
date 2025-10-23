@@ -126,7 +126,7 @@ class PermanentShell:
                     continue
 
                 # Handle exit
-                if user_input.lower() in ["exit", "quit", "/exit", "/quit"]:
+                if user_input.lower() in ["/exit", "/quit"]:
                     print("Goodbye!")
                     break
 
@@ -142,7 +142,7 @@ class PermanentShell:
                     print(f"Error (exit code {result.exit_code})", file=sys.stderr)
 
             except KeyboardInterrupt:
-                print("\nUse 'exit' or '/exit' to quit")
+                print("\nUse '/exit' or '/quit' to quit")
                 continue
             except EOFError:
                 print("\nGoodbye!")

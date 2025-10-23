@@ -372,3 +372,11 @@ class SessionManager:
         
         except Exception as e:
             logger.error(f"File history upload failed: {e}")
+    
+    def get_unix_alias_config(self) -> dict:
+        """Get Unix alias configuration"""
+        return {
+            'enabled': self.config.get('enable_unix_aliases', True),
+            'show_translation': self.config.get('show_translated_command', True),
+            'overrides': self.config.get('alias_overrides', {})
+        }
