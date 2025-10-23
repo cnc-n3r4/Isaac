@@ -38,7 +38,9 @@ class ConfigConsole:
             'multi_match_count': 5,
             'piping_threshold': 0.7,
             'piping_max_context': 3,
-            'show_scores': True
+            'show_scores': True,
+            'file_ids': [],  # List of file_ids to search within collections
+            'search_files_only': False  # Whether to search only specific files
         }
 
     def _load_settings(self) -> Dict[str, Any]:
@@ -129,6 +131,19 @@ class ConfigConsole:
             checked=self.settings['show_scores']
         )
 
+        self.search_files_only_checkbox = Checkbox(
+            text="Search only specific files",
+            checked=self.settings['search_files_only']
+        )
+
+        self.file_ids_field = TextArea(
+            text='\n'.join(self.settings['file_ids']),
+            multiline=True,
+            height=5,
+            width=70,
+            style='class:input-field'
+        )
+
         # Status and buttons
         save_button = Button("Save", handler=self._handle_save)
         cancel_button = Button("Cancel", handler=self._handle_cancel)
@@ -199,6 +214,23 @@ class ConfigConsole:
                 Window(content=FormattedTextControl("    Show relevance scores with matches"), width=45, dont_extend_width=True)
             ]),
 
+            # Search Files Only
+            VSplit([
+                Window(content=FormattedTextControl("    "), width=4, dont_extend_width=True),
+                self.search_files_only_checkbox,
+                Window(content=FormattedTextControl("    Search only specific files"), width=45, dont_extend_width=True)
+            ]),
+
+            Window(height=1),  # Spacing
+            
+            # File IDs Section
+            Window(content=FormattedTextControl("  File IDs (one per line):"), height=1, width=76),
+            VSplit([
+                Window(content=FormattedTextControl("    "), width=4, dont_extend_width=True),
+                self.file_ids_field,
+                Window(width=1)
+            ]),
+
             Window(height=2),  # Spacing
             
             # Status
@@ -240,6 +272,10 @@ class ConfigConsole:
                 get_app().layout.focus(self.piping_max_context_field.window)
             elif current_focus == self.piping_max_context_field.window:
                 get_app().layout.focus(self.show_scores_checkbox.window)
+            elif current_focus == self.show_scores_checkbox.window:
+                get_app().layout.focus(self.search_files_only_checkbox.window)
+            elif current_focus == self.search_files_only_checkbox.window:
+                get_app().layout.focus(self.file_ids_field.window)
             else:
                 get_app().layout.focus(self.max_chunk_size_field.window)
 
@@ -296,6 +332,19 @@ class ConfigConsole:
             return "Piping Max Context must be a valid integer"
 
         self.settings['show_scores'] = self.show_scores_checkbox.checked
+        self.settings['search_files_only'] = self.search_files_only_checkbox.checked
+
+        # Parse file_ids from textarea (one per line, ignore empty lines)
+        file_ids_text = self.file_ids_field.text.strip()
+        if file_ids_text:
+            file_ids = [line.strip() for line in file_ids_text.split('\n') if line.strip()]
+            # Basic validation - file_ids should look like file_ followed by UUID-like string
+            for file_id in file_ids:
+                if not file_id.startswith('file_') or len(file_id) < 10:
+                    return f"Invalid file_id format: {file_id} (should be like 'file_01852dbb-3f44-45fc-8cf8-699610d17501')"
+            self.settings['file_ids'] = file_ids
+        else:
+            self.settings['file_ids'] = []
 
         return None  # No errors
 

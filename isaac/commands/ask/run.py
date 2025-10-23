@@ -47,11 +47,15 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager, is_pip
             
             query = f"{user_question}\n\nContext data:\n{context}"
     
+    # Get timeout from config, default to 30 seconds for chat
+    timeout_seconds = chat_config.get('timeout_seconds') or config.get('xai_chat_timeout_seconds', 30)
+    
     # Initialize xAI client
     client = XaiClient(
         api_key=api_key,
         api_url=config.get('xai_api_url', 'https://api.x.ai/v1/chat/completions'),
-        model=config.get('xai_model', 'grok-3')
+        model=config.get('xai_model', 'grok-3'),
+        timeout=timeout_seconds
     )
     
     # Build chat preprompt (context-aware with history)
