@@ -92,8 +92,8 @@ def main():
                 print("Or: echo 'content' | /analyze [analysis_type] (within Isaac shell)")
                 sys.exit(1)
             
-            result = analyze_content(content, kind, analysis_type)
-            print(result)
+            result = analyze_content(content, kind, analysis_type, stream_output=True)
+            # For streaming mode, output is already printed, no need to print result
     
     except Exception as e:
         if not sys.stdin.isatty():
@@ -108,7 +108,7 @@ def main():
             print(f"Error: {e}")
 
 
-def analyze_content(content: str, kind: str, analysis_type: str) -> str:
+def analyze_content(content: str, kind: str, analysis_type: str, stream_output: bool = False) -> str:
     """Analyze content using AI."""
     if not HAS_XAI_CLIENT:
         return "Error: xAI client not available. Check xai_sdk installation and API key configuration."
@@ -152,11 +152,30 @@ def analyze_content(content: str, kind: str, analysis_type: str) -> str:
         else:
             prompt = f"Provide a general analysis of this {kind} content, including main themes, key points, and insights:\n\n{content[:2000]}"
         
-        # Get AI analysis
-        response = client.chat(
-            prompt=prompt,
-            system_prompt="You are an AI assistant specialized in content analysis. Provide clear, concise, and accurate analysis."
-        )
+        # Get AI analysis with streaming
+        try:
+            response_chunks = client.chat_stream(
+                prompt=prompt,
+                system_prompt="You are an AI assistant specialized in content analysis. Provide clear, concise, and accurate analysis."
+            )
+            
+            if stream_output:
+                # Print chunks progressively for real-time display
+                for chunk in response_chunks:
+                    print(chunk, end='', flush=True)
+                print()  # Final newline
+                response = ""  # No return value needed for streaming
+            else:
+                # Collect all chunks into complete response
+                response = ""
+                for chunk in response_chunks:
+                    response += chunk
+                    
+        except Exception as e:
+            response = f"Error: {e}"
+            if stream_output:
+                print(response)
+                response = ""
         
         # Log query to AI history
         session.log_ai_query(

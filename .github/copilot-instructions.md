@@ -33,7 +33,7 @@ pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 - **Build & Setup**: `pip install -e .` (editable), `isaac /start` to launch.
 - **Testing**: `pytest tests/` (≥85% coverage required), integration tests in `instructions/test_integration/` with completion templates.
 - **Meta-Commands**: `/help`, `/status`, `/config`, `/clear` (see `isaac/commands/`). `/config` supports subcommands for status, AI, cloud, plugins, and settings.
-- **Task Mode**: Use `isaac /task: <goal>` for multi-step planning and execution. Failure recovery options: f/r/s/a/? (auto-fix, retry, skip, abort, suggest).
+- **Task Mode**: Use `isaac /task <goal>` for multi-step planning and execution. Failure recovery options: f/r/s/a/? (auto-fix, retry, skip, abort, suggest).
 - **Session Management**: All session data is cloud-synced; rollback via snapshots (manual or auto-triggered).
 - **API Timeouts**: Configure xAI timeouts in `~/.isaac/config.json`:
   - Collections (mine command): `xai.collections.timeout_seconds` (default: 3600)
@@ -69,18 +69,7 @@ pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 - Meta-commands for configuration and status
 - Natural language requires "isaac" prefix
 - Offline mode indicator: `isaac [OFFLINE]>`
-- `isaac/core/session_manager.py`: Session, config, cloud sync
-- `isaac/adapters/`: Shell abstraction (PowerShell, bash)
-- `isaac/commands/`: Meta-commands (`/help`, `/config`, `/status`, etc.)
-- `isaac/ui/permanent_shell.py`: Main shell loop (prompt/output)
-- `isaac/ai/`: AI validation, translation, task planning
-- `isaac/api/cloud_client.py`: Cloud sync (GoDaddy PHP API)
-- Session files: preferences.json, command_history.json, aiquery_history.json, task_history.json, learned_autofixes.json, learned_patterns.json
-
-### UI & User Experience
-
-- Simple prompt → output → prompt flow (no locked header)
-- Meta-commands for configuration and status
-- Natural language requires "isaac" prefix
-- Offline mode indicator: `isaac [OFFLINE]>`</content>
+- Command routing: Regular commands execute directly, `/` commands use dispatcher, `!` for device routing, `isaac task:` for multi-step planning
+- Tier enforcement: Commands classified by safety level (1-4) with appropriate validation/confirmation
+- AI integration: xAI client for natural language translation and chat queries</content>
 <parameter name="filePath">c:\Projects\Isaac\.github\copilot-instructions.md
