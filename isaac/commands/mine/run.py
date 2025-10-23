@@ -64,12 +64,15 @@ class MineHandler:
                     api_host = collections_config.get('api_host') or self.session_manager.config.get('xai_api_host', 'api.x.ai')
                     management_api_host = collections_config.get('management_api_host') or self.session_manager.config.get('xai_management_api_host', 'management-api.x.ai')
                     
+                    # Get timeout from config, default to 3600 (1 hour)
+                    timeout_seconds = collections_config.get('timeout_seconds') or self.session_manager.config.get('xai_collections_timeout_seconds', 3600)
+                    
                     self.client = Client(
                         api_key=api_key,
                         management_api_key=management_api_key or api_key,  # Use same key if management key not specified
                         api_host=api_host,
                         management_api_host=management_api_host,
-                        timeout=3600  # Extended timeout for reasoning models
+                        timeout=timeout_seconds  # Configurable timeout for collections operations
                     )
                 else:
                     print("Warning: No API key configured for x.ai collections")
@@ -122,6 +125,7 @@ class MineHandler:
             'query': self._handle_dig,  # Alias for backward compatibility
             'delete': self._handle_delete,
             'info': self._handle_info,
+            'pan': self._handle_pan,
             'grokbug': self._handle_grokbug,
             'grokrefactor': self._handle_grokrefactor,
         }
@@ -144,22 +148,20 @@ CORE COMMANDS:
   /mine create <name>           Create new collection
   /mine cast <file>             Cast file into active collection
   /mine dig <question>          Dig up answers from active collection
+  /mine pan <collection>        List file_ids within a collection
   /mine delete <name>           Delete collection
   /mine info                    Show active collection details
 
-SMART PROJECT COMMANDS:
-  /mine grokbug <project>       Create debugging collection for project
-  /mine grokrefactor <project>  Create refactoring collection for project
-
-UTILITY:
-  /mine help                    Show this help
-  /mine status                  Show system status
+ADVANCED FEATURES:
+  /config console               Configure search parameters, file filtering
+  - Set specific file_ids to search within collections
+  - Enable "search files only" mode for targeted queries
 
 EXAMPLES:
-  /mine create myproject
-  /mine cast ~/docs/api.pdf
-  /mine grokbug ~/code/myapp
-  /mine dig "How does authentication work?"
+  /mine dig "what is machine learning?"
+  /mine use mydocs dig "find all email addresses"
+  /mine pan mydocs                    # List file_ids in 'mydocs' collection
+  /config console  # Configure file_ids like 'file_01852dbb-3f44-45fc-8cf8-699610d17501'
 """
 
     def _show_status(self, args=None) -> str:
@@ -381,13 +383,25 @@ EXAMPLES:
         question = " ".join(args)
 
         try:
+            # Load mine config for search parameters
+            mine_config = self._load_mine_config()
+            search_files_only = mine_config.get('search_files_only', False)
+            file_ids = mine_config.get('file_ids', [])
+
             # Search the collection
             # Note: xAI SDK has a hardcoded 10-second gRPC timeout for search operations
             # SDK returns multiple matches by default
-            response = self.client.collections.search(
-                query=question,
-                collection_ids=[self.active_collection_id]
-            )
+            search_params = {
+                'query': question,
+                'collection_ids': [self.active_collection_id]
+            }
+            
+            # If searching specific files only, add file_ids filter
+            if search_files_only and file_ids:
+                # xAI SDK may support file filtering - add if available
+                search_params['file_ids'] = file_ids
+            
+            response = self.client.collections.search(**search_params)
 
             if hasattr(response, 'matches') and response.matches:
                 # Return top matches with truncated content for piping-friendly output
@@ -491,6 +505,96 @@ EXAMPLES:
             return result
         except Exception as e:
             return f"Error getting collection info: {e}"
+
+    def _handle_pan(self, args: List[str]) -> str:
+        """Pan for file_ids within a collection (list documents with their file_ids)."""
+        if not args:
+            return "Usage: /mine pan <collection_name>"
+
+        collection_name = args[0]
+
+        try:
+            # Find the collection by name
+            collections_response = self.client.collections.list()
+            collections = collections_response.collections
+            target_coll = next((c for c in collections if c.collection_name == collection_name), None)
+
+            if not target_coll:
+                return f"Collection not found: {collection_name}"
+
+            # Get documents in the collection
+            documents_response = self.client.collections.list_documents(target_coll.collection_id)
+            documents = documents_response.documents
+
+            if not documents:
+                return f"No documents found in collection '{collection_name}'"
+
+            result = f"File IDs in collection '{collection_name}' (ID: {target_coll.collection_id}):\n\n"
+
+            for doc in documents:
+                # Try to get file_id from various possible properties
+                file_id = "unknown"
+                # Check common ID property names
+                for id_prop in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                    if hasattr(doc, id_prop):
+                        file_id = getattr(doc, id_prop)
+                        break
+                
+                # If still unknown, try to inspect the object
+                if file_id == "unknown":
+                    # Look for any property that looks like an ID
+                    for attr_name in dir(doc):
+                        if not attr_name.startswith('_'):
+                            attr_value = getattr(doc, attr_name)
+                            if isinstance(attr_value, str) and (attr_value.startswith('file_') or len(attr_value) == 36):
+                                file_id = attr_value
+                                break
+
+                # Get filename
+                filename = "Unknown"
+                if hasattr(doc, 'file_metadata') and getattr(doc, 'file_metadata'):
+                    file_metadata = getattr(doc, 'file_metadata')
+                    if hasattr(file_metadata, 'name'):
+                        filename = getattr(file_metadata, 'name')
+                
+                # Fallback: check direct properties on doc
+                if filename == "Unknown":
+                    for name_prop in ['name', 'filename', 'file_name']:
+                        if hasattr(doc, name_prop):
+                            filename = getattr(doc, name_prop)
+                            break
+
+                result += f"• {filename}: {file_id}\n"
+
+            result += f"\nTotal: {len(documents)} files"
+            return result
+
+        except Exception as e:
+            return f"Error panning collection: {e}"
+
+    def _load_mine_config(self) -> Dict[str, Any]:
+        """Load mine configuration from config file."""
+        config_file = Path.home() / '.isaac' / 'mine_config.json'
+        defaults = {
+            'max_chunk_size': 1000,
+            'match_preview_length': 200,
+            'multi_match_count': 5,
+            'piping_threshold': 0.7,
+            'piping_max_context': 3,
+            'show_scores': True,
+            'file_ids': [],
+            'search_files_only': False
+        }
+        
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    loaded = json.load(f)
+                    defaults.update(loaded)
+            except Exception:
+                pass  # Use defaults if file corrupted
+        
+        return defaults
 
     def _handle_grokbug(self, args: List[str]) -> str:
         """Smart debugging collection creation."""
