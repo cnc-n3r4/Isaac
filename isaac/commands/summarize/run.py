@@ -108,7 +108,7 @@ def main():
             print(f"Error: {e}")
 
 
-def summarize_content(content: str, kind: str, length: str, stream_output: bool = False) -> str:
+def summarize_content(content: str, kind: str, length: str, stream_output: bool = False, use_spinner: bool = True) -> str:
     """Summarize content using AI."""
     if not HAS_XAI_CLIENT:
         return "Error: xAI client not available. Check xai_sdk installation and API key configuration."
@@ -154,29 +154,34 @@ def summarize_content(content: str, kind: str, length: str, stream_output: bool 
             )
             
             if stream_output:
-                # Print chunks progressively for real-time display with spinner
+                # Print chunks progressively for real-time display
                 import time
-                spinners = ['-', '\\', '|', '/']
-                spinner_idx = 0
                 
                 for chunk in response_chunks:
-                    # Print spinner
-                    print(spinners[spinner_idx % len(spinners)], end='', flush=True)
-                    
-                    # Move cursor back
-                    print('\b', end='', flush=True)
+                    if use_spinner:
+                        # Use spinner animation for direct terminal output
+                        spinners = ['-', '\\', '|', '/']
+                        spinner_idx = 0
+                        
+                        # Print spinner
+                        print(spinners[spinner_idx % len(spinners)], end='', flush=True)
+                        
+                        # Move cursor back
+                        print('\b', end='', flush=True)
+                        
+                        # Update spinner for next iteration
+                        spinner_idx += 1
                     
                     # Print chunk
                     print(chunk, end='', flush=True)
                     
-                    # Update spinner
-                    spinner_idx += 1
-                    
-                    # Small delay for smooth animation
-                    time.sleep(0.05)
+                    if use_spinner:
+                        # Small delay for smooth animation
+                        time.sleep(0.05)
                 
-                # Clear final spinner and add newline
-                print(' \b', end='')  # Space then backspace to clear
+                if use_spinner:
+                    # Clear final spinner and add newline
+                    print(' \b', end='')  # Space then backspace to clear
                 print()  # Final newline
                 response = ""  # No return value needed for streaming
             else:
