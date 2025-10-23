@@ -257,13 +257,13 @@ response = chat.analyze(chunks + user_question)
 
 ### 4. System Management Commands
 
-#### `/sync [options]`
+#### `/sync [--dry-run]`
 **Purpose:** Manual cloud synchronization
+**Syntax:** `/sync [--dry-run]` (optional dry-run flag)
 **Examples:**
 ```bash
 /sync                      # Sync all data
 /sync --dry-run            # Preview what would be synced
-/sync --force              # Force full sync despite warnings
 ```
 
 **Features:**
@@ -340,12 +340,13 @@ cat report.txt | /summarize --length medium | /save --file executive_summary.md
 ### 6. Alias Commands
 
 #### `/alias` - Unix Command Translation
-**Purpose:** Automatic translation of Unix commands to PowerShell equivalents
+**Purpose:** Management of Unix-to-PowerShell command aliases
 **Examples:**
 ```bash
-grep "error" log.txt      # Auto-translates to: Select-String "error" log.txt
-ps                        # Auto-translates to: Get-Process
-kill 1234                 # Auto-translates to: Stop-Process 1234
+/alias --list              # Show all available aliases
+/alias --show ls          # Show PowerShell equivalent for 'ls'
+/alias --enable           # Enable automatic translation
+/alias --add ll "ls -la"  # Add custom alias
 ```
 
 **Features:**
@@ -366,15 +367,15 @@ kill 1234                 # Auto-translates to: Stop-Process 1234
 
 #### `/format <type>`
 **Purpose:** Format output (json, table, markdown)
-**Example:** `/mine dig "logs" | /format table`
+**Example:** `/mine --dig "logs" | /format table`
 
 #### `/chart <type> <file>`
 **Purpose:** Generate visualizations
-**Example:** `/mine dig "usage" | /extract numbers | /chart bar usage.png`
+**Example:** `/mine --dig "usage" | /extract numbers | /chart bar usage.png`
 
 #### `/alert [condition]`
 **Purpose:** Conditional notifications
-**Example:** `/mine dig "errors" | /alert "if count > 10"`
+**Example:** `/mine --dig "errors" | /alert "if count > 10"`
 
 ### 8. Task Mode Commands
 
@@ -405,9 +406,9 @@ isaac task: set up development environment
 **Old Name:** `/mine upload` (still works as alias)  
 **Examples:**
 ```bash
-/mine cast ~/docs/api.pdf
-/mine cast ./logs/*.txt backup_logs
-/mine cast README.md -n project_docs
+/mine --cast ~/docs/api.pdf
+/mine --cast ./logs/*.txt --name backup_logs
+/mine --cast README.md --name project_docs
 ```
 
 **Features:**
@@ -421,8 +422,8 @@ isaac task: set up development environment
 **Old Name:** `/mine query` (still works as alias)  
 **Examples:**
 ```bash
-/mine dig "where are the API docs?"
-/mine dig "what errors happened on Oct 20?"
+/mine --dig "where are the API docs?"
+/mine --dig "what errors happened on Oct 20?"
 ```
 
 **Features:**
@@ -441,17 +442,17 @@ response = chat.analyze(chunks + user_question)
 **Purpose:** Switch active collection context  
 **Examples:**
 ```bash
-/mine use tc_logs
-/mine dig "session errors" # Searches only tc_logs now
+/mine --use tc_logs
+/mine --dig "session errors" # Searches only tc_logs now
 ```
 
-##### `/mine ls`
+##### `/mine --list`
 **Purpose:** List all your Collections  
 **Output:** Table with name, size, document count
 
-##### `/mine init <name>`
+##### `/mine --create <name>`
 **Purpose:** Create new Collection  
-**Example:** `/mine init project_notes`
+**Example:** `/mine --create project_notes`
 
 **Collections Configuration:**
 ```json
@@ -476,7 +477,7 @@ Commands designed for data transformation pipelines.
 ```bash
 ls | /save dir_list.txt
 /ask "kubernetes" | /save notes.md
-/mine dig "errors" | /save findings.txt
+**Example:** `/mine --dig "errors" | /save findings.txt`
 ```
 
 **Features:**
@@ -866,8 +867,8 @@ isaac task: <description>    # Multi-step task automation (natural language requ
 /sync [--dry-run] [--force]  # Cloud synchronization (optional flags)
 
 # System Management
-/config <subcommand>         # Configuration management (subcommand required)
-/status                      # System status (no args)
+/config [--status|--ai|--cloud|--console|--set <key> <value>]  # Configuration management (action flags)
+/status [--verbose]          # System status (optional verbose flag)
 /queue                       # Command queue status (no args)
 /help                        # Show help (no args)
 

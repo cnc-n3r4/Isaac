@@ -46,14 +46,24 @@ Available Commands:
   /clear              - Clear screen
   /exit, /quit        - Exit ISAAC
 
-Collections (xAI):
-  /mine list         - List all collections
-  /mine use <name>   - Switch active collection
-  /mine cast <file>  - Upload file to collection
-  /mine dig <query>  - Search active collection
-  /mine create <name> - Create new collection
-  /mine delete <name> - Delete collection
-  /mine info         - Show collection details
+Collections (xAI Mining):
+  /mine --list                  - Quick alias to --deed --all (legacy-friendly)
+  /mine --deed [--all]          - Deed the claim: --all lists everything; no arg shows active details
+  /mine --stake <name>          - Stake/create new claim (initial plot-out)
+  /mine --claim <name>          - Claim/use/switch to a staked claim (enter the territory)
+  /mine --drift <name>          - Carve/create drift (collection) within active claim
+  /mine --muck <file>           - Muck file into active drift (upload waste rock & ore)
+  /mine --dig <question>        - Dig answers from active drift/claim
+  /mine --pan <drift>           - Pan file_ids in a specific drift
+  /mine --haul <file_id>        - Haul file out of drift (extract by ID)
+  /mine --haul <nugget_name>    - Haul file out by saved nugget name
+  /mine --abandon <claim>       - Abandon/delete claim (drifts caved in)
+  /mine --info                  - Quick alias to --deed (for active only)
+
+Nugget Management:
+  /mine --nuggets               - List all saved nuggets (named file_ids)
+  /mine --nuggets save <coll>   - Save piped file_ids as named nuggets
+  /mine --nuggets search <q>    - Search nuggets by name or filename
 
 AI Interaction:
   /ask <question>    - Direct AI chat
@@ -65,16 +75,20 @@ File Operations:
 
 Piping (Experimental):
   <cmd> | <cmd>      - Chain commands together
-  /mine dig "query" | /ask "analyze this"
+  /mine --dig "query" | /ask "analyze this"
+  /mine --pan collection | /mine --nuggets save collection
   ls | /save files.txt
 
 Examples:
   /help /alias       - Detailed help for alias command
   /status -v         - Verbose system status
   /alias list        - Show available Unix aliases
-  /mine use cnc-info - Switch to CNC manuals collection
-  /mine dig "g01" | /ask "explain this"
-  /newfile script.py - Create Python file with template
+  /mine --stake cnc-info       - Stake a new claim for CNC manuals
+  /mine --claim cnc-info       - Enter the CNC manuals claim
+  /mine --dig "g01 command"    - Dig for G01 command info
+  /mine --pan cnc-info | /mine --nuggets save cnc-info  - Save file_ids as nuggets
+  /mine --haul favorite_manual - Extract saved manual by nugget name
+  /newfile script.py           - Create Python file with template
 """.strip()
 
 

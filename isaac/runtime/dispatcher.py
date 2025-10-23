@@ -126,6 +126,7 @@ class CommandDispatcher:
                 }
 
             # Parse args if not provided
+            args_raw = ""
             if args is None:
                 # Extract args from command (everything after first space)
                 parts = command.split(None, 1)
@@ -152,6 +153,7 @@ class CommandDispatcher:
             payload = {
                 "command": command,
                 "args": args,
+                "args_raw": args_raw,
                 "stdin": stdin or "",
                 "manifest": manifest,
                 "session": {

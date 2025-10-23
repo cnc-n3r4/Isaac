@@ -8,7 +8,8 @@ from isaac.core.tier_validator import TierValidator
 from isaac.runtime import CommandDispatcher
 from isaac.ai.query_classifier import QueryClassifier
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, List, Any
+import shlex
 
 
 class CommandRouter:
@@ -62,6 +63,66 @@ class CommandRouter:
                 return False  # Found pipe outside quotes
         
         return True  # All pipes are quoted
+
+    def parse_command_flags(self, args: List[str]) -> Dict[str, Any]:
+        """Parse command arguments using standardized -/-- flag syntax.
+        
+        Supports:
+        - --flag value
+        - --flag=value  
+        - -f value
+        - -f=value
+        - --flag (boolean flags)
+        
+        Returns dict with parsed flags and remaining positional args.
+        """
+        parsed = {}
+        positional = []
+        i = 0
+        
+        while i < len(args):
+            arg = args[i]
+            
+            # Check if it's a flag (starts with -)
+            if arg.startswith('--'):
+                # Long flag like --flag or --flag=value
+                if '=' in arg:
+                    flag, value = arg.split('=', 1)
+                    flag = flag[2:]  # Remove --
+                    parsed[flag] = value
+                else:
+                    flag = arg[2:]  # Remove --
+                    # Check if next arg is the value
+                    if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                        parsed[flag] = args[i + 1]
+                        i += 1  # Skip the value
+                    else:
+                        parsed[flag] = True  # Boolean flag
+                        
+            elif arg.startswith('-') and len(arg) > 1:
+                # Short flag like -f or -f=value
+                if '=' in arg:
+                    flag, value = arg.split('=', 1)
+                    flag = flag[1:]  # Remove -
+                    parsed[flag] = value
+                else:
+                    flag = arg[1:]  # Remove -
+                    # Check if next arg is the value
+                    if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                        parsed[flag] = args[i + 1]
+                        i += 1  # Skip the value
+                    else:
+                        parsed[flag] = True  # Boolean flag
+            else:
+                # Positional argument
+                positional.append(arg)
+                
+            i += 1
+            
+        return {
+            'flags': parsed,
+            'positional': positional
+        }
 
     def _route_device_command(self, input_text: str) -> CommandResult:
         """Handle !alias device routing commands."""

@@ -2,27 +2,14 @@ name: alias
 version: 1.0.0
 summary: Manage Unix-to-PowerShell command aliases
 description: Manage Unix-to-PowerShell command aliases
-usage: /alias <subcommand> [args]
+usage: /alias [--list|--show <cmd>|--enable|--disable|--add <unix> <ps>|--remove <unix>]
 triggers:
   - /alias
 args:
-  - name: subcommand
-    type: enum
-    enum: [list, show, enable, disable, add, remove, help]
-    required: false
-    help: "Alias management subcommand"
-  - name: command
+  - name: args
     type: string
     required: false
-    help: "Unix command name for show/remove operations"
-  - name: unix_cmd
-    type: string
-    required: false
-    help: "Unix command name for add operation"
-  - name: powershell_cmd
-    type: string
-    required: false
-    help: "PowerShell command for add operation"
+    help: "Command arguments (supports --flags)"
 stdin: false
 stdout:
   type: text

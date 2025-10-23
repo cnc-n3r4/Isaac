@@ -1,9 +1,8 @@
-name: status
+name: restore
 version: 1.0.0
-summary: "Quick system status or detailed diagnostics"
+summary: "Restore configuration and session data from backup"
 
-triggers: ["/status"]
-aliases: ["/s"]
+triggers: ["/restore"]
 
 args:
   - name: args
@@ -17,10 +16,10 @@ stdout:
 
 security:
   scope: user
-  allow_remote: true
+  allow_remote: false
   resources:
-    timeout_ms: 3000
-    max_stdout_kib: 32
+    timeout_ms: 15000
+    max_stdout_kib: 16
 
 runtime:
   entry: "run.py"
@@ -31,5 +30,5 @@ telemetry:
   log_output: false
 
 examples:
-  - "/status"
-  - "/status --verbose"
+  - "/restore --file config_backup_2025-10-23.zip"
+  - "/restore --file session_backup.zip"
