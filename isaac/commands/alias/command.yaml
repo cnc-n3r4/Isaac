@@ -1,0 +1,37 @@
+name: alias
+version: 1.0.0
+summary: Manage Unix-to-PowerShell command aliases
+description: Manage Unix-to-PowerShell command aliases
+usage: /alias <subcommand> [args]
+triggers:
+  - /alias
+args:
+  - name: subcommand
+    type: enum
+    enum: [list, show, enable, disable, add, remove, help]
+    required: false
+    help: "Alias management subcommand"
+  - name: command
+    type: string
+    required: false
+    help: "Unix command name for show/remove operations"
+  - name: unix_cmd
+    type: string
+    required: false
+    help: "Unix command name for add operation"
+  - name: powershell_cmd
+    type: string
+    required: false
+    help: "PowerShell command for add operation"
+stdin: false
+stdout:
+  type: text
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 64
+runtime:
+  entry: run.py
+  interpreter: python

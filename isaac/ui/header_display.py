@@ -3,19 +3,17 @@ Header Display - Isaac's status header
 Shows session info, tier status, and system indicators
 """
 
-import time
+import shutil
 from datetime import datetime
 from typing import Optional
-from isaac.ui.terminal_control import TerminalControl
 from isaac.models.preferences import Preferences
 
 
 class HeaderDisplay:
     """Display Isaac's status header in the locked top area."""
 
-    def __init__(self, terminal: TerminalControl, preferences: Preferences):
+    def __init__(self, preferences: Preferences):
         """Initialize header display."""
-        self.terminal = terminal
         self.preferences = preferences
         self.session_start = datetime.now()
         self.current_tier = 1  # Default safe tier
@@ -43,14 +41,15 @@ class HeaderDisplay:
     def _draw_header(self) -> None:
         """Draw the complete header in the locked area."""
         # Get terminal dimensions
-        width, height = self.terminal.get_terminal_size()
+        size = shutil.get_terminal_size()
+        width, height = size.columns, size.lines
 
         # Header spans full width, 4 lines high now
         header_lines = self._build_header_lines(width)
 
         # Print header lines in locked area (top 4 lines)
         for i, line in enumerate(header_lines):
-            self.terminal.print_at(0, i, line)
+            print(line)
 
     def _build_header_lines(self, width: int) -> list[str]:
         """Build the three header lines.

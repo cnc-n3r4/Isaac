@@ -112,11 +112,14 @@ class PipeEngine:
         # Prepare stdin data
         stdin_data = None
         if stdin_blob:
-            # Include the command in the blob meta for piped commands
-            enhanced_blob = dict(stdin_blob)
-            enhanced_blob['meta'] = enhanced_blob.get('meta', {})
-            enhanced_blob['meta']['command'] = cmd
-            stdin_data = json.dumps(enhanced_blob)
+            # For piped Isaac commands, send in dispatcher format with piped data
+            command_name = cmd.strip('/').split()[0]
+            command_args = cmd.replace(f'/{command_name}', '').strip()
+            stdin_data = json.dumps({
+                "args": {"args": command_args},
+                "session": {},
+                "piped_blob": stdin_blob
+            })
         else:
             # For commands without input, send empty dispatcher envelope
             stdin_data = json.dumps({"command": cmd})
@@ -127,14 +130,42 @@ class PipeEngine:
                 [sys.executable, str(run_script)],
                 input=stdin_data,
                 text=True,
-                capture_output=True,
-                cwd=Path(__file__).parent.parent.parent
+                capture_output=True
+                # Don't set cwd - inherit from parent process (Isaac's working directory)
             )
 
             # Parse JSON output
             try:
-                output_blob = json.loads(result.stdout)
-                return output_blob
+                output_data = json.loads(result.stdout)
+                
+                # Check if this is an Isaac command result (has 'ok' field)
+                if isinstance(output_data, dict) and 'ok' in output_data:
+                    # Convert Isaac command result to blob
+                    if output_data['ok']:
+                        return {
+                            "kind": "text",
+                            "content": output_data.get('stdout', ''),
+                            "meta": {
+                                "source_command": cmd,
+                                "exit_code": 0,
+                                **output_data.get('meta', {})
+                            }
+                        }
+                    else:
+                        # Command failed
+                        return {
+                            "kind": "error",
+                            "content": output_data.get('error', {}).get('message', 'Command failed'),
+                            "meta": {
+                                "source_command": cmd,
+                                "exit_code": 1,
+                                **output_data.get('error', {})
+                            }
+                        }
+                else:
+                    # Not an Isaac command result, return as-is (shouldn't happen)
+                    return output_data
+                    
             except json.JSONDecodeError:
                 # Command returned plain text, wrap it
                 return {

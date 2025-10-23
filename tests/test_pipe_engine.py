@@ -96,9 +96,9 @@ class TestPipeEngine:
         # Verify subprocess was called with correct stdin
         call_args = mock_subprocess.call_args
         stdin_data = json.loads(call_args[1]["input"])
-        assert stdin_data["kind"] == "text"
-        assert stdin_data["content"] == "input data"
-        assert stdin_data["meta"]["command"] == "/save output.txt"
+        assert stdin_data["piped_blob"]["kind"] == "text"
+        assert stdin_data["piped_blob"]["content"] == "input data"
+        assert stdin_data["args"]["args"] == "output.txt"
 
     def test_execute_shell_command_success(self, pipe_engine, mock_shell_adapter):
         """Test successful shell command execution."""
