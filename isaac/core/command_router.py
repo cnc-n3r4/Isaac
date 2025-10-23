@@ -445,11 +445,20 @@ class CommandRouter:
             # Build chat preprompt
             preprompt = self._build_chat_preprompt()
             
-            # Query AI
-            response = client.chat(
-                prompt=query,
-                system_prompt=preprompt
-            )
+            # Query AI with streaming
+            try:
+                response_chunks = client.chat_stream(
+                    prompt=query,
+                    system_prompt=preprompt
+                )
+                
+                # Collect all chunks into complete response
+                response = ""
+                for chunk in response_chunks:
+                    response += chunk
+                
+            except Exception as e:
+                response = f"Error: {e}"
             
             # Log query to AI history
             self.session.log_ai_query(

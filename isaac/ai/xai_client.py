@@ -70,7 +70,7 @@ class XaiClient:
         ]
         return self._call_api_with_messages(messages, max_tokens, temperature)
 
-    def _call_api_with_messages(self, messages: list, max_tokens: int = 1024, temperature: float = 0) -> Dict:
+    def _call_api_with_messages(self, messages: list, max_tokens: int = 1024, temperature: float = 0, stream: bool = False) -> Dict:
         """
         Internal method to call x.ai API with custom messages.
         
@@ -78,6 +78,7 @@ class XaiClient:
             messages: List of message dicts with 'role' and 'content'
             max_tokens: Maximum response tokens
             temperature: Creativity (0 = deterministic)
+            stream: Whether to use streaming response
             
         Returns:
             dict: Response data or error dict
@@ -94,26 +95,33 @@ class XaiClient:
                 'model': self.model,
                 'max_tokens': max_tokens,
                 'temperature': temperature,
-                'messages': messages
+                'messages': messages,
+                'stream': stream
             }
             
             response = requests.post(
                 self.api_url,
                 headers=headers,
                 json=payload,
-                timeout=self.timeout
+                timeout=self.timeout,
+                stream=stream
             )
             
             if response.status_code == 200:
-                data = response.json()
-                
-                # Parse x.ai response (OpenAI-compatible format)
-                if 'choices' in data and data['choices']:
-                    text = data['choices'][0]['message']['content']
+                if stream:
+                    # Handle streaming response
+                    return {'success': True, 'stream': response}
                 else:
-                    return {'success': False, 'error': 'Invalid response format'}
-                
-                return {'success': True, 'text': text}
+                    # Handle regular response
+                    data = response.json()
+                    
+                    # Parse x.ai response (OpenAI-compatible format)
+                    if 'choices' in data and data['choices']:
+                        text = data['choices'][0]['message']['content']
+                    else:
+                        return {'success': False, 'error': 'Invalid response format'}
+                    
+                    return {'success': True, 'text': text}
             
             else:
                 return {'success': False, 'error': f'API error {response.status_code}: {response.text}'}
@@ -155,10 +163,103 @@ class XaiClient:
                 temperature=0.7
             )
         
+        return result['text']
+    
+    def chat_stream(self, prompt: str, system_prompt: Optional[str] = None):
+        """
+        Stream chat with AI (returns an iterator over response chunks).
+        
+        Args:
+            prompt: User query
+            system_prompt: Optional system context
+        
+        Yields:
+            str: Response chunks as they arrive
+        
+        Raises:
+            Exception: If API call fails
+        """
+        if system_prompt:
+            result = self._call_api_with_system_prompt_stream(
+                system_prompt=system_prompt,
+                user_prompt=prompt,
+                max_tokens=1024,
+                temperature=0.7
+            )
+        else:
+            result = self._call_api_stream(
+                prompt=prompt,
+                max_tokens=1024,
+                temperature=0.7
+            )
+        
         if not result['success']:
             raise Exception(result.get('error', 'Unknown API error'))
         
-        return result['text']
+        return self._process_stream(result['stream'])
+    
+    def _call_api_stream(self, prompt: str, max_tokens: int = 1024, temperature: float = 0) -> Dict:
+        """
+        Internal method to call x.ai API with streaming.
+        
+        Args:
+            prompt: User prompt
+            max_tokens: Maximum response tokens
+            temperature: Creativity (0 = deterministic)
+            
+        Returns:
+            dict: Response stream or error dict
+        """
+        return self._call_api_with_messages([{'role': 'user', 'content': prompt}], max_tokens, temperature, stream=True)
+    
+    def _call_api_with_system_prompt_stream(self, system_prompt: str, user_prompt: str, max_tokens: int = 1024, temperature: float = 0) -> Dict:
+        """
+        Call AI API with separate system and user prompts (streaming).
+        
+        Args:
+            system_prompt: System/instruction prompt
+            user_prompt: User query
+            max_tokens: Maximum response tokens
+            temperature: Creativity (0 = deterministic)
+            
+        Returns:
+            dict: Response stream or error dict
+        """
+        messages = [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_prompt}
+        ]
+        return self._call_api_with_messages(messages, max_tokens, temperature, stream=True)
+    
+    def _process_stream(self, response):
+        """
+        Process streaming response from xAI API.
+        
+        Args:
+            response: requests.Response object with stream=True
+            
+        Yields:
+            str: Content chunks as they arrive
+        """
+        try:
+            for line in response.iter_lines():
+                if line:
+                    line = line.decode('utf-8')
+                    if line.startswith('data: '):
+                        data = line[6:]  # Remove 'data: ' prefix
+                        if data == '[DONE]':
+                            break
+                        try:
+                            chunk = json.loads(data)
+                            if 'choices' in chunk and chunk['choices']:
+                                delta = chunk['choices'][0].get('delta', {})
+                                content = delta.get('content', '')
+                                if content:
+                                    yield content
+                        except json.JSONDecodeError:
+                            continue
+        finally:
+            response.close()
     
     def translate_to_shell(self, natural_language: str, shell_name: str) -> Dict:
         """

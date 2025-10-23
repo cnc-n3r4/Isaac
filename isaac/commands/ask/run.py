@@ -16,7 +16,7 @@ from isaac.ai.xai_client import XaiClient
 from isaac.core.session_manager import SessionManager
 
 
-def _handle_chat_query(query: str, config: dict, session: SessionManager, is_piped_input: bool = False) -> str:
+def _handle_chat_query(query: str, config: dict, session: SessionManager, is_piped_input: bool = False, stream_output: bool = False) -> str:
     """Handle regular chat queries (existing logic)"""
     # Get Chat API configuration - use nested structure
     xai_config = config.get('xai', {})
@@ -61,11 +61,34 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager, is_pip
     # Build chat preprompt (context-aware with history)
     preprompt = _build_chat_preprompt(session, query, is_piped_input)
     
-    # Query AI
-    return client.chat(
-        prompt=query,
-        system_prompt=preprompt
-    )
+    # Query AI with streaming
+    try:
+        response_chunks = client.chat_stream(
+            prompt=query,
+            system_prompt=preprompt
+        )
+        
+        if stream_output:
+            # Print chunks progressively for real-time display
+            for chunk in response_chunks:
+                print(chunk, end='', flush=True)
+            print()  # Final newline
+            return ""  # No return value needed for streaming
+        else:
+            # Collect all chunks into complete response
+            full_response = ""
+            for chunk in response_chunks:
+                full_response += chunk
+                
+            return full_response
+        
+    except Exception as e:
+        error_msg = f"Error: {e}"
+        if stream_output:
+            print(error_msg)
+            return ""
+        else:
+            return error_msg
 
 
 def main():
@@ -200,16 +223,22 @@ def main():
         )
         
         # Handle as chat query (collections logic removed - now chat-only)
-        response = _handle_chat_query(query, config, session, is_piped_input=return_blob)
+        if not sys.stdin.isatty():
+            # Piped/dispatcher mode - collect response for JSON return
+            response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=False)
+        else:
+            # Standalone mode - stream output directly
+            response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=True)
         
-        # Log query to AI history
-        session.log_ai_query(
-            query=query,
-            translated_command='[chat_mode]',
-            explanation=response[:100],
-            executed=False,
-            shell_name='chat'
-        )
+        # Log query to AI history (only for non-streaming modes)
+        if not (sys.stdin.isatty() and response == ""):
+            session.log_ai_query(
+                query=query,
+                translated_command='[chat_mode]',
+                explanation=response[:100] if response else "[streaming response]",
+                executed=False,
+                shell_name='chat'
+            )
         
         # Return response
         if not sys.stdin.isatty():
@@ -227,8 +256,8 @@ def main():
                     "stdout": response
                 }))
         else:
-            # Standalone mode - print response directly
-            print(response)
+            # Standalone mode - response already streamed, nothing more to do
+            pass
     
     except Exception as e:
         if not sys.stdin.isatty():
