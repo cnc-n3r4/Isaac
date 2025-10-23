@@ -5,19 +5,10 @@ summary: "View or modify configuration settings"
 triggers: ["/config"]
 
 args:
-  - name: subcommand
-    type: enum
-    enum: ["status", "ai", "cloud", "plugins", "collections", "console", "set"]
-    required: false
-    help: "Configuration section or action"
-  - name: key
+  - name: args
     type: string
     required: false
-    help: "Setting key (for 'set' subcommand)"
-  - name: value
-    type: string
-    required: false
-    help: "Setting value (for 'set' subcommand)"
+    help: "Command arguments (supports --flags)"
 
 stdin: false
 stdout:
@@ -41,7 +32,7 @@ telemetry:
     - "(?i)(api[_-]?key|token|password)\\s*[=:]\\s*[A-Za-z0-9_-]+"
 
 examples:
-  - "/config"
-  - "/config status"
-  - "/config ai"
-  - "/config set default_tier 3"
+  - "/config --status - System status check"
+  - "/config --ai - AI provider details"
+  - "/config --cloud - Cloud sync status"
+  - "/config --set default_tier 3 - Change setting"

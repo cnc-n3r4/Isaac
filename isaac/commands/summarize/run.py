@@ -154,9 +154,29 @@ def summarize_content(content: str, kind: str, length: str, stream_output: bool 
             )
             
             if stream_output:
-                # Print chunks progressively for real-time display
+                # Print chunks progressively for real-time display with spinner
+                import time
+                spinners = ['-', '\\', '|', '/']
+                spinner_idx = 0
+                
                 for chunk in response_chunks:
+                    # Print spinner
+                    print(spinners[spinner_idx % len(spinners)], end='', flush=True)
+                    
+                    # Move cursor back
+                    print('\b', end='', flush=True)
+                    
+                    # Print chunk
                     print(chunk, end='', flush=True)
+                    
+                    # Update spinner
+                    spinner_idx += 1
+                    
+                    # Small delay for smooth animation
+                    time.sleep(0.05)
+                
+                # Clear final spinner and add newline
+                print(' \b', end='')  # Space then backspace to clear
                 print()  # Final newline
                 response = ""  # No return value needed for streaming
             else:

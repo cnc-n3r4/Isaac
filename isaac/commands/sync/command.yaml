@@ -8,6 +8,11 @@ triggers:
 aliases:
   - /sync
   - /s
+args:
+  - name: args
+    type: string
+    required: false
+    help: "Command arguments (supports --flags)"
 security:
   resources:
     timeout_ms: 30000

@@ -133,26 +133,104 @@
 
 ---
 
+#### `/alias` - Unix Command Translation
+**Status:** ✅ Implemented
+
+**Usage:**
+```
+/alias --list                       - List all available aliases
+/alias --show <command>             - Show details for specific Unix command
+/alias --enable                     - Enable Unix alias translation
+/alias --disable                    - Disable Unix alias translation
+/alias --add <unix_cmd> <ps_cmd>    - Add custom alias mapping
+/alias --remove <unix_cmd>          - Remove custom alias
+```
+
+**Examples:**
+```
+/alias --list
+/alias --show ls
+/alias --enable
+/alias --add ll "ls -la"
+```
+
+**Notes:** Translates Unix commands to PowerShell equivalents on Windows
+
+---
+
+#### `/backup` - Data Backup
+**Status:** ✅ Implemented
+
+**Usage:**
+```
+/backup                             - Backup all data (config, session, files)
+/backup --target config             - Backup configuration only
+/backup --target session            - Backup session data only
+/backup --target all                - Backup everything (default)
+```
+
+**Examples:**
+```
+/backup
+/backup --target config
+```
+
+**Notes:** Creates timestamped backup archives in ~/.isaac/backups/
+
+---
+
+#### `/restore` - Data Restore
+**Status:** ✅ Implemented
+
+**Usage:**
+```
+/restore --file <backup_file>        - Restore from specific backup file
+```
+
+**Examples:**
+```
+/restore --file config_backup_2025-10-23.zip
+/restore --file session_backup.zip
+```
+
+**Notes:** Lists available backups if no file specified
+
+---
+
+#### `/sync` - Cloud Synchronization
+**Status:** ✅ Implemented
+
+**Usage:**
+```
+/sync                               - Force sync queued commands to cloud
+/sync --dry-run                     - Show what would be synced (no actual sync)
+/s                                  - Short alias for sync
+```
+
+**Examples:**
+```
+/sync
+/sync --dry-run
+```
+
+**Notes:** Forces immediate synchronization of command queue to cloud storage
+
 #### `/status` - System Status
-**Status:** 📝 Mentioned (needs implementation)
+**Status:** ✅ Implemented
 
 **Usage:**
 ```
 /status                             - Show system status
-/status --detailed                  - Show detailed status
-/status --agents                    - Show agent status
-/status --queue                     - Show command queue
-/status --performance               - Show performance metrics
+/status --verbose                   - Show detailed status
 ```
 
 **Examples:**
 ```
 /status
-/status --agents
-/status --queue
+/status --verbose
 ```
 
-**Notes:** Provides comprehensive system health information
+**Notes:** Provides system health information with optional verbose details
 
 ---
 

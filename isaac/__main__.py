@@ -1,27 +1,75 @@
 """
 Isaac - AI-Enhanced Command-Line Assistant
 
-Entry point for permanent shell mode.
+Entry point for permanent shell mode and direct command execution.
 """
 
 import sys
 from isaac.ui.permanent_shell import PermanentShell
+from isaac.core.session_manager import SessionManager
+from isaac.core.command_router import CommandRouter
+from isaac.adapters.powershell_adapter import PowerShellAdapter
+from isaac.adapters.bash_adapter import BashAdapter
 
 
 def main():
     """
     Main entry point.
 
-    Launches Isaac's simplified shell interface.
+    If arguments provided: execute command directly and exit
+    If no arguments: launch interactive shell
     """
     try:
-        shell = PermanentShell()
-        shell.run()
+        # Check if we have command-line arguments (beyond script name)
+        if len(sys.argv) > 1:
+            # Direct command execution mode
+            return execute_direct_command(sys.argv[1:])
+        else:
+            # Interactive shell mode
+            shell = PermanentShell()
+            shell.run()
     except KeyboardInterrupt:
         print("\nIsaac terminated by user.")
         sys.exit(0)
     except Exception as e:
         print(f"Isaac failed to start: {e}")
+        sys.exit(1)
+
+
+def execute_direct_command(args):
+    """
+    Execute a command directly from command line arguments.
+
+    Args:
+        args: Command line arguments (excluding script name)
+    """
+    try:
+        # Initialize session manager
+        session_mgr = SessionManager()
+
+        # Get shell adapter (same logic as PermanentShell)
+        if sys.platform == "win32":
+            shell_adapter = PowerShellAdapter()
+        else:
+            shell_adapter = BashAdapter()
+
+        # Create command router
+        router = CommandRouter(session_mgr, shell_adapter)
+
+        # Join arguments back into a command string
+        command = ' '.join(args)
+
+        # Route and execute the command
+        result = router.route_command(command)
+
+        # Output the result
+        print(result.output)
+
+        # Exit with appropriate code
+        sys.exit(0 if result.success else 1)
+
+    except Exception as e:
+        print(f"Command execution failed: {e}")
         sys.exit(1)
 
 

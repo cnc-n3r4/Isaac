@@ -89,10 +89,40 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager, is_pip
         )
         
         if stream_output:
-            # Print chunks progressively for real-time display
+            # Print chunks progressively for real-time display with spinner
+            import time
+            spinners = ['-', '\\', '|', '/']
+            spinner_idx = 0
+            
             for chunk in response_chunks:
-                print(chunk, end='', flush=True)
-            print()  # Final newline
+                # Print spinner
+                sys.stdout.write(spinners[spinner_idx % len(spinners)])
+                sys.stdout.flush()
+                
+                # Move cursor back
+                sys.stdout.write('\b')
+                sys.stdout.flush()
+                
+                # Print chunk (handle encoding errors)
+                try:
+                    sys.stdout.write(chunk)
+                    sys.stdout.flush()
+                except UnicodeEncodeError:
+                    # Replace problematic characters
+                    safe_chunk = chunk.encode('ascii', 'replace').decode('ascii')
+                    sys.stdout.write(safe_chunk)
+                    sys.stdout.flush()
+                
+                # Update spinner
+                spinner_idx += 1
+                
+                # Small delay for smooth animation
+                time.sleep(0.05)
+            
+            # Clear final spinner and add newline
+            sys.stdout.write(' \b')  # Space then backspace to clear
+            sys.stdout.write('\n')
+            sys.stdout.flush()
             return ""  # No return value needed for streaming
         else:
             # Collect all chunks into complete response
@@ -113,16 +143,6 @@ def _handle_chat_query(query: str, config: dict, session: SessionManager, is_pip
 
 def main():
     """Main entry point for ask command"""
-    # Standard help pattern: show help when no arguments provided
-    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] in ['--help', '-h']):
-        help_text = show_help()
-        print(json.dumps({
-            "ok": True,
-            "stdout": help_text,
-            "meta": {"command": "/ask"}
-        }))
-        return
-    
     command = '/ask'  # Default command
     return_blob = False  # Default to envelope format
     try:
@@ -166,13 +186,14 @@ def main():
                     # This is dispatcher payload
                     payload = blob
                     command = payload.get('command', '')
+                    args = payload.get('args', '')
+                    args_raw = payload.get('args_raw', '')
                     
                     # Strip the trigger to get the query
                     query = ''
-                    if command.startswith('/ask '):
-                        query = command[5:].strip()
-                    elif command.startswith('/a '):
-                        query = command[3:].strip()
+                    if command == '/ask' or command == '/a':
+                        # Args_raw contains the query
+                        query = args_raw.strip()
                     
                     # This is a dispatcher call - return envelope format
                     return_blob = False
@@ -272,11 +293,14 @@ def main():
         )
         
         # Handle as chat query (collections logic removed - now chat-only)
-        if not sys.stdin.isatty():
-            # Piped/dispatcher mode - collect response for JSON return
+        # For interactive AI commands like /ask, enable streaming even in dispatcher mode
+        is_interactive_ai_command = command.startswith('/ask') or command.startswith('/a')
+        
+        if not sys.stdin.isatty() and not is_interactive_ai_command:
+            # Piped/dispatcher mode for non-interactive commands - collect response for JSON return
             response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=False)
         else:
-            # Standalone mode - stream output directly
+            # Standalone mode or interactive AI commands - stream output directly
             response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=True)
         
         # Log query to AI history (only for non-streaming modes)
@@ -298,12 +322,13 @@ def main():
                     "content": response,
                     "meta": {"command": command, "mode": "chat"}
                 }))
-            else:
-                # Dispatcher call - return envelope
+            elif response != "":
+                # Dispatcher call, non-streaming - return envelope
                 print(json.dumps({
                     "ok": True,
                     "stdout": response
                 }))
+            # For streaming in dispatcher mode, don't return JSON - output was already streamed
         else:
             # Standalone mode - response already streamed, nothing more to do
             pass

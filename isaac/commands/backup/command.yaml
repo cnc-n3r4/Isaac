@@ -5,11 +5,10 @@ summary: "Backup configuration and session data"
 triggers: ["/backup"]
 
 args:
-  - name: target
-    type: enum
-    enum: ["config", "session", "all"]
+  - name: args
+    type: string
     required: false
-    help: "What to backup (default: all)"
+    help: "Command arguments (supports --flags)"
 
 stdin: false
 stdout:
@@ -32,4 +31,5 @@ telemetry:
 
 examples:
   - "/backup"
-  - "/backup config"
+  - "/backup --target config"
+  - "/backup --target session"

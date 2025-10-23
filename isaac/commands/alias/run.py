@@ -13,53 +13,103 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from isaac.core.unix_aliases import UnixAliasTranslator
 
 
+#!/usr/bin/env python3
+"""
+Alias Command Handler - Manage Unix-to-PowerShell command aliases
+"""
+
+import sys
+import json
+from pathlib import Path
+
+# Add isaac package to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from isaac.core.unix_aliases import UnixAliasTranslator
+
+
+def parse_flags(args_list):
+    """Parse command line flags using standardized syntax."""
+    flags = {}
+    positional = []
+    i = 0
+    
+    while i < len(args_list):
+        arg = args_list[i]
+        
+        # Check if it's a flag (starts with -)
+        if arg.startswith('--'):
+            flag = arg[2:]  # Remove --
+            # Check if next arg is the value
+            if i + 1 < len(args_list) and not args_list[i + 1].startswith('-'):
+                flags[flag] = args_list[i + 1]
+                i += 1  # Skip the value
+            else:
+                flags[flag] = True  # Boolean flag
+        else:
+            positional.append(arg)
+            
+        i += 1
+        
+    return flags, positional
+
+
 def main():
     """Main entry point for alias command"""
     try:
         # Read payload from stdin
         payload = json.loads(sys.stdin.read())
-        args = payload.get("args", {})
+        args_raw = payload.get("args", [])
         session = payload.get("session", {})
 
-        subcommand = args.get("subcommand", "list")
-        command = args.get("command")
-        unix_cmd = args.get("unix_cmd")
-        powershell_cmd = args.get("powershell_cmd")
+        # Parse flags from args
+        flags, positional = parse_flags(args_raw)
 
         # Initialize translator
         translator = UnixAliasTranslator()
 
-        if subcommand == "list":
+        # Determine action from flags
+        if 'list' in flags:
             result = handle_list(translator)
-        elif subcommand == "show":
+        elif 'show' in flags:
+            command = flags.get('show')
+            if not command and positional:
+                command = positional[0]
             if not command:
-                result = "Usage: /alias show <command>"
+                result = "Usage: /alias --show <command>"
             else:
                 result = handle_show(translator, command)
-        elif subcommand == "enable":
+        elif 'enable' in flags:
             result = handle_enable(session)
-        elif subcommand == "disable":
+        elif 'disable' in flags:
             result = handle_disable(session)
-        elif subcommand == "add":
-            if not unix_cmd or not powershell_cmd:
-                result = "Usage: /alias add <unix_cmd> <powershell_cmd>"
-            else:
+        elif 'add' in flags:
+            if len(positional) >= 2:
+                unix_cmd, powershell_cmd = positional[0], positional[1]
                 result = handle_add(session, unix_cmd, powershell_cmd)
-        elif subcommand == "remove":
+            else:
+                result = "Usage: /alias --add <unix_cmd> <powershell_cmd>"
+        elif 'remove' in flags:
+            unix_cmd = flags.get('remove')
+            if not unix_cmd and positional:
+                unix_cmd = positional[0]
             if not unix_cmd:
-                result = "Usage: /alias remove <unix_cmd>"
+                result = "Usage: /alias --remove <unix_cmd>"
             else:
                 result = handle_remove(session, unix_cmd)
-        elif subcommand == "help":
+        elif 'help' in flags:
             result = handle_help()
+        elif not flags:
+            # Default to list if no flags
+            result = handle_list(translator)
         else:
-            result = f"Unknown subcommand: {subcommand}\n\n{handle_help()}"
+            result = f"Unknown flags: {list(flags.keys())}\n\n{handle_help()}"
 
         # Return envelope
         print(json.dumps({
             "ok": True,
             "stdout": result,
-            "meta": {"command": "/alias", "subcommand": subcommand}
+            "meta": {"command": "/alias", "flags": list(flags.keys())}
         }))
 
     except Exception as e:
@@ -151,19 +201,19 @@ Alias Command - Unix-to-PowerShell Translation
 
 USAGE:
   /alias                    - List all available aliases
-  /alias list              - Show all Unix-to-PowerShell aliases
-  /alias show <command>    - Show details for specific Unix command
-  /alias enable            - Enable Unix alias translation
-  /alias disable           - Disable Unix alias translation
-  /alias add <unix> <ps>   - Add custom alias mapping
-  /alias remove <unix>     - Remove custom alias
-  /alias help              - Show this help
+  /alias --list            - Show all Unix-to-PowerShell aliases
+  /alias --show <command>  - Show details for specific Unix command
+  /alias --enable          - Enable Unix alias translation
+  /alias --disable         - Disable Unix alias translation
+  /alias --add <unix> <ps> - Add custom alias mapping
+  /alias --remove <unix>   - Remove custom alias
+  /alias --help            - Show this help
 
 EXAMPLES:
   /alias                   - Show ls → Get-ChildItem, cd → Set-Location, etc.
-  /alias show ls          - Show PowerShell equivalent and examples
-  /alias enable           - Enable automatic Unix→PowerShell translation
-  /alias add ll "ls -la"  - Add custom alias for detailed listing
+  /alias --show ls        - Show PowerShell equivalent and examples
+  /alias --enable         - Enable automatic Unix→PowerShell translation
+  /alias --add ll "ls -la" - Add custom alias for detailed listing
 
 For detailed help, use: /help /alias
 """.strip()

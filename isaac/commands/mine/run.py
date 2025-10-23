@@ -101,67 +101,444 @@ class MineHandler:
         except Exception:
             pass  # Silently fail
 
+    def parse_command_flags(self, args: List[str]) -> Dict[str, Any]:
+        """Parse command arguments using standardized -/-- flag syntax.
+        
+        Supports:
+        - --flag value
+        - --flag=value  
+        - -f value
+        - -f=value
+        - --flag (boolean flags)
+        
+        Returns dict with parsed flags and remaining positional args.
+        """
+        parsed = {}
+        positional = []
+        i = 0
+        
+        while i < len(args):
+            arg = args[i]
+            
+            # Check if it's a flag (starts with -)
+            if arg.startswith('--'):
+                # Long flag like --flag or --flag=value
+                if '=' in arg:
+                    flag, value = arg.split('=', 1)
+                    flag = flag[2:]  # Remove --
+                    parsed[flag] = value
+                else:
+                    flag = arg[2:]  # Remove --
+                    # Check if next arg is the value
+                    if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                        parsed[flag] = args[i + 1]
+                        i += 1  # Skip the value
+                    else:
+                        parsed[flag] = True  # Boolean flag
+                        
+            elif arg.startswith('-') and len(arg) > 1:
+                # Short flag like -f or -f=value
+                if '=' in arg:
+                    flag, value = arg.split('=', 1)
+                    flag = flag[1:]  # Remove -
+                    parsed[flag] = value
+                else:
+                    flag = arg[1:]  # Remove -
+                    # Check if next arg is the value
+                    if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                        parsed[flag] = args[i + 1]
+                        i += 1  # Skip the value
+                    else:
+                        parsed[flag] = True  # Boolean flag
+            else:
+                # Positional argument
+                positional.append(arg)
+                
+            i += 1
+            
+        return {
+            'flags': parsed,
+            'positional': positional
+        }
+
     def handle_command(self, args: List[str], command: str = '/mine') -> str:
         """Main command dispatcher for /mine commands."""
         if not args:
             return self._show_help()
 
-        subcommand = args[0].lower()
+        # Parse flags using standardized syntax
+        parsed = self.parse_command_flags(args)
+        flags = parsed['flags']
+        positional = parsed['positional']
 
         # Check if x.ai client is available
-        if not self.client and subcommand not in ['help', 'status']:
+        if not self.client and not any(flag in ['help', 'status'] for flag in flags):
             return "x.ai client not available. Check that xai_api_key is configured in your Isaac config and xai_sdk is installed."
 
-        # Route to appropriate handler
-        handlers = {
-            'help': self._show_help,
-            'status': self._show_status,
-            'list': self._handle_list,
-            'use': self._handle_use,
-            'create': self._handle_create,
-            'cast': self._handle_cast,
-            'upload': self._handle_cast,  # Alias for backward compatibility
-            'dig': self._handle_dig,
-            'query': self._handle_dig,  # Alias for backward compatibility
-            'delete': self._handle_delete,
-            'info': self._handle_info,
-            'pan': self._handle_pan,
-            'grokbug': self._handle_grokbug,
-            'grokrefactor': self._handle_grokrefactor,
-        }
+        # NEW MINING METAPHOR COMMANDS
+        if 'list' in flags:
+            return self._handle_list()
+        elif 'deed' in flags:
+            return self._handle_deed(positional)
+        elif 'stake' in flags:
+            return self._handle_stake([flags['stake']] + positional)
+        elif 'claim' in flags:
+            return self._handle_claim([flags['claim']] + positional)
+        elif 'drift' in flags:
+            return self._handle_drift([flags['drift']] + positional)
+        elif 'muck' in flags:
+            return self._handle_muck([flags['muck']] + positional)
+        elif 'haul' in flags:
+            return self._handle_haul([flags['haul']] + positional)
+        elif 'dig' in flags:
+            return self._handle_dig(positional if positional else [flags.get('dig', '')])
+        elif 'pan' in flags:
+            return self._handle_pan([flags['pan']] + positional)
+        elif 'nuggets' in flags:
+            return self._handle_nuggets(positional)
+        elif 'abandon' in flags:
+            return self._handle_abandon([flags['abandon']] + positional)
+        elif 'info' in flags:
+            return self._handle_info()
 
-        handler = handlers.get(subcommand)
-        if handler:
-            return handler(args[1:])
+        # BACKWARD COMPATIBILITY (with deprecation warnings)
+        elif 'use' in flags:
+            self._show_deprecation_warning('use', 'claim')
+            return self._handle_claim([flags['use']] + positional)
+        elif 'create' in flags:
+            self._show_deprecation_warning('create', 'stake')
+            return self._handle_stake([flags['create']] + positional)
+        elif 'cast' in flags:
+            self._show_deprecation_warning('cast', 'muck')
+            return self._handle_muck([flags['cast']] + positional)
+        elif 'delete' in flags:
+            self._show_deprecation_warning('delete', 'abandon')
+            return self._handle_abandon([flags['delete']] + positional)
+
+        # LEGACY FLAGS
+        elif 'help' in flags:
+            return self._show_help()
+        elif 'status' in flags:
+            return self._show_status()
+        elif 'grokbug' in flags:
+            return self._handle_grokbug([flags['grokbug']] + positional)
+        elif 'grokrefactor' in flags:
+            return self._handle_grokrefactor([flags['grokrefactor']] + positional)
         else:
-            return f"Unknown subcommand: {subcommand}. Use /mine help for available commands."
+            return f"Unknown flags: {list(flags.keys())}. Use /mine --help for available commands."
+
+    def _show_deprecation_warning(self, old_command: str, new_command: str) -> None:
+        """Show deprecation warning for old commands."""
+        print(f"⚠️  Warning: --{old_command} is deprecated. Use --{new_command} instead.")
+
+    def _handle_stake(self, args: List[str]) -> str:
+        """Stake a new claim (create collection)."""
+        return self._handle_create(args)  # Reuse existing create logic
+
+    def _handle_claim(self, args: List[str]) -> str:
+        """Claim/use a staked claim (switch collection)."""
+        if not args:
+            return "Usage: /mine --claim <collection_name> [--dig <query>]"
+
+        collection_name = args[0]
+        remaining_args = args[1:]
+
+        # Handle combined claim and dig
+        if remaining_args and remaining_args[0] == '--dig' and len(remaining_args) > 1:
+            # Switch collection and dig in one command
+            result = self._handle_use([collection_name])
+            if "Switched to collection" in result:
+                return result + "\n" + self._handle_dig(remaining_args[1:])
+            else:
+                return result
+
+        # Just switch collection
+        return self._handle_use([collection_name])
+
+    def _handle_drift(self, args: List[str]) -> str:
+        """Carve a drift within active claim (create sub-collection)."""
+        # For now, treat as regular collection creation
+        # Future: implement sub-collection hierarchy
+        return self._handle_create(args)
+
+    def _handle_muck(self, args: List[str]) -> str:
+        """Muck file into active drift (upload file)."""
+        return self._handle_cast(args)
+
+    def _handle_haul(self, args: List[str]) -> str:
+        """Haul file out of active drift (extract by file_id or nugget name)."""
+        if not args:
+            return "Usage: /mine --haul <file_id>        # Extract file content by ID\n       /mine --haul <nugget_name>    # Extract file by saved nugget name"
+
+        target = args[0]
+
+        # Check if it's a nugget name first
+        config = self.session_manager.get_config()
+        nuggets = config.get('xai', {}).get('collections', {}).get('nuggets', {})
+
+        if target in nuggets:
+            # It's a nugget name - get the file_id
+            nugget_data = nuggets[target]
+            file_id = nugget_data['file_id']
+            return self._handle_haul_extract(file_id)
+        elif target.startswith('file_') or (len(target) == 36 and '-' in target):
+            # Extract file by ID
+            return self._handle_haul_extract(target)
+        else:
+            return "Usage: /mine --haul <file_id>        # Extract file content by ID\n       /mine --haul <nugget_name>    # Extract file by saved nugget name"
+
+    def _handle_haul_extract(self, file_id: str) -> str:
+        """Extract and display file content by file_id (haul out from the mine)."""
+        if not self.active_collection_id:
+            return "No active collection. Use /mine --claim <name> first."
+
+        try:
+            # Get all documents in the active collection
+            documents_response = self.client.collections.list_documents(self.active_collection_id)
+            documents = documents_response.documents
+
+            # Find the document with matching file_id
+            target_doc = None
+            for doc in documents:
+                # Check various possible ID fields
+                doc_file_id = None
+                for id_field in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                    if hasattr(doc, id_field):
+                        doc_file_id = getattr(doc, id_field)
+                        break
+
+                # Also check nested file_metadata
+                if not doc_file_id and hasattr(doc, 'file_metadata') and doc.file_metadata:
+                    if hasattr(doc.file_metadata, 'file_id'):
+                        doc_file_id = doc.file_metadata.file_id
+
+                if doc_file_id == file_id:
+                    target_doc = doc
+                    break
+
+            if not target_doc:
+                return f"File with ID '{file_id}' not found in active collection '{self.active_collection_name}'"
+
+            # Extract file content and metadata
+            filename = "Unknown"
+            content = "No content available"
+
+            # Get filename
+            if hasattr(target_doc, 'file_metadata') and getattr(target_doc, 'file_metadata'):
+                file_metadata = getattr(target_doc, 'file_metadata')
+                if hasattr(file_metadata, 'name'):
+                    filename = getattr(file_metadata, 'name')
+
+            # Get content - try different fields
+            for content_field in ['content', 'text', 'chunk_content', 'body']:
+                if hasattr(target_doc, content_field):
+                    content = getattr(target_doc, content_field)
+                    break
+
+            # Format output
+            result = f"📄 Extracted File: {filename}\n"
+            result += f"🆔 File ID: {file_id}\n"
+            result += f"📚 Collection: {self.active_collection_name}\n"
+            result += "=" * 50 + "\n"
+            result += content
+
+            return result
+
+        except Exception as e:
+            return f"Error extracting file: {e}"
+
+    def _handle_nuggets(self, args: List[str]) -> str:
+        """Manage saved nuggets (named file_ids for easy reference)."""
+        if not args:
+            # List all saved nuggets
+            return self._list_nuggets()
+        elif args[0] == 'save' and len(args) > 1:
+            # Save piped file_ids as nuggets
+            return self._save_nuggets_from_pipe(args[1:])
+        elif args[0] == 'search' and len(args) > 1:
+            # Search nuggets by name
+            return self._search_nuggets(args[1])
+        else:
+            return "Usage: /mine --nuggets                    # List saved nuggets\n       /mine --nuggets save <collection>  # Save file_ids as nuggets\n       /mine --nuggets search <query>     # Search nuggets by name"
+
+    def _list_nuggets(self) -> str:
+        """List all saved nuggets."""
+        config = self.session_manager.get_config()
+        nuggets = config.get('xai', {}).get('collections', {}).get('nuggets', {})
+
+        if not nuggets:
+            return "No nuggets saved. Use '/mine --pan <collection> | /mine --nuggets save <collection>' to save file_ids as named nuggets."
+
+        result = "💎 Saved Nuggets (named file_ids):\n\n"
+        for name, data in nuggets.items():
+            file_id = data.get('file_id', 'unknown')
+            collection = data.get('collection', 'unknown')
+            filename = data.get('filename', 'unknown')
+            result += f"• {name}: {filename} ({file_id[:20]}...)\n  Collection: {collection}\n\n"
+
+        result += f"Total: {len(nuggets)} nuggets\n"
+        result += "Use '/mine --haul <nugget_name>' to extract a nugget."
+        return result
+
+    def _save_nuggets_from_pipe(self, args: List[str]) -> str:
+        """Save file_ids from piped input as named nuggets."""
+        if not args:
+            return "Usage: /mine --nuggets save <collection_name>"
+
+        collection_name = args[0]
+
+        # Read from stdin (piped input)
+        import sys
+        piped_data = sys.stdin.read().strip()
+
+        if not piped_data:
+            return "No piped input detected. Use: /mine --pan <collection> | /mine --nuggets save <collection>"
+
+        # Parse file_ids from piped data
+        nuggets = {}
+        lines = piped_data.split('\n')
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith('• ') and ': ' in line:
+                parts = line[2:].split(': ', 1)
+                if len(parts) == 2:
+                    filename, file_id = parts
+                    # Create a readable nugget name from filename
+                    nugget_name = self._create_nugget_name(filename, list(nuggets.keys()))
+                    nuggets[nugget_name] = {
+                        'file_id': file_id,
+                        'filename': filename,
+                        'collection': collection_name
+                    }
+
+        if not nuggets:
+            return "No valid file_ids found in piped input."
+
+        # Save nuggets to config
+        config = self.session_manager.get_config()
+        if 'xai' not in config:
+            config['xai'] = {}
+        if 'collections' not in config['xai']:
+            config['xai']['collections'] = {}
+        if 'nuggets' not in config['xai']['collections']:
+            config['xai']['collections']['nuggets'] = {}
+
+        config['xai']['collections']['nuggets'].update(nuggets)
+
+        # Save to disk
+        try:
+            import json
+            from pathlib import Path
+            config_file = Path.home() / '.isaac' / 'config.json'
+            with open(config_file, 'w') as f:
+                json.dump(config, f, indent=2)
+        except Exception as e:
+            return f"Error saving nuggets: {e}"
+
+        return f"Saved {len(nuggets)} nuggets from {collection_name}:\n" + "\n".join(f"  • {name} → {data['filename']}" for name, data in nuggets.items())
+
+    def _search_nuggets(self, query: str) -> str:
+        """Search nuggets by name."""
+        config = self.session_manager.get_config()
+        nuggets = config.get('xai', {}).get('collections', {}).get('nuggets', {})
+
+        matches = {}
+        for name, data in nuggets.items():
+            if query.lower() in name.lower() or query.lower() in data.get('filename', '').lower():
+                matches[name] = data
+
+        if not matches:
+            return f"No nuggets found matching '{query}'."
+
+        result = f"🔍 Nuggets matching '{query}':\n\n"
+        for name, data in matches.items():
+            file_id = data.get('file_id', 'unknown')
+            filename = data.get('filename', 'unknown')
+            collection = data.get('collection', 'unknown')
+            result += f"• {name}: {filename}\n  ID: {file_id}\n  Collection: {collection}\n\n"
+
+        return result
+
+    def _create_nugget_name(self, filename: str, existing_names: List[str]) -> str:
+        """Create a unique, readable nugget name from filename."""
+        # Remove extension and clean up
+        name = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        # Replace spaces and special chars with underscores
+        name = ''.join(c if c.isalnum() or c in '._-' else '_' for c in name)
+        # Ensure uniqueness
+        base_name = name
+        counter = 1
+        while name in existing_names:
+            name = f"{base_name}_{counter}"
+            counter += 1
+        return name
+
+    def _handle_deed(self, args: List[str]) -> str:
+        """Deed the claim: show collection details."""
+        if args and args[0] == '--all':
+            return self._handle_list()
+        else:
+            return self._handle_info()
+
+    def _handle_abandon(self, args: List[str]) -> str:
+        """Abandon claim (delete collection)."""
+        return self._handle_delete(args)
 
     def _show_help(self, args=None) -> str:
         """Show help for /mine commands."""
         return """
-Isaac x.ai Collection Manager (/mine)
+Isaac x.ai Collection Manager (/mine) - Mining Metaphor Edition 🏔️⛏️
 
-CORE COMMANDS:
-  /mine list                    List all collections
-  /mine use <name>              Switch active collection
-  /mine use <name> dig <text>   Switch collection and dig in one command
-  /mine create <name>           Create new collection
-  /mine cast <file>             Cast file into active collection
-  /mine dig <question>          Dig up answers from active collection
-  /mine pan <collection>        List file_ids within a collection
-  /mine delete <name>           Delete collection
-  /mine info                    Show active collection details
+CORE MINING COMMANDS:
+  /mine --list                  # Quick alias to --deed --all (legacy-friendly)
+  /mine --deed [--all]          # Deed the claim: --all lists everything; no arg shows active details
+  /mine --stake <name>          # Stake/create new claim (initial plot-out)
+  /mine --claim <name>          # Claim/use/switch to a staked claim (enter the territory)
+  /mine --claim <name> --dig <text>  # Claim and dig in one motion
+  /mine --drift <name>          # Carve/create drift (collection) within active claim
+  /mine --muck <file>           # Muck file into active drift (upload waste rock & ore)
+  /mine --dig <question>        # Dig answers from active drift/claim
+  /mine --pan <drift>           # Pan file_ids in a specific drift
+  /mine --haul <file_id>        # Haul file out of drift (extract by ID)
+  /mine --haul <nugget_name>    # Haul file out by saved nugget name
+  /mine --abandon <claim>       # Abandon/delete claim (drifts caved in)
+  /mine --info                  # Quick alias to --deed (for active only)
 
-ADVANCED FEATURES:
-  /config console               Configure search parameters, file filtering
-  - Set specific file_ids to search within collections
-  - Enable "search files only" mode for targeted queries
+NUGGET MANAGEMENT:
+  /mine --nuggets               # List all saved nuggets (named file_ids)
+  /mine --nuggets save <coll>   # Save piped file_ids as named nuggets
+  /mine --nuggets search <q>    # Search nuggets by name or filename
+
+FILE ID MANAGEMENT:
+  /mine --pan <collection> | /config  # Save file_ids locally for targeted searches
+  /config --collections              # View/manage saved file_ids
+  /config --console                  # Interactive settings (enable file_id filtering)
 
 EXAMPLES:
-  /mine dig "what is machine learning?"
-  /mine use mydocs dig "find all email addresses"
-  /mine pan mydocs                    # List file_ids in 'mydocs' collection
-  /config console  # Configure file_ids like 'file_01852dbb-3f44-45fc-8cf8-699610d17501'
+  # Mining workflow
+  /mine --stake myMusic           # Stake a new claim
+  /mine --claim myMusic           # Enter the claim
+  /mine --muck song.mp3           # Muck ore into the mine (upload file)
+  /mine --dig "find rock songs"   # Dig for answers
+  /mine --pan myMusic             # Pan for file nuggets (get file_ids)
+  /mine --pan myMusic | /mine --nuggets save myMusic  # Save file_ids as named nuggets
+  /mine --nuggets                 # List all saved nuggets
+  /mine --haul favorite_song      # Haul out file by nugget name
+  /mine --haul file_abc123...     # Or haul out by file_id
+
+  # File ID targeting
+  /mine --pan myMusic | /config   # Save file_ids locally
+  /mine --dig "specific lyrics"   # Search only saved files
+
+  # Combined operations
+  /mine --claim docs --dig "kubernetes tutorial"
+
+LEGACY COMMANDS (deprecated, use mining equivalents):
+  /mine --create → --stake
+  /mine --use → --claim
+  /mine --cast → --muck
+  /mine --delete → --abandon
 """
 
     def _show_status(self, args=None) -> str:
@@ -383,10 +760,13 @@ EXAMPLES:
         question = " ".join(args)
 
         try:
-            # Load mine config for search parameters
-            mine_config = self._load_mine_config()
-            search_files_only = mine_config.get('search_files_only', False)
-            file_ids = mine_config.get('file_ids', [])
+            # Load search configuration from Isaac config
+            config = self.session_manager.get_config()
+            xai_config = config.get('xai', {})
+            collections_config = xai_config.get('collections', {})
+            
+            search_files_only = collections_config.get('search_files_only', False)
+            file_ids = collections_config.get('file_ids', [])
 
             # Search the collection
             # Note: xAI SDK has a hardcoded 10-second gRPC timeout for search operations
@@ -539,6 +919,11 @@ EXAMPLES:
                     if hasattr(doc, id_prop):
                         file_id = getattr(doc, id_prop)
                         break
+                
+                # Check nested file_metadata.file_id (protobuf structure)
+                if file_id == "unknown" and hasattr(doc, 'file_metadata') and doc.file_metadata:
+                    if hasattr(doc.file_metadata, 'file_id'):
+                        file_id = doc.file_metadata.file_id
                 
                 # If still unknown, try to inspect the object
                 if file_id == "unknown":

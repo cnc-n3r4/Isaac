@@ -13,7 +13,7 @@
 
 ### 2025-10-23
 - **mvp_config_console_spec.md** - Config console MVP implementation
-- **piping_system_phase1.md** - Core piping system with /save, /analyze, /summarize
+- **piping_system_phase1.md** - Core piping system with /analyze, /summarize (replaced /save with /mine collections)
 - **streaming_spinner_enhancement.md** - Enhanced UI feedback for long operations
 - **ui_module_import_fix.md** - Updated header_display.py to remove TerminalControl dependency, created cleanup instructions for obsolete tests
 
@@ -26,7 +26,7 @@
 ## Pending Items 📋
 
 ### High Priority
-- **isaac_command_syntax_standardization.md** - Update all commands to use --flag syntax
+- **isaac_command_syntax_standardization.md** - Update all commands to use --flag syntax (COMPLETED for /mine)
 - **ask_command_implementation.md** - Implement simplified /ask command
 - **mine_config_command_spec.md** - Mine command configuration updates
 - ~~**ui_module_import_fix.md** - Fix missing terminal_control module causing test failures~~ ✅ **COMPLETED** - Updated header_display.py, created cleanup instructions for obsolete tests

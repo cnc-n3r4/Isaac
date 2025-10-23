@@ -27,7 +27,7 @@ security:
     - network
 
 examples:
-  - "/mine list - List all collections"
-  - "/mine create mydocs - Create new collection"
-  - "/mine upload file.txt - Upload file to active collection"
-  - "/mine query what is machine learning? - Search active collection"
+  - "/mine --list - List all collections"
+  - "/mine --create mydocs - Create new collection"
+  - "/mine --cast file.txt - Upload file to active collection"
+  - "/mine --dig 'what is machine learning?' - Search active collection"
