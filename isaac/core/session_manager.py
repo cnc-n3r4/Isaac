@@ -55,7 +55,10 @@ class SessionManager:
         # Get user home directory
         self.home_dir = Path.home()
         self.isaac_dir = self.home_dir / '.isaac'
-        self.isaac_dir.mkdir(exist_ok=True)
+        
+        # Create isaac directory if it doesn't exist
+        if not self.isaac_dir.exists():
+            self.isaac_dir.mkdir(exist_ok=True)
 
         # Store config and adapter
         self.config = config or {}

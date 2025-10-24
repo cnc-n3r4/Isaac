@@ -11,11 +11,12 @@ def main():
     """Main entry point for help command"""
     # Read payload from stdin
     payload = json.loads(sys.stdin.read())
-    args = payload.get("args", {})
+    args = payload.get("args", [])
     session = payload.get("session", {})
 
     # Get the requested command for detailed help
-    command_name = args.get("command")
+    # args is a list, so check if first element exists
+    command_name = args[0] if args else None
 
     if command_name:
         # Show detailed help for specific command
@@ -36,59 +37,25 @@ def main():
 def get_overview_help(session):
     """Show overview of available commands"""
     return """
-Available Commands:
-  /help [command]     - Show help (overview or detailed for command)
-  /status [-v]        - Quick system status (verbose with -v)
-  /config <subcmd>    - Configuration management
-  /alias <subcmd>     - Unix-to-PowerShell alias management
-  /mine <subcmd>      - xAI collection search and management
-  /newfile [file]     - Create files with templates
-  /clear              - Clear screen
-  /exit, /quit        - Exit ISAAC
+ISAAC Commands Overview:
 
-Collections (xAI Mining):
-  /mine --list                  - Quick alias to --deed --all (legacy-friendly)
-  /mine --deed [--all]          - Deed the claim: --all lists everything; no arg shows active details
-  /mine --stake <name>          - Stake/create new claim (initial plot-out)
-  /mine --claim <name>          - Claim/use/switch to a staked claim (enter the territory)
-  /mine --drift <name>          - Carve/create drift (collection) within active claim
-  /mine --muck <file>           - Muck file into active drift (upload waste rock & ore)
-  /mine --dig <question>        - Dig answers from active drift/claim
-  /mine --pan <drift>           - Pan file_ids in a specific drift
-  /mine --haul <file_id>        - Haul file out of drift (extract by ID)
-  /mine --haul <nugget_name>    - Haul file out by saved nugget name
-  /mine --abandon <claim>       - Abandon/delete claim (drifts caved in)
-  /mine --info                  - Quick alias to --deed (for active only)
+Core Commands:
+  /help [command]     # Show help (overview or detailed for command)
+  /status [-v]        # Quick system status (verbose with -v)
+  /config console     # Configuration console
+  /clear              # Clear screen
+  /exit, /quit        # Exit ISAAC
 
-Nugget Management:
-  /mine --nuggets               - List all saved nuggets (named file_ids)
-  /mine --nuggets save <coll>   - Save piped file_ids as named nuggets
-  /mine --nuggets search <q>    - Search nuggets by name or filename
-
-AI Interaction:
-  /ask <question>    - Direct AI chat
-  isaac <query>      - AI query or command translation
+AI & Search:
+  /ask <question>     # Direct AI chat
+  isaac <query>       # AI query or command translation
+  /mine <subcmd>      # Tool for searching xAI collections
 
 File Operations:
-  /newfile <file>    - Create file with template
-  /save <file>       - Save piped output to file
+  /newfile [file]     # Create files with templates
+  /alias <subcmd>     # Unix-to-PowerShell alias management
 
-Piping (Experimental):
-  <cmd> | <cmd>      - Chain commands together
-  /mine --dig "query" | /ask "analyze this"
-  /mine --pan collection | /mine --nuggets save collection
-  ls | /save files.txt
-
-Examples:
-  /help /alias       - Detailed help for alias command
-  /status -v         - Verbose system status
-  /alias list        - Show available Unix aliases
-  /mine --stake cnc-info       - Stake a new claim for CNC manuals
-  /mine --claim cnc-info       - Enter the CNC manuals claim
-  /mine --dig "g01 command"    - Dig for G01 command info
-  /mine --pan cnc-info | /mine --nuggets save cnc-info  - Save file_ids as nuggets
-  /mine --haul favorite_manual - Extract saved manual by nugget name
-  /newfile script.py           - Create Python file with template
+Type '[command] --help' for detailed help on any command.
 """.strip()
 
 
