@@ -20,6 +20,8 @@ class CommandRouter:
         """Initialize with session manager and shell adapter."""
         self.session = session_mgr
         self.shell = shell
+        
+        # Initialize security and validation components
         self.validator = TierValidator(self.session.preferences)
         self.query_classifier = QueryClassifier()
         self.sandbox = SandboxEnforcer(self.session)

@@ -19,6 +19,8 @@ class CommandDispatcher:
 
     def load_commands(self, directories: List[Path]):
         """Scan directories for command.yaml manifests"""
+        total_commands = 0
+        
         for directory in directories:
             if not directory.exists():
                 continue
@@ -27,6 +29,9 @@ class CommandDispatcher:
             for yaml_file in directory.rglob('command.yaml'):
                 manifest = self.loader.load_manifest(yaml_file)
                 if manifest:
+                    command_name = manifest.get('name', 'unknown')
+                    print(f"Loading command: {command_name}")
+                    
                     # Register all triggers and aliases
                     for trigger in manifest.get('triggers', []):
                         self.commands[trigger] = {
@@ -39,6 +44,10 @@ class CommandDispatcher:
                             'manifest': manifest,
                             'path': yaml_file.parent
                         }
+                    
+                    total_commands += 1
+        
+        print(f"✓ Loaded {total_commands} commands")
 
     def resolve_trigger(self, input_text: str) -> Optional[Dict]:
         """Match /command to loaded manifest"""
@@ -160,7 +169,8 @@ class CommandDispatcher:
                 "session": {
                     "machine_id": getattr(self.session.config, 'machine_id', 'unknown'),
                     "user_prefs": getattr(self.session.preferences, 'data', {}),
-                    "config": self.session.config
+                    "config": self.session.config,
+                    "command_history": getattr(self.session.command_history, 'commands', [])
                 }
             }
 

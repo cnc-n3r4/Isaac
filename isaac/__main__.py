@@ -22,6 +22,9 @@ def main():
     If no arguments: launch interactive shell
     """
     try:
+        print("Isaac - AI-Enhanced Command-Line Assistant")
+        print("Loading...")
+
         # Parse command line arguments
         parser = argparse.ArgumentParser(description='Isaac - AI-Enhanced Command-Line Assistant')
         parser.add_argument('-key', '--key', help='Authentication key for access')
@@ -32,14 +35,20 @@ def main():
         args, unknown = parser.parse_known_args()
         command = unknown
 
+        print("✓ Arguments parsed")
+
         # Initialize key manager for authentication
+        print("Loading key manager...")
         key_manager = KeyManager()
+        print("✓ Key manager loaded")
 
         # Authenticate if key provided or required
         if args.key:
+            print("Authenticating...")
             if not key_manager.authenticate(args.key):
                 print(key_manager.get_rejection_message())
                 sys.exit(1)
+            print("✓ Authentication successful")
         elif not args.daemon and not args.oneshot:
             # Interactive mode requires authentication unless explicitly bypassed
             print("Isaac requires authentication. Use -key <your_key> to authenticate.")
@@ -72,21 +81,29 @@ def execute_direct_command(args, key_manager=None, oneshot=False):
         oneshot: Whether to run in oneshot mode (no session persistence)
     """
     try:
+        print("Initializing session manager...")
         # Initialize session manager
         config = {'sync_enabled': False} if oneshot else None
         session_mgr = SessionManager(config)
+        print("✓ Session manager initialized")
 
+        print("Detecting shell environment...")
         # Get shell adapter (same logic as PermanentShell)
         if sys.platform == "win32":
             shell_adapter = PowerShellAdapter()
+            print("✓ PowerShell adapter loaded")
         else:
             shell_adapter = BashAdapter()
+            print("✓ Bash adapter loaded")
 
+        print("Initializing command router...")
         # Create command router
         router = CommandRouter(session_mgr, shell_adapter)
+        print("✓ Command router initialized")
 
         # Join arguments back into a command string
         command = ' '.join(args)
+        print(f"Executing command: {command}")
 
         # Route and execute the command
         result = router.route_command(command)

@@ -5,7 +5,6 @@ Status Command Handler - Plugin format
 
 import sys
 import json
-import socket
 
 
 def parse_flags(args_list):
@@ -44,14 +43,14 @@ def main():
     # Parse flags from args
     flags, positional = parse_flags(args_raw)
 
-    verbose = 'verbose' in flags
+    verbose = 'verbose' in flags or 'help' in flags
 
     if verbose:
-        # Delegate to config status (simulate the detailed status)
-        output = get_detailed_status(session)
+        # Show detailed help
+        output = get_detailed_help()
     else:
-        # One-line summary
-        output = get_summary_status(session)
+        # Show comprehensive status display
+        output = get_comprehensive_status(session)
 
     # Return envelope
     print(json.dumps({
@@ -62,47 +61,60 @@ def main():
     }))
 
 
-def get_summary_status(session):
-    """Return one-line status summary"""
-    machine_id = session.get('machine_id', 'unknown')[:6]
-
-    # Check cloud status (simplified)
-    cloud = "✓"  # Assume connected for now
-
-    # Check AI status
-    ai = "✓"  # Assume available for now
-
-    # Get history count (placeholder)
-    hist = 42  # Placeholder
-
-    return f"Session: {machine_id} | Cloud: {cloud} | AI: {ai} | History: {hist}"
-
-
-def get_detailed_status(session):
-    """Return detailed system status"""
-    lines = []
-    lines.append("=== System Status ===")
-
-    # Cloud status
-    lines.append("Cloud: ✓ Connected")  # Simplified
-
-    # AI status
-    lines.append("AI Provider: ✓ xAI (grok-3)")  # Simplified
-
-    # Network info
+def get_comprehensive_status(session):
+    """Return comprehensive status display"""
+    # Import the shared status display utility
     try:
-        hostname = socket.gethostname()
-        ip = socket.gethostbyname(hostname)
-        lines.append(f"Network: {ip}")
-    except:
-        lines.append("Network: Unable to detect")
+        # Try to import from the expected location
+        import os
+        isaac_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        import sys
+        if isaac_root not in sys.path:
+            sys.path.insert(0, isaac_root)
+        
+        from isaac.ui.status_display import StatusDisplay
+        
+        # Create a mock session object from the session dict
+        class MockSession:
+            def __init__(self, session_dict):
+                self.config = session_dict.get('config', {})
+                self.cloud = None  # Placeholder
+                self.command_history = type('obj', (object,), {'commands': session_dict.get('command_history', [])})()
+        
+        mock_session = MockSession(session)
+        status_display = StatusDisplay(mock_session)
+        return status_display.get_comprehensive_status()
+    except Exception:
+        # Fallback to simple status if import fails
+        return get_fallback_status(session)
 
-    # Session info
-    machine_id = session.get('machine_id', 'unknown')
-    lines.append(f"Session: {machine_id}")
-    lines.append("Commands today: 42")  # Placeholder
 
-    return "\n".join(lines)
+def get_detailed_help():
+    """Return detailed help for status command"""
+    return """
+ISAAC Status Command - Detailed Help
+
+USAGE:
+  /status                    # Show comprehensive system status
+  /status --help            # Show this detailed help
+  /status --verbose         # Legacy verbose mode
+
+The status display shows:
+• System version and network information
+• AI model and workspace details  
+• Inbox and message status
+• Cloud sync information
+• Session and connectivity status
+• Command history count
+
+All information is refreshed in real-time.
+""".strip()
+
+
+def get_fallback_status(session):
+    """Fallback status display if StatusDisplay import fails"""
+    machine_id = session.get('machine_id', 'unknown')[:6]
+    return f"Session: {machine_id} | Status: Basic mode (StatusDisplay unavailable)"
 
 
 if __name__ == "__main__":
