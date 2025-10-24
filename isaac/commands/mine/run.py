@@ -21,23 +21,64 @@ except ImportError:
 class MineHandler:
     """Handles /mine commands for personal collection search."""
 
-    def __init__(self, session_manager):
+    def __init__(self, session_manager_or_config):
         """Initialize the Mine handler."""
-        self.session_manager = session_manager
+        if hasattr(session_manager_or_config, 'get_config'):
+            # It's a SessionManager
+            self.session_manager = session_manager_or_config
+            self.config = self.session_manager.get_config()
+        else:
+            # It's a config dict
+            self.session_manager = None
+            self.config = session_manager_or_config
+        
         self.active_collection_id = None
         self.active_collection_name = None
         self.client = None
+        self.warnings = []  # Collect warnings instead of printing them
 
         # Load active collection from config
-        config = self.session_manager.get_config()
-        self.active_collection_id = config.get('active_collection_id')
-        self.active_collection_name = config.get('active_collection_name')
+        self.active_collection_id = self.config.get('active_collection_id')
+        self.active_collection_name = self.config.get('active_collection_name')
+
+        # Load mine-specific settings from config console
+        self._load_mine_settings()
+
+    def _load_mine_settings(self):
+        """Load mine-specific settings from config console."""
+        import json
+        from pathlib import Path
+        
+        # Default settings (match config console defaults)
+        defaults = {
+            'max_chunk_size': 1000,
+            'match_preview_length': 200,
+            'multi_match_count': 5,
+            'piping_threshold': 0.7,
+            'piping_max_context': 3,
+            'show_scores': True,
+            'file_ids': [],
+            'search_files_only': False
+        }
+        
+        # Load from mine_config.json if it exists
+        config_file = Path.home() / '.isaac' / 'mine_config.json'
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    loaded = json.load(f)
+                    defaults.update(loaded)
+            except Exception:
+                pass  # Use defaults if file corrupted
+        
+        # Store settings
+        self.mine_settings = defaults
 
         # Initialize x.ai client if available
         if HAS_XAI_SDK:
             try:
                 # Get API keys from config - use nested structure
-                xai_config = self.session_manager.config.get('xai', {})
+                xai_config = self.config.get('xai', {})
                 collections_config = xai_config.get('collections', {})
                 
                 api_key = collections_config.get('api_key')
@@ -45,9 +86,9 @@ class MineHandler:
                 
                 # Fallback to old flat structure for backward compatibility
                 if not api_key:
-                    api_key = self.session_manager.config.get('xai_api_key')
+                    api_key = self.config.get('xai_api_key')
                 if not management_api_key:
-                    management_api_key = self.session_manager.config.get('xai_management_api_key')
+                    management_api_key = self.config.get('xai_management_api_key')
                 
                 # Strip whitespace from API keys (common config issue)
                 if api_key:
@@ -61,11 +102,11 @@ class MineHandler:
                     # api_key: Collections API key (gRPC) - required for search, upload, document access
                     # management_api_key: Management API key (REST) - required for list, create, delete collections
                     # Get both keys from console.x.ai - they must be Collections API keys, not Chat API keys
-                    api_host = collections_config.get('api_host') or self.session_manager.config.get('xai_api_host', 'api.x.ai')
-                    management_api_host = collections_config.get('management_api_host') or self.session_manager.config.get('xai_management_api_host', 'management-api.x.ai')
+                    api_host = collections_config.get('api_host') or self.config.get('xai_api_host', 'api.x.ai')
+                    management_api_host = collections_config.get('management_api_host') or self.config.get('xai_management_api_host', 'management-api.x.ai')
                     
                     # Get timeout from config, default to 3600 (1 hour)
-                    timeout_seconds = collections_config.get('timeout_seconds') or self.session_manager.config.get('xai_collections_timeout_seconds', 3600)
+                    timeout_seconds = collections_config.get('timeout_seconds') or self.config.get('xai_collections_timeout_seconds', 3600)
                     
                     self.client = Client(
                         api_key=api_key,
@@ -75,7 +116,7 @@ class MineHandler:
                         timeout=timeout_seconds  # Configurable timeout for collections operations
                     )
                 else:
-                    print("Warning: No API key configured for x.ai collections")
+                    self.warnings.append("Warning: No API key configured for x.ai collections")
                     self.client = None
             except Exception as e:
                 print(f"Warning: Could not initialize x.ai client: {e}")
@@ -83,12 +124,13 @@ class MineHandler:
 
     def _save_active_collection(self):
         """Save the active collection to config."""
-        config = self.session_manager.get_config()
+        config = self.config.copy()
         config['active_collection_id'] = self.active_collection_id
         config['active_collection_name'] = self.active_collection_name
         
         # Update session manager's config too
-        self.session_manager.config.update(config)
+        if self.session_manager:
+            self.session_manager.config.update(config)
         
         # Save to disk
         try:
@@ -163,42 +205,62 @@ class MineHandler:
 
     def handle_command(self, args: List[str], command: str = '/mine') -> str:
         """Main command dispatcher for /mine commands."""
+        # Format warnings at the beginning
+        warning_text = ""
+        if self.warnings:
+            warning_text = "\n".join(self.warnings) + "\n"
+        
         if not args:
-            return self._show_help()
+            return warning_text + self._show_help()
 
-        # Parse flags using standardized syntax
-        parsed = self.parse_command_flags(args)
-        flags = parsed['flags']
-        positional = parsed['positional']
+        # Check if first arg is a subcommand
+        first_arg = args[0]
+        subcommands = ['list', 'deed', 'stake', 'claim', 'drift', 'muck', 'haul', 'dig', 'pan', 'nuggets', 'abandon', 'info', 'help', 'status']
+        
+        if first_arg in subcommands:
+            # It's a subcommand - parse flags from remaining args
+            subcommand = first_arg
+            remaining_args = args[1:]
+            parsed = self.parse_command_flags(remaining_args)
+            flags = parsed['flags']
+            positional = parsed['positional']
+        else:
+            # No subcommand - parse all args as flags
+            parsed = self.parse_command_flags(args)
+            flags = parsed['flags']
+            positional = parsed['positional']
+            subcommand = None
 
         # Check if x.ai client is available
-        if not self.client and not any(flag in ['help', 'status'] for flag in flags):
+        if not self.client and not any(flag in ['help', 'status', 'list', 'deed', 'info'] for flag in flags):
             return "x.ai client not available. Check that xai_api_key is configured in your Isaac config and xai_sdk is installed."
 
         # NEW MINING METAPHOR COMMANDS
-        if 'list' in flags:
+        if subcommand == 'list' or 'list' in flags:
             return self._handle_list()
-        elif 'deed' in flags:
+        elif subcommand == 'deed' or 'deed' in flags:
             return self._handle_deed(positional)
-        elif 'stake' in flags:
+        elif subcommand == 'stake' or 'stake' in flags:
             return self._handle_stake([flags['stake']] + positional)
-        elif 'claim' in flags:
+        elif subcommand == 'claim' or 'claim' in flags:
             return self._handle_claim([flags['claim']] + positional)
-        elif 'drift' in flags:
+        elif subcommand == 'drift' or 'drift' in flags:
             return self._handle_drift([flags['drift']] + positional)
-        elif 'muck' in flags:
+        elif subcommand == 'muck' or 'muck' in flags:
             return self._handle_muck([flags['muck']] + positional)
-        elif 'haul' in flags:
+        elif subcommand == 'haul' or 'haul' in flags:
             return self._handle_haul([flags['haul']] + positional)
-        elif 'dig' in flags:
-            return self._handle_dig(positional if positional else [flags.get('dig', '')])
-        elif 'pan' in flags:
+        elif subcommand == 'dig' or 'dig' in flags:
+            # Handle dig command - pass remaining args directly to _handle_dig
+            # _handle_dig expects flags like -c, -h in the args list
+            return self._handle_dig(remaining_args)
+        elif subcommand == 'pan' or 'pan' in flags:
             return self._handle_pan([flags['pan']] + positional)
-        elif 'nuggets' in flags:
+        elif subcommand == 'nuggets' or 'nuggets' in flags:
             return self._handle_nuggets(positional)
-        elif 'abandon' in flags:
+        elif subcommand == 'abandon' or 'abandon' in flags:
             return self._handle_abandon([flags['abandon']] + positional)
-        elif 'info' in flags:
+        elif subcommand == 'info' or 'info' in flags:
             return self._handle_info()
 
         # BACKWARD COMPATIBILITY (with deprecation warnings)
@@ -273,8 +335,7 @@ class MineHandler:
         target = args[0]
 
         # Check if it's a nugget name first
-        config = self.session_manager.get_config()
-        nuggets = config.get('xai', {}).get('collections', {}).get('nuggets', {})
+        nuggets = self.config.get('xai', {}).get('collections', {}).get('nuggets', {})
 
         if target in nuggets:
             # It's a nugget name - get the file_id
@@ -329,11 +390,24 @@ class MineHandler:
                 if hasattr(file_metadata, 'name'):
                     filename = getattr(file_metadata, 'name')
 
-            # Get content - try different fields
-            for content_field in ['content', 'text', 'chunk_content', 'body']:
-                if hasattr(target_doc, content_field):
-                    content = getattr(target_doc, content_field)
-                    break
+            # Get content - try searching for the file content since direct content access may not be available
+            # Use the file_id to search within this specific file
+            try:
+                # Note: xAI Collections API doesn't provide direct file content retrieval
+                # Files are indexed for search, but full content download isn't supported
+                # This is a limitation of the current xAI Collections API design
+                content = "⚠️  File content retrieval not available\n\n"
+                content += f"This file ({filename}) has been indexed for search in the xAI Collections API.\n"
+                content += "Full file content download is not currently supported by the API.\n\n"
+                content += "To search within this file, use:\n"
+                content += "/mine --dig \"your question\" (searches active collection)\n\n"
+                content += "File details:\n"
+                content += f"• Size: {target_doc.file_metadata.size_bytes} bytes\n"
+                content += f"• Type: {target_doc.file_metadata.content_type}\n"
+                content += f"• Hash: {target_doc.file_metadata.hash}"
+                
+            except Exception as search_error:
+                content = f"Unable to retrieve content: {search_error}"
 
             # Format output
             result = f"📄 Extracted File: {filename}\n"
@@ -363,8 +437,7 @@ class MineHandler:
 
     def _list_nuggets(self) -> str:
         """List all saved nuggets."""
-        config = self.session_manager.get_config()
-        nuggets = config.get('xai', {}).get('collections', {}).get('nuggets', {})
+        nuggets = self.config.get('xai', {}).get('collections', {}).get('nuggets', {})
 
         if not nuggets:
             return "No nuggets saved. Use '/mine --pan <collection> | /mine --nuggets save <collection>' to save file_ids as named nuggets."
@@ -416,7 +489,12 @@ class MineHandler:
             return "No valid file_ids found in piped input."
 
         # Save nuggets to config
-        config = self.session_manager.get_config()
+        if self.session_manager:
+            config = self.session_manager.get_config()
+        else:
+            # When using config dict, we can't save - return error
+            return "Cannot save nuggets when called through piping. Nuggets can only be saved in interactive mode."
+        
         if 'xai' not in config:
             config['xai'] = {}
         if 'collections' not in config['xai']:
@@ -440,8 +518,7 @@ class MineHandler:
 
     def _search_nuggets(self, query: str) -> str:
         """Search nuggets by name."""
-        config = self.session_manager.get_config()
-        nuggets = config.get('xai', {}).get('collections', {}).get('nuggets', {})
+        nuggets = self.config.get('xai', {}).get('collections', {}).get('nuggets', {})
 
         matches = {}
         for name, data in nuggets.items():
@@ -498,7 +575,9 @@ CORE MINING COMMANDS:
   /mine --claim <name> --dig <text>  # Claim and dig in one motion
   /mine --drift <name>          # Carve/create drift (collection) within active claim
   /mine --muck <file>           # Muck file into active drift (upload waste rock & ore)
-  /mine --dig <question>        # Dig answers from active drift/claim
+  /mine --dig <question>        # Dig answers from active drift/claim (uses config settings)
+  /mine --dig -c <question>     # Dig answers from all collections
+  /mine --dig -h <question>     # Dig with detailed output (overrides config settings)
   /mine --pan <drift>           # Pan file_ids in a specific drift
   /mine --haul <file_id>        # Haul file out of drift (extract by ID)
   /mine --haul <nugget_name>    # Haul file out by saved nugget name
@@ -521,6 +600,8 @@ EXAMPLES:
   /mine --claim myMusic           # Enter the claim
   /mine --muck song.mp3           # Muck ore into the mine (upload file)
   /mine --dig "find rock songs"   # Dig for answers
+  /mine --dig -c "find rock songs"  # Dig across all collections
+  /mine --dig -h "find rock songs"  # Dig with detailed output (overrides config settings)
   /mine --pan myMusic             # Pan for file nuggets (get file_ids)
   /mine --pan myMusic | /mine --nuggets save myMusic  # Save file_ids as named nuggets
   /mine --nuggets                 # List all saved nuggets
@@ -647,8 +728,7 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
         except Exception as e:
             # Fallback: use configured collections from config
             if "management" in str(e).lower() or "api key" in str(e).lower():
-                config = self.session_manager.get_config()
-                xai_config = config.get('xai', {})
+                xai_config = self.config.get('xai', {})
                 configured_collections = xai_config.get('collections', {})
 
                 if collection_name in configured_collections:
@@ -752,28 +832,55 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
     def _handle_dig(self, args: List[str]) -> str:
         """Dig up answers from active collection."""
         if not args:
-            return "Usage: /mine dig <question>"
+            return "Usage: /mine dig <question>\n       /mine dig -c <question>  # Search all collections\n       /mine dig -h <question>  # Search with detailed output (overrides config settings)"
 
-        if not self.active_collection_id:
-            return "No active collection. Use /mine use <name> first."
+        # Parse flags from args
+        use_all_collections = '-c' in args
+        verbose_mode = '-h' in args
+        
+        # Remove flags from args to get the question
+        question_args = [arg for arg in args if arg not in ['-c', '-h']]
+        
+        if not question_args:
+            return "Usage: /mine dig <question>\n       /mine dig -c <question>  # Search all collections\n       /mine dig -h <question>  # Search with detailed output (overrides config settings)"
 
-        question = " ".join(args)
+        question = " ".join(question_args)
+
+        # Determine which collections to search
+        if use_all_collections:
+            # Get all collections
+            try:
+                collections_response = self.client.collections.list()
+                collection_ids = [c.collection_id for c in collections_response.collections]
+                if not collection_ids:
+                    return "No collections found"
+            except Exception as e:
+                return f"Error listing collections: {e}"
+        else:
+            # Use active collection
+            if not self.active_collection_id:
+                return "No active collection. Use /mine use <name> first, or use -c to search all collections."
+            collection_ids = [self.active_collection_id]
 
         try:
-            # Load search configuration from Isaac config
-            config = self.session_manager.get_config()
+            # Load search configuration from both Isaac config and mine settings
+            if self.session_manager:
+                config = self.session_manager.get_config()
+            else:
+                config = {}
             xai_config = config.get('xai', {})
             collections_config = xai_config.get('collections', {})
             
-            search_files_only = collections_config.get('search_files_only', False)
-            file_ids = collections_config.get('file_ids', [])
+            # Use mine_settings if available, fallback to main config
+            search_files_only = self.mine_settings.get('search_files_only', collections_config.get('search_files_only', False))
+            file_ids = self.mine_settings.get('file_ids', collections_config.get('file_ids', []))
 
-            # Search the collection
+            # Search the collection(s)
             # Note: xAI SDK has a hardcoded 10-second gRPC timeout for search operations
             # SDK returns multiple matches by default
             search_params = {
                 'query': question,
-                'collection_ids': [self.active_collection_id]
+                'collection_ids': collection_ids
             }
             
             # If searching specific files only, add file_ids filter
@@ -786,39 +893,58 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
             if hasattr(response, 'matches') and response.matches:
                 # Return top matches with truncated content for piping-friendly output
                 # Collection chunks can be huge (user-configurable) - keep output manageable
-                matches = response.matches[:3]  # Top 3 matches
+                if verbose_mode:
+                    # Verbose mode: show more matches and longer previews
+                    max_matches = 5
+                    max_chars = 3000  # for single match
+                    max_preview = 1000  # for multiple matches
+                else:
+                    # Use config console settings
+                    max_matches = self.mine_settings.get('multi_match_count', 5)
+                    max_chars = self.mine_settings.get('max_chunk_size', 1000)
+                    max_preview = self.mine_settings.get('match_preview_length', 200)
+                
+                matches = response.matches[:max_matches]  # Top matches
                 
                 if len(matches) == 1:
                     # Single match - return with moderate truncation
                     match = matches[0]
                     if hasattr(match, 'chunk_content'):
                         content = match.chunk_content
-                        # Truncate very large chunks (keep first 2000 chars)
-                        if len(content) > 2000:
-                            content = content[:2000] + "\n... [content truncated]"
+                        # Truncate very large chunks
+                        if len(content) > max_chars:
+                            content = content[:max_chars] + "\n... [content truncated]"
                         return f"Answer: {content}"
                     else:
                         return f"Found match: {match}"
                 else:
                     # Multiple matches - return summary with previews
-                    result = f"Found {len(response.matches)} matches:\n\n"
+                    result = f"Found {len(response.matches)} matches"
+                    if use_all_collections:
+                        result += f" across {len(collection_ids)} collections"
+                    result += ":\n\n"
+                    
                     for i, match in enumerate(matches, 1):
                         if hasattr(match, 'chunk_content'):
-                            # Preview only for multiple matches (500 chars each)
-                            content = match.chunk_content[:500]
-                            if len(match.chunk_content) > 500:
+                            # Preview content
+                            content = match.chunk_content[:max_preview]
+                            if len(match.chunk_content) > max_preview:
                                 content += "..."
                             
-                            # Include score if available
-                            score = getattr(match, 'score', None)
-                            score_text = f" (score: {score:.3f})" if score is not None else ""
+                            # Include score if available and enabled
+                            score_text = ""
+                            if self.mine_settings.get('show_scores', True):
+                                score = getattr(match, 'score', None)
+                                if score is not None:
+                                    score_text = f" (score: {score:.3f})"
                             
                             result += f"Match {i}{score_text}:\n{content}\n\n"
                         else:
                             result += f"Match {i}: {match}\n\n"
                     return result.strip()
             else:
-                return "No answer found in collection"
+                search_scope = "all collections" if use_all_collections else "active collection"
+                return f"No answer found in {search_scope}"
         except Exception as e:
             return f"Error querying collection: {e}"
 
@@ -878,7 +1004,31 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
                 result += "\nDocuments:\n"
                 for doc in documents[:10]:  # Show first 10
                     doc_name = doc.file_metadata.name if hasattr(doc, 'file_metadata') and doc.file_metadata else "Unknown"
-                    result += f"• {doc_name}\n"
+                    
+                    # Get file_id for hauling
+                    file_id = "unknown"
+                    # Check common ID property names
+                    for id_prop in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                        if hasattr(doc, id_prop):
+                            file_id = getattr(doc, id_prop)
+                            break
+                    
+                    # Check nested file_metadata.file_id (protobuf structure)
+                    if file_id == "unknown" and hasattr(doc, 'file_metadata') and doc.file_metadata:
+                        if hasattr(doc.file_metadata, 'file_id'):
+                            file_id = doc.file_metadata.file_id
+                    
+                    # If still unknown, try to inspect the object
+                    if file_id == "unknown":
+                        # Look for any property that looks like an ID
+                        for attr_name in dir(doc):
+                            if not attr_name.startswith('_'):
+                                attr_value = getattr(doc, attr_name)
+                                if isinstance(attr_value, str) and (attr_value.startswith('file_') or len(attr_value) == 36):
+                                    file_id = attr_value
+                                    break
+                    
+                    result += f"• {doc_name} (ID: {file_id})\n"
                 if doc_count > 10:
                     result += f"... and {doc_count - 10} more"
 
@@ -1150,110 +1300,31 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
 
 def main():
     """Main entry point for mine command"""
-    command = '/mine'  # Default command
-    return_blob = False  # Default to envelope format
     try:
-        # Check if we're being called through dispatcher (stdin has JSON) or standalone
-        if not sys.stdin.isatty():
-            # Called through dispatcher - read JSON payload from stdin
-            stdin_data = sys.stdin.read()
-            
-            # Try to parse as blob format first (for piping)
-            try:
-                blob = json.loads(stdin_data)
-                if isinstance(blob, dict) and 'kind' in blob:
-                    # This is piped input in blob format
-                    input_content = blob.get('content', '')
-                    input_kind = blob.get('kind', 'text')
-                    
-                    # For mine command, piped input could be used as query content
-                    # Extract command from blob meta if available
-                    command = blob.get('meta', {}).get('command', '/mine')
-                    
-                    # Parse command to get args
-                    args = []
-                    if command.startswith('/mine '):
-                        args = command[6:].strip().split()
-                    elif command == '/mine':
-                        args = []
-                    
-                    # If no args but we have piped content, treat content as query
-                    if not args and input_content.strip():
-                        args = ['dig'] + input_content.strip().split()
-                        
-                    # This is a pipe call - return blob format
-                    return_blob = True
-                elif isinstance(blob, dict) and 'manifest' in blob:
-                    # This is dispatcher payload
-                    payload = blob
-                    command = payload.get('command', '/mine')
-                    args = payload.get('args', [])
-                    
-                    # The dispatcher may send args as a dict or list
-                    # For mine command, we need args as a list of strings
-                    if isinstance(args, dict):
-                        # If args is a dict, extract positional args from command string
-                        if command.startswith('/mine '):
-                            args = command[6:].strip().split()
-                        else:
-                            args = []
-                    # If args is already a list, use it as-is
-                    
-                    # This is a dispatcher call - return envelope format
-                    return_blob = False
-                else:
-                    # Unknown JSON format, treat as plain text input for dig command
-                    args = ['dig'] + stdin_data.strip().split()
-                    command = '/mine'
-                    return_blob = True
-            except json.JSONDecodeError:
-                # Not JSON, treat as plain text input for dig command
-                args = ['dig'] + stdin_data.strip().split()
-                command = '/mine'
-                return_blob = True
-        else:
-            # Standalone execution - get args from command line
-            args = sys.argv[1:] if len(sys.argv) > 1 else []
-            command = '/mine'
+        # Read payload from stdin (dispatcher protocol)
+        payload = json.loads(sys.stdin.read())
+        args = payload.get("args", [])
+        session_data = payload.get("session", {})
         
-        # Get session manager
-        from isaac.core.session_manager import SessionManager
-        session = SessionManager()
+        # Create handler with session data
+        handler = MineHandler(session_data)
+        result = handler.handle_command(args, '/mine')
         
-        # Create handler and execute
-        handler = MineHandler(session)
-        result = handler.handle_command(args, command)
-        
-        # Return result in appropriate format
-        if not sys.stdin.isatty():
-            if return_blob:
-                # Piped call - return blob
-                print(json.dumps({
-                    "kind": "text",
-                    "content": result,
-                    "meta": {"command": command}
-                }))
-            else:
-                # Dispatcher call - return envelope
-                print(json.dumps({
-                    "ok": True,
-                    "stdout": result
-                }))
-        else:
-            # Standalone mode - print result directly
-            print(result)
+        # Return envelope
+        print(json.dumps({
+            "ok": True,
+            "stdout": result
+        }))
     
     except Exception as e:
-        if not sys.stdin.isatty():
-            # Piped/dispatcher mode - return blob error
-            print(json.dumps({
-                "kind": "error",
-                "content": f"Error: {e}",
-                "meta": {"command": command}
-            }))
-        else:
-            # Standalone mode - print error directly
-            print(f"Error: {e}")
+        # Return error envelope
+        print(json.dumps({
+            "ok": False,
+            "error": {
+                "code": "EXECUTION_ERROR",
+                "message": str(e)
+            }
+        }))
 
 
 if __name__ == "__main__":

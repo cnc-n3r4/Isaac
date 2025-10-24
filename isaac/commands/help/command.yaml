@@ -13,7 +13,7 @@ args:
     required: false
     help: "Command name for detailed help"
 
-stdin: false
+stdin: true
 stdout:
   type: text
 

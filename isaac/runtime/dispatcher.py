@@ -131,7 +131,8 @@ class CommandDispatcher:
                 # Extract args from command (everything after first space)
                 parts = command.split(None, 1)
                 args_raw = parts[1] if len(parts) > 1 else ""
-                args = self.parse_args(manifest, args_raw)
+                # For payload, send args as list of strings
+                args = args_raw.split() if args_raw else []
 
             # Prepare execution
             runtime = manifest.get('runtime', {})
@@ -199,19 +200,37 @@ class CommandDispatcher:
 
         # Start process
         try:
+            use_stdin = manifest.get('stdin', True)
+            stdout_config = manifest.get('stdout', {})
+            is_streaming = stdout_config.get('streaming', False)
+            
             process = subprocess.Popen(
                 cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE if use_stdin else None,
+                stdout=None if is_streaming else subprocess.PIPE,  # Let streaming commands inherit stdout
                 stderr=subprocess.PIPE,
                 text=True,
                 encoding='utf-8',
                 env=self.security.sanitize_env()
             )
 
-            # Send payload via stdin
-            payload_json = json.dumps(payload)
-            stdout, stderr = process.communicate(input=payload_json, timeout=(timeout_ms + 1000) / 1000)
+            # Send payload via stdin if supported
+            payload_json = json.dumps(payload, ensure_ascii=True) if use_stdin else None
+            
+            if is_streaming:
+                # For streaming commands, send input and let command handle its own output
+                if use_stdin:
+                    process.stdin.write(payload_json)
+                    process.stdin.flush()
+                    process.stdin.close()
+                
+                # Wait for process to complete (output streams directly to terminal)
+                process.wait()
+                stdout = ""  # Output already streamed to terminal
+                stderr = process.stderr.read() if process.stderr else ""
+            else:
+                # For non-streaming commands, use communicate as before
+                stdout, stderr = process.communicate(input=payload_json, timeout=(timeout_ms + 1000) / 1000)
 
             # Check for timeout
             if self.security.enforce_timeout(process, timeout_ms):
@@ -224,7 +243,16 @@ class CommandDispatcher:
                     "meta": {}
                 }
 
-            # Parse result
+            if is_streaming:
+                # For streaming commands, return success status (output already streamed)
+                return {
+                    "ok": True,
+                    "stdout": "",
+                    "stderr": stderr,
+                    "meta": {"streamed": True}
+                }
+
+            # Parse result for non-streaming commands
             try:
                 result = json.loads(stdout)
             except json.JSONDecodeError:

@@ -16,9 +16,10 @@ aliases:
 
 args: []
 
-stdin: false
+stdin: true
 stdout:
   type: text
+  streaming: true
 
 security:
   scope: user

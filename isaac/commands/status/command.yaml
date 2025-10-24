@@ -11,7 +11,7 @@ args:
     required: false
     help: "Command arguments (supports --flags)"
 
-stdin: false
+stdin: true
 stdout:
   type: text
 

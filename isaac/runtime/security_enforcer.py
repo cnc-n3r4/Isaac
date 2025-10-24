@@ -81,6 +81,15 @@ class SecurityEnforcer:
         if 'PATH' not in sanitized:
             sanitized['PATH'] = os.environ.get('PATH', '')
 
+        # Force UTF-8 encoding for subprocess I/O
+        sanitized['PYTHONIOENCODING'] = 'utf-8'
+        
+        # Include user profile for config file access
+        if 'USERPROFILE' in env:
+            sanitized['USERPROFILE'] = env['USERPROFILE']
+        if 'HOME' in env:
+            sanitized['HOME'] = env['HOME']
+
         return sanitized
 
     def redact_patterns(self, text: str, patterns: List[str]) -> str:

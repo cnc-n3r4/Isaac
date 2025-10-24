@@ -12,7 +12,7 @@ args:
     pattern: "^[A-Za-z0-9._-]{1,32}$"
     help: "Name of the list (e.g., grocery, todos)"
 
-stdin: false
+stdin: true
 stdout:
   type: text
 
