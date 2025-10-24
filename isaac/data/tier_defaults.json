@@ -8,6 +8,9 @@
     "echo",
     "cat",
     "type",
+    "netstat",
+    "ipconfig",
+    "ifconfig",
     "Get-ChildItem",
     "Set-Location",
     "Get-Location"

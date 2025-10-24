@@ -13,8 +13,20 @@ args:
     type: string
     required: false
     help: "Workspace name (for create, switch, delete)"
+  - name: venv
+    type: bool
+    required: false
+    help: "Create virtual environment in workspace (create only)"
+  - name: collection
+    type: bool
+    required: false
+    help: "Create xAI collection for workspace (create only)"
+  - name: preserve-collection
+    type: bool
+    required: false
+    help: "Preserve xAI collection when deleting workspace (delete only)"
 
-stdin: false
+stdin: true
 stdout:
   type: text
 
@@ -36,6 +48,10 @@ telemetry:
 
 examples:
   - "/workspace create myproject - Create new workspace"
+  - "/workspace create myproject --venv - Create workspace with virtual environment"
+  - "/workspace create myproject --collection - Create workspace with xAI collection"
+  - "/workspace create myproject --venv --collection - Create workspace with both venv and collection"
   - "/workspace list - List all workspaces"
   - "/workspace switch myproject - Switch to workspace"
-  - "/workspace delete myproject - Delete workspace"
+  - "/workspace delete myproject - Delete workspace and its collection"
+  - "/workspace delete myproject --preserve-collection - Delete workspace but keep collection"

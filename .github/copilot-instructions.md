@@ -42,6 +42,7 @@ pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 - **File Search Configuration**: Use `/config console` to configure file-specific search:
   - Add file_ids (like 'file_01852dbb-3f44-45fc-8cf8-699610d17501') to search within specific files
   - Enable "search files only" mode for targeted queries within configured files
+- **Random Replies**: Isaac uses random reply generator for failed commands and missing 'isaac' prefix. Configure custom replies file in `~/.isaac/config.json` with `random_replies_file` setting. See `docs/reference/random_replies.md` for details.
 
 ### Project-Specific Conventions
 

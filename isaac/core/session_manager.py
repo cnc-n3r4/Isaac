@@ -76,6 +76,9 @@ class SessionManager:
         self.command_history = CommandHistory()
         self.ai_query_history = AIQueryHistory()
         self.task_history = TaskHistory()
+        
+        # Initialize current workspace (default to none/root)
+        self.current_workspace = None
 
         # Initialize cloud sync if enabled
         self.cloud = None
@@ -270,6 +273,10 @@ class SessionManager:
     def get_config(self) -> Dict[str, Any]:
         """Get the loaded configuration."""
         return self.config
+
+    def get_config_value(self, key: str, default: Any = None) -> Any:
+        """Get a specific configuration value by key."""
+        return self.config.get(key, default)
 
     def get_recent_commands(self, limit: int = 10) -> list:
         """Get recent commands from history."""

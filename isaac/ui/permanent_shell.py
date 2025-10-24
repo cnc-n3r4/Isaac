@@ -172,12 +172,28 @@ class PermanentShell:
 
     def _get_workspace_info(self):
         """Get current workspace information"""
-        # Check if workspace is active
+        # Check if workspace is active by examining current directory
         try:
-            # This would check sandbox enforcer for active workspace
-            return "@workspace"  # Placeholder
+            import os
+            from pathlib import Path
+            
+            current_dir = Path(os.getcwd())
+            workspace_root = Path(self.session.config.get('workspace.root_dir', '~/.isaac/workspaces')).expanduser()
+            
+            # Check if current directory is within workspace root
+            if workspace_root in current_dir.parents or current_dir == workspace_root:
+                # Get workspace name from path
+                try:
+                    relative_path = current_dir.relative_to(workspace_root)
+                    if relative_path.parts:
+                        workspace_name = relative_path.parts[0]
+                        return f"@{workspace_name}"
+                except ValueError:
+                    pass
+            
+            return "@root"  # Not in a workspace
         except Exception:
-            return "@workspace"
+            return "@root"
 
     def _get_inbox_status(self):
         """Get inbox status"""

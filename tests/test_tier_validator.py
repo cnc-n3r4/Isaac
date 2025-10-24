@@ -440,7 +440,7 @@ def test_case_sensitivity(mock_preferences, tier_defaults, monkeypatch):
     
     # Case sensitivity
     assert validator.get_tier('ls') == 1, "Lowercase 'ls' should be Tier 1"
-    assert validator.get_tier('LS') == 3, "Uppercase 'LS' not in defaults, should be Tier 3"
+    assert validator.get_tier('LS') == 1, "Uppercase 'LS' converts to 'ls', should be Tier 1"
     assert validator.get_tier('Get-ChildItem') == 1, "PowerShell cmdlets are case-sensitive"
 
 

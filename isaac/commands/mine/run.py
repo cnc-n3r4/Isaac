@@ -45,6 +45,10 @@ class MineHandler:
         self.active_collection_id = self.config.get('active_collection_id')
         self.active_collection_name = self.config.get('active_collection_name')
 
+        # Check for workspace collection if no active collection set
+        if not self.active_collection_id:
+            self._load_workspace_collection()
+
         # Load mine-specific settings from config console
         self._load_mine_settings()
         
@@ -1561,6 +1565,42 @@ EXAMPLES:
         }
         return content_types.get(ext, 'text/plain')
 
+    def _load_workspace_collection(self):
+        """Load collection associated with current workspace"""
+        try:
+            # Get current working directory
+            import os
+            cwd = os.getcwd()
+            
+            # Check if we're in a workspace
+            from pathlib import Path
+            workspace_root = Path.home() / '.isaac' / 'workspaces'
+            
+            # Find which workspace we're in
+            for workspace_dir in workspace_root.iterdir():
+                if workspace_dir.is_dir() and Path(cwd).is_relative_to(workspace_dir):
+                    # We're in this workspace, check for collection
+                    from isaac.core.sandbox_enforcer import SandboxEnforcer
+                    
+                    # Create a mock session for the enforcer
+                    class MockSession:
+                        def __init__(self, config):
+                            self.config = config
+                        def get_config(self):
+                            return self.config
+                    
+                    mock_session = MockSession(self.config)
+                    enforcer = SandboxEnforcer(mock_session)
+                    
+                    collection_id = enforcer.get_workspace_collection_id(workspace_dir.name)
+                    if collection_id:
+                        self.active_collection_id = collection_id
+                        self.active_collection_name = f"workspace-{workspace_dir.name}"
+                        break
+                        
+        except Exception:
+            # Silently fail, workspace collection loading is optional
+            pass
 
 def main():
     """Main entry point for mine command"""

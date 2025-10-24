@@ -741,8 +741,8 @@ class ConfigConsole:
     def _create_workspaces_layout(self):
         """Create the Workspaces management layout"""
         # Get current workspace settings
-        workspace_enabled = self.session_manager.get_config("workspace.enabled", False)
-        workspace_root = self.session_manager.get_config("workspace.root_dir", "~/.isaac/workspaces")
+        workspace_enabled = self.session_manager.get_config_value("workspace.enabled", False)
+        workspace_root = self.session_manager.get_config_value("workspace.root_dir", "~/.isaac/workspaces")
 
         # Create checkboxes and fields
         self.workspace_enabled_checkbox = Checkbox(
