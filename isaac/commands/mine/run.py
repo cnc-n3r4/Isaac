@@ -27,8 +27,12 @@ class MineHandler:
             # It's a SessionManager
             self.session_manager = session_manager_or_config
             self.config = self.session_manager.get_config()
+        elif isinstance(session_manager_or_config, dict) and 'config' in session_manager_or_config:
+            # It's session data from dispatcher with config
+            self.session_manager = None
+            self.config = session_manager_or_config['config']
         else:
-            # It's a config dict
+            # It's a config dict (fallback)
             self.session_manager = None
             self.config = session_manager_or_config
         
@@ -213,57 +217,66 @@ class MineHandler:
         if not args:
             return warning_text + self._show_help()
 
-        # Check if first arg is a subcommand
-        first_arg = args[0]
-        subcommands = ['list', 'deed', 'stake', 'claim', 'drift', 'muck', 'haul', 'dig', 'pan', 'nuggets', 'abandon', 'info', 'help', 'status']
-        
-        if first_arg in subcommands:
-            # It's a subcommand - parse flags from remaining args
-            subcommand = first_arg
-            remaining_args = args[1:]
-            parsed = self.parse_command_flags(remaining_args)
-            flags = parsed['flags']
-            positional = parsed['positional']
-        else:
-            # No subcommand - parse all args as flags
-            parsed = self.parse_command_flags(args)
-            flags = parsed['flags']
-            positional = parsed['positional']
-            subcommand = None
+        # Parse command flags
+        parsed = self.parse_command_flags(args)
+        flags = parsed['flags']
+        positional = parsed['positional']
 
         # Check if x.ai client is available
         if not self.client and not any(flag in ['help', 'status', 'list', 'deed', 'info'] for flag in flags):
             return "x.ai client not available. Check that xai_api_key is configured in your Isaac config and xai_sdk is installed."
 
-        # NEW MINING METAPHOR COMMANDS
-        if subcommand == 'list' or 'list' in flags:
-            return self._handle_list()
-        elif subcommand == 'deed' or 'deed' in flags:
-            return self._handle_deed(positional)
-        elif subcommand == 'stake' or 'stake' in flags:
-            return self._handle_stake([flags['stake']] + positional)
-        elif subcommand == 'claim' or 'claim' in flags:
-            return self._handle_claim([flags['claim']] + positional)
-        elif subcommand == 'drift' or 'drift' in flags:
+        # COLLECTION ARRAY MANAGEMENT
+        if 'drift' in flags:
             return self._handle_drift([flags['drift']] + positional)
-        elif subcommand == 'muck' or 'muck' in flags:
-            return self._handle_muck([flags['muck']] + positional)
-        elif subcommand == 'haul' or 'haul' in flags:
-            return self._handle_haul([flags['haul']] + positional)
-        elif subcommand == 'dig' or 'dig' in flags:
-            # Handle dig command - pass remaining args directly to _handle_dig
-            # _handle_dig expects flags like -c, -h in the args list
-            return self._handle_dig(remaining_args)
-        elif subcommand == 'pan' or 'pan' in flags:
-            return self._handle_pan([flags['pan']] + positional)
-        elif subcommand == 'nuggets' or 'nuggets' in flags:
-            return self._handle_nuggets(positional)
-        elif subcommand == 'abandon' or 'abandon' in flags:
-            return self._handle_abandon([flags['abandon']] + positional)
-        elif subcommand == 'info' or 'info' in flags:
-            return self._handle_info()
+        elif 'claim' in flags and 'to-drift' not in flags:
+            # Simple collection claim (not combined with sub-group)
+            return self._handle_claim([flags['claim']] + positional)
 
-        # BACKWARD COMPATIBILITY (with deprecation warnings)
+        # COLLECTION MANAGEMENT
+        elif 'stake' in flags:
+            return self._handle_stake([flags['stake']] + positional)
+        elif 'abandon' in flags:
+            return self._handle_abandon([flags['abandon']] + positional)
+
+        # FILE ARRAY MANAGEMENT
+        elif 'skip' in flags:
+            return self._handle_skip([flags['skip']] + positional)
+
+        # ORE PROCESSING (UPLOAD)
+        elif 'muck' in flags:
+            return self._handle_muck([flags['muck']] + positional)
+
+        # EXPLORATION & SEARCH
+        elif 'survey' in flags:
+            return self._handle_survey([flags['survey']] + positional)
+        elif 'dig' in flags:
+            return self._handle_dig([flags['dig']] + positional)
+
+        # FILE OPERATIONS
+        elif 'haul' in flags:
+            return self._handle_haul([flags['haul']] + positional)
+        elif 'pan' in flags:
+            return self._handle_pan([flags['pan']] + positional)
+        elif 'drop' in flags:
+            return self._handle_drop([flags['drop']] + positional)
+
+        # INFORMATION & MANAGEMENT
+        elif 'list' in flags or 'deed' in flags:
+            if 'deed' in flags and positional and positional[0] == '--all':
+                return self._handle_list()
+            else:
+                return self._handle_info()
+        elif 'info' in flags:
+            return self._handle_info()
+        elif 'nuggets' in flags:
+            return self._handle_nuggets(positional)
+        elif 'help' in flags:
+            return self._show_help()
+        elif 'status' in flags:
+            return self._show_status()
+
+        # LEGACY SUPPORT (deprecated)
         elif 'use' in flags:
             self._show_deprecation_warning('use', 'claim')
             return self._handle_claim([flags['use']] + positional)
@@ -277,17 +290,8 @@ class MineHandler:
             self._show_deprecation_warning('delete', 'abandon')
             return self._handle_abandon([flags['delete']] + positional)
 
-        # LEGACY FLAGS
-        elif 'help' in flags:
-            return self._show_help()
-        elif 'status' in flags:
-            return self._show_status()
-        elif 'grokbug' in flags:
-            return self._handle_grokbug([flags['grokbug']] + positional)
-        elif 'grokrefactor' in flags:
-            return self._handle_grokrefactor([flags['grokrefactor']] + positional)
         else:
-            return f"Unknown flags: {list(flags.keys())}. Use /mine --help for available commands."
+            return "Unknown command. Use /mine --help for available commands."
 
     def _show_deprecation_warning(self, old_command: str, new_command: str) -> None:
         """Show deprecation warning for old commands."""
@@ -567,59 +571,61 @@ class MineHandler:
         return """
 Isaac x.ai Collection Manager (/mine) - Mining Metaphor Edition 🏔️⛏️
 
-CORE MINING COMMANDS:
-  /mine --list                  # Quick alias to --deed --all (legacy-friendly)
-  /mine --deed [--all]          # Deed the claim: --all lists everything; no arg shows active details
-  /mine --stake <name>          # Stake/create new claim (initial plot-out)
-  /mine --claim <name>          # Claim/use/switch to a staked claim (enter the territory)
-  /mine --claim <name> --dig <text>  # Claim and dig in one motion
-  /mine --drift <name>          # Carve/create drift (collection) within active claim
-  /mine --muck <file>           # Muck file into active drift (upload waste rock & ore)
-  /mine --dig <question>        # Dig answers from active drift/claim (uses config settings)
-  /mine --dig -c <question>     # Dig answers from all collections
-  /mine --dig -h <question>     # Dig with detailed output (overrides config settings)
-  /mine --pan <drift>           # Pan file_ids in a specific drift
-  /mine --haul <file_id>        # Haul file out of drift (extract by ID)
-  /mine --haul <nugget_name>    # Haul file out by saved nugget name
-  /mine --abandon <claim>       # Abandon/delete claim (drifts caved in)
-  /mine --info                  # Quick alias to --deed (for active only)
+COLLECTION ARRAY MANAGEMENT:
+  /mine --drift <name>          # Create named array of xAI collections
+  /mine --claim <array>         # Switch to collection array
 
-NUGGET MANAGEMENT:
-  /mine --nuggets               # List all saved nuggets (named file_ids)
-  /mine --nuggets save <coll>   # Save piped file_ids as named nuggets
-  /mine --nuggets search <q>    # Search nuggets by name or filename
+COLLECTION MANAGEMENT:
+  /mine --stake <name>          # Create new xAI collection
+  /mine --claim <name>          # Switch to collection
+  /mine --claim <name> --to-drift <subgroup>  # Switch to collection and sub-group
+  /mine --abandon <collection>  # Delete collection
 
-FILE ID MANAGEMENT:
-  /mine --pan <collection> | /config  # Save file_ids locally for targeted searches
-  /config --collections              # View/manage saved file_ids
-  /config --console                  # Interactive settings (enable file_id filtering)
+FILE ARRAY MANAGEMENT:
+  /mine --skip <name>           # Create named array of files across collections
+
+ORE PROCESSING (UPLOAD):
+  /mine --muck <file>           # Upload file to active collection
+  /mine --muck <file> --to-drift <subgroup>  # Upload to specific sub-group
+
+EXPLORATION & SEARCH:
+  /mine --survey <query>        # Search across all collections
+  /mine --survey <query> --to-map <subgroup>  # Survey with sub-group focus
+  /mine --dig <question>        # Search within active collection
+  /mine --dig <question> --to-drift <subgroup>  # Search within sub-group
+  /mine --dig -c <question>     # Search all collections
+  /mine --dig -h <question>     # Search with detailed output
+
+FILE OPERATIONS:
+  /mine --haul <file>           # Attach file for analysis
+  /mine --haul <file> --to-skip <array>  # Attach and associate with file array
+  /mine --pan <query>           # Query attached file
+  /mine --drop <file>           # Delete file from collection
+
+INFORMATION & MANAGEMENT:
+  /mine --list                  # List all collections
+  /mine --info                  # Show active collection details
+  /mine --nuggets               # List saved nuggets
+  /mine --status                # Show system status
+  /mine --help                  # Show this help
 
 EXAMPLES:
-  # Mining workflow
-  /mine --stake myMusic           # Stake a new claim
-  /mine --claim myMusic           # Enter the claim
-  /mine --muck song.mp3           # Muck ore into the mine (upload file)
-  /mine --dig "find rock songs"   # Dig for answers
-  /mine --dig -c "find rock songs"  # Dig across all collections
-  /mine --dig -h "find rock songs"  # Dig with detailed output (overrides config settings)
-  /mine --pan myMusic             # Pan for file nuggets (get file_ids)
-  /mine --pan myMusic | /mine --nuggets save myMusic  # Save file_ids as named nuggets
-  /mine --nuggets                 # List all saved nuggets
-  /mine --haul favorite_song      # Haul out file by nugget name
-  /mine --haul file_abc123...     # Or haul out by file_id
+  # Collection workflow
+  /mine --stake mydocs          # Create collection
+  /mine --claim mydocs          # Switch to collection
+  /mine --muck document.pdf     # Upload file
+  /mine --dig "find tutorials"  # Search collection
 
-  # File ID targeting
-  /mine --pan myMusic | /config   # Save file_ids locally
-  /mine --dig "specific lyrics"   # Search only saved files
+  # Cross-collection search
+  /mine --survey "machine learning"  # Search all collections
 
-  # Combined operations
-  /mine --claim docs --dig "kubernetes tutorial"
+  # File analysis
+  /mine --pan mydocs | /mine --haul file_abc123  # Attach file
+  /mine --pan "explain this code"  # Query attached file
 
-LEGACY COMMANDS (deprecated, use mining equivalents):
-  /mine --create → --stake
-  /mine --use → --claim
-  /mine --cast → --muck
-  /mine --delete → --abandon
+  # Array management
+  /mine --drift research        # Create collection array
+  /mine --skip favorites        # Create file array
 """
 
     def _show_status(self, args=None) -> str:
@@ -646,7 +652,7 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
                     # Get document count
                     docs_response = self.client.collections.list_documents(coll.collection_id)
                     doc_count = len(docs_response.documents)
-                except:
+                except Exception:
                     doc_count = "?"
 
                 active_marker = " [ACTIVE]" if coll.collection_id == self.active_collection_id else ""
@@ -818,7 +824,7 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
                 file_content = f.read()
 
             # Create document in collection
-            doc = self.client.collections.upload_document(
+            self.client.collections.upload_document(
                 collection_id=self.active_collection_id,
                 name=expanded_path.name,
                 data=file_content,
@@ -829,20 +835,110 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
         except Exception as e:
             return f"Error casting file: {e}"
 
+    def _handle_skip(self, args: List[str]) -> str:
+        """Create a named array of files across collections."""
+        if not args:
+            return "Usage: /mine --skip <name>    # Create named file array"
+
+        array_name = args[0]
+
+        # Initialize file arrays structure if it doesn't exist
+        if 'xai' not in self.config:
+            self.config['xai'] = {}
+        if 'collections' not in self.config['xai']:
+            self.config['xai']['collections'] = {}
+        if 'file_arrays' not in self.config['xai']['collections']:
+            self.config['xai']['collections']['file_arrays'] = {}
+
+        file_arrays = self.config['xai']['collections']['file_arrays']
+
+        if array_name in file_arrays:
+            return f"File array '{array_name}' already exists."
+
+        # Create empty file array
+        file_arrays[array_name] = []
+
+        # Save to disk
+        self._save_active_collection()
+
+        return f"Created file array: {array_name}"
+
+    def _handle_survey(self, args: List[str]) -> str:
+        """Survey across all collections for files and previews."""
+        if not args:
+            return "Usage: /mine --survey <query> [--to-map <subgroup>]"
+
+        query = args[0]
+
+        # TODO: Implement --to-map flag for subgroup focus
+        # subgroup_focus = None
+        # if len(args) > 2 and args[1] == '--to-map':
+        #     subgroup_focus = args[2]
+
+        try:
+            # Get all collections
+            collections_response = self.client.collections.list()
+            all_collections = collections_response.collections
+
+            if not all_collections:
+                return "No collections found to survey."
+
+            results = []
+            total_matches = 0
+
+            for coll in all_collections:
+                try:
+                    # Search this collection
+                    search_response = self.client.collections.search(
+                        collection_id=coll.collection_id,
+                        query=query,
+                        limit=self.mine_settings.get('multi_match_count', 5)
+                    )
+
+                    if search_response.results:
+                        collection_results = []
+                        for match in search_response.results:
+                            if hasattr(match, 'chunk_content'):
+                                preview = match.chunk_content[:self.mine_settings.get('match_preview_length', 200)]
+                                if len(match.chunk_content) > self.mine_settings.get('match_preview_length', 200):
+                                    preview += "..."
+                                collection_results.append(f"  • {preview}")
+
+                        if collection_results:
+                            results.append(f"🏔️ {coll.collection_name}:")
+                            results.extend(collection_results)
+                            total_matches += len(collection_results)
+
+                except Exception:
+                    # Skip collections that fail to search
+                    continue
+
+            if not results:
+                return f"No matches found for '{query}' across all collections."
+
+            output = f"🔍 Survey Results for '{query}':\n"
+            output += f"Found {total_matches} matches across {len([r for r in results if r.startswith('🏔️')])} collections\n\n"
+            output += "\n".join(results)
+
+            return output
+
+        except Exception as e:
+            return f"Error surveying collections: {e}"
+
     def _handle_dig(self, args: List[str]) -> str:
         """Dig up answers from active collection."""
         if not args:
-            return "Usage: /mine dig <question>\n       /mine dig -c <question>  # Search all collections\n       /mine dig -h <question>  # Search with detailed output (overrides config settings)"
+            return "Usage: /mine --dig <question> [--to-drift <subgroup>]\n       /mine --dig -c <question>  # Search all collections\n       /mine --dig -h <question>  # Search with detailed output"
 
         # Parse flags from args
         use_all_collections = '-c' in args
         verbose_mode = '-h' in args
-        
+
         # Remove flags from args to get the question
         question_args = [arg for arg in args if arg not in ['-c', '-h']]
-        
+
         if not question_args:
-            return "Usage: /mine dig <question>\n       /mine dig -c <question>  # Search all collections\n       /mine dig -h <question>  # Search with detailed output (overrides config settings)"
+            return "Usage: /mine --dig <question> [--to-drift <subgroup>]\n       /mine --dig -c <question>  # Search all collections\n       /mine --dig -h <question>  # Search with detailed output"
 
         question = " ".join(question_args)
 
@@ -924,6 +1020,16 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
                         result += f" across {len(collection_ids)} collections"
                     result += ":\n\n"
                     
+                    # Build collection name mapping for display
+                    collection_names = {}
+                    if use_all_collections:
+                        try:
+                            collections_response = self.client.collections.list()
+                            for coll in collections_response.collections:
+                                collection_names[coll.collection_id] = coll.collection_name
+                        except Exception:
+                            pass  # Fall back to IDs if name lookup fails
+                    
                     for i, match in enumerate(matches, 1):
                         if hasattr(match, 'chunk_content'):
                             # Preview content
@@ -938,7 +1044,14 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
                                 if score is not None:
                                     score_text = f" (score: {score:.3f})"
                             
-                            result += f"Match {i}{score_text}:\n{content}\n\n"
+                            # Include collection info for multi-collection searches
+                            collection_info = ""
+                            if use_all_collections and hasattr(match, 'collection_ids') and match.collection_ids:
+                                coll_id = match.collection_ids[0]  # Take first collection ID
+                                coll_name = collection_names.get(coll_id, coll_id)
+                                collection_info = f" [{coll_name}]"
+                            
+                            result += f"Match {i}{score_text}{collection_info}:\n{content}\n\n"
                         else:
                             result += f"Match {i}: {match}\n\n"
                     return result.strip()
@@ -1107,6 +1220,51 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
         except Exception as e:
             return f"Error panning collection: {e}"
 
+    def _handle_drop(self, args: List[str]) -> str:
+        """Drop file from collection (delete)."""
+        if not args:
+            return "Usage: /mine --drop <file_id>    # Delete file from collection"
+
+        file_id = args[0]
+
+        if not self.active_collection_id:
+            return "No active collection. Use /mine --claim <name> first."
+
+        try:
+            # Find and delete the document
+            documents_response = self.client.collections.list_documents(self.active_collection_id)
+            documents = documents_response.documents
+
+            target_doc = None
+            filename = "Unknown"
+
+            for doc in documents:
+                # Check various possible ID fields
+                doc_file_id = None
+                for id_field in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                    if hasattr(doc, id_field):
+                        doc_file_id = getattr(doc, id_field)
+                        break
+
+                if doc_file_id == file_id:
+                    target_doc = doc
+                    # Get filename
+                    if hasattr(doc, 'file_metadata') and getattr(doc, 'file_metadata'):
+                        file_metadata = getattr(doc, 'file_metadata')
+                        if hasattr(file_metadata, 'name'):
+                            filename = getattr(file_metadata, 'name')
+                    break
+
+            if not target_doc:
+                return f"File with ID '{file_id}' not found in active collection '{self.active_collection_name}'"
+
+            # Delete the document
+            # Note: xAI Collections API may not support deletion, this is a placeholder
+            return f"⚠️  File deletion not implemented in current xAI Collections API\nFile: {filename} (ID: {file_id})\nCollection: {self.active_collection_name}"
+
+        except Exception as e:
+            return f"Error dropping file: {e}"
+
     def _load_mine_config(self) -> Dict[str, Any]:
         """Load mine configuration from config file."""
         config_file = Path.home() / '.isaac' / 'mine_config.json'
@@ -1240,7 +1398,7 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
             try:
                 matches = list(project_dir.glob(pattern))
                 files.extend(matches)
-            except:
+            except Exception:
                 continue
 
         # Remove duplicates and limit to reasonable number
@@ -1268,7 +1426,7 @@ LEGACY COMMANDS (deprecated, use mining equivalents):
                     content_type=self._guess_content_type(file_path)
                 )
                 cast += 1
-            except Exception as e:
+            except Exception:
                 # Continue with other files if one fails
                 continue
 
