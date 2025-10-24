@@ -10,6 +10,7 @@ import shlex
 from pathlib import Path
 
 from isaac.ui.config_console import show_config_console
+from isaac.core.key_manager import KeyManager
 
 
 def parse_flags(args_list):
@@ -97,6 +98,95 @@ def handle_piped_file_ids(stdin_data: str, session: dict) -> None:
     }))
 
 
+def handle_keys_command(flags, positional):
+    """Handle key management commands."""
+    try:
+        key_manager = KeyManager()
+
+        if not positional:
+            # Show help
+            return """Key Management Commands:
+
+  /config --keys create <type> [name]    Create a new key
+  /config --keys list                    List all keys
+  /config --keys delete <key_id>         Delete a key
+  /config --keys test <key>              Test key authentication
+
+Key Types:
+  user      - Full access to all commands
+  daemon    - Background webhook processing
+  readonly  - Read-only access (no execution)
+  oneshot   - Single command execution
+  persona   - Persona-specific access (Sarah, Daniel, etc.)
+
+Examples:
+  /config --keys create user mykey
+  /config --keys create daemon webhook
+  /config --keys list
+  /config --keys test abc123"""
+
+        action = positional[0].lower()
+
+        if action == 'create':
+            if len(positional) < 2:
+                return "Usage: /config --keys create <type> [name]"
+            key_type = positional[1]
+            name = positional[2] if len(positional) > 2 else None
+
+            if key_type not in KeyManager.KEY_TYPES:
+                return f"Invalid key type. Valid types: {', '.join(KeyManager.KEY_TYPES.keys())}"
+
+            try:
+                key, key_id = key_manager.create_random_key(key_type, name)
+                return f"Created {key_type} key '{key_id}': {key}\nKeep this key secure!"
+            except ValueError as e:
+                return str(e)
+
+        elif action == 'list':
+            keys = key_manager.list_keys()
+            if not keys:
+                return "No keys found. Create one with: /config --keys create <type> [name]"
+
+            output = "Isaac Keys:\n\n"
+            for key_info in keys:
+                permissions = key_manager.KEY_TYPES[key_info['type']]['permissions']
+                output += f"Name: {key_info['name']}\n"
+                output += f"Type: {key_info['type']}\n"
+                output += f"Created: {key_info['created']}\n"
+                if key_info.get('expires'):
+                    output += f"Expires: {key_info['expires']}\n"
+                output += f"Permissions: {', '.join(permissions)}\n\n"
+            return output.strip()
+
+        elif action == 'delete':
+            if len(positional) < 2:
+                return "Usage: /config --keys delete <key_id>"
+            key_id = positional[1]
+
+            if key_manager.delete_key(key_id):
+                return f"Deleted key '{key_id}'"
+            else:
+                return f"Key '{key_id}' not found"
+
+        elif action == 'test':
+            if len(positional) < 2:
+                return "Usage: /config --keys test <key>"
+            test_key = positional[1]
+
+            key_info = key_manager.authenticate(test_key)
+            if key_info:
+                permissions = key_manager.KEY_TYPES[key_info['type']]['permissions']
+                return f"✓ Key authenticated\nType: {key_info['type']}\nPermissions: {', '.join(permissions)}"
+            else:
+                return "✗ Key authentication failed"
+
+        else:
+            return f"Unknown action '{action}'. Use /config --keys for help"
+
+    except Exception as e:
+        return f"Key management error: {e}"
+
+
 def main():
     """Main entry point for config command"""
     # Read payload from stdin
@@ -113,19 +203,23 @@ def main():
     # Parse flags from args
     flags, positional = parse_flags(args_raw)
 
-    # Determine subcommand from flags
-    if 'status' in flags:
+    # Determine subcommand from flags or first positional arg
+    if 'status' in flags or (positional and positional[0] == 'status'):
         output = show_status(session)
-    elif 'ai' in flags:
+    elif 'ai' in flags or (positional and positional[0] == 'ai'):
         output = show_ai_details(session)
-    elif 'cloud' in flags:
+    elif 'cloud' in flags or (positional and positional[0] == 'cloud'):
         output = show_cloud_details(session)
-    elif 'plugins' in flags:
+    elif 'plugins' in flags or (positional and positional[0] == 'plugins'):
         output = show_plugins()
-    elif 'collections' in flags:
+    elif 'collections' in flags or (positional and positional[0] == 'collections'):
         output = show_collections_config(session)
-    elif 'console' in flags:
+    elif 'console' in flags or (positional and positional[0] == 'console'):
         output = show_config_console(session)
+    elif 'keys' in flags or (positional and positional[0] == 'keys'):
+        # For keys, pass the remaining positional args
+        key_args = positional[1:] if positional and positional[0] == 'keys' else []
+        output = handle_keys_command(flags, key_args)
     elif 'set' in flags:
         # For set, the value after --set should be "key value"
         set_args = positional
@@ -134,11 +228,11 @@ def main():
             output = set_config(session, key, value)
         else:
             output = "Usage: /config --set <key> <value>"
-    elif not flags:
-        # No flags means show overview
+    elif not flags and not positional:
+        # No flags or positional means show overview
         output = show_overview(session)
     else:
-        output = f"Unknown flags: {list(flags.keys())}\nUse /config for help"
+        output = f"Unknown command: {' '.join(positional)}\nUse /config for help"
 
     # Return envelope
     print(json.dumps({
@@ -164,6 +258,7 @@ def show_overview(session):
     lines.append("  /config cloud      - Cloud sync status")
     lines.append("  /config plugins    - Available plugins")
     lines.append("  /config collections - xAI Collections status")
+    lines.append("  /config keys       - Key management and authentication")
     lines.append("  /config console     - Interactive /mine settings TUI")
     lines.append("  /config set <key> <value> - Change setting")
     return "\n".join(lines)
