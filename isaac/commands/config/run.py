@@ -19,14 +19,24 @@ def parse_flags(args_list):
     positional = []
     i = 0
     
+    # Flags that indicate subcommands (consume all remaining args as positional)
+    subcommand_flags = {'keys', 'set'}
+    
     while i < len(args_list):
         arg = args_list[i]
         
         # Check if it's a flag (starts with -)
         if arg.startswith('--'):
             flag = arg[2:]  # Remove --
+            
+            # If this is a subcommand flag, treat everything after it as positional
+            if flag in subcommand_flags:
+                flags[flag] = True
+                # All remaining args are positional for the subcommand
+                positional.extend(args_list[i + 1:])
+                break
             # Check if next arg is the value
-            if i + 1 < len(args_list) and not args_list[i + 1].startswith('-'):
+            elif i + 1 < len(args_list) and not args_list[i + 1].startswith('-'):
                 flags[flag] = args_list[i + 1]
                 i += 1  # Skip the value
             else:
@@ -112,6 +122,11 @@ def handle_keys_command(flags, positional):
   /config --keys delete <key_id>         Delete a key
   /config --keys test <key>              Test key authentication
 
+Master Key Commands (Emergency Override):
+  /config --keys master set <key>        Set master key file
+  /config --keys master remove           Remove master key file
+  /config --keys master status           Show master key status
+
 Key Types:
   user      - Full access to all commands
   daemon    - Background webhook processing
@@ -119,11 +134,17 @@ Key Types:
   oneshot   - Single command execution
   persona   - Persona-specific access (Sarah, Daniel, etc.)
 
+Master Key Override:
+  If you lose all keys, use ISAAC_MASTER_KEY environment variable
+  or create a master key file with /config --keys master set
+
 Examples:
   /config --keys create user mykey
   /config --keys create daemon webhook
   /config --keys list
-  /config --keys test abc123"""
+  /config --keys test abc123
+  /config --keys master set myemergencykey
+  /config --keys master status"""
 
         action = positional[0].lower()
 
@@ -180,6 +201,54 @@ Examples:
             else:
                 return "✗ Key authentication failed"
 
+        elif action == 'master':
+            if len(positional) < 2:
+                return "Usage: /config --keys master <set|remove|status> [key]"
+
+            master_action = positional[1].lower()
+
+            if master_action == 'set':
+                if len(positional) < 3:
+                    return "Usage: /config --keys master set <key>"
+                master_key = positional[2]
+
+                if key_manager.set_master_key(master_key):
+                    return f"✓ Master key set successfully\nFile: {key_manager.master_key_file}\nKeep this key secure - it bypasses all authentication!"
+                else:
+                    return "✗ Failed to set master key"
+
+            elif master_action == 'remove':
+                if key_manager.remove_master_key():
+                    return "✓ Master key removed"
+                else:
+                    return "✗ Failed to remove master key"
+
+            elif master_action == 'status':
+                status = key_manager.get_master_key_status()
+                output = "Master Key Status:\n\n"
+
+                output += f"Environment Variable: {'✓ Set' if status['environment_variable'] else '✗ Not set'}\n"
+                output += f"Master Key File: {'✓ Exists' if status['master_key_file'] else '✗ Not found'}\n"
+                output += f"Development Key: {'✓ Available' if status['development_key'] else '✗ Not available'}\n\n"
+
+                if status.get('file_permissions'):
+                    output += f"File Permissions: {status['file_permissions']}\n"
+                    output += f"Last Modified: {status['file_modified']}\n\n"
+
+                output += "Override Priority:\n"
+                output += "1. ISAAC_MASTER_KEY environment variable\n"
+                output += "2. ~/.isaac/.master_key file\n"
+                output += "3. Development key (ISAAC_DEBUG=true)\n\n"
+
+                output += "To set emergency override:\n"
+                output += "  export ISAAC_MASTER_KEY=your_key\n"
+                output += "  /config --keys master set your_key"
+
+                return output
+
+            else:
+                return f"Unknown master action '{master_action}'. Use set, remove, or status"
+
         else:
             return f"Unknown action '{action}'. Use /config --keys for help"
 
@@ -218,7 +287,10 @@ def main():
         output = show_config_console(session)
     elif 'keys' in flags or (positional and positional[0] == 'keys'):
         # For keys, pass the remaining positional args
-        key_args = positional[1:] if positional and positional[0] == 'keys' else []
+        if 'keys' in flags:
+            key_args = positional  # All positional args are key command args
+        else:
+            key_args = positional[1:] if len(positional) > 1 else []  # Skip 'keys' if it's positional
         output = handle_keys_command(flags, key_args)
     elif 'set' in flags:
         # For set, the value after --set should be "key value"
