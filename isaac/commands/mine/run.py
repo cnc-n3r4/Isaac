@@ -47,6 +47,9 @@ class MineHandler:
 
         # Load mine-specific settings from config console
         self._load_mine_settings()
+        
+        # Load collections data from separate file
+        self._load_collections_data()
 
     def _load_mine_settings(self):
         """Load mine-specific settings from config console."""
@@ -125,6 +128,69 @@ class MineHandler:
             except Exception as e:
                 print(f"Warning: Could not initialize x.ai client: {e}")
                 self.client = None
+
+    def _load_collections_data(self):
+        """Load collections data from separate collections.json file."""
+        import json
+        from pathlib import Path
+        
+        # Initialize empty collections data structure
+        self.collections_data = {
+            'nuggets': {},
+            'arrays': {},
+            'collection_mappings': {}
+        }
+        
+        # Load from collections.json if it exists
+        collections_file = Path.home() / '.isaac' / 'collections.json'
+        if collections_file.exists():
+            try:
+                with open(collections_file, 'r') as f:
+                    loaded_data = json.load(f)
+                    self.collections_data.update(loaded_data)
+            except Exception:
+                # If file is corrupted, warn but continue with empty data
+                self.warnings.append("Warning: Could not load collections data, starting with empty collections")
+        
+        # For backward compatibility, also check if collections data exists in main config
+        # and migrate it to the separate file if found
+        xai_config = self.config.get('xai', {})
+        collections_config = xai_config.get('collections', {})
+        
+        if collections_config:
+            migrated = False
+            # Check for nuggets
+            if 'nuggets' in collections_config and collections_config['nuggets']:
+                self.collections_data['nuggets'].update(collections_config['nuggets'])
+                migrated = True
+            # Check for arrays
+            if 'arrays' in collections_config and collections_config['arrays']:
+                self.collections_data['arrays'].update(collections_config['arrays'])
+                migrated = True
+            # Check for other collections data
+            for key, value in collections_config.items():
+                if key not in ['enabled', 'api_key', 'management_api_key', 'management_api_host', 
+                             'default_collection', 'active_collection_id', 'active_collection_name',
+                             'nuggets', 'arrays']:  # Skip API keys and already migrated data
+                    self.collections_data['collection_mappings'][key] = value
+                    migrated = True
+            
+            # If we migrated data, save it to the new file and warn about migration
+            if migrated:
+                self._save_collections_data()
+                self.warnings.append("Migrated collections data to separate collections.json file")
+
+    def _save_collections_data(self):
+        """Save collections data to separate collections.json file."""
+        import json
+        from pathlib import Path
+        
+        collections_file = Path.home() / '.isaac' / 'collections.json'
+        try:
+            with open(collections_file, 'w') as f:
+                json.dump(self.collections_data, f, indent=2)
+        except Exception as e:
+            self.warnings.append(f"Warning: Could not save collections data: {e}")
 
     def _save_active_collection(self):
         """Save the active collection to config."""
@@ -262,8 +328,10 @@ class MineHandler:
             return self._handle_drop([flags['drop']] + positional)
 
         # INFORMATION & MANAGEMENT
-        elif 'list' in flags or 'deed' in flags:
-            if 'deed' in flags and positional and positional[0] == '--all':
+        elif 'list' in flags or 'maps' in flags:
+            return self._handle_list()
+        elif 'deed' in flags:
+            if positional and positional[0] == '--all':
                 return self._handle_list()
             else:
                 return self._handle_info()
@@ -276,26 +344,8 @@ class MineHandler:
         elif 'status' in flags:
             return self._show_status()
 
-        # LEGACY SUPPORT (deprecated)
-        elif 'use' in flags:
-            self._show_deprecation_warning('use', 'claim')
-            return self._handle_claim([flags['use']] + positional)
-        elif 'create' in flags:
-            self._show_deprecation_warning('create', 'stake')
-            return self._handle_stake([flags['create']] + positional)
-        elif 'cast' in flags:
-            self._show_deprecation_warning('cast', 'muck')
-            return self._handle_muck([flags['cast']] + positional)
-        elif 'delete' in flags:
-            self._show_deprecation_warning('delete', 'abandon')
-            return self._handle_abandon([flags['delete']] + positional)
-
         else:
             return "Unknown command. Use /mine --help for available commands."
-
-    def _show_deprecation_warning(self, old_command: str, new_command: str) -> None:
-        """Show deprecation warning for old commands."""
-        print(f"⚠️  Warning: --{old_command} is deprecated. Use --{new_command} instead.")
 
     def _handle_stake(self, args: List[str]) -> str:
         """Stake a new claim (create collection)."""
@@ -334,23 +384,43 @@ class MineHandler:
     def _handle_haul(self, args: List[str]) -> str:
         """Haul file out of active drift (extract by file_id or nugget name)."""
         if not args:
-            return "Usage: /mine --haul <file_id>        # Extract file content by ID\n       /mine --haul <nugget_name>    # Extract file by saved nugget name"
+            return "Usage: /mine --haul <file_id> [--to-skip <array>]    # Extract file and optionally associate with file array\n       /mine --haul <nugget_name> [--to-skip <array>]  # Extract by nugget name"
 
+        # Parse arguments for --to-skip flag
         target = args[0]
+        file_array = None
+
+        # Check for --to-skip flag
+        if len(args) >= 3 and args[1] == '--to-skip':
+            file_array = args[2]
+            # Validate file array exists
+            arrays = self.config.get('xai', {}).get('collections', {}).get('arrays', {})
+            if file_array not in arrays:
+                return f"File array '{file_array}' not found. Use '/mine --skip' to list available arrays."
+        elif len(args) > 1:
+            return "Usage: /mine --haul <file_id> [--to-skip <array>]    # Extract file and optionally associate with file array\n       /mine --haul <nugget_name> [--to-skip <array>]  # Extract by nugget name"
 
         # Check if it's a nugget name first
-        nuggets = self.config.get('xai', {}).get('collections', {}).get('nuggets', {})
+        nuggets = self.collections_data.get('nuggets', {})
 
         if target in nuggets:
             # It's a nugget name - get the file_id
             nugget_data = nuggets[target]
             file_id = nugget_data['file_id']
-            return self._handle_haul_extract(file_id)
+            result = self._handle_haul_extract(file_id)
+            # Associate with file array if specified
+            if file_array:
+                result += self._associate_file_with_array(file_id, file_array, target)
+            return result
         elif target.startswith('file_') or (len(target) == 36 and '-' in target):
             # Extract file by ID
-            return self._handle_haul_extract(target)
+            result = self._handle_haul_extract(target)
+            # Associate with file array if specified
+            if file_array:
+                result += self._associate_file_with_array(target, file_array)
+            return result
         else:
-            return "Usage: /mine --haul <file_id>        # Extract file content by ID\n       /mine --haul <nugget_name>    # Extract file by saved nugget name"
+            return "Usage: /mine --haul <file_id> [--to-skip <array>]    # Extract file and optionally associate with file array\n       /mine --haul <nugget_name> [--to-skip <array>]  # Extract by nugget name"
 
     def _handle_haul_extract(self, file_id: str) -> str:
         """Extract and display file content by file_id (haul out from the mine)."""
@@ -425,6 +495,35 @@ class MineHandler:
         except Exception as e:
             return f"Error extracting file: {e}"
 
+    def _associate_file_with_array(self, file_id: str, array_name: str, nugget_name: str = None) -> str:
+        """Associate a hauled file with a file array."""
+        try:
+            # Ensure arrays structure exists in collections data
+            if 'arrays' not in self.collections_data:
+                self.collections_data['arrays'] = {}
+
+            arrays = self.collections_data['arrays']
+
+            # Initialize array if it doesn't exist
+            if array_name not in arrays:
+                arrays[array_name] = []
+
+            # Add file_id if not already present
+            if file_id not in arrays[array_name]:
+                arrays[array_name].append(file_id)
+
+                # Save updated collections data
+                self._save_collections_data()
+
+                display_name = nugget_name if nugget_name else file_id[:20] + "..."
+                return f"\n✅ Associated '{display_name}' with array '{array_name}'"
+            else:
+                display_name = nugget_name if nugget_name else file_id[:20] + "..."
+                return f"\nℹ️  '{display_name}' already in array '{array_name}'"
+
+        except Exception as e:
+            return f"\n❌ Error associating file with array: {e}"
+
     def _handle_nuggets(self, args: List[str]) -> str:
         """Manage saved nuggets (named file_ids for easy reference)."""
         if not args:
@@ -493,36 +592,15 @@ class MineHandler:
             return "No valid file_ids found in piped input."
 
         # Save nuggets to config
-        if self.session_manager:
-            config = self.session_manager.get_config()
-        else:
-            # When using config dict, we can't save - return error
-            return "Cannot save nuggets when called through piping. Nuggets can only be saved in interactive mode."
-        
-        if 'xai' not in config:
-            config['xai'] = {}
-        if 'collections' not in config['xai']:
-            config['xai']['collections'] = {}
-        if 'nuggets' not in config['xai']['collections']:
-            config['xai']['collections']['nuggets'] = {}
-
-        config['xai']['collections']['nuggets'].update(nuggets)
-
-        # Save to disk
-        try:
-            import json
-            from pathlib import Path
-            config_file = Path.home() / '.isaac' / 'config.json'
-            with open(config_file, 'w') as f:
-                json.dump(config, f, indent=2)
-        except Exception as e:
-            return f"Error saving nuggets: {e}"
+        # Save nuggets to collections data
+        self.collections_data['nuggets'].update(nuggets)
+        self._save_collections_data()
 
         return f"Saved {len(nuggets)} nuggets from {collection_name}:\n" + "\n".join(f"  • {name} → {data['filename']}" for name, data in nuggets.items())
 
     def _search_nuggets(self, query: str) -> str:
         """Search nuggets by name."""
-        nuggets = self.config.get('xai', {}).get('collections', {}).get('nuggets', {})
+        nuggets = self.collections_data.get('nuggets', {})
 
         matches = {}
         for name, data in nuggets.items():
@@ -590,7 +668,6 @@ ORE PROCESSING (UPLOAD):
 
 EXPLORATION & SEARCH:
   /mine --survey <query>        # Search across all collections
-  /mine --survey <query> --to-map <subgroup>  # Survey with sub-group focus
   /mine --dig <question>        # Search within active collection
   /mine --dig <question> --to-drift <subgroup>  # Search within sub-group
   /mine --dig -c <question>     # Search all collections
@@ -603,7 +680,7 @@ FILE OPERATIONS:
   /mine --drop <file>           # Delete file from collection
 
 INFORMATION & MANAGEMENT:
-  /mine --list                  # List all collections
+  /mine --maps                  # List all collections
   /mine --info                  # Show active collection details
   /mine --nuggets               # List saved nuggets
   /mine --status                # Show system status
@@ -789,12 +866,18 @@ EXAMPLES:
     def _handle_cast(self, args: List[str]) -> str:
         """Cast file into active collection (down the mine)."""
         if not args:
-            return "Usage: /mine cast <file_path>"
+            return "Usage: /mine --muck <file_path> [--to-drift <subgroup>]"
+
+        # Parse arguments for --to-drift flag
+        file_path = args[0]
+        # subgroup = None  # TODO: Implement sub-group support
+
+        # Check for --to-drift flag
+        # if len(args) > 2 and args[1] == '--to-drift':
+        #     subgroup = args[2]
 
         if not self.active_collection_id:
-            return "No active collection. Use /mine use <name> first."
-
-        file_path = args[0]
+            return "No active collection. Use /mine --claim <name> first."
 
         try:
             # Remove quotes if present
@@ -842,38 +925,29 @@ EXAMPLES:
 
         array_name = args[0]
 
-        # Initialize file arrays structure if it doesn't exist
-        if 'xai' not in self.config:
-            self.config['xai'] = {}
-        if 'collections' not in self.config['xai']:
-            self.config['xai']['collections'] = {}
-        if 'file_arrays' not in self.config['xai']['collections']:
-            self.config['xai']['collections']['file_arrays'] = {}
+        # Ensure arrays structure exists in collections data
+        if 'arrays' not in self.collections_data:
+            self.collections_data['arrays'] = {}
 
-        file_arrays = self.config['xai']['collections']['file_arrays']
+        arrays = self.collections_data['arrays']
 
-        if array_name in file_arrays:
+        if array_name in arrays:
             return f"File array '{array_name}' already exists."
 
         # Create empty file array
-        file_arrays[array_name] = []
+        arrays[array_name] = []
 
-        # Save to disk
-        self._save_active_collection()
+        # Save to collections data
+        self._save_collections_data()
 
         return f"Created file array: {array_name}"
 
     def _handle_survey(self, args: List[str]) -> str:
         """Survey across all collections for files and previews."""
         if not args:
-            return "Usage: /mine --survey <query> [--to-map <subgroup>]"
+            return "Usage: /mine --survey <query>    # Search across all collections"
 
         query = args[0]
-
-        # TODO: Implement --to-map flag for subgroup focus
-        # subgroup_focus = None
-        # if len(args) > 2 and args[1] == '--to-map':
-        #     subgroup_focus = args[2]
 
         try:
             # Get all collections
@@ -1148,6 +1222,38 @@ EXAMPLES:
             return result
         except Exception as e:
             return f"Error getting collection info: {e}"
+
+    def _handle_nuggets(self, args: List[str]) -> str:
+        """Manage saved nuggets (named file_ids for easy reference)."""
+        if not args:
+            # List all saved nuggets
+            return self._list_nuggets()
+        elif args[0] == 'save' and len(args) > 1:
+            # Save piped file_ids as nuggets
+            return self._save_nuggets_from_pipe(args[1:])
+        elif args[0] == 'search' and len(args) > 1:
+            # Search nuggets by name
+            return self._search_nuggets(args[1])
+        else:
+            return "Usage: /mine --nuggets                    # List saved nuggets\n       /mine --nuggets save <collection>  # Save file_ids as nuggets\n       /mine --nuggets search <query>     # Search nuggets by name"
+
+    def _list_nuggets(self) -> str:
+        """List all saved nuggets."""
+        nuggets = self.collections_data.get('nuggets', {})
+
+        if not nuggets:
+            return "No nuggets saved. Use '/mine --pan <collection> | /mine --nuggets save <collection>' to save file_ids as named nuggets."
+
+        result = "💎 Saved Nuggets (named file_ids):\n\n"
+        for name, data in nuggets.items():
+            file_id = data.get('file_id', 'unknown')
+            collection = data.get('collection', 'unknown')
+            filename = data.get('filename', 'unknown')
+            result += f"• {name}: {filename} ({file_id[:20]}...)\n  Collection: {collection}\n\n"
+
+        result += f"Total: {len(nuggets)} nuggets\n"
+        result += "Use '/mine --haul <nugget_name>' to extract a nugget."
+        return result
 
     def _handle_pan(self, args: List[str]) -> str:
         """Pan for file_ids within a collection (list documents with their file_ids)."""
