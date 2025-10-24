@@ -54,7 +54,7 @@ class ConfigCommand:
         lines.append("")
         lines.append("Available subcommands:")
         lines.append("  /config status   - System status check")
-        lines.append("  /config ai       - AI provider details")
+        lines.append("  /config a0       - AI provider details")
         lines.append("  /config cloud    - Cloud sync status")
         lines.append("  /config plugins  - Available plugins")
         lines.append("  /config console  - Launch /mine settings console")
