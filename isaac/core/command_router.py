@@ -5,6 +5,7 @@ SAFETY-CRITICAL: Ensures all commands go through appropriate validation
 
 from isaac.adapters.base_adapter import CommandResult
 from isaac.core.tier_validator import TierValidator
+from isaac.core.sandbox_enforcer import SandboxEnforcer
 from isaac.runtime import CommandDispatcher
 from isaac.ai.query_classifier import QueryClassifier
 from pathlib import Path
@@ -21,6 +22,7 @@ class CommandRouter:
         self.shell = shell
         self.validator = TierValidator(self.session.preferences)
         self.query_classifier = QueryClassifier()
+        self.sandbox = SandboxEnforcer(self.session)
 
         # Initialize the plugin dispatcher
         self.dispatcher = CommandDispatcher(session_mgr)
@@ -263,8 +265,17 @@ class CommandRouter:
             else:
                 actual_command = input_text[7:]  # Skip '/force '
             
-            print(f"Isaac > Force executing (bypassing AI validation): {actual_command}")
-            return self.shell.execute(actual_command)
+            # Enforce sandbox rules even for force execution
+            sandbox_result = self._enforce_sandbox(actual_command)
+            if sandbox_result is None:
+                return CommandResult(
+                    success=False,
+                    output="Isaac > Command blocked by sandbox policy (even in force mode)",
+                    exit_code=1
+                )
+            
+            print(f"Isaac > Force executing (bypassing AI validation): {sandbox_result}")
+            return self.shell.execute(sandbox_result)
         
         # Check for meta-commands first
         if input_text.startswith('/'):
@@ -338,8 +349,17 @@ class CommandRouter:
                 )
         
         # Regular command processing
-        # First try direct shell execution
-        result = self.shell.execute(input_text)
+        # First enforce sandbox rules
+        sandbox_result = self._enforce_sandbox(input_text)
+        if sandbox_result is None:
+            return CommandResult(
+                success=False,
+                output="Isaac > Command blocked by sandbox policy",
+                exit_code=1
+            )
+
+        # Execute command (use sandbox-validated command if modified)
+        result = self.shell.execute(sandbox_result)
         if result.success:
             return result
         
@@ -578,6 +598,18 @@ Current user query follows below:
     def _show_translated_command(self) -> bool:
         """Check if translated commands should be shown"""
         return self.session.config.get('show_translated_command', True)
+
+    def _enforce_sandbox(self, command: str) -> Optional[str]:
+        """Enforce sandbox rules on command. Returns validated command or None if blocked."""
+        if not self.sandbox.is_sandbox_enabled():
+            return command
+
+        # Enforce command validation
+        validated_command = self.sandbox.enforce_command(command)
+        if validated_command is None:
+            return None
+
+        return validated_command
     
     def _try_unix_alias_translation(self, command: str) -> Optional[str]:
         """Try to translate Unix command to PowerShell"""

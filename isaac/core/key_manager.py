@@ -60,6 +60,7 @@ class KeyManager:
             isaac_dir = Path.home() / '.isaac'
         self.isaac_dir = isaac_dir
         self.keys_file = isaac_dir / 'keys.json'
+        self.master_key_file = isaac_dir / '.master_key'
         self._ensure_keys_file()
 
     def _ensure_keys_file(self):
@@ -72,6 +73,92 @@ class KeyManager:
             }
             with open(self.keys_file, 'w') as f:
                 json.dump(default_keys, f, indent=2)
+
+    def _check_master_key_override(self, provided_key: str) -> Optional[Dict[str, Any]]:
+        """Check for master key override mechanisms"""
+        # 1. Environment variable override (highest priority)
+        env_master = os.environ.get('ISAAC_MASTER_KEY')
+        if env_master and provided_key == env_master:
+            return {
+                "name": "env_master_key",
+                "type": "user",  # Full permissions
+                "permissions": ["read", "write", "execute", "ai", "cloud", "admin"],
+                "interactive": True,
+                "master_override": True,
+                "source": "environment_variable"
+            }
+
+        # 2. Master key file override
+        if self.master_key_file.exists():
+            try:
+                with open(self.master_key_file, 'r') as f:
+                    master_key = f.read().strip()
+                    if master_key and provided_key == master_key:
+                        return {
+                            "name": "file_master_key",
+                            "type": "user",  # Full permissions
+                            "permissions": ["read", "write", "execute", "ai", "cloud", "admin"],
+                            "interactive": True,
+                            "master_override": True,
+                            "source": "master_key_file"
+                        }
+            except Exception:
+                pass  # Ignore file read errors
+
+        # 3. Development emergency key (only in debug mode)
+        if os.environ.get('ISAAC_DEBUG') == 'true':
+            dev_key = "isaac_dev_master_2024"
+            if provided_key == dev_key:
+                return {
+                    "name": "dev_master_key",
+                    "type": "user",
+                    "permissions": ["read", "write", "execute", "ai", "cloud", "admin"],
+                    "interactive": True,
+                    "master_override": True,
+                    "source": "development_key"
+                }
+
+        return None
+
+    def set_master_key(self, master_key: str) -> bool:
+        """Set a master key in the master key file"""
+        try:
+            with open(self.master_key_file, 'w') as f:
+                f.write(master_key)
+            # Set restrictive permissions (readable only by owner)
+            self.master_key_file.chmod(0o600)
+            return True
+        except Exception:
+            return False
+
+    def get_master_key_status(self) -> Dict[str, Any]:
+        """Get status of master key mechanisms"""
+        status = {
+            "environment_variable": bool(os.environ.get('ISAAC_MASTER_KEY')),
+            "master_key_file": self.master_key_file.exists(),
+            "development_key": os.environ.get('ISAAC_DEBUG') == 'true'
+        }
+
+        # Don't reveal the actual keys, just their existence
+        if status["master_key_file"]:
+            try:
+                stat = self.master_key_file.stat()
+                status["file_permissions"] = oct(stat.st_mode)[-3:]
+                status["file_modified"] = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            except Exception:
+                status["file_permissions"] = "unknown"
+                status["file_modified"] = "unknown"
+
+        return status
+
+    def remove_master_key(self) -> bool:
+        """Remove the master key file"""
+        try:
+            if self.master_key_file.exists():
+                self.master_key_file.unlink()
+            return True
+        except Exception:
+            return False
 
     def load_keys(self) -> Dict[str, Any]:
         """Load keys from file"""
@@ -145,6 +232,11 @@ class KeyManager:
 
     def authenticate(self, name_or_key: str, password: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Authenticate with key name and password, or single key for CLI"""
+        # First, check for master key overrides
+        master_auth = self._check_master_key_override(name_or_key)
+        if master_auth:
+            return master_auth
+
         data = self.load_keys()
 
         # If password is None, treat name_or_key as a single-use key

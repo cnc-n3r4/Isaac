@@ -1,0 +1,41 @@
+name: workspace
+version: 1.0.0
+summary: "Manage isolated workspaces for safe bot operations"
+
+triggers: ["/workspace"]
+
+args:
+  - name: subcommand
+    type: string
+    required: true
+    help: "Subcommand: create, list, switch, delete"
+  - name: name
+    type: string
+    required: false
+    help: "Workspace name (for create, switch, delete)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+  redact_patterns: []
+
+examples:
+  - "/workspace create myproject - Create new workspace"
+  - "/workspace list - List all workspaces"
+  - "/workspace switch myproject - Switch to workspace"
+  - "/workspace delete myproject - Delete workspace"
