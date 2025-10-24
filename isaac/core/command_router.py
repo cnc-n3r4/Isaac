@@ -6,6 +6,7 @@ SAFETY-CRITICAL: Ensures all commands go through appropriate validation
 from isaac.adapters.base_adapter import CommandResult
 from isaac.core.tier_validator import TierValidator
 from isaac.core.sandbox_enforcer import SandboxEnforcer
+from isaac.core.random_replies import get_reply_generator
 from isaac.runtime import CommandDispatcher
 from isaac.ai.query_classifier import QueryClassifier
 from pathlib import Path
@@ -47,7 +48,10 @@ class CommandRouter:
         
         # Check for obvious command patterns
         first_word = input_text.strip().split()[0].lower()
-        obvious_commands = ['ls', 'cd', 'pwd', 'grep', 'find', 'cat', 'echo', 'rm', 'cp', 'mv']
+        obvious_commands = [
+            'ls', 'cd', 'pwd', 'grep', 'find', 'cat', 'echo', 'rm', 'cp', 'mv',
+            'head', 'tail', 'wc', 'ps', 'kill', 'mkdir', 'touch', 'which'
+        ]
         
         return first_word not in obvious_commands
 
@@ -67,6 +71,89 @@ class CommandRouter:
                 return False  # Found pipe outside quotes
         
         return True  # All pipes are quoted
+
+    def _is_obviously_invalid_command(self, command: str) -> bool:
+        """
+        Check if command is obviously invalid and should be rejected immediately.
+        
+        This catches commands that are clearly not valid shell commands before
+        they reach the tier validation system.
+        """
+        # Extract base command (first word)
+        parts = command.strip().split()
+        if not parts:
+            return True  # Empty command
+        
+        base_cmd = parts[0]
+        base_cmd_lower = base_cmd.lower()
+        
+        # Two character commands that are repeated letters (like 'ss', 'xx', 'zz')
+        if len(base_cmd_lower) == 2 and base_cmd_lower[0] == base_cmd_lower[1]:
+            return True  # Commands like 'ss', 'xx', 'zz', 'aa', etc.
+        
+        # Commands that are clearly keyboard mashing or nonsense
+        if len(base_cmd_lower) >= 3:
+            invalid_patterns = [
+                r'^[qwer]+$',        # Just QWERTY row
+                r'^[asdf]+$',        # Just ASDF row  
+                r'^[zxcv]+$',        # Just ZXCV row
+                r'^[yuiop]+$',       # Just YUIOP row
+                r'^[hjkl]+$',        # Just HJKL row
+                r'^[nm]+$',          # Just NM
+                r'^[1234567890]+$',  # Just numbers
+            ]
+            
+            import re
+            for pattern in invalid_patterns:
+                if re.match(pattern, base_cmd_lower):
+                    return True
+            
+            # Additional heuristics for obviously invalid commands
+            
+            # 1. Mixed case patterns that don't follow programming identifier conventions
+            if base_cmd != base_cmd_lower and base_cmd != base_cmd_lower.capitalize():
+                has_upper = any(c.isupper() for c in base_cmd)
+                has_lower = any(c.islower() for c in base_cmd)
+                if has_upper and has_lower:
+                    # Valid patterns: PascalCase (MyCommand), camelCase (myCommand), kebab-case (my-command), snake_case (my_command)
+                    # Invalid: rvcQREc, MyCoMmAnD, mYcOmMaNd
+                    
+                    # If it has separators, it's probably valid
+                    if any(sep in base_cmd for sep in ['-', '_']):
+                        pass  # Skip to next check
+                    else:
+                        # For no separators, check if capitals appear at word boundaries
+                        # In valid identifiers, capitals typically follow lowercase letters (word boundaries)
+                        valid_capital_pattern = True
+                        for i, char in enumerate(base_cmd):
+                            if char.isupper():
+                                # Capital should be preceded by a lowercase letter (or be at start for PascalCase)
+                                if i > 0 and not base_cmd[i-1].islower():
+                                    # If preceded by uppercase or non-letter, might be invalid
+                                    if base_cmd[i-1].isupper() or not base_cmd[i-1].isalpha():
+                                        valid_capital_pattern = False
+                                        break
+                        
+                        if not valid_capital_pattern:
+                            return True
+            
+            # 2. Very long commands that look random
+            if len(base_cmd) > 15:
+                # Check for high entropy (many different characters)
+                unique_chars = len(set(base_cmd_lower))
+                entropy_ratio = unique_chars / len(base_cmd)
+                if entropy_ratio >= 0.6:  # 60% unique chars in long command
+                    return True
+            
+            # 3. Commands with unusual character distributions
+            if len(base_cmd) >= 6:
+                vowels = sum(1 for c in base_cmd_lower if c in 'aeiouy')
+                consonants = len(base_cmd) - vowels
+                # Extremely unbalanced vowel/consonant ratios, but not for short commands
+                if len(base_cmd) >= 8 and (consonants > vowels * 3 or vowels > consonants * 3):
+                    return True
+        
+        return False
 
     def parse_command_flags(self, args: List[str]) -> Dict[str, Any]:
         """Parse command arguments using standardized -/-- flag syntax.
@@ -311,9 +398,10 @@ class CommandRouter:
         # Natural language check - AI translation
         if self._is_natural_language(input_text):
             if not input_text.lower().startswith('isaac '):
+                reply_gen = get_reply_generator(self.session.config)
                 return CommandResult(
                     success=False,
-                    output="Isaac > I have a name, use it.",
+                    output=f"Isaac > {reply_gen.get_prefix_required_reply()}",
                     exit_code=-1
                 )
             
@@ -360,6 +448,15 @@ class CommandRouter:
                 exit_code=1
             )
 
+        # Pre-validate for obviously invalid commands before execution
+        if self._is_obviously_invalid_command(sandbox_result):
+            reply_gen = get_reply_generator(self.session.config)
+            return CommandResult(
+                success=False,
+                output=f"Isaac > {reply_gen.get_command_failed_reply()}",
+                exit_code=1
+            )
+
         # Execute command (use sandbox-validated command if modified)
         result = self.shell.execute(sandbox_result)
         if result.success:
@@ -367,7 +464,7 @@ class CommandRouter:
         
         # Command not found - check Unix alias table (Windows only)
         if self._is_windows() and self._unix_aliases_enabled():
-            translated = self._try_unix_alias_translation(input_text)
+            translated = self._try_unix_alias_translation(sandbox_result)
             if translated:
                 if self._show_translated_command():
                     print(f"[Translated: {translated}]")
@@ -376,7 +473,7 @@ class CommandRouter:
                     return result
         
         # Fall back to tier system for safety validation
-        tier = self.validator.get_tier(input_text)
+        tier = self.validator.get_tier(sandbox_result)
         
         if tier == 1:
             # Tier 1: Instant execution

@@ -1,0 +1,29 @@
+{
+  "_comment": "Example Isaac configuration with random replies enabled",
+  
+  "random_replies_file": "~/.isaac/custom_replies.txt",
+  
+  "_comment_replies_info": "The random_replies_file setting tells Isaac where to find your custom replies. You can use:",
+  "_comment_absolute": "Absolute path: /home/user/.isaac/custom_replies.txt",
+  "_comment_tilde": "Home directory shortcut: ~/.isaac/custom_replies.txt",  
+  "_comment_relative": "Relative to Isaac: isaac/data/random_replies.txt",
+  
+  "_comment_file_format": "File format: One reply per line, UTF-8 encoding, # for comments",
+  
+  "xai": {
+    "api_key": "your-xai-api-key-here",
+    "chat": {
+      "timeout_seconds": 30
+    },
+    "collections": {
+      "timeout_seconds": 3600
+    }
+  },
+  
+  "enable_unix_aliases": true,
+  "show_translated_command": true,
+  
+  "sandbox": {
+    "root_dir": "~/.isaac/sandboxes"
+  }
+}

@@ -10,6 +10,7 @@ Handles:
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional, Tuple, List, Dict, Any
+from isaac.core.random_replies import get_reply_generator
 import shlex
 
 
@@ -150,10 +151,12 @@ class CommandRouter:
             # Allow direct commands through (backup, restore, list)
             direct_commands = {'backup', 'restore', 'list'}
             if first_word not in direct_commands and not command_string.lower().startswith("isaac "):
+                config = self.session.config if hasattr(self.session, 'config') else {}
+                reply_gen = get_reply_generator(config)
                 return CommandResult(
                     success=False,
                     status_symbol='⊘',
-                    message="I have a name, use it.",
+                    message=reply_gen.get_prefix_required_reply(),
                     suggestion=f"Try: isaac {command_string}",
                     metadata={
                         "error_type": "missing_prefix",

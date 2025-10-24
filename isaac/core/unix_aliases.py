@@ -58,27 +58,30 @@ class UnixAliasTranslator:
                 base_cmd,
                 pipe_cmd,
                 args,
-                alias_config['arg_mapping']
+                alias_config['arg_mapping'],
+                cmd_name
             )
         else:
             return self._translate_with_arg_mapping(
                 powershell_cmd,
                 args,
-                alias_config['arg_mapping']
+                alias_config['arg_mapping'],
+                cmd_name
             )
 
     def _translate_with_arg_mapping(
         self,
         powershell_cmd: str,
         args: List[str],
-        arg_mapping: Dict[str, str]
+        arg_mapping: Dict[str, str],
+        cmd_name: str
     ) -> str:
         """Translate command with argument mapping"""
         # Special handling for commands that need piping
         if '|' in powershell_cmd:
             # Commands like "Get-Content | Measure-Object" need special handling
             base_cmd, pipe_cmd = powershell_cmd.split(' | ', 1)
-            return self._translate_piped_command(base_cmd, pipe_cmd, args, arg_mapping)
+            return self._translate_piped_command(base_cmd, pipe_cmd, args, arg_mapping, cmd_name)
 
         # Handle flag mappings
         translated_args = []
@@ -131,7 +134,8 @@ class UnixAliasTranslator:
         base_cmd: str,
         pipe_cmd: str,
         args: List[str],
-        arg_mapping: Dict[str, str]
+        arg_mapping: Dict[str, str],
+        cmd_name: str
     ) -> str:
         """Translate commands that use piping like Get-Content | Measure-Object"""
         flag_args = []
@@ -144,6 +148,20 @@ class UnixAliasTranslator:
                 continue
 
             if arg.startswith('-'):
+                # Handle numeric arguments like -10 (should be -n 10 for head/tail)
+                if arg[1:].isdigit() and len(arg) > 1:
+                    # Convert -10 to appropriate flag based on command
+                    num = arg[1:]
+                    if "Select-Object" in pipe_cmd:
+                        if cmd_name == "head":
+                            flag_args.extend(["-First", num])
+                        elif cmd_name == "tail":
+                            flag_args.extend(["-Last", num])
+                        else:
+                            # Default to -First for other commands
+                            flag_args.extend(["-First", num])
+                    continue
+                
                 if arg in arg_mapping:
                     mapped = arg_mapping[arg]
                     if mapped:
