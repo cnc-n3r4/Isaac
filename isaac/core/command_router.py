@@ -168,48 +168,30 @@ class CommandRouter:
         """Get safety tier for command."""
         return self.validator.get_tier(command)
 
-    def _handle_meta_command(self, command: str) -> CommandResult:
-        """Handle /commands using the plugin dispatcher or PipeEngine for pipes"""
+    def _handle_meta_command(self, input_text: str) -> CommandResult:
+        """Handle meta-commands through the plugin dispatcher."""
         try:
-            # Check for pipes - use PipeEngine for all piping
-            if '|' in command and not self._is_quoted_pipe(command):
-                from isaac.core.pipe_engine import PipeEngine
-                engine = PipeEngine(self.session, self.shell)
-                result_blob = engine.execute_pipeline(command)
-                
-                # Convert blob to CommandResult
-                if result_blob['kind'] == 'error':
-                    return CommandResult(success=False, output=result_blob['content'], exit_code=1)
-                else:
-                    return CommandResult(success=True, output=result_blob['content'], exit_code=0)
+            # Dispatch command through plugin system
+            result_blob = self.dispatcher.execute(input_text)
+            
+            # Convert dispatcher result to CommandResult
+            if result_blob.get('ok', False):
+                # Success - extract stdout
+                output = result_blob.get('stdout', '')
+                return CommandResult(success=True, output=output, exit_code=0)
             else:
-                # Single command - use dispatcher
-                result = self.dispatcher.execute(command)
-
-                # Convert dispatcher result to CommandResult
-                if result.get('ok', False):
-                    return CommandResult(
-                        success=True,
-                        output=result.get('stdout', ''),
-                        exit_code=0
-                    )
-                else:
-                    # Handle error case
-                    error_info = result.get('error', {})
-                    error_msg = error_info.get('message', 'Unknown error') if isinstance(error_info, dict) else str(error_info)
-                    return CommandResult(
-                        success=False,
-                        output=f"Command failed: {error_msg}",
-                        exit_code=1
-                    )
-
+                # Error - extract error message
+                error_info = result_blob.get('error', {})
+                error_msg = error_info.get('message', 'Unknown error')
+                return CommandResult(success=False, output=error_msg, exit_code=1)
+                
         except Exception as e:
             return CommandResult(
                 success=False,
                 output=f"Command execution error: {str(e)}",
                 exit_code=1
             )
-    
+
     def route_command(self, input_text: str) -> CommandResult:
         """
         Route command through appropriate processing pipeline.

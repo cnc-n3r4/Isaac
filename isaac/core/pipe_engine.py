@@ -115,10 +115,15 @@ class PipeEngine:
             # For piped Isaac commands, send in dispatcher format with piped data
             command_name = cmd.strip('/').split()[0]
             command_args = cmd.replace(f'/{command_name}', '').strip()
+            
+            # Send in same format as dispatcher
             stdin_data = json.dumps({
-                "args": {"args": command_args},
-                "session": {},
-                "piped_blob": stdin_blob
+                "command": cmd,
+                "args": command_args.split() if command_args else [],
+                "args_raw": command_args,
+                "stdin": stdin_blob.get('content', ''),
+                "manifest": {},  # Empty manifest for piped commands
+                "session": self.session_manager.get_config()
             })
         else:
             # For commands without input, send empty dispatcher envelope

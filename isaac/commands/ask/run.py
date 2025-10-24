@@ -187,21 +187,56 @@ def main():
                     
                     # This is a pipe call - return blob format
                     return_blob = True
+                elif isinstance(blob, dict) and 'piped_blob' in blob:
+                    # This is piped input from PipeEngine in dispatcher format
+                    piped_blob = blob['piped_blob']
+                    input_content = piped_blob.get('content', '')
+                    input_kind = piped_blob.get('kind', 'text')
+                    
+                    # Get the command args which contain the user's question
+                    args = blob.get('args', {}).get('args', '')
+                    
+                    # Build query: combine piped data with user's question
+                    if args.strip():
+                        # User asked a specific question about the data
+                        query = f"{args}\n\nContext data:\n{input_content}"
+                    else:
+                        # No question, just analyze the data
+                        query = f"Analyze this data:\n\n{input_content}"
+                    
+                    # This is a pipe call - return blob format
+                    return_blob = True
                 elif isinstance(blob, dict) and 'manifest' in blob:
                     # This is dispatcher payload
                     payload = blob
                     command = payload.get('command', '')
                     args = payload.get('args', '')
                     args_raw = payload.get('args_raw', '')
+                    stdin_data = payload.get('stdin', '')
                     
-                    # Strip the trigger to get the query
-                    query = ''
-                    if command == '/ask' or command == '/a':
-                        # Args_raw contains the query
-                        query = args_raw.strip()
-                    
-                    # This is a dispatcher call - return envelope format
-                    return_blob = False
+                    # Check if this is piped input (stdin contains data)
+                    if stdin_data.strip():
+                        # This is piped input - combine with user's question
+                        user_question = args_raw.strip()
+                        if user_question:
+                            # User asked a specific question about the data
+                            query = f"{user_question}\n\nContext data:\n{stdin_data}"
+                        else:
+                            # No question, just analyze the data
+                            query = f"Analyze this data:\n\n{stdin_data}"
+                        
+                        # This is a pipe call - return blob format
+                        return_blob = True
+                    else:
+                        # Normal dispatcher call without piped input
+                        # Strip the trigger to get the query
+                        query = ''
+                        if command.startswith('/ask') or command.startswith('/a'):
+                            # Args_raw contains the query
+                            query = args_raw.strip()
+                        
+                        # This is a dispatcher call - return envelope format
+                        return_blob = False
                 elif isinstance(blob, dict) and 'args' in blob:
                     # This is the new pipe dispatcher format
                     args_data = blob.get('args', {})
@@ -305,14 +340,14 @@ def main():
         )
         
         # Handle as chat query (collections logic removed - now chat-only)
-        # For interactive AI commands, stream only in true standalone mode (not dispatcher)
+        # For interactive AI commands, stream output in both modes
         is_dispatcher_mode = not sys.stdin.isatty()
         
         if is_dispatcher_mode:
-            # Dispatcher mode - return test response for debugging
-            response = "test response"
+            # Dispatcher mode - stream output without spinner
+            response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=True, use_spinner=False)
         else:
-            # Standalone mode - stream output directly with spinner
+            # Standalone mode - stream output with spinner
             response = _handle_chat_query(query, config, session, is_piped_input=return_blob, stream_output=True, use_spinner=True)
         
         # Log query to AI history (only for non-streaming modes)

@@ -10,7 +10,7 @@ args:
     type: string
     required: false
     help: "Command arguments (supports --flags)"
-stdin: false
+stdin: true
 stdout:
   type: text
 security:

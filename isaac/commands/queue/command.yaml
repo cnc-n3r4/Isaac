@@ -9,7 +9,7 @@ aliases: ["/q"]
 
 args: []
 
-stdin: false
+stdin: true
 stdout:
   type: text
 
