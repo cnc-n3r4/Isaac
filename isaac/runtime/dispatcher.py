@@ -159,7 +159,8 @@ class CommandDispatcher:
                 "manifest": manifest,
                 "session": {
                     "machine_id": getattr(self.session.config, 'machine_id', 'unknown'),
-                    "user_prefs": getattr(self.session.preferences, 'data', {})
+                    "user_prefs": getattr(self.session.preferences, 'data', {}),
+                    "config": self.session.config
                 }
             }
 

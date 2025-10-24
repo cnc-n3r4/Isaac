@@ -380,3 +380,15 @@ class SessionManager:
             'show_translation': self.config.get('show_translated_command', True),
             'overrides': self.config.get('alias_overrides', {})
         }
+
+    def reload_config(self):
+        """Reload config from disk, updating in-memory config."""
+        config_file = self.isaac_dir / 'config.json'
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    file_config = json.load(f)
+                    # Replace config entirely with file contents
+                    self.config = file_config
+            except Exception:
+                pass  # Keep existing config if reload fails

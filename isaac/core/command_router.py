@@ -178,7 +178,20 @@ class CommandRouter:
             if result_blob.get('ok', False):
                 # Success - extract stdout
                 output = result_blob.get('stdout', '')
-                return CommandResult(success=True, output=output, exit_code=0)
+                result = CommandResult(success=True, output=output, exit_code=0)
+                
+                # Check if this was a state-changing command that modifies config
+                # These commands save to disk but don't update session manager's in-memory config
+                state_changing_commands = [
+                    '/mine --claim', '/mine claim', '/mine --use', '/mine use',
+                    '/mine --nuggets save', '/mine nuggets save'
+                ]
+                
+                if any(input_text.startswith(cmd) for cmd in state_changing_commands):
+                    # Reload config to pick up changes made by the command
+                    self.session.reload_config()
+                
+                return result
             else:
                 # Error - extract error message
                 error_info = result_blob.get('error', {})
