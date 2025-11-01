@@ -33,12 +33,8 @@ def main():
                 piped_blob = payload['piped_blob']
                 if piped_blob['kind'] == 'text':
                     piped_content = piped_blob['content']
-                    args_raw = payload.get("args", {}).get("args", "").strip()
-                    # Strip surrounding quotes if present
-                    if (args_raw.startswith('"') and args_raw.endswith('"')) or \
-                       (args_raw.startswith("'") and args_raw.endswith("'")):
-                        args_raw = args_raw[1:-1]
-                    session = payload.get("session", {})
+                    args_list = payload.get("args", [])
+                    args_raw = " ".join(args_list) if args_list else ""
                 elif piped_blob['kind'] == 'error':
                     # Propagate error from previous command
                     print(json.dumps({
@@ -59,12 +55,16 @@ def main():
                         }
                     }))
                     return
+            elif 'stdin' in payload and payload.get('stdin'):
+                # PipeEngine format - piped content in stdin field
+                piped_content = payload['stdin']
+                args_list = payload.get("args", [])
+                args_raw = " ".join(args_list) if args_list else ""
             elif 'kind' in payload:
                 # Legacy pipe blob format (fallback)
                 if payload['kind'] == 'text':
                     piped_content = payload['content']
                     args_raw = payload.get('meta', {}).get('command', '').replace('/newfile', '').strip()
-                    session = {}
                     payload = None
                 elif payload['kind'] == 'error':
                     print(json.dumps({
@@ -86,19 +86,14 @@ def main():
                     return
             else:
                 # Normal command payload
-                args_raw = payload.get("args", {}).get("args", "").strip()
-                # Strip surrounding quotes if present
-                if (args_raw.startswith('"') and args_raw.endswith('"')) or \
-                   (args_raw.startswith("'") and args_raw.endswith("'")):
-                    args_raw = args_raw[1:-1]
-                session = payload.get("session", {})
+                args_list = payload.get("args", [])
+                args_raw = " ".join(args_list) if args_list else ""
                 piped_content = None
                 
         except json.JSONDecodeError:
             # Not JSON - treat as piped content (fallback for compatibility)
             payload = None
             args_raw = ""
-            session = {}
             piped_content = stdin_content.strip()
 
         # Parse arguments using argparse
@@ -195,11 +190,11 @@ def handle_list_templates(session_manager: SessionManager) -> str:
     result = "Available templates:\n\n"
     for ext in sorted(templates.keys()):
         items = templates[ext]
-        if isinstance(items, list) and items:
+        if isinstance(items, list) and items and isinstance(items[0], dict):
             desc = items[0].get("desc", "") or "(no description)"
             result += f"  {ext:<8} → {desc}\n"
         else:
-            result += f"  {ext:<8} → (template)\n"
+            result += f"  {ext:<8} → (invalid template)\n"
 
     result += "\nUse /newfile <file> --template <ext> to use a template"
     return result
@@ -215,7 +210,8 @@ def handle_set_template(session_manager: SessionManager, ext: str, content: str)
     templates[ext.lower()] = [{"desc": f"Custom template for {ext}", "body": content}]
 
     # Save to session
-    session_manager.config["newfile_templates"] = templates
+    config = session_manager.get_config()
+    config["newfile_templates"] = templates
     session_manager._save_config()
 
     return f"Template set for {ext}"
@@ -226,6 +222,9 @@ def handle_create_file(session_manager: SessionManager, filename: str,
                       force: bool) -> str:
     """Create a new file"""
     try:
+        # Strip surrounding quotes if present (PowerShell/Windows may include them)
+        filename = filename.strip('"').strip("'")
+        
         # Expand path properly for Windows
         filepath = Path(filename).expanduser().resolve()
 
@@ -267,7 +266,21 @@ def handle_create_file(session_manager: SessionManager, filename: str,
 def get_templates(session_manager: SessionManager) -> Dict[str, Any]:
     """Get templates from session config"""
     config = session_manager.get_config()
-    return config.get("newfile_templates", get_default_templates())
+    templates = config.get("newfile_templates", get_default_templates())
+    # Validate that templates is a dict with proper structure
+    if not isinstance(templates, dict):
+        return get_default_templates()
+    # Clean invalid entries
+    cleaned = {}
+    for ext, items in templates.items():
+        if isinstance(items, list) and items and isinstance(items[0], dict):
+            cleaned[ext] = items
+    # Merge with defaults for missing extensions
+    defaults = get_default_templates()
+    for ext, items in defaults.items():
+        if ext not in cleaned:
+            cleaned[ext] = items
+    return cleaned
 
 
 def get_default_templates() -> Dict[str, Any]:
@@ -290,14 +303,14 @@ def get_template_content(templates: Dict[str, Any], template_spec: str, file_ext
 
     if ext_key in templates:
         items = templates[ext_key]
-        if isinstance(items, list) and items:
+        if isinstance(items, list) and items and isinstance(items[0], dict):
             return items[0].get("body", "")
 
     # Try file extension match
     file_ext_key = file_ext.lower()
     if file_ext_key in templates:
         items = templates[file_ext_key]
-        if isinstance(items, list) and items:
+        if isinstance(items, list) and items and isinstance(items[0], dict):
             return items[0].get("body", "")
 
     return None

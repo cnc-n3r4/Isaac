@@ -46,6 +46,10 @@ class PermanentShell:
         self.status_display = StatusDisplay(self.session, self.shell)
         
         print("Isaac ready!")
+        
+        # Set static window title
+        print("\033]0;I$AAC> Done!\007", end="", flush=True)
+        
         print()
 
     def _print_welcome(self):
