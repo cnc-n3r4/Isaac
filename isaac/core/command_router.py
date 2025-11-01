@@ -13,6 +13,13 @@ from pathlib import Path
 from typing import Optional, Dict, List, Any
 import shlex
 
+try:
+    import colorama
+    colorama.init()
+    HAS_COLORAMA = True
+except ImportError:
+    HAS_COLORAMA = False
+
 
 class CommandRouter:
     """Routes commands through tier validation and AI processing."""
@@ -451,9 +458,13 @@ class CommandRouter:
         # Pre-validate for obviously invalid commands before execution
         if self._is_obviously_invalid_command(sandbox_result):
             reply_gen = get_reply_generator(self.session.config)
+            reply = reply_gen.get_command_failed_reply()
+            if HAS_COLORAMA:
+                from colorama import Fore, Style
+                reply = f"{Fore.RED}{reply}{Style.RESET_ALL}"
             return CommandResult(
                 success=False,
-                output=f"Isaac > {reply_gen.get_command_failed_reply()}",
+                output=reply,
                 exit_code=1
             )
 

@@ -170,7 +170,8 @@ class SessionManager:
                 with open(config_file, 'r') as f:
                     file_config = json.load(f)
                     # Merge file config with passed config (file takes precedence)
-                    self.config.update(file_config)
+                    if isinstance(file_config, dict):
+                        self.config.update(file_config)
             except Exception:
                 pass  # Use defaults if file corrupted
 

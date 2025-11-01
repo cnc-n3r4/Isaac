@@ -24,8 +24,8 @@ from isaac.commands.newfile.run import (
 def session_manager():
     """Create a mock session manager"""
     manager = Mock(spec=SessionManager)
-    manager.get_config.return_value = {}
     manager.config = {}
+    manager.get_config.return_value = manager.config  # Return the same dict
     return manager
 
 
