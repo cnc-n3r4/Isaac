@@ -1,0 +1,32 @@
+name: edit
+version: 1.0.0
+summary: Edit files with exact string replacement
+description: |
+  Edit file by replacing exact string. SAFETY: old_string must match exactly.
+  Prevents accidental changes by requiring unique matches.
+
+triggers:
+  - /edit
+
+aliases:
+  - /edit
+
+args: []
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 1024
+  capabilities:
+    - filesystem_write
+
+examples:
+  - "/edit app.py 'old text' 'new text' - Replace exact string"
+  - "/edit file.txt 'bug' 'fix' --replace-all - Replace all occurrences"
+  - "/edit config.json '\"debug\": false' '\"debug\": true' - Replace JSON value"

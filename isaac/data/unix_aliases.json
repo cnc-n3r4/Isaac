@@ -1,0 +1,176 @@
+{
+  "grep": {
+    "powershell": "Select-String",
+    "bash": "grep",
+    "description": "Search text patterns",
+    "examples": [
+      {"unix": "grep 'error' log.txt", "powershell": "Select-String 'error' log.txt"}
+    ]
+  },
+  "find": {
+    "powershell": "Get-ChildItem -Recurse",
+    "bash": "find",
+    "description": "Find files",
+    "arg_mapping": {
+      "-name": "-Filter"
+    },
+    "examples": [
+      {"unix": "find . -name '*.py'", "powershell": "Get-ChildItem -Recurse -Filter '*.py'"}
+    ]
+  },
+  "ps": {
+    "powershell": "Get-Process",
+    "bash": "ps",
+    "description": "List processes",
+    "examples": [
+      {"unix": "ps aux", "powershell": "Get-Process | Format-Table"}
+    ]
+  },
+  "kill": {
+    "powershell": "Stop-Process",
+    "bash": "kill",
+    "description": "Terminate process",
+    "arg_mapping": {
+      "-9": "-Force",
+      "default": "-Id"
+    },
+    "examples": [
+      {"unix": "kill 1234", "powershell": "Stop-Process -Id 1234"},
+      {"unix": "kill -9 1234", "powershell": "Stop-Process -Force -Id 1234"}
+    ]
+  },
+  "cat": {
+    "powershell": "Get-Content",
+    "bash": "cat",
+    "description": "Display file content",
+    "examples": [
+      {"unix": "cat file.txt", "powershell": "Get-Content file.txt"}
+    ]
+  },
+  "ls": {
+    "powershell": "Get-ChildItem",
+    "bash": "ls",
+    "description": "List directory",
+    "arg_mapping": {
+      "-l": "| Format-List",
+      "-la": "| Format-List",
+      "-a": "-Force"
+    },
+    "examples": [
+      {"unix": "ls -la", "powershell": "Get-ChildItem -Force | Format-List"}
+    ]
+  },
+  "wc": {
+    "powershell": "Get-Content | Measure-Object",
+    "bash": "wc",
+    "description": "Count lines/words/chars",
+    "arg_mapping": {
+      "-l": "-Line",
+      "-w": "-Word",
+      "-c": "-Character"
+    },
+    "examples": [
+      {"unix": "wc -l file.txt", "powershell": "Get-Content file.txt | Measure-Object -Line"}
+    ]
+  },
+  "head": {
+    "powershell": "Get-Content | Select-Object",
+    "bash": "head",
+    "description": "First N lines",
+    "arg_mapping": {
+      "-n": "-First"
+    },
+    "examples": [
+      {"unix": "head -n 10 file.txt", "powershell": "Get-Content file.txt | Select-Object -First 10"}
+    ]
+  },
+  "tail": {
+    "powershell": "Get-Content | Select-Object",
+    "bash": "tail",
+    "description": "Last N lines",
+    "arg_mapping": {
+      "-n": "-Last",
+      "-f": "-Wait"
+    },
+    "examples": [
+      {"unix": "tail -n 10 file.txt", "powershell": "Get-Content file.txt | Select-Object -Last 10"},
+      {"unix": "tail -f log.txt", "powershell": "Get-Content -Wait log.txt"}
+    ]
+  },
+  "which": {
+    "powershell": "Get-Command",
+    "bash": "which",
+    "description": "Locate command",
+    "examples": [
+      {"unix": "which python", "powershell": "Get-Command python"}
+    ]
+  },
+  "touch": {
+    "powershell": "New-Item -ItemType File",
+    "bash": "touch",
+    "description": "Create empty file",
+    "examples": [
+      {"unix": "touch file.txt", "powershell": "New-Item -ItemType File file.txt"}
+    ]
+  },
+  "rm": {
+    "powershell": "Remove-Item",
+    "bash": "rm",
+    "description": "Remove file/directory",
+    "arg_mapping": {
+      "-r": "-Recurse",
+      "-f": "-Force",
+      "-rf": "-Recurse -Force"
+    },
+    "examples": [
+      {"unix": "rm file.txt", "powershell": "Remove-Item file.txt"},
+      {"unix": "rm -rf folder", "powershell": "Remove-Item -Recurse -Force folder"}
+    ]
+  },
+  "cp": {
+    "powershell": "Copy-Item",
+    "bash": "cp",
+    "description": "Copy file/directory",
+    "arg_mapping": {
+      "-r": "-Recurse"
+    },
+    "examples": [
+      {"unix": "cp file1.txt file2.txt", "powershell": "Copy-Item file1.txt file2.txt"}
+    ]
+  },
+  "mv": {
+    "powershell": "Move-Item",
+    "bash": "mv",
+    "description": "Move/rename file",
+    "examples": [
+      {"unix": "mv old.txt new.txt", "powershell": "Move-Item old.txt new.txt"}
+    ]
+  },
+  "mkdir": {
+    "powershell": "New-Item -ItemType Directory",
+    "bash": "mkdir",
+    "description": "Create directory",
+    "arg_mapping": {
+      "-p": "-Force"
+    },
+    "examples": [
+      {"unix": "mkdir -p path/to/dir", "powershell": "New-Item -ItemType Directory -Force path/to/dir"}
+    ]
+  },
+  "pwd": {
+    "powershell": "Get-Location",
+    "bash": "pwd",
+    "description": "Print working directory",
+    "examples": [
+      {"unix": "pwd", "powershell": "Get-Location"}
+    ]
+  },
+  "echo": {
+    "powershell": "Write-Output",
+    "bash": "echo",
+    "description": "Print text",
+    "examples": [
+      {"unix": "echo 'hello'", "powershell": "Write-Output 'hello'"}
+    ]
+  }
+}

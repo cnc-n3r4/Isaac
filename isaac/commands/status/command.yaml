@@ -1,0 +1,35 @@
+name: status
+version: 1.0.0
+summary: "Quick system status or detailed diagnostics"
+
+triggers: ["/status"]
+aliases: ["/s"]
+
+args:
+  - name: verbose
+    type: bool
+    required: false
+    help: "Show detailed status (-v flag)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 3000
+    max_stdout_kib: 32
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/status"
+  - "/status -v"

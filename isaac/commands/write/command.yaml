@@ -1,0 +1,33 @@
+name: write
+version: 1.0.0
+summary: Create new files
+description: |
+  Create new file with content. Creates parent directories if needed.
+  Supports piping content from other commands.
+
+triggers:
+  - /write
+
+aliases:
+  - /write
+
+args: []
+
+stdin: true
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 1024
+  capabilities:
+    - filesystem_write
+
+examples:
+  - "/write newfile.txt 'Hello World' - Create file with content"
+  - "/write file.txt 'content' --overwrite - Overwrite existing file"
+  - "echo 'test' | /write output.txt - Pipe content to file"
+  - "/read source.py | /write backup.py - Copy file"

@@ -1,0 +1,8 @@
+requests==2.31.0
+colorama==0.4.6
+prompt-toolkit==3.0.43
+pytest==7.4.3
+PyYAML==6.0.1
+jsonschema==4.19.0
+bcrypt==4.0.1
+xai-sdk

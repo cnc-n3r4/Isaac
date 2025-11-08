@@ -1,0 +1,34 @@
+name: restore
+version: 1.0.0
+summary: "Restore backups"
+
+triggers: ["/restore"]
+
+args:
+  - name: flag
+    type: string
+    required: false
+    help: "Flags (--file <backup_file>)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/restore"
+  - "/restore --file backup_2024-11-08.zip"

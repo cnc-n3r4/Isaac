@@ -1,0 +1,43 @@
+name: workspace
+version: 1.0.0
+summary: "Manage isolated workspaces"
+
+triggers: ["/workspace"]
+
+args:
+  - name: subcommand
+    type: enum
+    enum: ["create", "list", "switch", "delete"]
+    required: false
+    help: "Workspace operation"
+  - name: name
+    type: string
+    required: false
+    help: "Workspace name"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/workspace list"
+  - "/workspace create myproject"
+  - "/workspace create myproject --venv"
+  - "/workspace create myproject --venv --collection"
+  - "/workspace switch myproject"
+  - "/workspace delete myproject"

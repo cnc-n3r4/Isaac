@@ -1,0 +1,33 @@
+name: read
+version: 1.0.0
+summary: Read files with line numbers
+description: |
+  Read file contents with line numbers. Supports offset and limit for large files.
+  Cross-platform tool using pathlib.
+
+triggers:
+  - /read
+
+aliases:
+  - /read
+
+args: []
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 10240
+  capabilities:
+    - filesystem_read
+
+examples:
+  - "/read myfile.py - Read entire file"
+  - "/read myfile.py --offset 100 - Read from line 100"
+  - "/read myfile.py --limit 50 - Read first 50 lines"
+  - "/read myfile.py --offset 100 --limit 50 - Read lines 100-150"

@@ -1,0 +1,35 @@
+name: grep
+version: 1.0.0
+summary: Search files for regex patterns
+description: |
+  Search files for regex patterns. Returns matching lines with context.
+  Supports glob patterns to filter files and multiple output modes.
+
+triggers:
+  - /grep
+
+aliases:
+  - /grep
+  - /search
+
+args: []
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 10240
+  capabilities:
+    - filesystem_read
+
+examples:
+  - "/grep 'TODO' - Search for TODO in current directory"
+  - "/grep 'error' --glob '*.log' - Search in log files only"
+  - "/grep 'function' --glob '*.py' --context 3 - Show 3 lines of context"
+  - "/grep 'pattern' --ignore-case - Case-insensitive search"
+  - "/grep 'import' --output content - Show matching lines"

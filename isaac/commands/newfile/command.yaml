@@ -1,0 +1,41 @@
+name: newfile
+version: 1.0.0
+summary: "Create files with templates"
+
+triggers: ["/newfile"]
+
+args:
+  - name: filename
+    type: string
+    required: false
+    help: "File to create"
+  - name: flags
+    type: string
+    required: false
+    help: "Optional flags (--template, --content, --force, --list-templates, --set-template, --help)"
+
+stdin: true
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 32
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/newfile script.py"
+  - "/newfile notes.txt --content \"My notes\""
+  - "/newfile report.md --template .md"
+  - "/newfile --list-templates"
+  - "echo 'Hello World' | /newfile output.txt"

@@ -1,0 +1,47 @@
+name: config
+version: 1.0.0
+summary: "View or modify configuration settings"
+
+triggers: ["/config"]
+
+args:
+  - name: subcommand
+    type: enum
+    enum: ["status", "ai", "cloud", "plugins", "collections", "console", "set"]
+    required: false
+    help: "Configuration section or action"
+  - name: key
+    type: string
+    required: false
+    help: "Setting key (for 'set' subcommand)"
+  - name: value
+    type: string
+    required: false
+    help: "Setting value (for 'set' subcommand)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false  # Config changes are local-only
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: true
+  redact_patterns:
+    - "(?i)(api[_-]?key|token|password)\\s*[=:]\\s*[A-Za-z0-9_-]+"
+
+examples:
+  - "/config"
+  - "/config status"
+  - "/config ai"
+  - "/config set default_tier 3"

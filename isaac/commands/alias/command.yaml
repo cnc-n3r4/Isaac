@@ -1,0 +1,37 @@
+name: alias
+version: 1.0.0
+summary: "Manage Unix-to-PowerShell command aliases"
+
+triggers: ["/alias"]
+
+args:
+  - name: flag
+    type: string
+    required: false
+    help: "Action flag (--list, --show, --enable, --disable, --add, --remove, --help)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/alias"
+  - "/alias --list"
+  - "/alias --show ls"
+  - "/alias --enable"
+  - "/alias --add ll \"ls -la\""

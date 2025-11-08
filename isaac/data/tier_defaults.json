@@ -1,0 +1,51 @@
+{
+  "1": [
+    "ls",
+    "cd",
+    "clear",
+    "cls",
+    "pwd",
+    "echo",
+    "cat",
+    "type",
+    "Get-ChildItem",
+    "Set-Location",
+    "Get-Location"
+  ],
+  "2": [
+    "grep",
+    "Select-String",
+    "head",
+    "tail",
+    "sort",
+    "uniq"
+  ],
+  "2.5": [
+    "find",
+    "sed",
+    "awk",
+    "Where-Object",
+    "ForEach-Object"
+  ],
+  "3": [
+    "cp",
+    "mv",
+    "git",
+    "npm",
+    "pip",
+    "reset",
+    "Copy-Item",
+    "Move-Item",
+    "New-Item",
+    "Remove-Item"
+  ],
+  "4": [
+    "rm",
+    "del",
+    "format",
+    "dd",
+    "Remove-Item",
+    "Format-Volume",
+    "Clear-Disk"
+  ]
+}

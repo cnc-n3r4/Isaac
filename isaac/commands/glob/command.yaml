@@ -1,0 +1,35 @@
+name: glob
+version: 1.0.0
+summary: Find files by pattern matching
+description: |
+  Find files using glob patterns (e.g., "**/*.py", "src/**/*.js").
+  Returns matching file paths sorted by modification time.
+
+triggers:
+  - /glob
+
+aliases:
+  - /glob
+  - /find
+
+args:
+  - name: pattern
+    required: true
+    description: Glob pattern to match files
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 512
+  capabilities: []
+
+examples:
+  - "/glob '**/*.py' - Find all Python files"
+  - "/glob 'src/**/*.js' --path /home/user/project - Find JS files in specific directory"
+  - "/glob '*.md' - Find markdown files in current directory"
