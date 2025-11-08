@@ -27,8 +27,9 @@ security:
     - network
 
 examples:
-  - "/mine --maps - List all collections"
-  - "/mine --stake mydocs - Create new collection"
-  - "/mine --drift project-docs - Create collection group"
-  - "/mine --muck file.txt - Upload file to active collection"
-  - "/mine --dig 'what is machine learning?' - Search active collection"
+  - "/mine --list - List all collections"
+  - "/mine --create mydocs - Create new collection"
+  - "/mine --use mydocs - Switch to collection"
+  - "/mine --upload file.txt - Upload file to active collection"
+  - "/mine --search 'what is machine learning?' - Search active collection"
+  - "/mine --info - Show active collection details"

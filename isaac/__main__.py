@@ -27,6 +27,7 @@ def main():
         parser.add_argument('-key', '--key', help='Authentication key for access')
         parser.add_argument('-daemon', '--daemon', action='store_true', help='Run in daemon mode for webhooks')
         parser.add_argument('-oneshot', '--oneshot', action='store_true', help='Execute command and exit (no session persistence)')
+        parser.add_argument('-start', '--start', action='store_true', help='Launch interactive shell (default behavior)')
 
         # Parse known args first, leave the rest as command
         args, unknown = parser.parse_known_args()

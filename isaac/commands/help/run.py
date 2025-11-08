@@ -50,15 +50,13 @@ Available Commands:
   /exit, /quit       - Exit ISAAC
 
 Collections (xAI):
-  /mine list         - List all collections
-  /mine use <name>   - Switch active collection
-  /mine cast <file>  - Upload file to collection
-  /mine dig <query>  - Search active collection
-  /mine create <name> - Create new collection
-  /mine delete <name> - Delete collection
-  /mine info         - Show collection details
-
-AI Interaction:
+  /mine --list              - List all collections
+  /mine --create <name>     - Create new collection
+  /mine --use <name>        - Switch active collection
+  /mine --delete <name>     - Delete collection
+  /mine --upload <file>     - Upload file to collection
+  /mine --search <query>    - Search active collection
+  /mine --info              - Show collection detailsAI Interaction:
   /ask <question>    - Direct AI chat
   isaac <query>      - AI query or command translation
 
@@ -70,8 +68,8 @@ Piping (Experimental):
 Examples:
   /help /config      - Detailed help for config command
   /status -v         - Verbose system status
-  /mine use cnc-info - Switch to CNC manuals collection
-  /mine dig "g01" | /ask "explain this"
+  /mine --use cnc-info - Switch to CNC manuals collection
+  /mine --search "g01" | /ask "explain this"
 """.strip()
 
 

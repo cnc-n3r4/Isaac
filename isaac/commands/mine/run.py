@@ -293,60 +293,32 @@ class MineHandler:
         positional = parsed['positional']
 
         # Check if x.ai client is available
-        if not self.client and not any(flag in ['help', 'status', 'list', 'deed', 'info'] for flag in flags):
+        if not self.client and not any(flag in ['help', 'status', 'list', 'info'] for flag in flags):
             return "x.ai client not available. Check that xai_api_key is configured in your Isaac config and xai_sdk is installed."
 
-        # COLLECTION ARRAY MANAGEMENT
-        if 'drift' in flags:
-            return self._handle_drift([flags['drift']] + positional)
-        elif 'claim' in flags and 'to-drift' not in flags:
-            # Simple collection claim (not combined with sub-group)
-            return self._handle_claim([flags['claim']] + positional)
-
         # COLLECTION MANAGEMENT
-        elif 'stake' in flags:
-            return self._handle_stake([flags['stake']] + positional)
-        elif 'abandon' in flags:
-            return self._handle_abandon([flags['abandon']] + positional)
-
-        # FILE ARRAY MANAGEMENT
-        elif 'skip' in flags:
-            return self._handle_skip([flags['skip']] + positional)
-
-        # ORE PROCESSING (UPLOAD)
-        elif 'muck' in flags:
-            return self._handle_muck([flags['muck']] + positional)
-
-        # EXPLORATION & SEARCH
-        elif 'survey' in flags:
-            return self._handle_survey([flags['survey']] + positional)
-        elif 'dig' in flags:
-            return self._handle_dig([flags['dig']] + positional)
+        if 'create' in flags:
+            return self._handle_create([flags['create']] + positional)
+        elif 'use' in flags:
+            return self._handle_use([flags['use']] + positional)
+        elif 'delete' in flags:
+            return self._handle_delete([flags['delete']] + positional)
 
         # FILE OPERATIONS
-        elif 'haul' in flags:
-            return self._handle_haul([flags['haul']] + positional)
-        elif 'pan' in flags:
-            return self._handle_pan([flags['pan']] + positional)
-        elif 'drop' in flags:
-            return self._handle_drop([flags['drop']] + positional)
+        elif 'upload' in flags:
+            return self._handle_cast([flags['upload']] + positional)
+        elif 'search' in flags:
+            return self._handle_dig([flags['search']] + positional)
 
         # INFORMATION & MANAGEMENT
         elif 'list' in flags or 'maps' in flags:
             return self._handle_list()
-        elif 'deed' in flags:
-            if positional and positional[0] == '--all':
-                return self._handle_list()
-            else:
-                return self._handle_info()
         elif 'info' in flags:
             return self._handle_info()
-        elif 'nuggets' in flags:
-            return self._handle_nuggets(positional)
-        elif 'help' in flags:
-            return self._show_help()
         elif 'status' in flags:
             return self._show_status()
+        elif 'help' in flags:
+            return self._show_help()
 
         else:
             return "Unknown command. Use /mine --help for available commands."
@@ -651,62 +623,29 @@ class MineHandler:
     def _show_help(self, args=None) -> str:
         """Show help for /mine commands."""
         return """
-Isaac x.ai Collection Manager (/mine) - Mining Metaphor Edition 🏔️⛏️
-
-COLLECTION ARRAY MANAGEMENT:
-  /mine --drift <name>          # Create named array of xAI collections
-  /mine --claim <array>         # Switch to collection array
+Isaac xAI Collection Manager
 
 COLLECTION MANAGEMENT:
-  /mine --stake <name>          # Create new xAI collection
-  /mine --claim <name>          # Switch to collection
-  /mine --claim <name> --to-drift <subgroup>  # Switch to collection and sub-group
-  /mine --abandon <collection>  # Delete collection
-
-FILE ARRAY MANAGEMENT:
-  /mine --skip <name>           # Create named array of files across collections
-
-ORE PROCESSING (UPLOAD):
-  /mine --muck <file>           # Upload file to active collection
-  /mine --muck <file> --to-drift <subgroup>  # Upload to specific sub-group
-
-EXPLORATION & SEARCH:
-  /mine --survey <query>        # Search across all collections
-  /mine --dig <question>        # Search within active collection
-  /mine --dig <question> --to-drift <subgroup>  # Search within sub-group
-  /mine --dig -c <question>     # Search all collections
-  /mine --dig -h <question>     # Search with detailed output
+  /mine --create <name>     # Create new collection
+  /mine --use <name>        # Switch to collection
+  /mine --delete <name>     # Delete collection
 
 FILE OPERATIONS:
-  /mine --haul <file>           # Attach file for analysis
-  /mine --haul <file> --to-skip <array>  # Attach and associate with file array
-  /mine --pan <query>           # Query attached file
-  /mine --drop <file>           # Delete file from collection
+  /mine --upload <file>     # Upload file to active collection
+  /mine --search <query>    # Search active collection
 
-INFORMATION & MANAGEMENT:
-  /mine --maps                  # List all collections
-  /mine --info                  # Show active collection details
-  /mine --nuggets               # List saved nuggets
-  /mine --status                # Show system status
-  /mine --help                  # Show this help
+INFORMATION:
+  /mine --list              # List all collections
+  /mine --info              # Show active collection details
+  /mine --status            # Show system status
+  /mine --help              # Show this help
 
 EXAMPLES:
-  # Collection workflow
-  /mine --stake mydocs          # Create collection
-  /mine --claim mydocs          # Switch to collection
-  /mine --muck document.pdf     # Upload file
-  /mine --dig "find tutorials"  # Search collection
-
-  # Cross-collection search
-  /mine --survey "machine learning"  # Search all collections
-
-  # File analysis
-  /mine --pan mydocs | /mine --haul file_abc123  # Attach file
-  /mine --pan "explain this code"  # Query attached file
-
-  # Array management
-  /mine --drift research        # Create collection array
-  /mine --skip favorites        # Create file array
+  /mine --create mydocs     # Create collection
+  /mine --use mydocs        # Switch to collection
+  /mine --upload file.txt   # Upload file
+  /mine --search "query"    # Search collection
+  /mine --info              # Show collection info
 """
 
     def _show_status(self, args=None) -> str:

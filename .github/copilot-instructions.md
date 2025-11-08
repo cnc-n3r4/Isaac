@@ -7,7 +7,7 @@
 ```powershell
 # Development setup
 pip install -e .              # Install with entry point 'isaac'
-isaac /start                 # Launch permanent shell assistant
+isaac --start                 # Launch permanent shell assistant
 
 # Testing (run after tier/config changes)
 pytest tests/test_tier_validator.py -v           # Tier safety tests
@@ -17,9 +17,9 @@ pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 
 ### Big Picture Architecture
 
-- **Permanent Shell Layer**: Isaac wraps the shell after launch (`isaac /start`), routing all commands through its engine. Natural language requires explicit "isaac" prefix.
+- **Permanent Shell Layer**: Isaac wraps the shell after launch (`isaac --start`), routing all commands through its engine. Natural language requires explicit "isaac" prefix.
 - **Session Roaming**: Cloud-based session persistence (GoDaddy PHP API), machine-aware command history, and privacy boundaries for AI queries.
-- **Tier System**: 4+ tiers (1: instant, 2: auto-correct, 2.5: confirm typo, 3: AI validation, 4: lockdown). User-customizable via config.
+- **Tier System**: 5-tier command safety system (1: instant, 2: auto-correct, 2.5: confirm typo, 3: AI validation, 4: lockdown). User-customizable via `isaac/data/tier_defaults.json`.
 - **Task Mode**: Multi-step command planning, safety-based approval, interactive failure recovery (auto-fix, retry, skip, abort, suggest).
 - **Auto-Fix Learning**: Isaac learns from user corrections, syncs patterns, tracks machine compatibility, and confidence scores.
 - **Dual History**: Command history (machine-aware, arrow keys) and AI query history (private, machine-agnostic).
@@ -30,10 +30,10 @@ pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 
 ### Developer Workflows
 
-- **Build & Setup**: `pip install -e .` (editable), `isaac /start` to launch.
+- **Build & Setup**: `pip install -e .` (editable), `isaac --start` to launch.
 - **Testing**: `pytest tests/` (≥85% coverage required), integration tests in `instructions/test_integration/`.
 - **Meta-Commands**: `/help`, `/status`, `/config`, `/clear` (see `isaac/commands/`). `/config` supports subcommands for status, AI, cloud, plugins, and settings.
-- **Task Mode**: Use `isaac /task: <goal>` for multi-step planning and execution. Failure recovery options: f/r/s/a/? (auto-fix, retry, skip, abort, suggest).
+- **Task Mode**: Use `isaac task: <goal>` for multi-step planning and execution. Failure recovery options: f/r/s/a/? (auto-fix, retry, skip, abort, suggest).
 - **Session Management**: All session data is cloud-synced; rollback via snapshots (manual or auto-triggered).
 
 ### Project-Specific Conventions
