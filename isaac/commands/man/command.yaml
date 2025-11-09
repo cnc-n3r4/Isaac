@@ -1,0 +1,56 @@
+name: man
+version: 1.0.0
+status: stable
+summary: "Display manual pages for ISAAC commands"
+description: |
+  Unix-style manual page system for ISAAC commands.
+
+  Displays comprehensive documentation including:
+  - Command synopsis and description
+  - Available options and arguments
+  - Usage examples
+  - Dependencies and requirements
+  - Related commands
+
+  Special pages:
+  - man isaac     - Main ISAAC manual
+  - man intro     - Introduction to ISAAC
+  - man tutorial  - Getting started guide
+
+triggers: ["/man"]
+aliases: ["/manual"]
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: command
+    type: string
+    required: false
+    help: "Command name or topic (defaults to isaac)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 256
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/man"
+  - "/man msg"
+  - "/man isaac"
+  - "/man config"

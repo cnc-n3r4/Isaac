@@ -1,0 +1,53 @@
+name: apropos
+version: 1.0.0
+status: stable
+summary: "Search command descriptions by keyword"
+description: |
+  Search the manual page names and descriptions for a keyword.
+
+  Searches through all ISAAC commands to find matches in:
+  - Command names
+  - Summaries and descriptions
+  - Triggers and aliases
+  - Tags and keywords
+
+  Useful for discovering commands when you know what you want
+  to do but don't know the command name.
+
+triggers: ["/apropos"]
+aliases: ["/search", "/find"]
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: keyword
+    type: string
+    required: true
+    help: "Keyword to search for"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 128
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/apropos message"
+  - "/apropos backup"
+  - "/apropos file"
+  - "/apropos ai"
