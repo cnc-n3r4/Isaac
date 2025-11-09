@@ -1,0 +1,52 @@
+triggers: ["/machine", "/machines"]
+aliases: ["/registry", "/nodes"]
+args:
+  - name: action
+    type: enum
+    enum: [register, unregister, list, show, status, group, groups, discover, find]
+    required: true
+    description: "Action to perform on machine registry"
+  - name: machine_id
+    type: string
+    required: false
+    description: "Machine ID for operations"
+  - name: hostname
+    type: string
+    required: false
+    description: "Hostname for machine registration"
+  - name: ip_address
+    type: string
+    required: false
+    description: "IP address for machine registration"
+  - name: port
+    type: integer
+    required: false
+    description: "Port for machine registration (default: 8080)"
+  - name: tags
+    type: string
+    required: false
+    description: "Comma-separated tags for machine"
+  - name: group_name
+    type: string
+    required: false
+    description: "Group name for group operations"
+  - name: group_members
+    type: string
+    required: false
+    description: "Comma-separated machine IDs for group creation"
+  - name: filter_tags
+    type: string
+    required: false
+    description: "Comma-separated tags to filter machines"
+  - name: min_cpu
+    type: integer
+    required: false
+    description: "Minimum CPU cores required"
+  - name: min_memory
+    type: float
+    required: false
+    description: "Minimum memory GB required"
+security:
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 100

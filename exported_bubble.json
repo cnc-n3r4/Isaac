@@ -1,0 +1,133 @@
+{
+  "bubble": {
+    "bubble_id": "a2caf08d",
+    "timestamp": 1762699611.1008425,
+    "name": "Enhanced Test",
+    "description": "Testing all state components",
+    "cwd": "C:\\Projects\\Isaac2",
+    "git_branch": "main",
+    "git_status": {
+      "is_git_repo": true,
+      "modified_files": [],
+      "untracked_files": [
+        "isaac/bubbles/",
+        "isaac/commands/bubble/",
+        "isaac/commands/help_unified/",
+        "isaac/core/aliases.py",
+        "isaac/core/command_history.py",
+        "isaac/core/flag_parser.py",
+        "isaac/memory/",
+        "test_command_consolidation.py"
+      ],
+      "staged_files": []
+    },
+    "environment": {
+      "PATH": "C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\Program Files\\Zulu\\zulu-8-jre\\bin\\;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\java8path;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\IDM Computer Solutions\\UltraEdit;C:\\Program Files\\IDM Computer Solutions\\UltraCompare;C:\\Program Files (x86)\\QuickTime\\QTSystem\\;C:\\Program Files\\dotnet\\;c:\\Users\\ndemi\\AppData\\Local\\Programs\\Python\\Python313\\;c:\\Users\\ndemi\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\;C:\\ffmpeg\\bin;C:\\Program Files\\PuTTY\\;C:\\xampp\\php;C:\\Program Files\\IDM Computer Solutions\\UltraFTP;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Tailscale\\;C:\\Program Files\\Zulu\\zulu-8-jre\\bin\\;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\java8path;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\IDM Computer Solutions\\UltraEdit;C:\\Program Files\\IDM Computer Solutions\\UltraCompare;C:\\Program Files (x86)\\QuickTime\\QTSystem\\;C:\\Program Files\\dotnet\\;c:\\Users\\ndemi\\AppData\\Local\\Programs\\Python\\Python313\\;c:\\Users\\ndemi\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\;C:\\ffmpeg\\bin;C:\\Program Files\\PuTTY\\;C:\\xampp\\php;C:\\Program Files\\IDM Computer Solutions\\UltraFTP;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\Sony\\Content Manager\\Tools;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Users\\ndemi\\AppData\\Roaming\\npm;C:\\Users\\ndemi\\AppData\\Local\\Programs\\Python\\Launcher\\;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64_win\\compiler;C:\\Program Files (x86)\\Common Files\\Orac;C:\\Scripts;C:\\Users\\ndemi\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\ndemi\\.local\\bin;C:\\Users\\ndemi\\AppData\\Roaming\\Python\\Python314\\Scripts;c:\\Program Files\\totalcmd\\;C:\\Windows\\System32\\OpenSSH;c:\\Users\\ndemi\\.vscode\\extensions\\ms-python.debugpy-2025.14.1-win32-x64\\bundled\\scripts\\noConfigScripts;c:\\Users\\ndemi\\AppData\\Roaming\\Code\\User\\globalStorage\\github.copilot-chat\\debugCommand"
+    },
+    "running_processes": [
+      {
+        "pid": 45284,
+        "name": "powershell.exe",
+        "cmdline": [
+          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "-noexit",
+          "-command",
+          "try { . \"c:\\Users\\ndemi\\AppData\\Local\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\" } catch {}"
+        ],
+        "cwd": "C:\\Projects\\Isaac2"
+      },
+      {
+        "pid": 58816,
+        "name": "powershell.exe",
+        "cmdline": [
+          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "-noexit",
+          "-command",
+          "try { . \"c:\\Users\\ndemi\\AppData\\Local\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\" } catch {}"
+        ],
+        "cwd": "C:\\Projects\\Isaac2"
+      },
+      {
+        "pid": 62004,
+        "name": "powershell.exe",
+        "cmdline": [
+          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "-noexit",
+          "-command",
+          "try { . \"c:\\Users\\ndemi\\AppData\\Local\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\" } catch {}"
+        ],
+        "cwd": "C:\\Projects\\Isaac2"
+      },
+      {
+        "pid": 79492,
+        "name": "python.exe",
+        "cmdline": [
+          "C:\\Python314\\python.exe",
+          "-c",
+          "from isaac.bubbles import BubbleManager; m = BubbleManager(); bubble = m.create_bubble('Enhanced Test', 'Testing all state components'); print('Created bubble with', len(bubble.recent_commands), 'recent commands,', len(bubble.background_jobs), 'background jobs')"
+        ],
+        "cwd": "C:\\Projects\\Isaac2"
+      },
+      {
+        "pid": 79496,
+        "name": "powershell.exe",
+        "cmdline": [
+          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "-noexit",
+          "-command",
+          "try { . \"c:\\Users\\ndemi\\AppData\\Local\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\" } catch {}"
+        ],
+        "cwd": "C:\\Projects\\Isaac2"
+      },
+      {
+        "pid": 83628,
+        "name": "powershell.exe",
+        "cmdline": [
+          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "-noexit",
+          "-command",
+          "try { . \"c:\\Users\\ndemi\\AppData\\Local\\Programs\\Microsoft VS Code\\resources\\app\\out\\vs\\workbench\\contrib\\terminal\\common\\scripts\\shellIntegration.ps1\" } catch {}"
+        ],
+        "cwd": "C:\\Projects\\Isaac2"
+      }
+    ],
+    "open_files": [
+      "isaac\\bubbles\\manager.py",
+      "isaac\\commands\\bubble\\run.py",
+      "isaac\\commands\\bubble\\command.yaml",
+      "isaac\\bubbles\\__init__.py",
+      "proposal.md",
+      "isaac\\core\\flag_parser.py",
+      "test_command_consolidation.py",
+      "isaac\\core\\command_history.py",
+      "isaac\\core\\aliases.py",
+      "isaac\\commands\\help_unified\\run.py"
+    ],
+    "recent_commands": [
+      "python -c \"from isaac.bubbles import BubbleManager; m = BubbleManager(); bubble = m.create_bubble('Test Bubble', 'Testing workspace capture'); print(f'Created bubble: {bubble.name} ({bubble.bubble_id})'); print(f'Git branch: {bubble.git_branch}'); print(f'Processes: {len(bubble.running_processes)}')\"",
+      "python isaac/commands/bubble/run.py list",
+      "python isaac/commands/bubble/run.py create --name \"Development Session\" --description \"Current dev environment\" --tags \"dev,python,git\"",
+      "python isaac/commands/bubble/run.py show --bubble-id b02cf494",
+      "python -c \"import sys; print('Args:', sys.argv)\" isaac/commands/bubble/run.py show --bubble-id b02cf494",
+      "python isaac/commands/bubble/run.py show --bubble-id b02cf494",
+      "python isaac/commands/bubble/run.py list",
+      "python isaac/commands/bubble/run.py restore --bubble-id b02cf494",
+      "python -c \"from isaac.bubbles import BubbleManager; m = BubbleManager(); bubble = m.create_bubble('Enhanced Test', 'Testing all state components'); print(f'Created bubble with {len(bubble.recent_commands)} recent commands, {len(bubble.background_jobs)} background jobs'); print(f'System info: CPU {bubble.system_info.get(\\\"cpu_percent\\\", \\\"N/A\\\")}%, Memory {bubble.system_info.get(\\\"memory_percent\\\", \\\"N/A\\\")}%')\"",
+      "python -c \"from isaac.bubbles import BubbleManager; m = BubbleManager(); bubble = m.create_bubble('Enhanced Test', 'Testing all state components'); print('Created bubble with', len(bubble.recent_commands), 'recent commands,', len(bubble.background_jobs), 'background jobs')\""
+    ],
+    "background_jobs": [],
+    "system_info": {
+      "cpu_percent": 8.8,
+      "memory_percent": 90.9,
+      "memory_used_gb": 14.17,
+      "memory_total_gb": 15.59,
+      "disk_percent": 52.5,
+      "disk_free_gb": 444.13,
+      "network_connections": 512
+    },
+    "version": "1.0",
+    "tags": []
+  },
+  "exported_at": 1762699708.7529416,
+  "version": "1.0"
+}

@@ -1,0 +1,36 @@
+triggers: ["/bubble"]
+aliases: ["/bubbles", "/workspace"]
+args:
+  - name: action
+    type: enum
+    enum: [create, list, show, restore, delete, export, import, suspend, resume, version, versions]
+    required: true
+    description: "Action to perform on workspace bubbles"
+  - name: name
+    type: string
+    required: false
+    description: "Name for new bubble (create only)"
+  - name: description
+    type: string
+    required: false
+    description: "Description for new bubble (create only)"
+  - name: bubble_id
+    type: string
+    required: false
+    description: "Bubble ID for show/restore/delete/suspend/resume/version/versions actions"
+  - name: tags
+    type: string
+    required: false
+    description: "Comma-separated tags for bubble (create only)"
+  - name: file
+    type: string
+    required: false
+    description: "File path for export/import actions"
+  - name: suspend_processes
+    type: boolean
+    required: false
+    description: "Whether to suspend running processes (suspend only)"
+security:
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 100

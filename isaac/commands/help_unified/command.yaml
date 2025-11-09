@@ -1,0 +1,59 @@
+name: help
+version: 2.0.0
+status: stable
+summary: "Unified help system - display commands, search, and detailed documentation"
+description: |
+  Comprehensive help system that combines command reference, search, and documentation.
+
+  MODES:
+  - No args: List all available commands
+  - /help <command>: Show detailed help for specific command
+  - /help --search <keyword>: Search commands by keyword (was /apropos)
+  - /help --whatis <command>: Show one-line description (was /whatis)
+  - /help --man <topic>: Show detailed manual page (was /man)
+
+  FLAGS:
+  - --search, -s: Search mode (equivalent to old /apropos)
+  - --whatis, -w: One-line description mode (equivalent to old /whatis)
+  - --man, -m: Manual page mode (equivalent to old /man)
+  - --all, -a: Show all commands including hidden ones
+  - --verbose, -v: Verbose output
+
+triggers: ["/help"]
+aliases: ["/h", "/man", "/apropos", "/whatis"]
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: command
+    type: string
+    required: false
+    help: "Command name for help, or keyword when using --search"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 256
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/help"
+  - "/help config"
+  - "/help --search message"
+  - "/help --whatis msg"
+  - "/help --man workspace"
