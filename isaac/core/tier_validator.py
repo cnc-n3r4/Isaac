@@ -110,6 +110,10 @@ class TierValidator:
         Returns:
             float: Tier level (1=instant, 2=safe, 2.5=confirm, 3=validate, 4=lockdown)
         """
+        # Handle empty or whitespace-only commands
+        if not command or not command.strip():
+            return 3
+
         # Extract base command (first word)
         base_cmd = command.strip().split()[0].lower()
 
