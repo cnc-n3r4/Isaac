@@ -4,7 +4,7 @@ Script Explainer
 Explains what bash scripts do in natural language.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from pathlib import Path
 import re
 

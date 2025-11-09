@@ -3,14 +3,11 @@ Multi-Language Support for Voice Systems
 Isaac's internationalization system for voice commands and responses
 """
 
-import os
 import json
 import time
-from typing import Dict, List, Any, Optional, Callable, Union
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from pathlib import Path
-import threading
-import re
 
 
 @dataclass
@@ -501,7 +498,6 @@ class MultiLanguageManager:
         """Load voice command patterns for language recognition."""
         # This would load more sophisticated pattern matching
         # For now, using simple keyword matching
-        pass
 
     def detect_language(self, text: str) -> Optional[str]:
         """Detect the language of input text."""

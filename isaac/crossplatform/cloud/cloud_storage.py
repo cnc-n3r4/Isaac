@@ -3,8 +3,7 @@ Cloud Storage - Manage workspace state in cloud storage
 """
 
 import json
-import hashlib
-from typing import Dict, Any, Optional, List, BinaryIO
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pathlib import Path
 import asyncio

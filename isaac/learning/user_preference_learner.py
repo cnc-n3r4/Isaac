@@ -5,12 +5,10 @@ Learns and adapts to individual user coding styles, preferences, and patterns.
 
 import json
 import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple, Set
+from datetime import datetime
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
-import statistics
-from collections import defaultdict, Counter
 
 from isaac.core.session_manager import SessionManager
 
@@ -180,7 +178,7 @@ class UserPreferenceLearner:
 
         # Analyze response preferences
         if user_feedback:
-            response_pref = self._analyze_response_preference(ai_response, user_feedback)
+            self._analyze_response_preference(ai_response, user_feedback)
             self.observe_coding_pattern('response_length', 'preferred_length',
                                       len(ai_response.split()), context)
 

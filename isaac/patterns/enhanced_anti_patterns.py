@@ -4,14 +4,9 @@ Phase 3.4.5: Sophisticated anti-pattern detection with detailed suggestions
 """
 
 import ast
-import re
-import json
-from typing import Dict, List, Any, Optional, Set, Tuple, Callable
-from dataclasses import dataclass, field, asdict
-from pathlib import Path
+from typing import Dict, List, Any, Optional, Callable
+from dataclasses import dataclass, field
 import time
-from collections import defaultdict, Counter
-import inspect
 
 
 @dataclass
@@ -826,7 +821,6 @@ class EnhancedAntiPatternDetector:
 
     def _check_imports_not_at_top(self, tree: ast.AST, content: str, lines: List[str]) -> Optional[Dict[str, Any]]:
         """Check for imports not at the top of the file."""
-        imports_found = False
         non_import_found = False
 
         for node in tree.body:
@@ -837,7 +831,6 @@ class EnhancedAntiPatternDetector:
                         'matched_code': lines[node.lineno - 1].strip(),
                         'description': 'Import statement found after non-import code'
                     }
-                imports_found = True
             elif not isinstance(node, (ast.Expr, ast.Constant)) and not (hasattr(ast, 'Str') and isinstance(node, ast.Str)):  # Skip docstrings and strings
                 non_import_found = True
 

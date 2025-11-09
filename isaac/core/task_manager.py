@@ -6,7 +6,6 @@ Manages background task execution with notification support.
 Tasks run asynchronously and notify via message queue on completion.
 """
 
-import os
 import sys
 import json
 import time

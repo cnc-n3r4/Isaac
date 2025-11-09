@@ -1,10 +1,7 @@
 """Plugin Security - Sandboxed plugin execution and security policies."""
 
-import sys
-import os
 import resource
 import signal
-import time
 from contextlib import contextmanager
 from typing import Any, Callable, Dict, List, Optional, Set
 from dataclasses import dataclass, field

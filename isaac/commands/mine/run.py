@@ -3,13 +3,10 @@ Mine Handler - Personal file history and collection search for Isaac
 Provides /mine commands for searching personal collections using xAI
 """
 
-import os
-import glob
 import json
 import sys
 from pathlib import Path
-from typing import List, Optional, Dict, Any
-from datetime import datetime
+from typing import List, Dict, Any
 
 try:
     from xai_sdk import Client

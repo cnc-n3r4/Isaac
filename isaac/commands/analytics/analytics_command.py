@@ -5,7 +5,6 @@ Comprehensive analytics interface for Isaac.
 """
 
 import os
-from typing import Optional
 from datetime import datetime, timedelta
 
 from isaac.analytics.analytics_manager import AnalyticsManager

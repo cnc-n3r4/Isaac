@@ -2,10 +2,8 @@
 Web Server - HTTP server for web interface
 """
 
-from flask import Flask, render_template_string, send_from_directory
+from flask import Flask, render_template_string
 from flask_cors import CORS
-import os
-from pathlib import Path
 
 
 class WebServer:

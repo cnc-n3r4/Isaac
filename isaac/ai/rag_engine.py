@@ -6,7 +6,7 @@ Combines semantic search from xAI Collections with AI chat for context-aware res
 """
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -117,7 +117,7 @@ class RAGQueryEngine:
 
             content = result.get('content', '')
             metadata = result.get('metadata', {})
-            score = result.get('score', 0)
+            result.get('score', 0)
 
             # Build context block
             block_parts = []

@@ -5,7 +5,7 @@ Cross-platform file tools using pathlib with intelligent features
 
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any
 from .base import BaseTool
 
 

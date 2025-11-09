@@ -3,12 +3,10 @@ Root Cause Analysis - Find deep issues beyond surface symptoms
 Isaac's advanced debugging system for thorough problem diagnosis
 """
 
-import re
 import time
-from typing import Dict, List, Any, Optional, Tuple, Set
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass
 from enum import Enum
-import json
 
 
 class AnalysisDepth(Enum):

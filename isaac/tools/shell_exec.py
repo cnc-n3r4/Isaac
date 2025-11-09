@@ -3,9 +3,7 @@ Shell Execution Tool - Safe command execution for Isaac Agent
 Integrates with tier validation and shell adapters for controlled command execution
 """
 
-import re
-from typing import Dict, Any, Optional
-from pathlib import Path
+from typing import Dict, Any
 from .base import BaseTool
 
 

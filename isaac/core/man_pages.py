@@ -7,7 +7,6 @@ Generates Unix-style manual pages from command metadata
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import yaml
-import re
 
 
 class ManPageGenerator:

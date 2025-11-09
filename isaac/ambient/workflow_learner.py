@@ -6,10 +6,9 @@ Isaac's ambient intelligence system for learning user workflows
 import json
 import time
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional
 from collections import defaultdict, Counter
 from dataclasses import dataclass, asdict
-import re
 
 
 @dataclass

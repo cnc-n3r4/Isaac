@@ -27,7 +27,6 @@ class BaseShellAdapter(ABC):
         Returns:
             str: Shell name (e.g., "PowerShell", "bash")
         """
-        pass
     
     @abstractmethod
     def execute(self, command: str) -> CommandResult:
@@ -40,7 +39,6 @@ class BaseShellAdapter(ABC):
         Returns:
             CommandResult with success status, output, and exit code
         """
-        pass
     
     @abstractmethod
     def detect_available(self) -> bool:
@@ -50,4 +48,3 @@ class BaseShellAdapter(ABC):
         Returns:
             bool: True if shell can be used, False otherwise
         """
-        pass

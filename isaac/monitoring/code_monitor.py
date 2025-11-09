@@ -7,12 +7,9 @@ Checks for linting errors, test failures, and other code quality issues
 that might require developer attention.
 """
 
-import os
 import subprocess
 import logging
 from pathlib import Path
-from datetime import datetime
-from typing import Dict, Any, List
 
 from isaac.monitoring.base_monitor import BaseMonitor
 from isaac.core.message_queue import MessageType, MessagePriority

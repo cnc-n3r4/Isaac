@@ -6,14 +6,10 @@ Isaac's smart debugging assistant for comprehensive error analysis
 import os
 import re
 import time
-import subprocess
 import platform
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Set
-from dataclasses import dataclass, asdict
-import json
+from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass
 import psutil
-import threading
 
 
 @dataclass
@@ -145,7 +141,7 @@ class AutoInvestigator:
         # Follow-up actions
         follow_up_actions = self._get_follow_up_actions(error_category)
 
-        investigation_time = time.time() - start_time
+        time.time() - start_time
 
         result = InvestigationResult(
             investigation_id=investigation_id,

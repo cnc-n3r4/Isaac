@@ -15,9 +15,8 @@ Settings stored in ~/.isaac/ai_routing_config.json
 """
 
 import re
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 from enum import Enum
-from pathlib import Path
 
 
 class TaskComplexity(Enum):

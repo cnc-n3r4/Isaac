@@ -7,7 +7,6 @@ Updated to use the official xai-sdk instead of direct HTTP requests.
 
 import os
 import requests
-import json
 from typing import Dict, List, Optional
 
 try:
@@ -67,7 +66,7 @@ class XaiCollectionsClient:
         if self.use_sdk:
             try:
                 # Try to list collections to test connection
-                collections = self.client.collections.list()
+                self.client.collections.list()
                 return True
             except Exception as e:
                 # Check if it's an auth error (API exists) vs 404 (API doesn't exist)

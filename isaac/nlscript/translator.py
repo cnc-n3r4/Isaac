@@ -4,8 +4,7 @@ English to Bash Translator
 Converts natural language descriptions to bash commands and scripts.
 """
 
-from typing import Dict, Any, List, Optional
-from pathlib import Path
+from typing import Dict, Any, Optional
 import re
 
 

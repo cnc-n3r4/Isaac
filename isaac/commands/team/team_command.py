@@ -1,6 +1,6 @@
 """Team collaboration command implementation."""
 
-from typing import List, Optional
+from typing import List
 from isaac.core.flag_parser import FlagParser
 from isaac.team import (
     TeamManager,
@@ -494,7 +494,7 @@ Share the Team ID with others to invite them to join!
         if len(parsed.positional) < 2:
             return "Usage: /team import-workspace <team_id> <resource_id> [--name NAME]"
 
-        team_id = parsed.positional[0]
+        parsed.positional[0]
         resource_id = parsed.positional[1]
         name = parsed.flags.get('name')
 

@@ -7,10 +7,8 @@ Predict future resource needs based on historical patterns.
 import time
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime
 import statistics
-import json
-import os
 
 
 @dataclass

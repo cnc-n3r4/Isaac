@@ -3,7 +3,6 @@ Mobile Authentication - Authentication for mobile devices
 """
 
 import secrets
-import hashlib
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 

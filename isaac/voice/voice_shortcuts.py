@@ -3,14 +3,11 @@ Voice Shortcuts - Voice-activated command shortcuts
 Isaac's system for quick voice commands and macros
 """
 
-import os
 import json
 import time
-import threading
-from typing import Dict, List, Any, Optional, Callable, Union
-from dataclasses import dataclass, field
+from typing import Dict, List, Any, Optional, Callable
+from dataclasses import dataclass
 from pathlib import Path
-import re
 try:
     import fuzzywuzzy
     from fuzzywuzzy import fuzz

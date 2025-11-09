@@ -11,8 +11,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Callable
 from enum import Enum
 
-from isaac.arvr.spatial_api import Vector3D, Quaternion, Transform3D, SpatialWorkspace
-from isaac.arvr.gesture_api import Gesture, GestureType, HandType
+from isaac.arvr.spatial_api import Vector3D, Transform3D, SpatialWorkspace
 from isaac.arvr.multimodal_input import MultimodalInput
 
 
@@ -107,32 +106,26 @@ class PlatformInterface(ABC):
     @abstractmethod
     def initialize(self) -> bool:
         """Initialize the platform connection"""
-        pass
 
     @abstractmethod
     def shutdown(self) -> None:
         """Shutdown the platform connection"""
-        pass
 
     @abstractmethod
     def update(self) -> DeviceState:
         """Update and return current device state"""
-        pass
 
     @abstractmethod
     def render_workspace(self, workspace: SpatialWorkspace) -> None:
         """Render workspace to the device"""
-        pass
 
     @abstractmethod
     def process_input(self) -> List[MultimodalInput]:
         """Process and return input events"""
-        pass
 
     @abstractmethod
     def enable_passthrough(self, enabled: bool) -> bool:
         """Enable/disable AR passthrough (if supported)"""
-        pass
 
     def get_capabilities(self) -> PlatformCapabilities:
         """Get platform capabilities"""

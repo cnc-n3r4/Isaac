@@ -80,7 +80,7 @@ def main():
                 if isinstance(blob, dict) and 'kind' in blob:
                     # This is piped input in blob format
                     input_content = blob.get('content', '')
-                    input_kind = blob.get('kind', 'text')
+                    blob.get('kind', 'text')
                     
                     # Get the original command which contains the user's question
                     command = blob.get('meta', {}).get('command', '/ask')
@@ -335,7 +335,7 @@ RESPONSE STYLE:
                     preprompt += "\n"
                 
                 preprompt += "You can reference these previous exchanges when relevant.\n"
-    except Exception as e:
+    except Exception:
         # Don't fail if history unavailable, just skip it
         pass
     

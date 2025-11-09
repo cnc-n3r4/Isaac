@@ -6,7 +6,7 @@ Enables cross-file refactoring, batch operations, and project-wide analysis.
 """
 
 import logging
-from typing import List, Dict, Optional, Any, Callable
+from typing import List, Dict, Any
 from pathlib import Path
 import re
 
@@ -293,7 +293,6 @@ Provide specific suggestions for each file including:
 
 if __name__ == '__main__':
     # Test multi-file operations
-    import sys
     logging.basicConfig(level=logging.INFO)
 
     project_root = Path.cwd()

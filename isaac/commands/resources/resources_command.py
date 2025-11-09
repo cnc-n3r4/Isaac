@@ -4,8 +4,7 @@ Resources Command
 Comprehensive resource monitoring, optimization, and management.
 """
 
-from typing import Dict, Any, Optional
-import json
+from typing import Dict, Any
 
 from isaac.resources.monitor import ResourceMonitor
 from isaac.resources.optimizer import OptimizationEngine

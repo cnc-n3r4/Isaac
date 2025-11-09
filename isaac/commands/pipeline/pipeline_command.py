@@ -4,15 +4,14 @@ Isaac's pipeline management interface
 """
 
 import argparse
-import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from datetime import datetime
 
 from isaac.pipelines.manager import PipelineManager
 from isaac.pipelines.runner import PipelineRunner
 from isaac.pipelines.pattern_learner import PatternLearner
-from isaac.pipelines.models import Pipeline, PipelineStep, StepType
+from isaac.pipelines.models import Pipeline
 
 
 class PipelineCommand:

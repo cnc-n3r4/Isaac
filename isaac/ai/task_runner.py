@@ -3,8 +3,7 @@ Task Runner - Execute multi-step tasks with failure recovery
 Handles task execution, progress tracking, and failure recovery options
 """
 
-from typing import Dict, List
-from isaac.adapters.base_adapter import CommandResult
+from typing import Dict
 
 
 def execute_task(task_plan: Dict, mode: str = "autonomous", approved: bool = False, shell_adapter = None, session_mgr = None) -> Dict:

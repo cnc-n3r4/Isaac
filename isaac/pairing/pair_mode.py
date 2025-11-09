@@ -7,7 +7,7 @@ import json
 import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from pathlib import Path
 from enum import Enum
 import uuid

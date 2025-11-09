@@ -3,7 +3,6 @@ Claude AI Client (Anthropic)
 Fallback AI provider - powerful for complex tasks
 """
 
-import json
 import requests
 from typing import Dict, Any, List, Optional
 from .base import BaseAIClient, AIResponse, ToolCall

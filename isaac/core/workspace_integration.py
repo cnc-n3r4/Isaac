@@ -7,7 +7,7 @@ Provides a single entry point for managing workspace-scoped AI contexts.
 
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -271,7 +271,7 @@ class WorkspaceContext:
         if async_mode:
             return self._current_knowledge_base.index_project_async()
         else:
-            result = self._current_knowledge_base.index_project_sync()
+            self._current_knowledge_base.index_project_sync()
             return None
 
     def switch_workspace(self, path: Path) -> Dict[str, Any]:

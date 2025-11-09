@@ -7,7 +7,6 @@ Provides interface for viewing and managing AI assistant notifications.
 /msg command with support for filtering by type and acknowledging messages.
 """
 
-import sys
 import shlex
 from typing import List, Dict, Any
 from isaac.core.message_queue import MessageQueue, MessageType

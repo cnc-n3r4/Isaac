@@ -5,7 +5,7 @@ Privacy-focused: Stored in separate file, marked as PRIVATE
 
 import json
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict
 from pathlib import Path
 
 

@@ -3,7 +3,6 @@ Flag Parser Utility - Centralized flag parsing for ISAAC commands
 Standardizes flag handling across all commands.
 """
 
-import re
 from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass
 
@@ -162,7 +161,6 @@ class FlagParser:
         """Validate parsed flags against command specification"""
         # This could be extended to validate against the command.yaml spec
         # For now, just basic validation
-        pass
 
     def format_help_flags(self, command_spec: Dict[str, Any]) -> str:
         """Format flag help from command specification"""

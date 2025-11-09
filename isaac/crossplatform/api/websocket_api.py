@@ -4,7 +4,7 @@ WebSocket API - Real-time bidirectional communication
 
 import asyncio
 import json
-from typing import Dict, Any, Set, Optional, Callable
+from typing import Dict, Any, Set, Callable
 import uuid
 from datetime import datetime
 
@@ -132,7 +132,7 @@ class WebSocketAPI:
     async def _handle_execute(self, connection_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle command execution request"""
         command = data.get('command')
-        workspace_id = data.get('workspace_id')
+        data.get('workspace_id')
 
         if not command:
             return {'type': 'error', 'message': 'Command required'}
@@ -161,7 +161,7 @@ class WebSocketAPI:
 
     async def _handle_get_context(self, connection_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle context retrieval"""
-        workspace_id = data.get('workspace_id')
+        data.get('workspace_id')
 
         # TODO: Get workspace context
         return {

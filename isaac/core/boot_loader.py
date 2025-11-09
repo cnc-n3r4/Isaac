@@ -5,13 +5,11 @@ Discovers, validates, and loads command plugins with visual feedback
 """
 
 import os
-import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 import yaml
 import importlib.util
 from enum import Enum
-import time
 
 
 class PluginStatus(Enum):

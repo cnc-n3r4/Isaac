@@ -7,12 +7,12 @@ gestures, and multimodal interactions in a standard terminal.
 
 import os
 import math
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Tuple
 from dataclasses import dataclass
 
 from isaac.arvr.spatial_api import Vector3D, SpatialObject, SpatialWorkspace
 from isaac.arvr.spatial_layouts import Layout, LayoutNode
-from isaac.arvr.gesture_api import Gesture, GestureType
+from isaac.arvr.gesture_api import Gesture
 from isaac.arvr.multimodal_input import MultimodalInput
 
 
@@ -29,7 +29,7 @@ class Camera:
         # Transform to camera space
         dx = point.x - self.position.x
         dy = point.y - self.position.y
-        dz = point.z - self.position.z
+        point.z - self.position.z
 
         # Project to screen
         scale = 20.0  # Adjust for terminal size
@@ -301,7 +301,7 @@ class PrototypeRenderer:
 
         # Visualize workspace (simplified)
         y = self.height // 2
-        cx = self.width // 2
+        self.width // 2
 
         for obj in list(workspace.objects.values())[:5]:  # Show up to 5 objects
             world_pos = obj.get_world_position(workspace)

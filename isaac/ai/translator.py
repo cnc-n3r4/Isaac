@@ -5,7 +5,6 @@ Uses AIRouter for multi-provider translation with fallback
 
 from typing import Dict
 from isaac.ai import AIRouter
-import json
 
 
 def translate_query(query: str, shell_name: str, session_mgr) -> Dict:

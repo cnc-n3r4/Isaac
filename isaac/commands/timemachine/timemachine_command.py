@@ -6,8 +6,7 @@ Usage: /timemachine <action> [args...]
 import argparse
 import time
 from datetime import datetime
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from isaac.timemachine.time_machine import TimeMachine
 from isaac.timemachine.timeline_browser import TimelineBrowser
 from isaac.bubbles.manager import BubbleManager

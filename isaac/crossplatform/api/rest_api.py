@@ -4,9 +4,7 @@ RESTful API - HTTP endpoints for all Isaac operations
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from typing import Dict, Any, Optional, Callable
-import asyncio
-from functools import wraps
+from typing import Callable
 
 
 class RestAPI:
@@ -42,7 +40,7 @@ class RestAPI:
         @self.app.route('/api/v1/workspaces', methods=['POST'])
         def create_workspace():
             """Create a new workspace"""
-            data = request.json
+            request.json
             # TODO: Implement workspace creation
             return jsonify({'workspace_id': 'new-workspace-id'}), 201
 
@@ -87,7 +85,7 @@ class RestAPI:
         def restore_bubble(bubble_id):
             """Restore a bubble"""
             data = request.json
-            target_path = data.get('target_path')
+            data.get('target_path')
 
             # TODO: Implement bubble restoration
             return jsonify({'success': True})
@@ -98,7 +96,7 @@ class RestAPI:
             """Execute a command"""
             data = request.json
             command = data.get('command')
-            workspace_id = data.get('workspace_id')
+            data.get('workspace_id')
 
             if not command:
                 return jsonify({'error': 'Command required'}), 400
@@ -122,7 +120,7 @@ class RestAPI:
         @self.app.route('/api/v1/workspaces/<workspace_id>/files', methods=['GET'])
         def list_files(workspace_id):
             """List files in workspace"""
-            path = request.args.get('path', '')
+            request.args.get('path', '')
             # TODO: Implement file listing
             return jsonify({'files': []})
 
@@ -154,14 +152,14 @@ class RestAPI:
         @self.app.route('/api/v1/context', methods=['POST'])
         def add_context():
             """Add context to workspace"""
-            data = request.json
+            request.json
             # TODO: Implement context addition
             return jsonify({'success': True})
 
         @self.app.route('/api/v1/context', methods=['GET'])
         def get_context():
             """Get current context"""
-            workspace_id = request.args.get('workspace_id')
+            request.args.get('workspace_id')
             # TODO: Implement context retrieval
             return jsonify({'context': {}})
 
@@ -171,7 +169,7 @@ class RestAPI:
             """Send a query to AI"""
             data = request.json
             query = data.get('query')
-            workspace_id = data.get('workspace_id')
+            data.get('workspace_id')
 
             if not query:
                 return jsonify({'error': 'Query required'}), 400
@@ -186,7 +184,7 @@ class RestAPI:
         @self.app.route('/api/v1/memory', methods=['GET'])
         def get_memory():
             """Get conversation memory"""
-            workspace_id = request.args.get('workspace_id')
+            request.args.get('workspace_id')
             limit = request.args.get('limit', 10, type=int)
 
             # TODO: Implement memory retrieval
@@ -196,7 +194,7 @@ class RestAPI:
         def search_memory():
             """Search conversation memory"""
             data = request.json
-            query = data.get('query')
+            data.get('query')
 
             # TODO: Implement memory search
             return jsonify({'results': []})
@@ -205,7 +203,7 @@ class RestAPI:
         @self.app.route('/api/v1/analytics/metrics', methods=['GET'])
         def get_metrics():
             """Get analytics metrics"""
-            workspace_id = request.args.get('workspace_id')
+            request.args.get('workspace_id')
             # TODO: Implement metrics retrieval
             return jsonify({'metrics': {}})
 
@@ -219,7 +217,7 @@ class RestAPI:
         @self.app.route('/api/v1/plugins/<plugin_id>/execute', methods=['POST'])
         def execute_plugin(plugin_id):
             """Execute a plugin"""
-            data = request.json
+            request.json
             # TODO: Implement plugin execution
             return jsonify({'success': True})
 
@@ -233,7 +231,7 @@ class RestAPI:
         @self.app.route('/api/v1/config', methods=['PUT'])
         def update_config():
             """Update configuration"""
-            data = request.json
+            request.json
             # TODO: Implement config update
             return jsonify({'success': True})
 

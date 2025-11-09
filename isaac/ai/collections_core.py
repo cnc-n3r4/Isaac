@@ -508,7 +508,7 @@ class FileWatcher:
                     try:
                         for file_path in files_to_update:
                             # Chunk file
-                            chunks = self.knowledge_base.chunker.chunk_file(file_path)
+                            self.knowledge_base.chunker.chunk_file(file_path)
 
                             # Update hash
                             file_key = str(file_path.relative_to(self.knowledge_base.project_root))

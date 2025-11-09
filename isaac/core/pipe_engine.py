@@ -7,7 +7,7 @@ via pipe operator. Don't reinvent Unix/PowerShell - leverage existing tools.
 
 import json
 import sys
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from pathlib import Path
 
 # Add isaac package to path for imports
@@ -94,8 +94,6 @@ class PipeEngine:
     def _execute_isaac_command(self, cmd: str, stdin_blob: Optional[dict] = None) -> dict:
         """Execute Isaac plugin with blob I/O."""
         import subprocess
-        import tempfile
-        import os
 
         # Find the command script
         cmd_name = cmd.strip('/').split()[0]

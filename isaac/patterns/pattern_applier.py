@@ -5,12 +5,10 @@ Phase 3.4.2: Suggest and apply learned patterns intelligently
 
 import re
 import ast
-import difflib
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from pathlib import Path
-import time
-from .pattern_learner import CodePattern, PatternMatch
+from .pattern_learner import CodePattern
 
 
 @dataclass
@@ -171,8 +169,8 @@ class PatternApplier:
         # Analyze function characteristics
         arg_count = len(node.args.args)
         has_docstring = self._has_docstring(node)
-        has_type_hints = self._has_type_hints(node)
-        complexity = self._calculate_complexity(node)
+        self._has_type_hints(node)
+        self._calculate_complexity(node)
 
         # Check if pattern characteristics match
         pattern_vars = pattern.variables
@@ -216,7 +214,6 @@ class PatternApplier:
         has_init = any(isinstance(n, ast.FunctionDef) and n.name == '__init__' for n in node.body)
         has_docstring = self._has_docstring(node)
 
-        confidence = 0.0
 
         if not has_docstring:
             suggested_code = self._add_docstring_to_class(node_source)

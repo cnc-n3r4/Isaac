@@ -10,12 +10,10 @@ from typing import Dict, Any, Optional
 from prompt_toolkit import Application
 from prompt_toolkit.layout import Layout, HSplit, VSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.widgets import TextArea, Checkbox, Button, Frame
+from prompt_toolkit.widgets import TextArea, Checkbox, Button
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import WindowAlign
 from prompt_toolkit.application import get_app
 from prompt_toolkit.styles import Style
-import asyncio
 
 
 class ConfigConsole:

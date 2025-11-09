@@ -3,7 +3,6 @@ Pair Command - Interface for collaborative pair programming
 Provides access to AI pair mode, task division, code review, and metrics
 """
 
-import argparse
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
@@ -17,10 +16,7 @@ from isaac.pairing import (
     PairingLearner,
     PairMetrics,
     PairRole,
-    PairStyle,
-    TaskPriority,
-    TaskAssignee,
-    ReviewSeverity
+    PairStyle
 )
 
 

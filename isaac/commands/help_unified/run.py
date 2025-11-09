@@ -3,8 +3,6 @@
 Unified Help Command - Combines /help, /man, /apropos, /whatis functionality
 """
 
-import os
-import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import yaml

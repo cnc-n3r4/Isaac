@@ -6,10 +6,9 @@ Phase 3.4.6: Generate comprehensive documentation for learned patterns
 import json
 import time
 import markdown
-from typing import Dict, List, Any, Optional, Set, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-import re
 from datetime import datetime
 import uuid
 

@@ -4,12 +4,10 @@ Stores file change events in SQLite for background processing.
 This is a scaffold for Phase 0 auto-sync implementation.
 """
 import sqlite3
-from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional
 import threading
 import time
 from dataclasses import dataclass
-from datetime import datetime
 
 
 @dataclass

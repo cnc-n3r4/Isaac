@@ -318,7 +318,6 @@ class BubbleCommand:
 def main():
     """Main entry point"""
     import sys
-    import json
 
     # Parse command line arguments
     if len(sys.argv) < 2:

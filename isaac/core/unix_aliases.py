@@ -4,7 +4,6 @@ Translate Unix commands to PowerShell equivalents for cross-platform convenience
 """
 
 import json
-import re
 from pathlib import Path
 from typing import Optional, Dict, List
 

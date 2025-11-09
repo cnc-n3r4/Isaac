@@ -416,7 +416,6 @@ def get_workspace_manager() -> WorkspaceSessionManager:
 
 if __name__ == '__main__':
     # Test the workspace manager
-    import sys
     logging.basicConfig(level=logging.DEBUG)
 
     manager = WorkspaceSessionManager()

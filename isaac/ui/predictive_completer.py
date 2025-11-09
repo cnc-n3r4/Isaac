@@ -4,13 +4,11 @@ Learns from user behavior and provides context-aware command suggestions
 """
 
 import json
-import os
-import re
 from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Set
-from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
+from datetime import datetime
 
 
 @dataclass

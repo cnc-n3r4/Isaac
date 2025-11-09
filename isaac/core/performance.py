@@ -11,7 +11,6 @@ import functools
 from typing import Dict, Optional, Any, Callable
 from datetime import datetime, timedelta
 from pathlib import Path
-import json
 import hashlib
 
 logger = logging.getLogger(__name__)
@@ -335,7 +334,6 @@ def get_perf_monitor() -> PerformanceMonitor:
 
 if __name__ == '__main__':
     # Test performance utilities
-    import sys
     logging.basicConfig(level=logging.DEBUG)
 
     print("=== Performance Utilities Test ===\n")

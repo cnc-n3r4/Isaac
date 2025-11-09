@@ -4,7 +4,6 @@ Shows War Games reference, ASCII art, and loading sequence
 """
 
 import time
-import os
 from isaac.ui.terminal_control import TerminalControl
 
 

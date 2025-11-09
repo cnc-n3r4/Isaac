@@ -5,7 +5,7 @@ Enables natural language translation, validation, correction, and task planning
 
 import requests
 import json
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 
 class XaiClient:

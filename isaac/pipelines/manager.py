@@ -7,7 +7,6 @@ import json
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from dataclasses import asdict
 
 from isaac.pipelines.models import Pipeline
 

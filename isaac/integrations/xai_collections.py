@@ -38,7 +38,7 @@ class FileHistoryCollectionManager:
             return 0
         
         # Convert operations to searchable text documents
-        documents = [self._operation_to_document(op) for op in operations]
+        [self._operation_to_document(op) for op in operations]
         
         try:
             # Store locally for now - xAI vector collections may require

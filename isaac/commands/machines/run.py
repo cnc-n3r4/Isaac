@@ -6,7 +6,7 @@ Machines Command Handler - Machine orchestration status and management
 import sys
 import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -17,7 +17,7 @@ def main():
     # Read payload from stdin
     payload = json.loads(sys.stdin.read())
     args = payload.get("args", {})
-    session = payload.get("session", {})
+    payload.get("session", {})
 
     action = args.get("action", "status")
     target = args.get("target")

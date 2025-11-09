@@ -4,13 +4,9 @@ Isaac's intelligent test generation system for comprehensive bug prevention
 """
 
 import re
-import os
-import ast
-import inspect
-from typing import Dict, List, Any, Optional, Tuple, Set
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
 from pathlib import Path
-import tempfile
 import subprocess
 
 

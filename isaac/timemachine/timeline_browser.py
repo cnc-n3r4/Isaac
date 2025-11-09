@@ -5,7 +5,7 @@ Isaac's time machine interface
 
 import time
 from datetime import datetime
-from typing import List, Dict, Optional, Any
+from typing import List, Optional
 from isaac.timemachine.time_machine import TimeMachine, TimelineEntry
 
 

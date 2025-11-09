@@ -335,7 +335,6 @@ class AITranslator:
         """
         # Placeholder for learning system
         # In Phase 3, this would update AI model weights
-        pass
 
     def set_context(self, session_history: List[str], current_directory: str):
         """
@@ -347,7 +346,6 @@ class AITranslator:
         """
         # Placeholder for context management
         # In Phase 3, this would improve translation accuracy
-        pass
 
 
 def create_translator() -> AITranslator:

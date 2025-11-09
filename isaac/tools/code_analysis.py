@@ -5,7 +5,7 @@ Code Analysis Tools - Understand code structure and dependencies
 import ast
 import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Set
+from typing import Dict, Any, List
 from .base import BaseTool
 
 

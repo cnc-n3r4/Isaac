@@ -8,11 +8,9 @@ import time
 import threading
 import queue
 import json
-from typing import Dict, List, Any, Optional, Callable, Union
+from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, asdict
 from pathlib import Path
-import tempfile
-import subprocess
 
 
 @dataclass
@@ -153,7 +151,6 @@ class GoogleSTTEngine(SpeechToTextEngine):
 
         try:
             from google.cloud import speech
-            import google.auth
             self.speech_client = speech.SpeechClient()
         except ImportError:
             raise ImportError("google-cloud-speech package not installed")
@@ -206,9 +203,7 @@ class VoskSTTEngine(SpeechToTextEngine):
         self.model_path = self.config.get('model_path')
 
         try:
-            from vosk import Model, KaldiRecognizer
-            import wave
-            import json
+            from vosk import Model
 
             if not self.model_path or not os.path.exists(self.model_path):
                 raise ValueError(f"Vosk model not found at: {self.model_path}")

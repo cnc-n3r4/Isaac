@@ -4,7 +4,7 @@ Provides beautiful terminal output with colors, formatting, and visual feedback
 """
 
 import re
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 from enum import Enum
 
 

@@ -4,13 +4,11 @@ Isaac's pipeline runner with parallel execution and error handling
 """
 
 import time
-import threading
 import subprocess
-from concurrent.futures import ThreadPoolExecutor, Future
-from typing import Dict, Any, Optional, List, Callable
+from typing import Dict, Any, Optional
 from pathlib import Path
 
-from isaac.pipelines.models import Pipeline, PipelineStep, PipelineExecution, PipelineStatus, StepType
+from isaac.pipelines.models import PipelineStep, StepType
 
 
 class StepExecutor:

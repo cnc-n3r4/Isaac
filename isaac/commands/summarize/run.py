@@ -3,10 +3,8 @@ Summarize Handler - AI text summarization of piped data
 Provides /summarize command for AI-powered summarization of blob content
 """
 
-import os
 import json
 import sys
-from typing import Optional
 
 try:
     from isaac.ai.xai_client import XaiClient

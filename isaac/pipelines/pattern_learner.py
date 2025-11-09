@@ -5,12 +5,10 @@ Isaac's intelligent workflow pattern recognition
 
 import re
 import time
-from collections import defaultdict, Counter
+from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple, Set
-from datetime import datetime, timedelta
+from typing import List, Dict, Any
 
-from isaac.pipelines.models import Pipeline, PipelineStep, StepType
 
 
 @dataclass

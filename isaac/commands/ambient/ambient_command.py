@@ -3,10 +3,8 @@ Ambient Command - Isaac's ambient intelligence interface
 Provides access to proactive suggestions and learning features
 """
 
-import argparse
 import time
-from typing import Dict, List, Any, Optional
-from pathlib import Path
+from typing import Dict, List, Any
 
 from isaac.ambient.workflow_learner import WorkflowLearner
 from isaac.ambient.proactive_suggester import ProactiveSuggester
@@ -288,7 +286,7 @@ The ambient system learns from your behavior and provides proactive assistance."
     def _show_stats(self, args: List[str]) -> Dict[str, Any]:
         """Show learning statistics."""
         try:
-            learner_stats = self.workflow_learner.get_pattern_suggestions()
+            self.workflow_learner.get_pattern_suggestions()
             suggester_stats = self.proactive_suggester.get_learning_stats()
 
             output = "📊 Ambient Intelligence Statistics\n\n"

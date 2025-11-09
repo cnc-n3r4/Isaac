@@ -5,7 +5,7 @@ Provides tab completion, history navigation, and keyboard shortcuts
 
 import sys
 import os
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 from isaac.core.tier_validator import TierValidator
 
 

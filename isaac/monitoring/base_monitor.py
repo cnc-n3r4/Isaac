@@ -85,7 +85,6 @@ class BaseMonitor(ABC):
         This method should be implemented by subclasses to perform
         the specific monitoring logic and generate messages as needed.
         """
-        pass
 
     def _send_message(self, message_type: MessageType, title: str,
                      content: str = "", priority: MessagePriority = MessagePriority.NORMAL,
