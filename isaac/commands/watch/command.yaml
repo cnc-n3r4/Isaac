@@ -1,0 +1,44 @@
+# isaac/commands/watch/command.yaml
+name: watch
+version: 1.0.0
+status: experimental
+summary: "Watch files and queue changes for background sync"
+description: |
+  Demonstrates Phase 0 file watching with change queue.
+  Watches specified files and enqueues changes for background processing.
+
+triggers: ["/watch"]
+aliases: []
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: paths
+    type: string
+    required: false
+    help: "Comma-separated file paths to watch (default: current directory files)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/watch                    # Watch files in current directory"
+  - "/watch --paths file1.txt,file2.py  # Watch specific files"
