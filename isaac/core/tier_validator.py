@@ -5,18 +5,18 @@ SAFETY-CRITICAL: Prevents dangerous commands from executing without warnings
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict, List
 
 
 class TierValidator:
     """Classifies shell commands into safety tiers (1-4)."""
 
-    def __init__(self, preferences):
+    def __init__(self, preferences: Any) -> None:
         """Initialize with user preferences."""
         self.preferences = preferences
         self.tier_defaults = self._load_tier_defaults()
 
-    def _load_tier_defaults(self) -> Dict[str, list]:
+    def _load_tier_defaults(self) -> Dict[str, List[str]]:
         """Load default tier classifications from JSON file."""
         try:
             data_dir = Path(__file__).parent.parent / "data"
