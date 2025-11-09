@@ -1,0 +1,23 @@
+name: pipeline
+version: 1.0.0
+summary: Intelligent pipeline builder and workflow automation
+description: Create, manage, and execute automated workflows with pattern learning and suggestions
+triggers:
+  - "/pipeline"
+  - "/pipelines"
+aliases:
+  - "/workflows"
+args:
+  - name: action
+    type: enum
+    enum: [list, create, run, status, delete, edit, analyze, suggest, templates, export, import]
+    required: true
+    description: "Pipeline action to perform"
+  - name: args
+    type: string
+    required: false
+    variadic: true
+security:
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 100
