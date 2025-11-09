@@ -1,0 +1,30 @@
+{
+  "name": "team",
+  "description": "Manage team collaboration and shared resources",
+  "version": "1.0.0",
+  "author": "Isaac Team",
+  "entry_point": "team_command.TeamCommand",
+  "category": "collaboration",
+  "examples": [
+    "/team create MyTeam 'A collaborative development team'",
+    "/team list",
+    "/team invite <team_id> user@example.com --role write",
+    "/team share-workspace <team_id> <bubble_id>",
+    "/team collections list <team_id>",
+    "/team patterns list <team_id>",
+    "/team pipelines list <team_id>",
+    "/team memory search <team_id> 'authentication'",
+    "/team permissions grant <resource_id> <user_id> read"
+  ],
+  "keywords": [
+    "team",
+    "collaboration",
+    "sharing",
+    "workspace",
+    "collection",
+    "pattern",
+    "pipeline",
+    "memory",
+    "permission"
+  ]
+}
