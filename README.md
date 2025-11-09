@@ -20,6 +20,8 @@ Isaac transforms your command-line experience by combining multi-tier safety val
 - 📁 **Workspace Management** - Isolated environments for each project
 - 🔍 **Advanced File Operations** - Claude Code-style file manipulation
 - 🧠 **Knowledge Management** - xAI Collections for context-aware AI (RAG)
+- 📈 **Self-Improving AI** - Learns from mistakes and adapts to your preferences
+- 🎯 **Personalized Assistance** - Gets better at helping you specifically
 
 ---
 
@@ -125,6 +127,30 @@ Grok (Primary) → Claude (Fallback) → OpenAI (Backup)
 ```
 
 **Result:** Optimized costs with automatic failover
+
+### Self-Improving AI System
+
+Isaac learns from every interaction to become more helpful:
+
+**Mistake Learning**
+- Tracks command corrections and failures
+- Learns from patterns to prevent future mistakes
+- Builds personalized correction database
+
+**Behavior Adaptation**
+- Analyzes user feedback and preferences
+- Automatically adjusts response style and suggestions
+- Adapts to your coding patterns and conventions
+
+**Learning Metrics Dashboard**
+- Real-time performance monitoring
+- Health scores and improvement trends
+- Actionable insights for system optimization
+
+**Personalized Experience**
+- Learns your preferred coding style
+- Adapts suggestions based on past interactions
+- Gets better at understanding your needs
 
 ---
 

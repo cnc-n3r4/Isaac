@@ -5,6 +5,8 @@ Components for continuous learning and improvement.
 
 from .mistake_learner import MistakeLearner, MistakeRecord, LearningPattern
 from .behavior_adjustment import BehaviorAdjustmentEngine, UserFeedback, BehaviorAdjustment, BehaviorProfile
+from .learning_metrics import LearningMetricsDashboard, LearningMetrics, LearningInsight
+from .user_preference_learner import UserPreferenceLearner, UserPreferences, CodingPattern
 
 __all__ = [
     'MistakeLearner',
@@ -13,5 +15,11 @@ __all__ = [
     'BehaviorAdjustmentEngine',
     'UserFeedback',
     'BehaviorAdjustment',
-    'BehaviorProfile'
+    'BehaviorProfile',
+    'LearningMetricsDashboard',
+    'LearningMetrics',
+    'LearningInsight',
+    'UserPreferenceLearner',
+    'UserPreferences',
+    'CodingPattern'
 ]
