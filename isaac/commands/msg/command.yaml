@@ -1,9 +1,16 @@
 name: msg
-version: 1.0.0
+version: 2.0.0
 summary: "View and manage AI assistant message notifications"
 description: |
-  Display pending notifications from autonomous AI assistant monitoring.
+  Comprehensive message queue management for ISAAC notifications.
   Messages are categorized by type: system operations (!) and code operations (¢).
+
+  Features:
+  - View pending messages
+  - Read full message content
+  - Acknowledge/delete messages
+  - Clear message queue
+  - Filter by type (system/code) or status
 
 triggers: ["/msg"]
 aliases: ["/messages"]
@@ -12,17 +19,30 @@ args:
   - name: filter
     type: string
     required: false
-    enum: ["--sys", "--code", "--all"]
-    help: "Filter messages by type (default: all)"
+    enum: ["--sys", "--code", "--all", "-s", "-c", "-a"]
+    help: "Filter messages by type"
+  - name: read
+    type: string
+    required: false
+    help: "Read full message content by ID (--read ID)"
   - name: ack
     type: string
     required: false
-    help: "Acknowledge specific message by ID"
+    help: "Acknowledge specific message by ID (--ack ID)"
   - name: ack_all
     type: string
     required: false
     enum: ["--sys", "--code"]
-    help: "Acknowledge all messages or by type"
+    help: "Acknowledge all messages (--ack-all [--sys|--code])"
+  - name: delete
+    type: string
+    required: false
+    help: "Delete specific message by ID (--delete ID)"
+  - name: clear
+    type: string
+    required: false
+    enum: ["--sys", "--code", "--ack"]
+    help: "Clear multiple messages (--clear [--sys|--code|--ack])"
 
 stdin: false
 stdout:
@@ -44,8 +64,14 @@ telemetry:
   log_output: false
 
 examples:
-  - "/msg"
-  - "/msg --sys"
-  - "/msg --code"
-  - "/msg --ack 123"
-  - "/msg --ack-all --sys"
+  - "/msg                    # View all pending messages"
+  - "/msg --sys              # View system messages only"
+  - "/msg --code             # View code messages only"
+  - "/msg --read 123         # Read full message 123"
+  - "/msg --ack 123          # Acknowledge message 123"
+  - "/msg --ack-all          # Acknowledge all pending messages"
+  - "/msg --ack-all --sys    # Acknowledge all system messages"
+  - "/msg --delete 123       # Delete message 123"
+  - "/msg --clear            # Clear all messages"
+  - "/msg --clear --sys      # Clear all system messages"
+  - "/msg --clear --ack      # Clear acknowledged messages"

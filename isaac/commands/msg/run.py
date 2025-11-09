@@ -65,6 +65,10 @@ def main():
     ack_id = None
     ack_all = False
     ack_type = None
+    read_id = None
+    delete_id = None
+    clear_all = False
+    clear_type = None
 
     i = 0
     while i < len(args):
@@ -87,19 +91,88 @@ def main():
             if i + 1 < len(args) and args[i + 1] in ['--sys', '--code']:
                 ack_type = MessageType.SYSTEM if args[i + 1] == '--sys' else MessageType.CODE
                 i += 1
+        elif arg == '--read' and i + 1 < len(args):
+            try:
+                read_id = int(args[i + 1])
+                i += 1
+            except ValueError:
+                print("Error: --read requires a valid message ID", file=sys.stderr)
+                sys.exit(1)
+        elif arg == '--delete' and i + 1 < len(args):
+            try:
+                delete_id = int(args[i + 1])
+                i += 1
+            except ValueError:
+                print("Error: --delete requires a valid message ID", file=sys.stderr)
+                sys.exit(1)
+        elif arg == '--clear':
+            clear_all = True
+            if i + 1 < len(args) and args[i + 1] in ['--sys', '--code', '--ack']:
+                if args[i + 1] == '--sys':
+                    clear_type = ('type', MessageType.SYSTEM)
+                elif args[i + 1] == '--code':
+                    clear_type = ('type', MessageType.CODE)
+                elif args[i + 1] == '--ack':
+                    clear_type = ('status', 'acknowledged')
+                i += 1
         else:
             print(f"Unknown argument: {arg}", file=sys.stderr)
-            print("Usage: /msg [--sys|--code|--all] [--ack ID|--ack-all]", file=sys.stderr)
+            print("Usage: /msg [OPTIONS]", file=sys.stderr)
+            print("  --sys, -s              Show system messages", file=sys.stderr)
+            print("  --code, -c             Show code messages", file=sys.stderr)
+            print("  --all, -a              Show all messages", file=sys.stderr)
+            print("  --read ID              Read full message", file=sys.stderr)
+            print("  --ack ID               Acknowledge message", file=sys.stderr)
+            print("  --ack-all [--sys|--code]  Acknowledge all messages", file=sys.stderr)
+            print("  --delete ID            Delete message", file=sys.stderr)
+            print("  --clear [--sys|--code|--ack]  Clear messages", file=sys.stderr)
             sys.exit(1)
         i += 1
 
-    # Handle acknowledgments first
+    # Handle operations in priority order
+
+    # 1. Read individual message
+    if read_id is not None:
+        message = message_queue.get_message_by_id(read_id)
+        if message:
+            _display_full_message(message)
+        else:
+            print(f"✗ Message {read_id} not found")
+            sys.exit(1)
+        return
+
+    # 2. Delete individual message
+    if delete_id is not None:
+        if message_queue.delete_message(delete_id):
+            print(f"✓ Message {delete_id} deleted")
+        else:
+            print(f"✗ Message {delete_id} not found")
+            sys.exit(1)
+        return
+
+    # 3. Clear messages
+    if clear_all:
+        if clear_type:
+            filter_type, filter_value = clear_type
+            if filter_type == 'type':
+                count = message_queue.clear_messages(message_type=filter_value)
+                print(f"✓ Cleared {count} {filter_value.value} message(s)")
+            elif filter_type == 'status':
+                count = message_queue.clear_messages(status=filter_value)
+                print(f"✓ Cleared {count} {filter_value} message(s)")
+        else:
+            count = message_queue.clear_messages()
+            print(f"✓ Cleared {count} message(s)")
+        return
+
+    # 4. Acknowledge messages
     if ack_id is not None:
         if message_queue.acknowledge_message(ack_id):
             print(f"✓ Message {ack_id} acknowledged")
         else:
             print(f"✗ Message {ack_id} not found or already acknowledged")
             sys.exit(1)
+        return
 
     if ack_all:
         count = message_queue.acknowledge_all(ack_type)
@@ -108,8 +181,9 @@ def main():
             print(f"✓ Acknowledged {count} {type_name} message(s)")
         else:
             print(f"✓ Acknowledged {count} message(s)")
+        return
 
-    # Determine what to show
+    # 5. Display messages (default behavior)
     if show_all or (not show_system and not show_code):
         # Show all messages (default behavior)
         messages = message_queue.get_messages(status='pending')
@@ -127,6 +201,36 @@ def main():
                 message_type=MessageType.CODE, status='pending'
             )
             _display_messages(code_msgs, "Code Messages")
+
+
+def _display_full_message(message):
+    """Display a single message in full detail."""
+    print("=" * 70)
+    print(f"Message ID: {message['id']}")
+    print(f"Type: {message['message_type']}")
+    print(f"Priority: {message['priority']}")
+    print(f"Status: {message['status']}")
+    print(f"Created: {message['created_at']}")
+    if message['acknowledged_at']:
+        print(f"Acknowledged: {message['acknowledged_at']}")
+    print("=" * 70)
+    print(f"\nTitle: {message['title']}")
+    print()
+
+    if message['content']:
+        print("Content:")
+        print("-" * 70)
+        print(message['content'])
+        print("-" * 70)
+        print()
+
+    if message['metadata']:
+        print("Metadata:")
+        print("-" * 70)
+        for key, value in message['metadata'].items():
+            print(f"  {key}: {value}")
+        print("-" * 70)
+        print()
 
 
 def _display_messages(messages, title):

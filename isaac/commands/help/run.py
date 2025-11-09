@@ -65,6 +65,13 @@ AI Interaction:
   /a <question>      - Short alias for /ask
   isaac <query>      - AI query or command translation
 
+Messaging & Notifications:
+  /msg               - View pending notifications
+  /msg --read ID     - Read full message
+  /msg --ack ID      - Acknowledge message
+  /msg --delete ID   - Delete message
+  /msg --clear       - Clear all messages
+
 File Operations:
   /read <file>       - Read file contents
   /write <file>      - Write/create file
@@ -533,6 +540,63 @@ EXAMPLES:
 
 QUEUE FEATURES:
   Batch execution, offline queuing, progress tracking
+""".strip(),
+
+        "/msg": """
+Message Command - Notification Management
+
+USAGE:
+  /msg                            - View all pending messages
+  /msg --sys                      - View system messages only
+  /msg --code                     - View code messages only
+  /msg --read ID                  - Read full message content
+  /msg --ack ID                   - Acknowledge message
+  /msg --ack-all [--sys|--code]   - Acknowledge all (or filtered) messages
+  /msg --delete ID                - Delete specific message
+  /msg --clear [--sys|--code|--ack] - Clear messages
+
+DESCRIPTION:
+  Manage notifications from ISAAC's autonomous AI monitoring.
+  Messages are categorized by type:
+    ! - System operations (updates, monitoring, alerts)
+    ¢ - Code operations (linting, testing, debugging)
+
+  The prompt indicator shows pending counts: [!2¢1]> means
+  2 system messages and 1 code message pending.
+
+VIEWING MESSAGES:
+  /msg                    - List all pending messages (summary)
+  /msg --sys              - Filter to system messages only
+  /msg --code             - Filter to code messages only
+  /msg --all              - Show all messages (same as /msg)
+  /msg --read 123         - Read full content of message 123
+
+MANAGING MESSAGES:
+  /msg --ack 123          - Mark message 123 as acknowledged
+  /msg --ack-all          - Acknowledge all pending messages
+  /msg --ack-all --sys    - Acknowledge all system messages
+  /msg --delete 123       - Permanently delete message 123
+  /msg --clear            - Delete all messages
+  /msg --clear --sys      - Delete all system messages
+  /msg --clear --code     - Delete all code messages
+  /msg --clear --ack      - Delete acknowledged messages
+
+EXAMPLES:
+  /msg                    - View pending messages
+  /msg --read 42          - Read full details of message 42
+  /msg --ack 42           - Mark message as read
+  /msg --ack-all --code   - Acknowledge all code messages
+  /msg --delete 42        - Delete message 42
+  /msg --clear --ack      - Clean up old acknowledged messages
+
+MESSAGE PRIORITY:
+  [URGENT]  - Requires immediate attention
+  [HIGH]    - Important, review soon
+  [NORMAL]  - Standard notification
+  [LOW]     - Informational only
+
+ALIASES:
+  /messages              - Same as /msg
 """.strip(),
     }
 

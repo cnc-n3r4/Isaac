@@ -300,6 +300,110 @@ class MessageQueue:
         finally:
             conn.close()
 
+    def get_message_by_id(self, message_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get a single message by its ID.
+
+        Args:
+            message_id: ID of message to retrieve
+
+        Returns:
+            Message dict or None if not found
+        """
+        conn = sqlite3.connect(str(self.db_path))
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, created_at, message_type, priority, title, content,
+                       metadata, acknowledged_at, status
+                FROM messages
+                WHERE id = ?
+            """, (message_id,))
+
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            # Parse metadata if present
+            metadata = json.loads(row[6]) if row[6] else {}
+
+            return {
+                'id': row[0],
+                'created_at': row[1],
+                'message_type': row[2],
+                'priority': row[3],
+                'title': row[4],
+                'content': row[5],
+                'metadata': metadata,
+                'acknowledged_at': row[7],
+                'status': row[8]
+            }
+        finally:
+            conn.close()
+
+    def delete_message(self, message_id: int) -> bool:
+        """
+        Delete a specific message by ID.
+
+        Args:
+            message_id: ID of message to delete
+
+        Returns:
+            True if message was deleted, False if not found
+        """
+        conn = sqlite3.connect(str(self.db_path))
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM messages WHERE id = ?", (message_id,))
+            success = cursor.rowcount > 0
+            conn.commit()
+
+            if success:
+                logger.info(f"Deleted message {message_id}")
+
+            return success
+        finally:
+            conn.close()
+
+    def clear_messages(self, message_type: Optional[MessageType] = None,
+                      status: Optional[str] = None) -> int:
+        """
+        Clear (delete) multiple messages by type and/or status.
+
+        Args:
+            message_type: Type of messages to clear (None for all types)
+            status: Status of messages to clear (None for all statuses)
+
+        Returns:
+            Number of messages deleted
+        """
+        conn = sqlite3.connect(str(self.db_path))
+        try:
+            cursor = conn.cursor()
+
+            # Build query based on filters
+            query = "DELETE FROM messages WHERE 1=1"
+            params = []
+
+            if message_type:
+                query += " AND message_type = ?"
+                params.append(message_type.value)
+
+            if status:
+                query += " AND status = ?"
+                params.append(status)
+
+            cursor.execute(query, params)
+            count = cursor.rowcount
+            conn.commit()
+
+            if count > 0:
+                logger.info(f"Cleared {count} messages")
+
+            return count
+        finally:
+            conn.close()
+
     def get_prompt_indicator(self) -> str:
         """
         Generate prompt indicator string showing pending message counts.
