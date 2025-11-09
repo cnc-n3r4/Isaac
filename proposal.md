@@ -64,14 +64,14 @@ Isaac evolves from a terminal assistant to a truly intelligent development envir
 - [x] **Shareable Links** - Generate public URLs for collaboration (implemented: token-based sharing with expiration)
 - [x] **Image History Browser** - `/images --history` with previews (implemented: `/images` command with history/search/info)
 - [x] **OCR Integration** - Extract text from images automatically (implemented: pytesseract-based OCR with graceful fallback)
-- [ ] **Storage Quotas** - Manage and display storage usage
+- [x] **Storage Quotas** - Manage and display storage usage (implemented: quota enforcement, warnings, and usage tracking)
 
 ### 1.2 Smart Drag-Drop System
-- [ ] **Multi-File Detection** - Recognize file types and quantities
-- [ ] **Interactive Decisions** - Ask user what to do with dropped files
-- [ ] **Smart Routing** - Route to appropriate handler (analyze/upload/store)
-- [ ] **Progress Indicators** - Show upload/processing progress
-- [ ] **Batch Operations** - Handle 100+ files gracefully
+- [x] **Multi-File Detection** - Recognize file types and quantities (implemented: `isaac/dragdrop/multi_file_detector.py`)
+- [x] **Interactive Decisions** - Ask user what to do with dropped files (implemented: `isaac/dragdrop/interactive_decision.py`)
+- [x] **Smart Routing** - Route to appropriate handler (analyze/upload/store) (implemented: `isaac/dragdrop/smart_router.py`)
+- [x] **Progress Indicators** - Show upload/processing progress (implemented: `isaac/dragdrop/progress.py`)
+- [x] **Batch Operations** - Handle 100+ files gracefully (implemented: `isaac/dragdrop/batch_processor.py`)
 - [ ] **Undo Support** - Reverse drag-drop actions
 
 ### 1.3 Persistent AI Memory
