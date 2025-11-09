@@ -1,0 +1,56 @@
+name: machines
+version: 1.0.0
+status: stable
+summary: "Machine orchestration status and management"
+
+triggers: ["/machines", "/cluster"]
+aliases: ["/orch", "/orchestration"]
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: action
+    type: enum
+    enum: ["status", "list", "groups", "load", "register", "unregister"]
+    required: false
+    default: "status"
+    help: "Action to perform"
+
+  - name: target
+    type: string
+    required: false
+    help: "Target machine ID, hostname, or group name"
+
+  - name: verbose
+    type: bool
+    required: false
+    default: false
+    help: "Show detailed information"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/machines"
+  - "/machines --action list"
+  - "/machines --action groups"
+  - "/machines --action load"
+  - "/cluster status"

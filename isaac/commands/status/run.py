@@ -135,11 +135,43 @@ def get_detailed_status(session):
     except Exception as e:
         lines.append(f"  ⚠ Error: {str(e)}")
 
-    # AI Provider status
-    lines.append(f"\n🧠 AI Provider")
-    lines.append(f"  Provider: xAI")
-    lines.append(f"  Model: grok-3")
-    lines.append(f"  Features: Chat, Collections, Sessions")
+    # Machine orchestration status
+    lines.append(f"\n🖥️  Machine Orchestration")
+    try:
+        from isaac.orchestration import MachineRegistry, LoadBalancer
+        
+        registry = MachineRegistry()
+        load_balancer = LoadBalancer(registry)
+        
+        machines = registry.list_machines(filter_online=True)
+        total_machines = len(machines)
+        groups = registry.list_groups()
+        
+        lines.append(f"  Registered machines: {total_machines}")
+        lines.append(f"  Machine groups: {len(groups)}")
+        
+        if total_machines > 0:
+            # Show machine status summary
+            online_count = sum(1 for m in machines if m.status.is_online)
+            lines.append(f"  Online machines: {online_count}/{total_machines}")
+            
+            # Show top 3 machines by load
+            if len(machines) > 0:
+                scores = load_balancer.get_load_scores(machines)
+                lines.append(f"  Load distribution:")
+                for i, score in enumerate(scores[:3]):
+                    machine = score.machine
+                    load_pct = machine.status.current_load
+                    mem_pct = machine.status.memory_usage
+                    lines.append(f"    {machine.hostname}: {load_pct:.1f}% CPU, {mem_pct:.1f}% MEM")
+        
+        # Show recent load balancing activity
+        if hasattr(load_balancer, 'performance_history') and load_balancer.performance_history:
+            total_executions = sum(len(times) for times in load_balancer.performance_history.values())
+            lines.append(f"  Total executions tracked: {total_executions}")
+            
+    except Exception as e:
+        lines.append(f"  ⚠ Error: {str(e)}")
 
     # Network info
     lines.append(f"\n🌐 Network")

@@ -260,6 +260,14 @@ class MachineRegistry:
 
         return scored[0][0] if scored else None
 
+    def get_group_machines(self, group_name: str) -> List[Machine]:
+        """Get all machines in a group"""
+        if group_name not in self.groups:
+            return []
+
+        machine_ids = self.groups[group_name]
+        return [self.machines[mid] for mid in machine_ids if mid in self.machines]
+
     def discover_machines(self, network_range: str = "192.168.1.0/24") -> List[Machine]:
         """Discover Isaac instances on the network (placeholder)"""
         # This would implement network discovery
