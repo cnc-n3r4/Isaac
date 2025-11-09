@@ -1,25 +1,37 @@
 """
-Help Handler - Display command reference and usage examples.
+Help Handler - Unified help system (consolidates /man, /apropos, /whatis)
 
 Handles:
 - Brief command overview
+- Detailed command help (man pages)
+- Keyword search (apropos)
+- One-line summaries (whatis)
 - Category-specific help
 - Usage examples
-- Scannable format (≤30 lines for overview)
 """
 
 from typing import List
 from isaac.core.cli_command_router import CommandResult
 
+# Try to import man_pages generator for advanced help
+try:
+    from isaac.core.man_pages import get_generator
+    MAN_PAGES_AVAILABLE = True
+except ImportError:
+    MAN_PAGES_AVAILABLE = False
+    get_generator = None
+
 
 class HelpHandler:
     """
-    Handle help command execution.
+    Handle help command execution with man/apropos/whatis functionality.
 
     Expected format:
-        help              - Show overview
-        help backup       - Show backup-specific help
-        help restore      - Show restore-specific help
+        help                  - Show overview
+        help <command>        - Show detailed help for command (man)
+        help --search <word>  - Search commands by keyword (apropos)
+        help --whatis <cmd>   - Show one-line summary (whatis)
+        help <category>       - Show category-specific help
     """
 
     def __init__(self, session_manager):
@@ -30,79 +42,109 @@ class HelpHandler:
             session_manager: SessionManager (not used, kept for consistency)
         """
         self.session = session_manager
+        self.man_generator = get_generator() if MAN_PAGES_AVAILABLE else None
 
     def execute(self, args: List[str]) -> CommandResult:
         """
-        Execute help command.
+        Execute help command with man/apropos/whatis support.
 
         Args:
-            args: Command arguments (category name or empty)
+            args: Command arguments
 
         Returns:
             CommandResult with formatted help text
         """
-        # Determine help category
-        category = args[0].lower() if args else "overview"
-
-        if category == "overview":
+        # Handle special flags
+        if args and args[0] == '--search' and len(args) > 1:
+            # Apropos mode: search by keyword
+            return self._search_commands(args[1])
+        elif args and args[0] == '--whatis' and len(args) > 1:
+            # Whatis mode: one-line summary
+            return self._show_whatis(args[1])
+        elif not args or args[0] == "overview":
+            # Overview mode
             return self._show_overview()
-        elif category == "backup":
-            return self._show_backup_help()
-        elif category == "restore":
-            return self._show_restore_help()
-        elif category == "list":
-            return self._show_list_help()
+        elif args[0] in ["backup", "restore", "list"]:
+            # Legacy category help
+            return self._show_category_help(args[0])
         else:
-            return CommandResult(
-                success=False,
-                message=f"Unknown help category: {category}",
-                status_symbol='✗',
-                suggestion="Try: isaac help [backup|restore|list]"
-            )
+            # Man page mode: detailed command help
+            return self._show_man_page(args[0])
 
     def _show_overview(self) -> CommandResult:
         """
-        Show brief command overview.
+        Show brief command overview with consolidated commands.
 
         Returns:
-            CommandResult with overview text (≤30 lines)
+            CommandResult with overview text
         """
         help_text = """
-Isaac Command Reference
+Isaac Command Reference - Phase 9 (Consolidated Commands)
 
+════════════════════════════════════════════════════════════
+6 CORE COMMANDS (Unified Interface):
+════════════════════════════════════════════════════════════
+
+  /help [command]         Unified help (man/apropos/whatis)
+    /help --search <word>   Search commands by keyword
+    /help --whatis <cmd>    One-line command summary
+    /help backup            Detailed help for command
+
+  /file <operation>       All file operations
+    /file read <path>       Read files
+    /file write <path>      Write/create files
+    /file edit <path>       Edit with string replacement
+    /file append <path>     Append to files
+    /file <path>            Smart mode (auto-detect)
+
+  /search <query>         Universal search
+    /search "*.py"          Find Python files (glob)
+    /search "TODO"          Search for TODO (grep)
+    /search "TODO" in "*.py" Search TODO in Python files
+
+  /task <operation>       Background task management
+    /task list              List all tasks
+    /task show <id>         Show task details
+    /task cancel <id>       Cancel running task
+
+  /status [mode]          System status dashboard
+    /status                 Quick status
+    /status -v              Detailed status
+    /status --session       Session info
+
+  /config <setting>       Configuration
+    /config ai              AI provider settings
+    /config show            Show all settings
+
+════════════════════════════════════════════════════════════
 SHELL COMMANDS (Just work - no prefix needed):
-  cd, ls, dir, pwd, cat, echo
-  cp, mv, rm, mkdir, rmdir
-  grep, find, chmod, chown
+════════════════════════════════════════════════════════════
+  cd, ls, dir, pwd, cat, echo, cp, mv, rm, mkdir, grep, find
 
-  Example: isaac cd /home/user
-
-ISAAC INTERNAL COMMANDS:
-  --help, -h         Show this help
-  --version, -v      Show version info
-  --show-log         Display command history
-  list history       Show command history with status
-  list backups       Show available backups
-
-BACKUP & RESTORE:
+════════════════════════════════════════════════════════════
+BACKUP & RESTORE (Legacy):
+════════════════════════════════════════════════════════════
   backup <source> to <dest>
-    Example: isaac backup my-folder to /mnt/external
-
   restore <n> from <source>
-    Example: isaac restore my-folder from /mnt/external
+  list backups
 
-INTERACTIVE MODE:
-  isaac              Enter interactive REPL
-    isaac> backup documents
-    isaac> list history
-    isaac> exit
+════════════════════════════════════════════════════════════
+NATURAL LANGUAGE (Primary Interface):
+════════════════════════════════════════════════════════════
+  isaac fix the authentication bug
+  isaac find all TODOs in Python files
+  isaac explain how the login system works
 
-DETAILED HELP:
-  isaac help backup   - Backup command details
-  isaac help restore  - Restore command details
-  isaac help list     - List command details
+════════════════════════════════════════════════════════════
+ADVANCED HELP:
+════════════════════════════════════════════════════════════
+  /help <command>         Detailed command help (man page)
+  /help --search <word>   Search by keyword (apropos)
+  /help --whatis <cmd>    One-line summary
+  /help backup            Legacy category help
 
-Visit: https://isaac-docs.example.com (placeholder)
+Note: Legacy commands (/read, /write, /grep, /glob, /man, /apropos,
+/whatis) still work but are deprecated in favor of unified commands.
         """.strip()
 
         return CommandResult(
@@ -291,3 +333,180 @@ Natural Language:
             status_symbol='✓',
             suggestion=None
         )
+
+    def _show_category_help(self, category: str) -> CommandResult:
+        """
+        Show legacy category-specific help.
+
+        Args:
+            category: Category name (backup, restore, list)
+
+        Returns:
+            CommandResult with category help
+        """
+        if category == "backup":
+            return self._show_backup_help()
+        elif category == "restore":
+            return self._show_restore_help()
+        elif category == "list":
+            return self._show_list_help()
+        else:
+            return CommandResult(
+                success=False,
+                message=f"Unknown category: {category}",
+                status_symbol='✗',
+                suggestion="Try: help [backup|restore|list]"
+            )
+
+    def _show_man_page(self, command: str) -> CommandResult:
+        """
+        Show detailed man page for a command (man functionality).
+
+        Args:
+            command: Command name (with or without /)
+
+        Returns:
+            CommandResult with man page
+        """
+        if not MAN_PAGES_AVAILABLE or not self.man_generator:
+            return CommandResult(
+                success=False,
+                message="Man pages not available. Using basic help.",
+                status_symbol='⚠',
+                suggestion="Install man page system for detailed help"
+            )
+
+        # Normalize command name
+        if not command.startswith('/'):
+            command = '/' + command
+
+        try:
+            man_page = self.man_generator.generate(command)
+            if man_page:
+                return CommandResult(
+                    success=True,
+                    message=man_page,
+                    status_symbol='✓',
+                    suggestion=None
+                )
+            else:
+                return CommandResult(
+                    success=False,
+                    message=f"No manual entry for {command}",
+                    status_symbol='✗',
+                    suggestion="Try: /help --search <keyword> to find commands"
+                )
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                message=f"Error retrieving man page: {e}",
+                status_symbol='✗',
+                suggestion="Use /help for basic help"
+            )
+
+    def _search_commands(self, keyword: str) -> CommandResult:
+        """
+        Search commands by keyword (apropos functionality).
+
+        Args:
+            keyword: Keyword to search for
+
+        Returns:
+            CommandResult with search results
+        """
+        if not MAN_PAGES_AVAILABLE or not self.man_generator:
+            return CommandResult(
+                success=False,
+                message="Command search not available.",
+                status_symbol='⚠',
+                suggestion="Use /help for basic command list"
+            )
+
+        try:
+            results = self.man_generator.search(keyword)
+
+            if not results:
+                return CommandResult(
+                    success=False,
+                    message=f"No commands found matching '{keyword}'",
+                    status_symbol='✗',
+                    suggestion="Try a different keyword or /help for overview"
+                )
+
+            # Format results
+            output = [f"Commands matching '{keyword}':", "=" * 70, ""]
+            for result in results:
+                trigger = result['trigger']
+                version = result.get('version', '1.0.0')
+                summary = result['summary']
+
+                # Truncate long summaries
+                if len(summary) > 50:
+                    summary = summary[:47] + "..."
+
+                output.append(f"{trigger:<20} ({version})  - {summary}")
+
+            output.append("")
+            output.append(f"Found {len(results)} match(es)")
+            output.append(f"Use '/help <command>' for detailed information")
+
+            return CommandResult(
+                success=True,
+                message="\n".join(output),
+                status_symbol='✓',
+                suggestion=None
+            )
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                message=f"Error searching commands: {e}",
+                status_symbol='✗',
+                suggestion="Use /help for basic help"
+            )
+
+    def _show_whatis(self, command: str) -> CommandResult:
+        """
+        Show one-line summary for command (whatis functionality).
+
+        Args:
+            command: Command name (with or without /)
+
+        Returns:
+            CommandResult with one-line summary
+        """
+        if not MAN_PAGES_AVAILABLE or not self.man_generator:
+            return CommandResult(
+                success=False,
+                message="Whatis not available.",
+                status_symbol='⚠',
+                suggestion="Use /help for basic command list"
+            )
+
+        # Normalize command name
+        if not command.startswith('/'):
+            command = '/' + command
+
+        try:
+            summary = self.man_generator.whatis(command)
+
+            if summary:
+                return CommandResult(
+                    success=True,
+                    message=summary,
+                    status_symbol='✓',
+                    suggestion=None
+                )
+            else:
+                return CommandResult(
+                    success=False,
+                    message=f"{command}: nothing appropriate",
+                    status_symbol='✗',
+                    suggestion="Use /help --search <keyword> to find commands"
+                )
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                message=f"Error: {e}",
+                status_symbol='✗',
+                suggestion="Use /help for basic help"
+            )

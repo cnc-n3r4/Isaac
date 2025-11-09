@@ -15,7 +15,7 @@ description: |
   to do but don't know the command name.
 
 triggers: ["/apropos"]
-aliases: ["/search", "/find"]
+aliases: ["/find"]
 
 dependencies:
   packages: []

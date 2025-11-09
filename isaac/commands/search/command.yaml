@@ -1,0 +1,74 @@
+name: search
+version: 1.0.0
+status: stable
+summary: Unified search - Find files or search content intelligently
+description: |
+  Smart search command that automatically detects whether to find files by pattern
+  (like /glob) or search file contents (like /grep).
+
+  Auto-detection:
+  - Patterns with wildcards (*, **, ?) → Find files
+  - Text patterns → Search content
+  - "pattern in files" syntax → Search content in specific files
+
+  Replaces /grep and /glob with a single, intuitive interface.
+
+triggers:
+  - /search
+
+aliases:
+  - /search
+  - /find
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: query
+    type: string
+    required: true
+    help: "Search query (supports 'pattern in files' syntax)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 10240
+  capabilities:
+    - filesystem_read
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/search '*.py' - Find Python files (glob mode)"
+  - "/search 'TODO' - Search for TODO in files (grep mode)"
+  - "/search 'TODO' in '*.py' - Search TODO in Python files"
+  - "/search 'error' -i - Case-insensitive content search"
+  - "/search --mode glob 'test' - Force glob mode"
+  - "/search 'function' -C 3 --output content - Show matches with context"
+
+tags:
+  - file-operations
+  - search
+  - grep
+  - glob
+  - find
+  - unified
+
+metadata:
+  category: "file-operations"
+  replaces: ["/grep", "/glob"]
+  phase: "9"
+  phase_name: "Command Consolidation"
