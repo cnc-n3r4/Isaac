@@ -11,12 +11,12 @@ from typing import Dict, List, Optional
 class XaiClient:
     """HTTP client for x.ai/Grok API integration."""
     
-    def __init__(self, api_key: str, model: str = "grok-3", 
+    def __init__(self, api_key: str, model: str = "grok-3",
                  api_url: Optional[str] = None, api_version: Optional[str] = None, timeout: Optional[int] = None,
-                 provider: Optional[str] = None):
+                 provider: Optional[str] = None, session_id: Optional[str] = None):
         """
         Initialize x.ai/Grok API client.
-        
+
         Args:
             api_key: x.ai API key
             model: Model to use (default: grok-3)
@@ -24,19 +24,39 @@ class XaiClient:
             api_version: API version header (not used for x.ai)
             timeout: Request timeout in seconds (default: 10)
             provider: API provider type ('xai', 'openai', 'custom') - auto-detected if not set
+            session_id: Optional session ID for persistent 24-hour context
         """
         self.api_key = api_key
         self.model = model
         self.api_url = api_url or "https://api.x.ai/v1/chat/completions"
         self.timeout = timeout or 10
         self.api_version = api_version or "2023-06-01"
-        
+        self.session_id = session_id  # NEW: Session persistence
+
         # Auto-detect provider if not specified
         if provider:
             self.provider = provider.lower()
         else:
             self.provider = 'xai'  # Default to x.ai
-    
+
+    def set_session_id(self, session_id: Optional[str]):
+        """
+        Update session ID for persistent context
+
+        Args:
+            session_id: New session ID (or None to disable persistence)
+        """
+        self.session_id = session_id
+
+    def get_session_id(self) -> Optional[str]:
+        """
+        Get current session ID
+
+        Returns:
+            Active session ID or None
+        """
+        return self.session_id
+
     def _call_api(self, prompt: str, max_tokens: int = 1024, temperature: float = 0) -> Dict:
         """
         Internal method to call x.ai/Grok API (supports x.ai and OpenAI-compatible APIs).
@@ -96,6 +116,10 @@ class XaiClient:
                 'temperature': temperature,
                 'messages': messages
             }
+
+            # Add session_id if provided (xAI native 24-hour persistence)
+            if self.session_id:
+                payload['session_id'] = self.session_id
             
             response = requests.post(
                 self.api_url,
