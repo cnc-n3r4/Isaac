@@ -1,0 +1,51 @@
+name: whatis
+version: 1.0.0
+status: stable
+summary: "Display one-line command description"
+description: |
+  Display a one-line description of a command.
+
+  Quick reference for command summaries without viewing
+  the full manual page.
+
+  Useful for:
+  - Quick lookups
+  - Verifying command purpose
+  - Shell scripting
+
+triggers: ["/whatis"]
+aliases: []
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: command
+    type: string
+    required: true
+    help: "Command name"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 2000
+    max_stdout_kib: 32
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/whatis msg"
+  - "/whatis config"
+  - "/whatis help"
