@@ -1,10 +1,11 @@
 """
 Translator - Natural language to shell command conversion
-Uses ClaudeClient to translate user queries to executable commands
+Uses AIRouter for multi-provider translation with fallback
 """
 
 from typing import Dict
-from isaac.ai.xai_client import XaiClient
+from isaac.ai import AIRouter
+import json
 
 
 def translate_query(query: str, shell_name: str, session_mgr) -> Dict:
@@ -46,28 +47,58 @@ def translate_query(query: str, shell_name: str, session_mgr) -> Dict:
             'error': 'xAI API key not configured. Add to ~/.isaac/config.json'
         }
     
-    # Initialize xAI client
+    # Initialize AI router with session manager
     try:
-        model = session_mgr.config.get('ai_model', 'grok-3')
-        api_url = session_mgr.config.get('xai_api_url')
-        timeout = session_mgr.config.get('xai_timeout')
-        client = XaiClient(
-            api_key=api_key, 
-            model=model,
-            api_url=api_url,
-            timeout=timeout
-        )
+        router = AIRouter(session_mgr=session_mgr)
     except Exception as e:
         return {
             'success': False,
-            'error': f'Failed to initialize AI client: {str(e)}'
+            'error': f'Failed to initialize AI router: {str(e)}'
         }
     
-    # Call xAI API
-    result = client.translate_to_shell(query, shell_name)
+    # Create translation prompt
+    prompt = f"""Translate this natural language query to a {shell_name} command.
+
+Query: {query}
+
+Respond in JSON format:
+{{
+    "command": "the shell command",
+    "explanation": "brief explanation of what it does",
+    "confidence": 0.95
+}}
+
+Only respond with the JSON, no other text."""
     
-    if not result.get('success'):
-        return result  # Return error from ClaudeClient
+    # Prepare messages for router
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
+    
+    # Call AI router
+    response = router.chat(messages=messages, max_tokens=512)
+    
+    if not response.success:
+        return {
+            'success': False,
+            'error': f'AI translation failed: {response.error}'
+        }
+    
+    try:
+        # Parse JSON from AI response
+        import json
+        parsed = json.loads(response.content)
+        result = {
+            'success': True,
+            'command': parsed.get('command', ''),
+            'explanation': parsed.get('explanation', ''),
+            'confidence': parsed.get('confidence', 0.5)
+        }
+    except json.JSONDecodeError:
+        return {
+            'success': False,
+            'error': 'Failed to parse AI response as JSON'
+        }
     
     # Add original query to response
     result['query'] = query

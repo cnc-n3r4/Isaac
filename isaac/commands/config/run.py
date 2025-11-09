@@ -10,6 +10,23 @@ import socket
 from isaac.ui.config_console import show_config_console
 
 
+def parse_flags(args):
+    """Parse command line flags"""
+    flags = {}
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg.startswith('--'):
+            flag = arg[2:]  # Remove --
+            if i + 1 < len(args) and not args[i + 1].startswith('--'):
+                flags[flag] = args[i + 1]
+                i += 1
+            else:
+                flags[flag] = True
+        i += 1
+    return flags
+
+
 def main():
     """Main entry point for config command"""
     # Read payload from stdin
@@ -17,31 +34,65 @@ def main():
     args = payload.get("args", {})
     session = payload.get("session", {})
 
-    subcommand = args.get("subcommand")
+    # Parse flags - only accept --flag syntax
+    if isinstance(args, list):
+        # Old format - should not happen anymore, but handle gracefully
+        flags = parse_flags(args)
+    else:
+        # New format: args is a dict from dispatcher
+        subcommand = args.get('subcommand')
+        arg1 = args.get('arg1')
+        arg2 = args.get('arg2')
+        
+        if subcommand:
+            if subcommand.startswith('--'):
+                flag_name = subcommand[2:]  # Remove --
+                flags = {flag_name: arg1 if arg1 else True}
+                # Handle special cases that need two arguments
+                if flag_name == 'set' and arg1 and arg2:
+                    flags['set'] = arg1
+                    flags['set_value'] = arg2
+                elif flag_name == 'apikey' and arg1 and arg2:
+                    flags['apikey'] = arg1
+                    flags['api_key_value'] = arg2
+            else:
+                # Reject old positional syntax
+                flags = {}
+        else:
+            flags = {}
 
-    if not subcommand:
+    if not flags:
         output = show_overview(session)
-    elif subcommand == "status":
+    elif 'help' in flags:
+        output = show_overview(session)  # Same as default for now
+    elif 'status' in flags:
         output = show_status(session)
-    elif subcommand == "ai":
+    elif 'ai' in flags:
         output = show_ai_details(session)
-    elif subcommand == "cloud":
+    elif 'cloud' in flags:
         output = show_cloud_details(session)
-    elif subcommand == "plugins":
+    elif 'plugins' in flags:
         output = show_plugins()
-    elif subcommand == "collections":
+    elif 'collections' in flags:
         output = show_collections_config(session)
-    elif subcommand == "console":
+    elif 'console' in flags:
         output = show_config_console(session)
-    elif subcommand == "set":
-        key = args.get("key")
-        value = args.get("value")
+    elif 'set' in flags:
+        key = flags.get('set')
+        value = flags.get('set_value')
         if key and value:
             output = set_config(session, key, value)
         else:
-            output = "Usage: /config set <key> <value>"
+            output = "Usage: /config --set <key> <value>"
+    elif 'apikey' in flags or 'key' in flags:
+        service = flags.get('apikey') or flags.get('key')
+        api_key = flags.get('api_key_value')
+        if service and api_key:
+            output = set_api_key(session, service, api_key)
+        else:
+            output = "Usage: /config --apikey <service> <api_key>\n\nSupported services:\n  xai-chat        - xAI API key for chat completion\n  xai-collections - xAI API key for collections\n  claude          - Anthropic Claude API key\n  openai          - OpenAI API key\n\nExamples:\n  /config --apikey xai-chat YOUR_XAI_API_KEY\n  /config --apikey xai-collections YOUR_XAI_API_KEY\n  /config --apikey claude YOUR_CLAUDE_API_KEY"
     else:
-        output = f"Unknown subcommand: {subcommand}\nUse /config for help"
+        output = f"Unknown flag: {list(flags.keys())}\nUse /config for help"
 
     # Return envelope
     print(json.dumps({
@@ -226,6 +277,61 @@ def set_config(session, key, value):
         return f"✓ Set {key} = {converted_value}"
     except Exception as e:
         return f"✗ Error setting {key}: {str(e)}"
+
+
+def set_api_key(session, service, api_key):
+    """Set API key for a specific service"""
+    try:
+        # Map service names to config keys
+        service_map = {
+            'xai-chat': 'xai.chat.api_key',
+            'xai-collections': 'xai.collections.api_key',
+            'xai': 'xai_api_key',  # Legacy fallback
+            'claude': 'claude_api_key',
+            'openai': 'openai_api_key',
+        }
+        
+        if service not in service_map:
+            return f"✗ Unknown service '{service}'. Supported services: {', '.join(service_map.keys())}"
+        
+        config_key = service_map[service]
+        
+        # Load existing config
+        import os
+        from pathlib import Path
+        isaac_dir = Path.home() / '.isaac'
+        isaac_dir.mkdir(exist_ok=True)
+        config_file = isaac_dir / 'config.json'
+        
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+            except:
+                config = {}
+        else:
+            config = {}
+        
+        # Set the API key in nested structure for xAI services
+        if service.startswith('xai-'):
+            parts = config_key.split('.')
+            current = config
+            for part in parts[:-1]:
+                if part not in current:
+                    current[part] = {}
+                current = current[part]
+            current[parts[-1]] = api_key
+        else:
+            # Flat structure for other services
+            config[config_key] = api_key
+        
+        # Save back to file
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+
+        return f"✓ Set {service} API key (stored as {config_key})"
+    except Exception as e:
+        return f"✗ Error setting {service} API key: {str(e)}"
 
 
 if __name__ == "__main__":

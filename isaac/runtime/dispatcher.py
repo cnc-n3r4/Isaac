@@ -126,11 +126,22 @@ class CommandDispatcher:
                 }
 
             # Parse args if not provided
+            args_raw = ""
             if args is None:
                 # Extract args from command (everything after first space)
                 parts = command.split(None, 1)
                 args_raw = parts[1] if len(parts) > 1 else ""
                 args = self.parse_args(manifest, args_raw)
+
+            # Check for --help flag and redirect to help command
+            if isinstance(args, dict) and args.get('help'):
+                # Redirect to help command
+                help_command = f"/help {command.split()[0]}"
+                return self.execute(help_command, None, stdin)
+            elif args_raw and ('--help' in args_raw or '-h' in args_raw):
+                # Also check raw args for --help or -h
+                help_command = f"/help {command.split()[0]}"
+                return self.execute(help_command, None, stdin)
 
             # Prepare execution
             runtime = manifest.get('runtime', {})
@@ -156,7 +167,8 @@ class CommandDispatcher:
                 "manifest": manifest,
                 "session": {
                     "machine_id": getattr(self.session.config, 'machine_id', 'unknown'),
-                    "user_prefs": getattr(self.session.preferences, 'data', {})
+                    "user_prefs": getattr(self.session.preferences, 'data', {}),
+                    "config": self.session.get_config()
                 }
             }
 

@@ -61,8 +61,8 @@ def test_tool_calling():
     grep_tool = GrepTool()
     
     tools = [
-        read_tool.get_parameters_schema(),
-        grep_tool.get_parameters_schema()
+        read_tool.to_dict(),
+        grep_tool.to_dict()
     ]
     
     print(f"Registered tools: {', '.join(t['function']['name'] for t in tools)}")

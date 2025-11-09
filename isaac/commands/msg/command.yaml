@@ -1,0 +1,51 @@
+name: msg
+version: 1.0.0
+summary: "View and manage AI assistant message notifications"
+description: |
+  Display pending notifications from autonomous AI assistant monitoring.
+  Messages are categorized by type: system operations (!) and code operations (¢).
+
+triggers: ["/msg"]
+aliases: ["/messages"]
+
+args:
+  - name: filter
+    type: string
+    required: false
+    enum: ["--sys", "--code", "--all"]
+    help: "Filter messages by type (default: all)"
+  - name: ack
+    type: string
+    required: false
+    help: "Acknowledge specific message by ID"
+  - name: ack_all
+    type: string
+    required: false
+    enum: ["--sys", "--code"]
+    help: "Acknowledge all messages or by type"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/msg"
+  - "/msg --sys"
+  - "/msg --code"
+  - "/msg --ack 123"
+  - "/msg --ack-all --sys"

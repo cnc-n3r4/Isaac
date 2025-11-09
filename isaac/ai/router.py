@@ -22,13 +22,15 @@ class AIRouter:
     Backup: OpenAI (reliable)
     """
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Optional[Path] = None, session_mgr=None):
         """
         Initialize router with configuration
         
         Args:
             config_path: Path to AI config file (defaults to ~/.isaac/ai_config.json)
+            session_mgr: SessionManager instance (optional, for Isaac integration)
         """
+        self.session_mgr = session_mgr
         if config_path is None:
             config_path = Path.home() / '.isaac' / 'ai_config.json'
         
@@ -114,12 +116,23 @@ class AIRouter:
             if not settings['enabled']:
                 continue
             
-            # Get API key from environment
-            api_key_env = settings['api_key_env']
-            api_key = os.environ.get(api_key_env)
+            # Get API key - first try session manager, then environment
+            api_key = None
+            if self.session_mgr:
+                # Get API key from session config
+                if provider == 'grok':
+                    api_key = self.session_mgr.config.get('xai_api_key') or self.session_mgr.config.get('api_key')
+                elif provider == 'claude':
+                    api_key = self.session_mgr.config.get('claude_api_key') or self.session_mgr.config.get('anthropic_api_key')
+                elif provider == 'openai':
+                    api_key = self.session_mgr.config.get('openai_api_key')
+            else:
+                # Get API key from environment
+                api_key_env = settings['api_key_env']
+                api_key = os.environ.get(api_key_env)
             
             if not api_key:
-                print(f"Warning: {api_key_env} not set, {provider} disabled")
+                print(f"Warning: API key not found for {provider}, disabled")
                 continue
             
             # Initialize client

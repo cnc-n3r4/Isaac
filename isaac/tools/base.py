@@ -43,12 +43,15 @@ class BaseTool(ABC):
         Convert tool to dictionary format for AI tool calling.
 
         Returns:
-            dict: Tool definition in Claude/OpenAI tool format
+            dict: Tool definition in OpenAI tool format
         """
         return {
-            'name': self.name,
-            'description': self.description,
-            'parameters': self.get_parameters_schema()
+            'type': 'function',
+            'function': {
+                'name': self.name,
+                'description': self.description,
+                'parameters': self.get_parameters_schema()
+            }
         }
 
     @abstractmethod

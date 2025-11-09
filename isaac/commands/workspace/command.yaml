@@ -5,15 +5,38 @@ summary: "Manage isolated workspaces"
 triggers: ["/workspace"]
 
 args:
-  - name: subcommand
-    type: enum
-    enum: ["create", "list", "switch", "delete"]
+  - name: list
+    type: bool
     required: false
-    help: "Workspace operation"
-  - name: name
+    help: "List all workspaces"
+  - name: create
     type: string
     required: false
-    help: "Workspace name"
+    help: "Create a new workspace with the given name"
+  - name: switch
+    type: string
+    required: false
+    help: "Switch to the specified workspace"
+  - name: delete
+    type: string
+    required: false
+    help: "Delete the specified workspace"
+  - name: add-collection
+    type: string
+    required: false
+    help: "Add xAI collection to an existing workspace"
+  - name: venv
+    type: bool
+    required: false
+    help: "Create virtual environment when creating workspace"
+  - name: collection
+    type: bool
+    required: false
+    help: "Create xAI collection when creating workspace"
+  - name: preserve_collection
+    type: bool
+    required: false
+    help: "Preserve xAI collection when deleting workspace"
 
 stdin: false
 stdout:
@@ -35,9 +58,10 @@ telemetry:
   log_output: false
 
 examples:
-  - "/workspace list"
-  - "/workspace create myproject"
-  - "/workspace create myproject --venv"
-  - "/workspace create myproject --venv --collection"
-  - "/workspace switch myproject"
-  - "/workspace delete myproject"
+  - "/workspace --list"
+  - "/workspace --create myproject"
+  - "/workspace --create myproject --venv"
+  - "/workspace --create myproject --venv --collection"
+  - "/workspace --add-collection myproject"
+  - "/workspace --switch myproject"
+  - "/workspace --delete myproject"

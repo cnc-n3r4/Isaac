@@ -6,18 +6,17 @@ triggers: ["/config"]
 
 args:
   - name: subcommand
-    type: enum
-    enum: ["status", "ai", "cloud", "plugins", "collections", "console", "set"]
-    required: false
-    help: "Configuration section or action"
-  - name: key
     type: string
     required: false
-    help: "Setting key (for 'set' subcommand)"
-  - name: value
+    help: "Configuration subcommand (status, ai, cloud, plugins, collections, console, set, apikey)"
+  - name: arg1
     type: string
     required: false
-    help: "Setting value (for 'set' subcommand)"
+    help: "First argument for subcommands that need it"
+  - name: arg2
+    type: string
+    required: false
+    help: "Second argument for subcommands that need it"
 
 stdin: false
 stdout:

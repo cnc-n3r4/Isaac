@@ -147,6 +147,97 @@ class CommandRouter:
                 output=f"Command execution error: {str(e)}",
                 exit_code=1
             )
+
+    def _handle_config_command(self, input_text: str) -> CommandResult:
+        """Handle /config commands directly"""
+        try:
+            # Parse the command: /config [args...]
+            parts = input_text.split()
+            if len(parts) < 2:
+                # Just /config - show overview
+                from isaac.commands.config.run import show_overview
+                output = show_overview(self.session)
+                return CommandResult(success=True, output=output, exit_code=0)
+            
+            # Parse arguments
+            args_raw = ' '.join(parts[1:])
+            import shlex
+            parsed_parts = shlex.split(args_raw)
+            
+            # Simple flag parsing for --flag format
+            flags = {}
+            i = 0
+            while i < len(parsed_parts):
+                part = parsed_parts[i]
+                if part.startswith('--'):
+                    flag_name = part[2:]  # Remove --
+                    if i + 1 < len(parsed_parts) and not parsed_parts[i + 1].startswith('--'):
+                        flags[flag_name] = parsed_parts[i + 1]
+                        i += 1  # Skip the value
+                    else:
+                        flags[flag_name] = True
+                i += 1
+            
+            # Call the appropriate config function
+            from isaac.commands.config.run import (
+                show_overview, show_status, show_ai_details, 
+                show_cloud_details, show_plugins, show_collections_config,
+                set_config, set_api_key
+            )
+            
+            # Convert session to dict format expected by config functions
+            session_dict = {
+                "machine_id": getattr(self.session.config, 'machine_id', 'unknown'),
+                "user_prefs": getattr(self.session.preferences, 'data', {})
+            }
+            
+            if 'help' in flags:
+                # Show detailed help for config command
+                from isaac.commands.help.run import get_detailed_help
+                output = get_detailed_help('/config')
+            elif 'status' in flags:
+                output = show_status(session_dict)
+            elif 'ai' in flags:
+                output = show_ai_details(session_dict)
+            elif 'cloud' in flags:
+                output = show_cloud_details(session_dict)
+            elif 'plugins' in flags:
+                output = show_plugins()
+            elif 'collections' in flags:
+                output = show_collections_config(session_dict)
+            elif 'set' in flags:
+                key = flags['set']
+                # Find the value (everything after the key)
+                key_index = parsed_parts.index(f'--set')
+                if key_index + 1 < len(parsed_parts):
+                    value = parsed_parts[key_index + 1]
+                    output = set_config(session_dict, key, value)
+                else:
+                    output = "Usage: /config --set <key> <value>"
+            elif 'apikey' in flags or 'key' in flags:
+                service = flags.get('apikey') or flags.get('key')
+                # Find the API key (next argument after the service in parsed_parts)
+                service_index = None
+                for i, part in enumerate(parsed_parts):
+                    if part == service:  # Only match the service name, not the flag
+                        service_index = i + 1
+                        break
+                if service_index and service_index < len(parsed_parts):
+                    api_key = parsed_parts[service_index]
+                    output = set_api_key(session_dict, service, api_key)
+                else:
+                    output = "Usage: /config --apikey <service> <api_key>\n\nSupported services:\n  xai-chat        - xAI API key for chat completion\n  xai-collections - xAI API key for collections\n  claude          - Anthropic Claude API key\n  openai          - OpenAI API key"
+            else:
+                output = show_overview(session_dict)
+            
+            return CommandResult(success=True, output=output, exit_code=0)
+                
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                output=f"Config command error: {str(e)}",
+                exit_code=1
+            )
     
     def route_command(self, input_text: str) -> CommandResult:
         """
@@ -210,6 +301,9 @@ class CommandRouter:
                 import os
                 os.system('cls' if os.name == 'nt' else 'clear')
                 return CommandResult(success=True, output="", exit_code=0)
+            if input_text.startswith('/config '):
+                # Handle /config commands directly
+                return self._handle_config_command(input_text)
             if input_text == '/config console':
                 # Launch the config console TUI
                 from isaac.ui.config_console import show_config_console
@@ -223,12 +317,38 @@ class CommandRouter:
         if input_text.startswith('!'):
             return self._route_device_command(input_text)
 
+        # Block exit/quit commands without / prefix
+        if input_text.strip() in ['exit', 'quit']:
+            return CommandResult(success=False, output="Isaac > Use /exit or /quit to exit Isaac", exit_code=1)
+
         # Task mode detection
         if input_text.lower().startswith('isaac task:'):
             task_desc = input_text[11:].strip()  # Remove "isaac task:"
             
             from isaac.ai.task_planner import execute_task
             return execute_task(task_desc, self.shell, self.session)
+        
+        # Agentic mode detection (Phase 2)
+        if input_text.lower().startswith('isaac agent:') or input_text.lower().startswith('isaac agentic:'):
+            agentic_query = input_text.split(':', 1)[1].strip()  # Remove "isaac agent:" prefix
+            
+            from isaac.core.agentic_orchestrator import AgenticOrchestrator
+            from isaac.ui.streaming_display import StreamingDisplay
+            from isaac.ui.progress_indicator import ProgressIndicator, ProgressStyle
+            
+            # Initialize UI components
+            display = StreamingDisplay()
+            progress = ProgressIndicator(style=ProgressStyle.SPINNER)
+            
+            # Initialize orchestrator with UI components
+            orchestrator = AgenticOrchestrator(
+                session_mgr=self.session,
+                streaming_display=display,
+                progress_indicator=progress
+            )
+            
+            # Execute agentic task
+            return orchestrator.execute_agentic_task_sync(agentic_query)
         
         # Natural language check - AI translation
         if self._is_natural_language(input_text):
@@ -373,42 +493,6 @@ class CommandRouter:
                 exit_code=-1
             )
     
-    def _handle_meta_command(self, input_text: str) -> CommandResult:
-        """
-        Handle meta-commands (starting with /) by routing to dispatcher.
-        
-        Args:
-            input_text: The full command including the / prefix
-            
-        Returns:
-            CommandResult from the dispatcher
-        """
-        try:
-            # Route to dispatcher with the full command (including /)
-            result = self.dispatcher.execute(input_text)
-            
-            # Convert dispatcher result to CommandResult
-            if result.get('ok', False):
-                return CommandResult(
-                    success=True,
-                    output=result.get('stdout', ''),
-                    exit_code=0
-                )
-            else:
-                error = result.get('error', {})
-                return CommandResult(
-                    success=False,
-                    output=f"Isaac > {error.get('message', 'Unknown error')}",
-                    exit_code=-1
-                )
-                
-        except Exception as e:
-            return CommandResult(
-                success=False,
-                output=f"Isaac > Meta-command error: {e}",
-                exit_code=-1
-            )
-    
     def _handle_chat_query(self, query: str) -> CommandResult:
         """
         Handle chat-style query (no execution, just AI response).
@@ -420,51 +504,44 @@ class CommandRouter:
             CommandResult with AI response
         """
         try:
-            from isaac.ai.xai_client import XaiClient
+            from isaac.ai import AIRouter
             
-            # Get API configuration - use chat API key
-            config = self.session.get_config()
-            xai_config = config.get('xai', {})
-            chat_config = xai_config.get('chat', {})
-            api_key = chat_config.get('api_key') or config.get('xai_api_key') or config.get('api_key')
-            
-            if not api_key:
-                return CommandResult(
-                    success=False,
-                    output="Isaac > xAI Chat API key not configured. Set it in ~/.isaac/config.json under xai.chat.api_key",
-                    exit_code=-1
-                )
-            
-            # Initialize xAI client
-            client = XaiClient(
-                api_key=api_key,
-                api_url=config.get('xai_api_url', 'https://api.x.ai/v1/chat/completions'),
-                model=config.get('xai_model', 'grok-3')
-            )
+            # Initialize AI router with session config
+            router = AIRouter(session_mgr=self.session)
             
             # Build chat preprompt
             preprompt = self._build_chat_preprompt()
             
-            # Query AI
-            response = client.chat(
-                prompt=query,
-                system_prompt=preprompt
-            )
+            # Prepare messages for router
+            messages = [
+                {"role": "system", "content": preprompt},
+                {"role": "user", "content": query}
+            ]
             
-            # Log query to AI history
-            self.session.log_ai_query(
-                query=query,
-                translated_command='[chat_mode_auto]',
-                explanation=response[:100],
-                executed=False,
-                shell_name='chat'
-            )
+            # Query AI through router
+            response = router.chat(messages=messages)
             
-            return CommandResult(
-                success=True,
-                output=f"Isaac > {response}",
-                exit_code=0
-            )
+            if response.success:
+                # Log query to AI history
+                self.session.log_ai_query(
+                    query=query,
+                    translated_command='[chat_mode_auto]',
+                    explanation=response.content[:100],
+                    executed=False,
+                    shell_name='chat'
+                )
+                
+                return CommandResult(
+                    success=True,
+                    output=f"Isaac > {response.content}",
+                    exit_code=0
+                )
+            else:
+                return CommandResult(
+                    success=False,
+                    output=f"Isaac > AI Error: {response.error}",
+                    exit_code=-1
+                )
         
         except Exception as e:
             return CommandResult(

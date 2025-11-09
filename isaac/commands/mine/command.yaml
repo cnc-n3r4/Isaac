@@ -11,7 +11,47 @@ triggers:
 aliases:
   - /mine
 
-args: []
+args:
+  - name: create
+    type: string
+    required: false
+    help: "Create new collection with the given name"
+  - name: use
+    type: string
+    required: false
+    help: "Switch to the specified collection"
+  - name: delete
+    type: string
+    required: false
+    help: "Delete the specified collection"
+  - name: upload
+    type: string
+    required: false
+    help: "Upload file to active collection"
+  - name: search
+    type: string
+    required: false
+    help: "Search active collection for the given query"
+  - name: list
+    type: bool
+    required: false
+    help: "List all collections"
+  - name: maps
+    type: bool
+    required: false
+    help: "List all collections (alias for --list)"
+  - name: info
+    type: bool
+    required: false
+    help: "Show active collection details"
+  - name: status
+    type: bool
+    required: false
+    help: "Show system status"
+  - name: help
+    type: bool
+    required: false
+    help: "Show help information"
 
 stdin: true
 stdout:

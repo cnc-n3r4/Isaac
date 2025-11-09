@@ -182,6 +182,10 @@ class SessionManager:
         self.config[key] = value
         self._save_config()
 
+    def reload_config(self):
+        """Reload config from disk."""
+        self._load_config()
+
     def log_command(self, command: str, exit_code: int = 0, shell_name: str = "unknown"):
         """Log executed command to history."""
         import time

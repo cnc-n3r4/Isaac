@@ -541,55 +541,64 @@ echo "test" | /newfile output.txt
 
 **Syntax**:
 ```bash
-/workspace <subcommand> [options]
+/workspace <--subcommand> [options]
 ```
 
 **Subcommands**:
 
-**create** - Create new workspace
+**--create** - Create new workspace
 ```bash
-/workspace create <name> [--venv] [--collection]
+/workspace --create <name> [--venv] [--collection]
 ```
 - `--venv` - Create Python virtual environment
 - `--collection` - Create xAI collection
 
-**list** - List all workspaces
+**--list** - List all workspaces
 ```bash
-/workspace list
+/workspace --list
 ```
 
-**switch** - Switch to workspace
+**--switch** - Switch to workspace
 ```bash
-/workspace switch <name>
+/workspace --switch <name>
 ```
 - Changes current directory
 - Updates session state
 
-**delete** - Delete workspace
+**--add-collection** - Add collection to existing workspace
 ```bash
-/workspace delete <name> [--preserve-collection]
+/workspace --add-collection <name>
+```
+- Adds xAI collection to workspace created without `--collection`
+
+**--delete** - Delete workspace
+```bash
+/workspace --delete <name> [--preserve-collection]
 ```
 - `--preserve-collection` - Keep xAI collection
 
 **Examples**:
 ```bash
 # Create basic workspace
-/workspace create myproject
+/workspace --create myproject
 
 # Create with venv
-/workspace create api-server --venv
+/workspace --create api-server --venv
 
 # Create with everything
-/workspace create webapp --venv --collection
+/workspace --create webapp --venv --collection
+
+# Add collection to existing workspace
+/workspace --add-collection myproject
 
 # List workspaces
-/workspace list
+/workspace --list
 
 # Switch workspace
-/workspace switch webapp
+/workspace --switch webapp
 
 # Delete workspace
-/workspace delete old-project
+/workspace --delete old-project
 ```
 
 **Workspace Structure**:
@@ -742,77 +751,87 @@ isaac where is alaska.exe?
 
 **Syntax**:
 ```bash
-/mine <subcommand> [options]
+/mine --<command> [value]
 ```
 
-**Subcommands**:
+**Commands**:
 
-**create** - Create collection
+**--create** - Create collection
 ```bash
-/mine create <name> [--description <desc>]
+/mine --create <name>
 ```
 
-**upload** - Upload documents
+**--upload** - Upload file to active collection
 ```bash
-/mine upload <collection_name> <file_pattern>
+/mine --upload <file_path>
 ```
 
-**search** - Search collection
+**--search** - Search active collection
 ```bash
-/mine search <collection_name> <query>
+/mine --search <query>
 ```
 
-**list** - List all collections
+**--list** - List all collections
 ```bash
-/mine list
+/mine --list
 ```
 
-**info** - Collection details
+**--info** - Show active collection details
 ```bash
-/mine info <collection_name>
+/mine --info
 ```
 
-**delete** - Delete collection
+**--use** - Switch to collection
 ```bash
-/mine delete <collection_name>
+/mine --use <collection_name>
 ```
 
-**claim** - Claim existing collection
+**--delete** - Delete collection
 ```bash
-/mine claim <collection_id>
+/mine --delete <collection_name>
+```
+
+**--status** - Show system status
+```bash
+/mine --status
+```
+
+**--help** - Show help
+```bash
+/mine --help
 ```
 
 **Examples**:
 ```bash
 # Create collection
-/mine create project_docs --description "Project documentation"
+/mine --create project_docs
+
+# Switch to collection
+/mine --use project_docs
 
 # Upload files
-/mine upload project_docs README.md
-/mine upload project_docs docs/*.md
-/mine upload project_docs src/**/*.py
+/mine --upload README.md
+/mine --upload docs/guide.md
 
-# Search
-/mine search project_docs "how to authenticate"
+# Search active collection
+/mine --search "how to authenticate"
 
-# List collections
-/mine list
+# List all collections
+/mine --list
 
-# Get info
-/mine info project_docs
+# Show active collection info
+/mine --info
 
-# Delete
-/mine delete old_docs
-
-# Claim workspace collection
-/mine claim workspace-myproject
+# Delete collection
+/mine --delete old_docs
 ```
 
 **Features**:
-- Vector-based search
+- Vector-based search using xAI Collections
 - Context-aware AI responses
-- Multiple file formats
-- Automatic indexing
+- Multiple file formats supported
+- Automatic indexing and retrieval
+- Personal file history management
 
 ---
 

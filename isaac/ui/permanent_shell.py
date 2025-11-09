@@ -9,8 +9,10 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style
 from isaac.core.command_router import CommandRouter
 from isaac.core.session_manager import SessionManager
+from isaac.core.message_queue import MessageQueue
 from isaac.adapters.powershell_adapter import PowerShellAdapter
 from isaac.adapters.bash_adapter import BashAdapter
+from isaac.monitoring.monitor_manager import MonitorManager
 
 
 class PermanentShell:
@@ -18,6 +20,8 @@ class PermanentShell:
         self.session = SessionManager()
         self.shell = self._detect_shell()
         self.router = CommandRouter(self.session, self.shell)
+        self.message_queue = MessageQueue()
+        self.monitor_manager = MonitorManager()
         
         # Initialize prompt_toolkit with history support
         self.history = InMemoryHistory()
@@ -63,7 +67,7 @@ class PermanentShell:
 
     def _print_welcome(self):
         """Print startup banner with key info"""
-        version = "1.0.2"  # Get from config
+        version = "2.0.0"  # Get from config
         session_id = self.session.config.get('machine_id', 'unknown')[:6]
 
         cloud_status = "✓" if self.session.cloud else "✗"
@@ -103,17 +107,24 @@ class PermanentShell:
     def run(self):
         """Main shell loop - simplified"""
         self._print_welcome()
+        
+        # Start autonomous monitoring agents
+        self.monitor_manager.start_all()
 
         while True:
             try:
-                # Build prompt text
+                # Build prompt text with message indicators
                 queue_status = self.session.get_queue_status()
                 pending_count = queue_status['pending']
                 
+                # Get message indicator from message queue
+                message_indicator = self.message_queue.get_prompt_indicator()
+                
                 if pending_count > 0:
-                    prompt_text = f"$ [OFFLINE: {pending_count} queued]> "
+                    # Show offline indicator with count and messages
+                    prompt_text = f"{message_indicator[:-1]} [OFFLINE: {pending_count} queued]> "
                 else:
-                    prompt_text = "$> "
+                    prompt_text = message_indicator + " "
 
                 # Get user input with history support (arrow keys work!)
                 user_input = self.prompt_session.prompt(
@@ -125,13 +136,14 @@ class PermanentShell:
                 if not user_input:
                     continue
 
-                # Handle exit
-                if user_input.lower() in ["exit", "quit", "/exit", "/quit"]:
-                    print("Goodbye!")
-                    break
-
                 # Route command through existing system
                 result = self.router.route_command(user_input)
+
+                # Handle exit commands
+                if user_input.lower() in ["/exit", "/quit"] and result.success:
+                    print("Goodbye!")
+                    self.monitor_manager.stop_all()
+                    break
 
                 # Print output
                 if result.output:
@@ -146,6 +158,7 @@ class PermanentShell:
                 continue
             except EOFError:
                 print("\nGoodbye!")
+                self.monitor_manager.stop_all()
                 break
             except Exception as e:
                 print(f"Unexpected error: {e}", file=sys.stderr)

@@ -32,17 +32,19 @@ class SandboxEnforcer:
         """Load sandbox configuration from session"""
         config = self.session.get_config()
 
-        # Sandbox settings
-        self.enabled = config.get('sandbox.enabled', False)
-        self.root_dir = Path(config.get('sandbox.root_dir', '~/.isaac/sandboxes')).expanduser()
-        self.block_system_paths = config.get('sandbox.block_system_paths', True)
-        self.max_file_size_mb = config.get('sandbox.max_file_size_mb', 100)
-        self.allowed_commands = set(config.get('sandbox.allowed_commands', ['pip', 'npm', 'git', 'python', 'node']))
+        # Sandbox settings - handle both flat and nested config
+        self.enabled = config.get('sandbox.enabled', config.get('sandbox', {}).get('enabled', False))
+        sandbox_root = config.get('sandbox.root_dir', config.get('sandbox', {}).get('root_dir', '~/.isaac/sandboxes'))
+        self.root_dir = Path(sandbox_root).expanduser()
+        self.block_system_paths = config.get('sandbox.block_system_paths', config.get('sandbox', {}).get('block_system_paths', True))
+        self.max_file_size_mb = config.get('sandbox.max_file_size_mb', config.get('sandbox', {}).get('max_file_size_mb', 100))
+        allowed_cmds = config.get('sandbox.allowed_commands', config.get('sandbox', {}).get('allowed_commands', ['pip', 'npm', 'git', 'python', 'node']))
+        self.allowed_commands = set(allowed_cmds)
 
-        # Workspace settings
-        workspace_config = config.get('workspace', {})
-        self.workspace_enabled = workspace_config.get('enabled', False)
-        self.workspace_root = Path(workspace_config.get('root_dir', '~/.isaac/workspaces')).expanduser()
+        # Workspace settings - handle both flat and nested config
+        self.workspace_enabled = config.get('workspace.enabled', config.get('workspace', {}).get('enabled', False))
+        workspace_root = config.get('workspace.root_dir', config.get('workspace', {}).get('root_dir', '~/.isaac/workspaces'))
+        self.workspace_root = Path(workspace_root).expanduser()
 
     def is_sandbox_enabled(self) -> bool:
         """Check if sandbox is enabled"""
@@ -378,6 +380,35 @@ class SandboxEnforcer:
     def create_workspace(self, name: str, create_venv: bool = False, create_collection: bool = False) -> bool:
         """Create a new workspace (alias for create_user_workspace)"""
         return self.create_user_workspace(name, create_venv, create_collection) is not None
+
+    def add_collection_to_workspace(self, workspace_name: str) -> bool:
+        """Add an xAI collection to an existing workspace"""
+        if not self.workspace_enabled:
+            return False
+
+        workspace_path = self.workspace_root / workspace_name
+        if not workspace_path.exists():
+            return False
+
+        try:
+            # Check if workspace already has a collection
+            metadata = self.get_workspace_metadata(workspace_name) or {}
+            if metadata.get('collection_id'):
+                print(f"Workspace '{workspace_name}' already has a collection")
+                return True  # Already has one, consider this success
+
+            # Create collection
+            collection_id = self._create_workspace_collection(workspace_name)
+            if collection_id:
+                # Update metadata
+                metadata['collection_id'] = collection_id
+                self._save_workspace_metadata(workspace_name, metadata)
+                return True
+            
+            return False
+        except Exception as e:
+            print(f"Error adding collection to workspace: {e}")
+            return False
 
     def enforce_command(self, command: str, cwd: Optional[str] = None) -> Optional[str]:
         """Enforce sandbox rules on a command. Returns modified command or None if blocked."""

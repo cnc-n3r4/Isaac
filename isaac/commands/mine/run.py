@@ -88,16 +88,39 @@ class MineHandler:
         # Initialize x.ai client if available
         if HAS_XAI_SDK:
             try:
+                # Reload config to get latest API keys and active collection
+                if self.session_manager and hasattr(self.session_manager, 'reload_config'):
+                    self.session_manager.reload_config()
+                    self.config = self.session_manager.get_config()
+                else:
+                    # Reload config from disk directly
+                    from pathlib import Path
+                    isaac_dir = Path.home() / '.isaac'
+                    config_file = isaac_dir / 'config.json'
+                    if config_file.exists():
+                        try:
+                            import json
+                            with open(config_file, 'r') as f:
+                                file_config = json.load(f)
+                                self.config.update(file_config)
+                        except Exception:
+                            pass  # Keep existing config if reload fails
+                
+                # Reload active collection from updated config
+                self.active_collection_id = self.config.get('active_collection_id')
+                self.active_collection_name = self.config.get('active_collection_name')
+                
                 # Get API keys from config - use nested structure
                 xai_config = self.config.get('xai', {})
                 collections_config = xai_config.get('collections', {})
                 
-                api_key = collections_config.get('api_key')
-                management_api_key = collections_config.get('management_api_key')
+                # Use chat API key for search operations (query processing)
+                api_key = self.config.get('xai_api_key')  # Chat API key for search
+                management_api_key = collections_config.get('api_key')  # Collections API key for management
                 
-                # Fallback to old flat structure for backward compatibility
+                # Fallback to collections key if chat key not available
                 if not api_key:
-                    api_key = self.config.get('xai_api_key')
+                    api_key = collections_config.get('api_key')
                 if not management_api_key:
                     management_api_key = self.config.get('xai_management_api_key')
                 
@@ -294,7 +317,7 @@ class MineHandler:
 
         # Check if x.ai client is available
         if not self.client and not any(flag in ['help', 'status', 'list', 'info'] for flag in flags):
-            return "x.ai client not available. Check that xai_api_key is configured in your Isaac config and xai_sdk is installed."
+            return "x.ai client not available. Check that xai_api_key is configured in your Isaac config and xai_sdk is installed.\n\nTo configure:\n  /config --set xai_api_key YOUR_XAI_API_KEY\n  /config --ai  # Check configuration status"
 
         # COLLECTION MANAGEMENT
         if 'create' in flags:
@@ -330,7 +353,7 @@ class MineHandler:
     def _handle_claim(self, args: List[str]) -> str:
         """Claim/use a staked claim (switch collection)."""
         if not args:
-            return "Usage: /mine --claim <collection_name> [--dig <query>]"
+            return "Usage: /mine --claim <collection_name> [--search <query>]"
 
         collection_name = args[0]
         remaining_args = args[1:]
@@ -732,7 +755,7 @@ EXAMPLES:
     def _handle_use(self, args: List[str]) -> str:
         """Switch active collection."""
         if not args:
-            return "Usage: /mine use <collection_name> [dig <query_text>]"
+            return "Usage: /mine --use <collection_name> [--search <query_text>]"
 
         # Remove quotes from collection name if present
         collection_name = args[0].strip('"').strip("'")
@@ -782,14 +805,14 @@ EXAMPLES:
                 dig_result = self._handle_dig(dig_args)
                 return f"{result}\n{dig_result}"
             else:
-                return f"{result}\nUsage: /mine use <collection_name> dig <query_text>"
+                return f"{result}\nUsage: /mine --use <collection_name> --search <query_text>"
 
         return result
 
     def _handle_create(self, args: List[str]) -> str:
         """Create new collection."""
         if not args:
-            return "Usage: /mine create <collection_name>"
+            return "Usage: /mine --create <collection_name>"
 
         collection_name = args[0]
 
@@ -945,7 +968,7 @@ EXAMPLES:
     def _handle_dig(self, args: List[str]) -> str:
         """Dig up answers from active collection."""
         if not args:
-            return "Usage: /mine --dig <question> [--to-drift <subgroup>]\n       /mine --dig -c <question>  # Search all collections\n       /mine --dig -h <question>  # Search with detailed output"
+            return "Usage: /mine --search <question> [--to-drift <subgroup>]\n       /mine --search -c <question>  # Search all collections\n       /mine --search -h <question>  # Search with detailed output"
 
         # Parse flags from args
         use_all_collections = '-c' in args
@@ -955,7 +978,7 @@ EXAMPLES:
         question_args = [arg for arg in args if arg not in ['-c', '-h']]
 
         if not question_args:
-            return "Usage: /mine --dig <question> [--to-drift <subgroup>]\n       /mine --dig -c <question>  # Search all collections\n       /mine --dig -h <question>  # Search with detailed output"
+            return "Usage: /mine --search <question> [--to-drift <subgroup>]\n       /mine --search -c <question>  # Search all collections\n       /mine --search -h <question>  # Search with detailed output"
 
         question = " ".join(question_args)
 
@@ -1081,7 +1104,7 @@ EXAMPLES:
     def _handle_delete(self, args: List[str]) -> str:
         """Delete collection."""
         if not args:
-            return "Usage: /mine delete <collection_name>"
+            return "Usage: /mine --delete <collection_name>"
 
         collection_name = args[0]
 
@@ -1546,8 +1569,16 @@ def main():
     try:
         # Read payload from stdin (dispatcher protocol)
         payload = json.loads(sys.stdin.read())
-        args = payload.get("args", [])
+        command = payload.get("command", "")
         session_data = payload.get("session", {})
+        
+        # Extract args from command (everything after /mine)
+        if command.startswith("/mine "):
+            args_raw = command[6:].strip()  # Remove "/mine "
+            import shlex
+            args = shlex.split(args_raw)
+        else:
+            args = []
         
         # Create handler with session data
         handler = MineHandler(session_data)
