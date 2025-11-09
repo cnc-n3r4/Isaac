@@ -30,7 +30,7 @@ class AIRouter:
     - Performance monitoring and analytics
     """
 
-    def __init__(self, config_path: Optional[Path] = None, session_mgr=None):
+    def __init__(self, config_path: Optional[Path] = None, session_mgr: Optional[Any] = None) -> None:
         """
         Initialize router with Phase 3 enhancements
 
@@ -130,7 +130,7 @@ class AIRouter:
                 json.dump(default_config, f, indent=2)
             return default_config
 
-    def _init_clients(self):
+    def _init_clients(self) -> None:
         """Initialize AI clients from config"""
         for provider, settings in self.config["providers"].items():
             if not settings["enabled"]:
@@ -187,7 +187,7 @@ class AIRouter:
 
         return default_order
 
-    def _update_stats(self, provider: str, response: AIResponse, success: bool):
+    def _update_stats(self, provider: str, response: AIResponse, success: bool) -> None:
         """Update usage statistics (legacy, kept for backward compatibility)"""
         stats = self.usage_stats[provider]
         stats["calls"] += 1
@@ -205,7 +205,7 @@ class AIRouter:
         else:
             stats["failures"] += 1
 
-    def _update_performance_stats(self, provider: str, elapsed_time: float):
+    def _update_performance_stats(self, provider: str, elapsed_time: float) -> None:
         """Phase 3: Track performance metrics"""
         stats = self.performance_stats[provider]
         stats["total_time"] += elapsed_time
@@ -471,7 +471,7 @@ class AIRouter:
             },
         }
 
-    def reset_stats(self):
+    def reset_stats(self) -> None:
         """Reset usage statistics (call daily)"""
         for provider in self.usage_stats:
             self.usage_stats[provider] = {"calls": 0, "tokens": 0, "cost": 0.0, "failures": 0}
@@ -480,7 +480,7 @@ class AIRouter:
         """Get list of available providers"""
         return [name for name, client in self.clients.items() if client is not None]
 
-    def update_config(self, updates: Dict[str, Any]):
+    def update_config(self, updates: Dict[str, Any]) -> None:
         """Update configuration and save"""
 
         # Deep merge updates
