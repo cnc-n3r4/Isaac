@@ -114,6 +114,13 @@ class SessionManager:
         self.cron_manager = None
         self._init_file_history()
 
+        # Initialize self-improving learning system (Phase 3.5)
+        self.mistake_learner = None
+        self.behavior_engine = None
+        self.metrics_dashboard = None
+        self.preference_learner = None
+        self._init_learning_system()
+
     def _load_session_data(self):
         """Load session data from local files."""
         # Load preferences
@@ -282,10 +289,14 @@ class SessionManager:
         # Stop sync worker
         if hasattr(self, 'sync_worker'):
             self.sync_worker.stop()
-        
+
         # Stop cron manager
         if hasattr(self, 'cron_manager') and self.cron_manager:
             self.cron_manager.stop()
+
+        # Stop learning system
+        if hasattr(self, 'mistake_learner') and self.mistake_learner:
+            self.mistake_learner.stop_learning()
 
     def get_queue_status(self) -> dict:
         """Expose queue status for UI."""
@@ -361,18 +372,197 @@ class SessionManager:
         """Background task: Parse and upload new file operations."""
         import logging
         logger = logging.getLogger(__name__)
-        
+
         if not self.totalcmd_parser or not self.file_history_manager:
             return
-        
+
         try:
             # Parse new operations (incremental)
             operations = self.totalcmd_parser.parse_log(incremental=True)
-            
+
             if operations:
                 # Upload to xAI collection
                 count = self.file_history_manager.upload_operations(operations)
                 logger.info(f"Synced {count} file operations to AI collection")
-        
+
         except Exception as e:
             logger.error(f"File history upload failed: {e}")
+
+    def _init_learning_system(self):
+        """Initialize self-improving learning system (Phase 3.5)."""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # Check if learning is disabled
+        if self.config.get('disable_learning', False):
+            logger.info("Learning system disabled by configuration")
+            return
+
+        try:
+            from isaac.learning import (
+                MistakeLearner,
+                BehaviorAdjustmentEngine,
+                LearningMetricsDashboard,
+                UserPreferenceLearner
+            )
+
+            # Initialize mistake learner with background learning
+            enable_background = self.config.get('learning_background_enabled', True)
+            self.mistake_learner = MistakeLearner(self, start_background_learning=enable_background)
+
+            # Initialize behavior adjustment engine
+            self.behavior_engine = BehaviorAdjustmentEngine(self, self.mistake_learner)
+
+            # Initialize metrics dashboard
+            self.metrics_dashboard = LearningMetricsDashboard(
+                self,
+                self.mistake_learner,
+                self.behavior_engine
+            )
+
+            # Initialize user preference learner
+            self.preference_learner = UserPreferenceLearner(self)
+
+            logger.info("Self-improving learning system initialized successfully")
+
+        except ImportError as e:
+            logger.warning(f"Learning system not available: {e}")
+        except Exception as e:
+            logger.error(f"Failed to initialize learning system: {e}")
+            # Don't fail session init if learning fails
+            self.mistake_learner = None
+            self.behavior_engine = None
+            self.metrics_dashboard = None
+            self.preference_learner = None
+
+    def track_mistake(self, mistake_type: str, description: str, correction: str,
+                     original_input: str = "", context: Optional[Dict[str, Any]] = None,
+                     severity: str = "medium"):
+        """Track a mistake for the learning system.
+
+        Args:
+            mistake_type: Type of mistake (command_error, ai_response, etc.)
+            description: Description of what went wrong
+            correction: The correct action/response
+            original_input: The original input that caused the mistake
+            context: Additional context about the mistake
+            severity: Severity level (low, medium, high, critical)
+        """
+        if not self.mistake_learner:
+            return
+
+        try:
+            from isaac.learning import MistakeRecord
+            import time
+
+            mistake = MistakeRecord(
+                id=f"{mistake_type}_{int(time.time())}",
+                timestamp=time.time(),
+                mistake_type=mistake_type,
+                original_input=original_input or description,
+                mistake_description=description,
+                user_correction=correction,
+                context=context or {},
+                severity=severity
+            )
+
+            self.mistake_learner.record_mistake(mistake)
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to track mistake: {e}")
+
+    def record_user_feedback(self, feedback_type: str, context: str, response: str,
+                            category: str = "response_style", sentiment: float = 0.0):
+        """Record user feedback for behavior adjustment.
+
+        Args:
+            feedback_type: Type of feedback (positive, negative, correction, preference)
+            context: What Isaac did/said
+            response: User's feedback/correction
+            category: Behavior category (response_style, suggestion_frequency, etc.)
+            sentiment: Sentiment score from -1.0 to 1.0
+        """
+        if not self.behavior_engine:
+            return
+
+        try:
+            from isaac.learning import UserFeedback
+            import time
+
+            feedback = UserFeedback(
+                id=f"feedback_{int(time.time())}",
+                timestamp=time.time(),
+                feedback_type=feedback_type,
+                context=context,
+                user_response=response,
+                sentiment_score=sentiment,
+                behavior_category=category
+            )
+
+            self.behavior_engine.record_feedback(feedback)
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to record feedback: {e}")
+
+    def observe_coding_pattern(self, pattern_type: str, pattern_key: str, observed_value: Any,
+                              context: Optional[Dict[str, Any]] = None):
+        """Observe a coding pattern for user preference learning.
+
+        Args:
+            pattern_type: Type of pattern (naming_conventions, code_structure, etc.)
+            pattern_key: Specific pattern identifier
+            observed_value: The observed value/approach
+            context: Additional context about the observation
+        """
+        if not self.preference_learner:
+            return
+
+        try:
+            self.preference_learner.observe_coding_pattern(
+                pattern_type,
+                pattern_key,
+                observed_value,
+                context
+            )
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to observe coding pattern: {e}")
+
+    def get_learning_stats(self) -> Dict[str, Any]:
+        """Get comprehensive learning statistics.
+
+        Returns:
+            Dictionary with learning stats from all components
+        """
+        stats = {
+            'learning_enabled': self.mistake_learner is not None,
+            'components': {}
+        }
+
+        if not self.mistake_learner:
+            return stats
+
+        try:
+            stats['components']['mistakes'] = self.mistake_learner.get_learning_stats()
+
+            if self.behavior_engine:
+                stats['components']['behavior'] = self.behavior_engine.analyze_behavior_effectiveness()
+
+            if self.preference_learner:
+                stats['components']['preferences'] = self.preference_learner.get_learning_stats()
+
+            if self.metrics_dashboard:
+                stats['components']['metrics'] = self.metrics_dashboard.get_dashboard_summary()
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to get learning stats: {e}")
+
+        return stats
