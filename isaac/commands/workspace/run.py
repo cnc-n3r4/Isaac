@@ -5,7 +5,6 @@ Workspace Command Handler - Manage isolated workspaces
 
 import sys
 import json
-from pathlib import Path
 
 from isaac.core.sandbox_enforcer import SandboxEnforcer
 

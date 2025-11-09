@@ -187,7 +187,7 @@ class PermanentShell:
             if len(self.session_commands) > 100:  # Keep last 100
                 self.session_commands.pop(0)
 
-        except Exception as e:
+        except Exception:
             # Don't let learning errors break the shell
             pass
 
@@ -256,7 +256,7 @@ class PermanentShell:
             # Learn from correction if a suggestion was shown
             self.inline_completer.learn_from_correction(command, context)
 
-        except Exception as e:
+        except Exception:
             # Don't let learning errors break the shell
             pass
 

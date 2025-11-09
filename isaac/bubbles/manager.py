@@ -6,7 +6,7 @@ import json
 import time
 import uuid
 from pathlib import Path
-from typing import Dict, List, Any, Optional, NamedTuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import os
 import psutil
@@ -246,7 +246,7 @@ class BubbleManager:
     def _get_open_files(self) -> List[str]:
         """Get list of potentially open/active files (best effort)"""
         open_files = []
-        workspace_root = os.getcwd()
+        os.getcwd()
 
         try:
             # Look for recently modified files (last 30 minutes)
@@ -279,7 +279,7 @@ class BubbleManager:
                     if file_path not in open_files:
                         open_files.append(file_path)
 
-        except Exception as e:
+        except Exception:
             # If anything fails, return empty list rather than crashing
             pass
 

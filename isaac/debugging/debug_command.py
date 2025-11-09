@@ -4,7 +4,7 @@ Provides comprehensive debugging assistance with investigation, analysis, and fi
 """
 
 import time
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 from pathlib import Path
 from dataclasses import asdict
 
@@ -87,7 +87,7 @@ class DebugCommand:
             # Step 4: Performance profiling (if command is available)
             print("📊 Analyzing performance...")
             try:
-                profile_id = self.performance_profiler.start_profiling(command, context)
+                self.performance_profiler.start_profiling(command, context)
                 # Simulate command execution for profiling
                 time.sleep(0.1)  # Brief pause for profiling
                 profile = self.performance_profiler.stop_profiling()
@@ -215,7 +215,7 @@ class DebugCommand:
                 print(f"📊 Running performance iteration {i + 1}/{iterations}...")
 
                 # Start profiling
-                profile_id = self.performance_profiler.start_profiling(command)
+                self.performance_profiler.start_profiling(command)
 
                 # Execute command (simulated)
                 time.sleep(0.5)  # Simulate command execution

@@ -5,7 +5,7 @@ Isaac's ambient intelligence system for proactive assistance
 
 import time
 import threading
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional
 from pathlib import Path
 from dataclasses import dataclass
 import json

@@ -6,11 +6,9 @@ Isaac's intelligent performance analysis and optimization system
 import time
 import psutil
 import threading
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
 from collections import defaultdict
-import os
-from pathlib import Path
 
 
 @dataclass

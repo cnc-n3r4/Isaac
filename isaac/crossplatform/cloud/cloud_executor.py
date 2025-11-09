@@ -3,8 +3,7 @@ Cloud Executor - Execute commands in cloud environment
 """
 
 import asyncio
-import json
-from typing import Dict, Any, Optional, List, Callable
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 import uuid
 

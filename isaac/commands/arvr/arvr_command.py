@@ -5,11 +5,11 @@ Provides command-line interface for AR/VR preparation features.
 """
 
 import json
-from typing import Dict, Any, List
+from typing import List
 
-from isaac.arvr.spatial_api import SpatialAPI, Vector3D, SpatialWorkspace
+from isaac.arvr.spatial_api import SpatialAPI, Vector3D
 from isaac.arvr.gesture_api import GestureAPI, GestureType
-from isaac.arvr.spatial_layouts import LayoutManager, LayoutType, LayoutConstraints
+from isaac.arvr.spatial_layouts import LayoutManager, LayoutType
 from isaac.arvr.multimodal_input import MultimodalInputHandler
 from isaac.arvr.prototype_mode import PrototypeRenderer
 from isaac.arvr.platform_adapter import PlatformAdapter, Platform
@@ -150,7 +150,7 @@ class ARVRCommand:
             name = args[1] if len(args) > 1 else None
             layout = self.layout_manager.get_layout(name)
             if layout:
-                optimized = self.layout_manager.optimize_layout(layout)
+                self.layout_manager.optimize_layout(layout)
                 return f"Optimized layout '{name}'"
             return "Layout not found"
 

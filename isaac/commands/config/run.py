@@ -306,7 +306,6 @@ def set_config(session, key, value):
         converted_value = converter(value)
 
         # Load existing config
-        import os
         from pathlib import Path
         isaac_dir = Path.home() / '.isaac'
         isaac_dir.mkdir(exist_ok=True)
@@ -441,7 +440,7 @@ def set_ai_routing_limits(period, amount):
         config_mgr.set_cost_limit(period, amount_float)
 
         return f"✓ Set {period} cost limit to ${amount_float:.2f}"
-    except ValueError as e:
+    except ValueError:
         return f"✗ Invalid amount: {amount}. Must be a number."
     except Exception as e:
         return f"✗ Error setting cost limit: {str(e)}"
@@ -478,7 +477,6 @@ def set_api_key(session, service, api_key):
         config_key = service_map[service]
         
         # Load existing config
-        import os
         from pathlib import Path
         isaac_dir = Path.home() / '.isaac'
         isaac_dir.mkdir(exist_ok=True)

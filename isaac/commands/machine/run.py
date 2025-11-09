@@ -11,7 +11,7 @@ from typing import Dict, Any
 # Add the isaac package to the path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from isaac.orchestration import MachineRegistry, Machine, MachineCapabilities, MachineStatus
+from isaac.orchestration import MachineRegistry, Machine, MachineStatus
 
 
 class MachineCommand:
@@ -296,7 +296,6 @@ class MachineCommand:
 def main():
     """Main entry point"""
     import sys
-    import json
 
     # Parse command line arguments
     if len(sys.argv) < 2:

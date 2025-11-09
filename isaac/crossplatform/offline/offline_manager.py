@@ -3,7 +3,7 @@ Offline Manager - Manages offline/online state and synchronization
 """
 
 import asyncio
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Callable
 from datetime import datetime
 import socket
 

@@ -3,7 +3,6 @@ Cloud Image Storage Service for Isaac
 Handles uploading, storing, and managing images in cloud storage.
 """
 
-import os
 import hashlib
 import mimetypes
 from pathlib import Path
@@ -11,7 +10,6 @@ from typing import Optional, Dict, List, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
-import base64
 
 from PIL import Image
 import io
@@ -326,7 +324,7 @@ class CloudImageStorage:
         if checksum not in self.metadata:
             return False
 
-        metadata = self.metadata[checksum]
+        self.metadata[checksum]
 
         try:
             # TODO: Delete from cloud storage

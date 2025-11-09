@@ -5,7 +5,7 @@ Cross-platform file search tools using pathlib and regex
 
 import re
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from .base import BaseTool
 
 

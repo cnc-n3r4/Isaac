@@ -6,7 +6,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Any
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 from isaac.plugins.plugin_api import (
@@ -14,10 +14,9 @@ from isaac.plugins.plugin_api import (
     PluginMetadata,
     PluginContext,
     PluginHook,
-    PluginError,
     PluginLoadError,
 )
-from isaac.plugins.plugin_registry import PluginRegistry, RegistryEntry
+from isaac.plugins.plugin_registry import PluginRegistry
 from isaac.plugins.plugin_security import PluginSandbox
 
 

@@ -9,17 +9,14 @@ from datetime import datetime
 
 class PluginError(Exception):
     """Base exception for plugin errors."""
-    pass
 
 
 class PluginLoadError(PluginError):
     """Raised when a plugin fails to load."""
-    pass
 
 
 class PluginSecurityError(PluginError):
     """Raised when a plugin violates security constraints."""
-    pass
 
 
 class PluginHook(enum.Enum):
@@ -193,7 +190,6 @@ class Plugin(abc.ABC):
 
         This must be implemented by all plugins.
         """
-        pass
 
     @abc.abstractmethod
     def initialize(self, context: PluginContext) -> None:
@@ -204,7 +200,6 @@ class Plugin(abc.ABC):
         Args:
             context: Plugin context with configuration and APIs
         """
-        pass
 
     def shutdown(self) -> None:
         """Clean up plugin resources.
@@ -212,7 +207,6 @@ class Plugin(abc.ABC):
         This is called when the plugin is being unloaded.
         Optional to implement.
         """
-        pass
 
     def register_hook(self, hook: PluginHook, handler: Callable) -> None:
         """Register a handler for a hook.

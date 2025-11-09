@@ -3,16 +3,14 @@ Smart File Router for Drag-Drop System
 Routes files to appropriate handlers based on user decisions.
 """
 
-import os
 import subprocess
 import shlex
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Callable
-from dataclasses import dataclass
 from .interactive_decision import DecisionResult, ActionType
-from .multi_file_detector import BatchAnalysis, FileAnalysis
+from .multi_file_detector import BatchAnalysis
 from .progress import BatchProgressManager, ProgressStyle
-from .batch_processor import BatchProcessor, BatchConfig
+from .batch_processor import BatchProcessor
 from .types import RoutingResult
 from ..images import CloudImageStorage
 

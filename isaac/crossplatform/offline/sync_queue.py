@@ -2,7 +2,6 @@
 Sync Queue - Queue operations for later synchronization
 """
 
-import asyncio
 import sqlite3
 from typing import Dict, Any, List, Optional
 from datetime import datetime

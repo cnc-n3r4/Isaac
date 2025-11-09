@@ -8,7 +8,7 @@ import json
 import csv
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 from io import StringIO
 
 from isaac.analytics.database import AnalyticsDatabase

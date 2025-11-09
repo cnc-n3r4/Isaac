@@ -316,7 +316,6 @@ def get_fallback_manager() -> FallbackManager:
 
 if __name__ == '__main__':
     # Test fallback manager
-    import sys
     logging.basicConfig(level=logging.DEBUG)
 
     manager = FallbackManager()

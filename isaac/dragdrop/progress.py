@@ -3,10 +3,9 @@ Progress Indicators for Smart Drag-Drop System
 Provides visual feedback during file processing operations.
 """
 
-import sys
 import time
 import threading
-from typing import Optional, Callable, Any
+from typing import Optional, Callable
 from enum import Enum
 
 

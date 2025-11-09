@@ -6,11 +6,9 @@ Analyzes resource usage and suggests optimizations.
 
 import os
 import subprocess
-import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
-import glob
 
 
 @dataclass
@@ -78,7 +76,7 @@ class OptimizationEngine:
 
             if result.returncode == 0:
                 # Parse Docker system df output
-                output = result.stdout
+                result.stdout
 
                 # Check for unused images
                 images_result = subprocess.run(

@@ -14,13 +14,11 @@ class BaseTool(ABC):
     @abstractmethod
     def name(self) -> str:
         """Tool name (e.g., 'read', 'write', 'edit')"""
-        pass
 
     @property
     @abstractmethod
     def description(self) -> str:
         """Brief description of what the tool does"""
-        pass
 
     @abstractmethod
     def execute(self, **kwargs) -> Dict[str, Any]:
@@ -36,7 +34,6 @@ class BaseTool(ABC):
                 ... (tool-specific fields)
             }
         """
-        pass
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -62,7 +59,6 @@ class BaseTool(ABC):
         Returns:
             dict: JSON schema for parameters
         """
-        pass
 
     def validate_result(self, result: Dict[str, Any]) -> bool:
         """

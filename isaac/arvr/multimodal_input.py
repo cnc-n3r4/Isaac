@@ -347,7 +347,6 @@ class MultimodalInputHandler:
         time.sleep(delay)
 
         # Gesture input
-        from isaac.arvr.spatial_api import Vector3D
         from isaac.arvr.gesture_api import HandType
         gesture = Gesture(
             type=gesture_type,

@@ -1,7 +1,6 @@
 """SessionManager - Manages Isaac session data with cloud sync."""
 
 import json
-import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 import uuid
@@ -205,7 +204,6 @@ class SessionManager:
     def log_command(self, command: str, exit_code: int = 0, shell_name: str = "unknown"):
         """Log executed command to history."""
         import time
-        import platform
 
         entry = {
             'command': command,

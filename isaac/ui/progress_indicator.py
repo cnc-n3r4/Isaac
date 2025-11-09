@@ -5,8 +5,7 @@ Visual progress tracking for agentic tasks and tool execution
 
 import time
 import threading
-from typing import Dict, Any, List, Optional, Callable
-from dataclasses import dataclass, field
+from typing import Dict, Any, List, Optional
 from enum import Enum
 
 

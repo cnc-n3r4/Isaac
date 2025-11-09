@@ -3,16 +3,13 @@ Batch Operations for Smart Drag-Drop System
 Handles large-scale file processing with optimizations for 100+ files.
 """
 
-import os
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Any, Optional, Callable, Tuple
-from dataclasses import dataclass
-from pathlib import Path
+from typing import List, Optional, Callable
 from queue import Queue
 
-from .multi_file_detector import BatchAnalysis, FileAnalysis
+from .multi_file_detector import BatchAnalysis
 from .interactive_decision import DecisionResult, ActionType
 from .types import RoutingResult, BatchConfig, BatchResult
 from .progress import BatchProgressManager, ProgressStyle

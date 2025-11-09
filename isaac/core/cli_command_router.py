@@ -96,7 +96,7 @@ class CommandRouter:
         # Parse command into tokens (respects quotes)
         try:
             tokens = shlex.split(command_string)
-        except ValueError as e:
+        except ValueError:
             # Handle unclosed quotes gracefully
             tokens = command_string.split()
 

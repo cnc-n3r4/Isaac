@@ -5,7 +5,7 @@ SAFETY-CRITICAL: Prevents dangerous commands from executing without warnings
 
 import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict
 
 
 class TierValidator:

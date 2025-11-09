@@ -3,11 +3,9 @@ Save Handler - Save piped data to files
 Provides /save command for saving blob content to files
 """
 
-import os
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 def main():

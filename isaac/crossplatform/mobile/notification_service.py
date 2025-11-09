@@ -5,7 +5,6 @@ Notification Service - Push notifications for mobile devices
 import asyncio
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-import json
 
 
 class NotificationService:

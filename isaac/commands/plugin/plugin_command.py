@@ -1,8 +1,7 @@
 """Plugin command - Manage Isaac plugins."""
 
 from pathlib import Path
-from typing import List, Optional
-from datetime import datetime
+from typing import List
 
 from isaac.plugins import PluginManager, PluginRegistry
 from isaac.plugins.plugin_devkit import PluginDevKit

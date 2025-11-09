@@ -9,12 +9,10 @@ import time
 import datetime
 import threading
 import re
-import xml.etree.ElementTree as ET
-from typing import Optional, Tuple
+from typing import Optional
 from pathlib import Path
 
 try:
-    import requests
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
@@ -27,7 +25,6 @@ except ImportError:
     HAS_COLORAMA = False
 
 try:
-    import psutil
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
@@ -503,7 +500,7 @@ class TerminalControl:
             self._draw_status_bar()
             frame = self._frame_cached
 
-        total_width = frame['total_width']
+        frame['total_width']
         inner_width = frame['inner_width']
         
         # DEBUG: Print actual widths (will appear in terminal)

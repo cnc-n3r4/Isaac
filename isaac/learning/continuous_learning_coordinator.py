@@ -5,15 +5,10 @@ Orchestrates all learning components for seamless continuous improvement.
 
 import time
 import threading
-from typing import Dict, List, Any, Optional
-from pathlib import Path
+from typing import Dict, Any
 import logging
 
 from isaac.core.session_manager import SessionManager
-from isaac.learning.mistake_learner import MistakeLearner
-from isaac.learning.behavior_adjustment import BehaviorAdjustmentEngine
-from isaac.learning.learning_metrics import LearningMetricsDashboard
-from isaac.learning.user_preference_learner import UserPreferenceLearner
 
 
 class ContinuousLearningCoordinator:

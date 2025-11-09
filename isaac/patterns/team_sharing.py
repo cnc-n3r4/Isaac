@@ -5,13 +5,10 @@ Phase 3.4.3: Share patterns across team members
 
 import json
 import time
-import hashlib
 from typing import Dict, List, Any, Optional, Set
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 import threading
-import requests
-from datetime import datetime
 import uuid
 
 

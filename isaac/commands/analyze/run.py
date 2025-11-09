@@ -3,10 +3,8 @@ Analyze Handler - AI analysis of piped data
 Provides /analyze command for AI-powered analysis of blob content
 """
 
-import os
 import json
 import sys
-from typing import Optional
 
 try:
     from isaac.ai.xai_client import XaiClient

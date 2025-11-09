@@ -15,7 +15,6 @@ Smart Detection:
 import sys
 import json
 import argparse
-import re
 from pathlib import Path
 
 # Add isaac to path for imports

@@ -341,7 +341,6 @@ def get_session_manager() -> XAISessionManager:
 
 if __name__ == '__main__':
     # Test the session manager
-    import sys
     logging.basicConfig(level=logging.DEBUG)
 
     manager = XAISessionManager()

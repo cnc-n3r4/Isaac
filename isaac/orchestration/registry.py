@@ -5,7 +5,6 @@ Multi-Machine Orchestration - Machine Registry and Coordination
 import json
 import time
 import uuid
-import subprocess
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
@@ -94,7 +93,7 @@ class MachineCapabilities:
                 has_docker=has_docker,
                 has_kubernetes=has_kubernetes
             )
-        except Exception as e:
+        except Exception:
             # Fallback with basic info
             return cls(
                 cpu_cores=1,

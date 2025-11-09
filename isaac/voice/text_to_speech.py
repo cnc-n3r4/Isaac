@@ -8,8 +8,7 @@ import time
 import threading
 import queue
 from typing import Dict, List, Any, Optional, Callable
-from dataclasses import dataclass, asdict
-from pathlib import Path
+from dataclasses import dataclass
 import tempfile
 import subprocess
 import platform

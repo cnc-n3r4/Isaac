@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 from collections import defaultdict
-import time
 
 
 class CostOptimizer:
@@ -358,7 +357,7 @@ class CostOptimizer:
         # Get all providers that can handle this complexity
         from isaac.ai.task_analyzer import TaskComplexity
         try:
-            complexity_enum = TaskComplexity(complexity)
+            TaskComplexity(complexity)
         except ValueError:
             return None
 

@@ -5,7 +5,6 @@ Cloud-synced user preferences for Isaac behavior
 
 from dataclasses import dataclass, asdict
 from typing import Dict, Optional
-import json
 import platform
 
 

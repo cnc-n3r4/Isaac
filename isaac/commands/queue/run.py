@@ -15,7 +15,7 @@ from isaac.core.session_manager import SessionManager
 def main():
     """Main entry point for queue command"""
     # Read payload from stdin
-    payload = json.loads(sys.stdin.read())
+    json.loads(sys.stdin.read())
 
     # Get session
     session = SessionManager()

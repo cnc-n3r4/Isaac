@@ -4,7 +4,6 @@ Newfile Command Handler - Create and manage files with templates
 Provides /newfile command for creating files with templates and proper path handling
 """
 
-import os
 import json
 import sys
 import argparse

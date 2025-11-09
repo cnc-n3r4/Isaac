@@ -5,9 +5,8 @@ Isaac's intelligent debugging system for automated fix recommendations
 
 import re
 import os
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, asdict
-from pathlib import Path
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
 
 
 @dataclass

@@ -5,9 +5,9 @@ Track and analyze pair programming effectiveness.
 
 import json
 import sqlite3
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
 from pathlib import Path
 from collections import defaultdict
 

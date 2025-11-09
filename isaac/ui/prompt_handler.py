@@ -3,8 +3,7 @@ Prompt Handler - Isaac's command prompt interface
 Manages isaac> user> interaction and command input
 """
 
-import sys
-from typing import Optional, Tuple
+from typing import Tuple
 from isaac.ui.terminal_control import TerminalControl
 from isaac.ui.advanced_input import AdvancedInputHandler
 from isaac.ui.visual_enhancer import VisualEnhancer

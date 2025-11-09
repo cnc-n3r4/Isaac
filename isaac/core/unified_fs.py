@@ -5,7 +5,6 @@ This is intentionally minimal and suitable for iterative enhancement.
 """
 from pathlib import Path
 from typing import Optional
-import os
 
 
 class UnifiedFileSystem:

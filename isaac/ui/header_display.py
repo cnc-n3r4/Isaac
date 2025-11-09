@@ -3,7 +3,6 @@ Header Display - Isaac's status header
 Shows session info, tier status, and system indicators
 """
 
-import time
 from datetime import datetime
 from typing import Optional
 from isaac.ui.terminal_control import TerminalControl

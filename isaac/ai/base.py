@@ -82,19 +82,16 @@ class BaseAIClient(ABC):
 
     def _setup(self):
         """Provider-specific setup (override if needed)"""
-        pass
 
     @property
     @abstractmethod
     def provider_name(self) -> str:
         """Provider identifier (e.g., 'grok', 'claude', 'openai')"""
-        pass
 
     @property
     @abstractmethod
     def default_model(self) -> str:
         """Default model for this provider"""
-        pass
 
     @abstractmethod
     def chat(
@@ -120,12 +117,10 @@ class BaseAIClient(ABC):
         Returns:
             AIResponse object
         """
-        pass
 
     @abstractmethod
     def supports_tool_calling(self) -> bool:
         """Whether this provider supports tool/function calling"""
-        pass
 
     def get_cost_estimate(self, usage: Dict[str, int]) -> float:
         """

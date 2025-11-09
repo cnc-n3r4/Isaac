@@ -4,7 +4,6 @@ Mobile API - RESTful API for mobile companion apps
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from typing import Dict, Any, Optional, List
 
 
 class MobileAPI:

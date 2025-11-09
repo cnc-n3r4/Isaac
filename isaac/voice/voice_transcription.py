@@ -8,9 +8,8 @@ import time
 import threading
 import json
 import queue
-from typing import Dict, List, Any, Optional, Callable, Union
+from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, asdict
-from pathlib import Path
 import tempfile
 import subprocess
 try:
@@ -632,10 +631,10 @@ class VoiceTranscriptionManager:
 
     def _format_srt_time(self, seconds: float) -> str:
         """Format time for SRT subtitle format."""
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = int(seconds % 60)
-        millis = int((seconds % 1) * 1000)
+        int(seconds // 3600)
+        int((seconds % 3600) // 60)
+        int(seconds % 60)
+        int((seconds % 1) * 1000)
         return "02d"
 
     def stop(self):

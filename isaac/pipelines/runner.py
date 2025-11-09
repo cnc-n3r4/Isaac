@@ -6,7 +6,7 @@ Isaac's pipeline execution orchestrator
 import time
 import uuid
 import threading
-from concurrent.futures import ThreadPoolExecutor, Future, as_completed
+from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Dict, Any, Optional, List, Set
 from collections import defaultdict, deque
 
@@ -125,7 +125,7 @@ class PipelineRunner:
         """Execute pipeline with dependency management."""
         try:
             # Build dependency graph
-            dependency_graph = self._build_dependency_graph(pipeline.steps)
+            self._build_dependency_graph(pipeline.steps)
             reverse_deps = self._build_reverse_dependencies(pipeline.steps)
 
             # Track completed steps

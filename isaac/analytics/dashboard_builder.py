@@ -4,10 +4,9 @@ Dashboard Builder
 Build custom dashboards with metrics visualization.
 """
 
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 from isaac.analytics.database import AnalyticsDatabase
 from isaac.analytics.productivity_tracker import ProductivityTracker

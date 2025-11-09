@@ -140,7 +140,7 @@ class ScriptValidator:
 
         except subprocess.TimeoutExpired:
             errors.append("Validation timed out")
-        except Exception as e:
+        except Exception:
             # Bash might not be available in some environments
             pass
 
@@ -286,7 +286,7 @@ class ScriptValidator:
         except FileNotFoundError:
             # shellcheck not installed
             pass
-        except Exception as e:
+        except Exception:
             pass
 
         return None

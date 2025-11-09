@@ -7,7 +7,6 @@ import sqlite3
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from pathlib import Path
-import hashlib
 
 
 class CacheManager:

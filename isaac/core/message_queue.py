@@ -11,7 +11,7 @@ from pathlib import Path
 import sqlite3
 import json
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any
 from enum import Enum
 import logging
 

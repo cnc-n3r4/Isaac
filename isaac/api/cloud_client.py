@@ -6,7 +6,6 @@ from typing import Optional
 
 class CloudUnavailableError(Exception):
     """Raised when cloud API is unreachable."""
-    pass
 
 
 class CloudClient:

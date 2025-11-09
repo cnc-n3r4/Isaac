@@ -76,7 +76,7 @@ class AnalyticsManager:
             return
 
         # Analyze file quality
-        analysis = self.code_quality.analyze_file(file_path)
+        self.code_quality.analyze_file(file_path)
 
         # Record any patterns or anti-patterns detected
         # This would integrate with pattern detection systems

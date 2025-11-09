@@ -3,10 +3,9 @@ Smart Drag-Drop System for Isaac
 Handles multi-file detection, analysis, and intelligent routing.
 """
 
-import os
 import mimetypes
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple, Set
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -232,7 +231,6 @@ class MultiFileDetector:
         # Calculate checksum for duplicate detection (only for reasonable file sizes)
         if size_bytes > 0 and size_bytes < 100 * 1024 * 1024:  # < 100MB
             try:
-                import hashlib
                 checksum = self._calculate_checksum(path)
                 metadata['checksum'] = checksum
             except Exception:

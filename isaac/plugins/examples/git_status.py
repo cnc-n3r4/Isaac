@@ -41,7 +41,6 @@ class GitStatusPlugin(Plugin):
 
     def shutdown(self) -> None:
         """Clean up plugin resources."""
-        pass
 
     def on_startup(self) -> None:
         """Handle startup hook."""

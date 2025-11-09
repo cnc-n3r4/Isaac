@@ -6,10 +6,9 @@ Isaac's intelligent debug history system for learning from past experiences
 import json
 import sqlite3
 import time
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from datetime import datetime, timedelta
 import hashlib
 
 

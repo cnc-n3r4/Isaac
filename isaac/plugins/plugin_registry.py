@@ -1,10 +1,8 @@
 """Plugin Registry - Central plugin repository management."""
 
 import json
-import os
 import hashlib
-import requests
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pathlib import Path

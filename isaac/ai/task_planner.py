@@ -4,10 +4,9 @@ Breaks complex tasks into steps, handles failures, provides recovery options
 """
 
 import json
-from typing import Dict, List
+from typing import Dict
 from isaac.ai.xai_client import XaiClient
 from isaac.adapters.base_adapter import CommandResult
-from isaac.models.task_history import TaskHistory
 
 
 def plan_task(task_description: str, shell_name: str = "bash") -> Dict:

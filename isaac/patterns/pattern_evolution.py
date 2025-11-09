@@ -6,11 +6,11 @@ Phase 3.4.4: Patterns that learn and improve over time
 import json
 import time
 import statistics
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 import uuid
 
 

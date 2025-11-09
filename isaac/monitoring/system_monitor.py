@@ -12,7 +12,6 @@ import psutil
 import subprocess
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any
 
 from isaac.monitoring.base_monitor import BaseMonitor
 from isaac.core.message_queue import MessageType, MessagePriority

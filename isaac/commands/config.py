@@ -1,7 +1,6 @@
 # isaac/commands/config.py
 
 from isaac.core.session_manager import SessionManager
-from isaac.api.cloud_client import CloudClient
 from isaac.ai.xai_client import XaiClient
 
 class ConfigCommand:

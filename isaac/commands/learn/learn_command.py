@@ -3,7 +3,6 @@ Learn Command - Interface for Isaac's self-improving learning system
 Provides access to mistake learning, behavior adjustment, and metrics
 """
 
-import argparse
 import time
 from typing import Dict, List, Any, Optional
 from pathlib import Path
