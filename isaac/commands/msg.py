@@ -26,11 +26,11 @@ class MsgCommand(BaseCommand):
 
     @property
     def usage(self) -> str:
-        return "/msg [--sys|--code|--all] [--ack ID|--ack-all]"
+        return "/msg [--sys|--code|--all] [--ack ID|--ack-all] [--run ID]"
 
     def execute(self, args: List[str]) -> bool:
         """
-        Execute message command.
+        Execute message command with auto-execution support.
 
         Args:
             args: Command arguments
@@ -45,6 +45,7 @@ class MsgCommand(BaseCommand):
         ack_id = None
         ack_all = False
         ack_type = None
+        run_id = None
 
         i = 0
         while i < len(args):
@@ -67,6 +68,13 @@ class MsgCommand(BaseCommand):
                 if i + 1 < len(args) and args[i + 1] in ['--sys', '--code']:
                     ack_type = MessageType.SYSTEM if args[i + 1] == '--sys' else MessageType.CODE
                     i += 1
+            elif arg in ['--run', '--execute', '-x'] and i + 1 < len(args):
+                try:
+                    run_id = int(args[i + 1])
+                    i += 1
+                except ValueError:
+                    print("Error: --run requires a valid message ID")
+                    return False
             else:
                 print(f"Unknown argument: {arg}")
                 print(f"Usage: {self.usage}")
@@ -97,6 +105,69 @@ class MsgCommand(BaseCommand):
                 print(f"✓ Acknowledged {count} message(s)")
             return True
 
+        # Handle command execution
+        if run_id is not None:
+            message = message_queue.get_message(run_id)
+            if not message:
+                print(f"✗ Message {run_id} not found")
+                return False
+
+            # Check if message has a suggested command
+            metadata = message.get('metadata', {})
+            if isinstance(metadata, str):
+                import json
+                try:
+                    metadata = json.loads(metadata)
+                except:
+                    metadata = {}
+
+            suggested_command = metadata.get('suggested_command')
+
+            if not suggested_command:
+                print(f"✗ Message {run_id} has no suggested command to execute")
+                print(f"   Title: {message['title']}")
+                return False
+
+            # Confirm execution
+            print(f"Execute suggested command from message {run_id}:")
+            print(f"  Title: {message['title']}")
+            print(f"  Command: {suggested_command}")
+            print()
+            confirm = input("Execute this command? [y/N]: ").strip().lower()
+
+            if confirm not in ['y', 'yes']:
+                print("✗ Execution cancelled")
+                return False
+
+            # Execute the command
+            print(f"\n▶ Executing: {suggested_command}")
+            print("=" * 60)
+
+            import subprocess
+            try:
+                result = subprocess.run(
+                    suggested_command,
+                    shell=True,
+                    capture_output=False,
+                    text=True
+                )
+
+                print("=" * 60)
+                if result.returncode == 0:
+                    print(f"✓ Command executed successfully")
+                    # Auto-acknowledge the message
+                    message_queue.acknowledge_message(run_id)
+                    print(f"✓ Message {run_id} acknowledged")
+                else:
+                    print(f"✗ Command failed with exit code {result.returncode}")
+
+                return result.returncode == 0
+
+            except Exception as e:
+                print("=" * 60)
+                print(f"✗ Error executing command: {e}")
+                return False
+
         # Determine what to show
         if show_all or (not show_system and not show_code):
             # Show all messages (default behavior)
@@ -119,7 +190,7 @@ class MsgCommand(BaseCommand):
         return True
 
     def _display_messages(self, messages: List[Dict[str, Any]], title: str) -> None:
-        """Display messages in a formatted way."""
+        """Display messages in a formatted way with executable commands."""
         if not messages:
             print(f"\n{title}:")
             print("  No pending messages")
@@ -155,11 +226,25 @@ class MsgCommand(BaseCommand):
                     content = content[:97] + "..."
                 print(f"    {content}")
 
-            # Show metadata if present
-            if msg['metadata']:
+            # Parse metadata
+            metadata = msg.get('metadata')
+            if metadata:
+                if isinstance(metadata, str):
+                    import json
+                    try:
+                        metadata = json.loads(metadata)
+                    except:
+                        metadata = {}
+
+                # Check for suggested command
+                if 'suggested_command' in metadata:
+                    print(f"    💡 Suggested: {metadata['suggested_command']}")
+                    print(f"    ▶️  Run with: /msg --run {msg['id']}")
+
+                # Show other metadata
                 metadata_items = []
-                for key, value in msg['metadata'].items():
-                    if isinstance(value, (str, int, float, bool)):
+                for key, value in metadata.items():
+                    if key != 'suggested_command' and isinstance(value, (str, int, float, bool)):
                         metadata_items.append(f"{key}={value}")
                 if metadata_items:
                     print(f"    Metadata: {', '.join(metadata_items)}")
@@ -186,11 +271,26 @@ EXAMPLES:
   /msg --ack 123         # Acknowledge message ID 123
   /msg --ack-all         # Acknowledge all messages
   /msg --ack-all --sys   # Acknowledge all system messages
+  /msg --run 123         # Execute suggested command from message 123
+  /msg -x 33             # Short form: execute command from message 33
+
+AUTO-EXECUTION:
+  Messages with suggested commands show:
+    💡 Suggested: pip install --upgrade package
+    ▶️  Run with: /msg --run 33
+
+  Running with --run will:
+  1. Display the command to be executed
+  2. Ask for confirmation
+  3. Execute the command if confirmed
+  4. Auto-acknowledge the message on success
 
 SHORTCUTS:
-  -s, --sys     System messages only
-  -c, --code    Code messages only
-  -a, --all     All messages (default)
+  -s, --sys       System messages only
+  -c, --code      Code messages only
+  -a, --all       All messages (default)
+  -x, --run ID    Execute suggested command (with confirmation)
+  --execute ID    Same as --run
 
 The prompt shows message counts: $[!2¢1]> (2 system, 1 code pending)
 """</content>
