@@ -1,3 +1,7 @@
+name: bubble
+version: 1.0.0
+summary: Workspace bubble management for state capture and restoration
+description: Create, manage, and restore complete workspace states including git status, environment variables, running processes, and open files
 triggers: ["/bubble"]
 aliases: ["/bubbles", "/workspace"]
 args:
@@ -27,7 +31,7 @@ args:
     required: false
     description: "File path for export/import actions"
   - name: suspend_processes
-    type: boolean
+    type: bool
     required: false
     description: "Whether to suspend running processes (suspend only)"
 security:

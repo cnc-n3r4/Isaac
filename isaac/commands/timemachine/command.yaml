@@ -1,0 +1,23 @@
+name: timemachine
+version: 1.0.0
+summary: Time machine for workspace history navigation
+description: Navigate workspace timeline, create snapshots, and restore to any point in time
+triggers:
+  - "/timemachine"
+  - "/time"
+aliases:
+  - "/timeline"
+args:
+  - name: action
+    type: enum
+    enum: [snapshot, timeline, restore, browse, playback, search, stats, graph]
+    required: true
+    description: "Action to perform with time machine"
+  - name: args
+    type: string
+    required: false
+    variadic: true
+security:
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 100
