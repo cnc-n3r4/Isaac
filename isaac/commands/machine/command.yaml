@@ -1,3 +1,7 @@
+name: machine
+version: 1.0.0
+summary: Multi-machine orchestration and registry management
+description: Manage Isaac machine registry for distributed computing and orchestration
 triggers: ["/machine", "/machines"]
 aliases: ["/registry", "/nodes"]
 args:
@@ -19,7 +23,7 @@ args:
     required: false
     description: "IP address for machine registration"
   - name: port
-    type: integer
+    type: int
     required: false
     description: "Port for machine registration (default: 8080)"
   - name: tags
@@ -39,14 +43,16 @@ args:
     required: false
     description: "Comma-separated tags to filter machines"
   - name: min_cpu
-    type: integer
+    type: int
     required: false
     description: "Minimum CPU cores required"
   - name: min_memory
-    type: float
+    type: int
     required: false
     description: "Minimum memory GB required"
 security:
   resources:
     timeout_ms: 30000
     max_stdout_kib: 100
+runtime:
+  entry: run.py
