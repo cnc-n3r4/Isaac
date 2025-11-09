@@ -1,0 +1,46 @@
+triggers:
+  - "/script"
+  - "/bash"
+  - "/sh"
+aliases:
+  - "script"
+  - "bash"
+  - "sh"
+args:
+  - name: action
+    type: enum
+    enum: ["translate", "generate", "explain", "schedule", "validate", "template", "list-templates", "list-scheduled"]
+    required: true
+    description: "Action to perform"
+  - name: input
+    type: string
+    required: false
+    description: "Input text (natural language description or script to analyze)"
+  - name: template
+    type: string
+    required: false
+    description: "Template name (for template action)"
+  - name: output
+    type: string
+    required: false
+    description: "Output file path"
+  - name: when
+    type: string
+    required: false
+    description: "Schedule time in natural language (for schedule action)"
+  - name: strict
+    type: boolean
+    default: false
+    description: "Use strict validation mode"
+  - name: detail_level
+    type: enum
+    enum: ["brief", "medium", "detailed"]
+    default: "medium"
+    description: "Detail level for explanations"
+security:
+  resources:
+    timeout_ms: 60000
+    max_stdout_kib: 2048
+execution:
+  python_module: "isaac.commands.script.run"
+  function: "execute_script"
