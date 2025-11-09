@@ -102,6 +102,113 @@ Isaac acts as your intelligent shell companion that:
 
 ---
 
+## ⚙️ Configuration
+
+Isaac supports two flexible configuration methods that can be used independently or together.
+
+### Option 1: Environment Variables (Recommended for Development)
+
+The easiest way to get started is using a `.env` file:
+
+1. **Copy the example file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Add your API keys:**
+   ```bash
+   # Edit .env and add your keys
+   XAI_API_KEY=your_xai_key_here
+   ANTHROPIC_API_KEY=your_claude_key_here
+   OPENAI_API_KEY=your_openai_key_here
+   ```
+
+3. **Run Isaac:**
+   ```bash
+   isaac --start
+   ```
+
+Isaac automatically loads your `.env` file at startup.
+
+### Option 2: Isaac Commands (Recommended for Production)
+
+Configure API keys using Isaac's built-in commands:
+
+```bash
+# Set API keys
+isaac /config --apikey xai YOUR_XAI_KEY
+isaac /config --apikey claude YOUR_CLAUDE_KEY
+isaac /config --apikey openai YOUR_OPENAI_KEY
+
+# For xAI Collections
+isaac /config --apikey xai-collections YOUR_XAI_KEY
+```
+
+### Configuration Priority
+
+Isaac uses this priority order (highest to lowest):
+
+1. **Command line arguments** - Passed directly to commands
+2. **Isaac config files** - `~/.isaac/config.json`
+3. **Environment variables** - `.env` file
+4. **Default values** - Built-in defaults
+
+This means you can:
+- Use `.env` for local development
+- Override with `~/.isaac/config.json` for user-specific settings
+- Override with command arguments for one-off changes
+
+### Verify Configuration
+
+Check that your API keys are working:
+
+```bash
+# Show configuration overview
+/config
+
+# Show AI provider details
+/config --ai
+
+# Show AI routing configuration
+/config --ai-routing
+
+# Validate all settings
+/config --status
+```
+
+### Advanced Configuration
+
+**AI Routing Configuration:**
+```bash
+# Set which AI to use for different complexity levels
+/config --ai-routing-set simple grok
+/config --ai-routing-set complex claude
+
+# Set specific models
+/config --ai-routing-model claude claude-3-5-sonnet-20241022
+/config --ai-routing-model grok grok-beta
+
+# Set cost limits
+/config --ai-routing-limits daily 10.0
+/config --ai-routing-limits monthly 100.0
+```
+
+**Interactive Configuration Console:**
+```bash
+# Launch TUI for settings management
+/config --console
+```
+
+### Security Best Practices
+
+⚠️ **Important:**
+- Never commit `.env` files to version control
+- Use `.env.example` as a template (safe to commit)
+- Rotate API keys regularly
+- Use different keys for development and production
+
+---
+
 ## 📚 Core Concepts
 
 ### Safety Tiers

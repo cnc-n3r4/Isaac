@@ -8,6 +8,7 @@ import uuid
 
 from isaac.models.task_history import TaskHistory
 from isaac.models.aiquery_history import AIQueryHistory
+from isaac.core.env_config import EnvConfigLoader
 
 
 class Preferences:
@@ -57,12 +58,20 @@ class SessionManager:
         self.isaac_dir = self.home_dir / '.isaac'
         self.isaac_dir.mkdir(exist_ok=True)
 
+        # Load environment variables from .env file
+        self.env_loader = EnvConfigLoader(auto_load=True)
+
         # Store config and adapter
         self.config = config or {}
         self.shell_adapter = shell_adapter
 
         # Load config from disk if it exists
         self._load_config()
+
+        # Merge .env configuration with loaded config
+        # Priority: config.json > .env
+        if self.env_loader.loaded:
+            self.config = self.env_loader.merge_with_isaac_config(self.config)
 
         # Generate machine ID if not provided
         if 'machine_id' not in self.config:

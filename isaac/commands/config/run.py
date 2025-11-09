@@ -68,6 +68,12 @@ def main():
                     flags['ai-routing'] = True
                 elif flag_name == 'ai-routing-reset':
                     flags['ai-routing-reset'] = True
+                elif flag_name == 'env':
+                    flags['env'] = True
+                elif flag_name == 'env-validate':
+                    flags['env-validate'] = True
+                elif flag_name == 'env-create':
+                    flags['env-create'] = True
             else:
                 # Reject old positional syntax
                 flags = {}
@@ -129,6 +135,12 @@ def main():
             output = "Usage: /config --ai-routing-limits <daily|monthly> <amount>\n\nExamples:\n  /config --ai-routing-limits daily 10.0\n  /config --ai-routing-limits monthly 100.0"
     elif 'ai-routing-reset' in flags:
         output = reset_ai_routing()
+    elif 'env' in flags:
+        output = show_env_status()
+    elif 'env-validate' in flags:
+        output = validate_env_keys()
+    elif 'env-create' in flags:
+        output = create_env_example()
     else:
         output = f"Unknown flag: {list(flags.keys())}\nUse /config for help"
 
@@ -159,6 +171,9 @@ def show_overview(session):
     lines.append("  /config --collections  - xAI Collections status")
     lines.append("  /config --console      - Interactive /mine settings TUI")
     lines.append("  /config --set <key> <value> - Change setting")
+    lines.append("  /config --env          - Show .env configuration status")
+    lines.append("  /config --env-validate - Validate .env API keys")
+    lines.append("  /config --env-create   - Create .env.example file")
     return "\n".join(lines)
 
 
@@ -498,6 +513,118 @@ def set_api_key(session, service, api_key):
         return f"✓ Set {service} API key (stored as {config_key})"
     except Exception as e:
         return f"✗ Error setting {service} API key: {str(e)}"
+
+
+def show_env_status():
+    """Show .env configuration status"""
+    try:
+        from isaac.core.env_config import EnvConfigLoader
+
+        env_loader = EnvConfigLoader(auto_load=True)
+
+        lines = []
+        lines.append("=== Environment Configuration Status ===\n")
+
+        # Check if .env file exists
+        if env_loader.has_env_file():
+            lines.append(f"✓ .env file found: {env_loader.env_path}")
+            lines.append("")
+
+            # Show which API keys are configured
+            lines.append("API Keys Status:")
+            validation = env_loader.validate_keys()
+
+            for service, is_valid in validation.items():
+                status = "✓" if is_valid else "✗"
+                lines.append(f"  {status} {service:20} {'Configured' if is_valid else 'Not configured'}")
+
+            lines.append("")
+            lines.append("Configuration Priority:")
+            lines.append("  1. Command line arguments (highest)")
+            lines.append("  2. Isaac config files (~/.isaac/config.json)")
+            lines.append("  3. Environment variables (.env file)")
+            lines.append("  4. Default values (lowest)")
+        else:
+            lines.append("✗ No .env file found")
+            lines.append("")
+            lines.append("To create a .env file:")
+            lines.append("  1. Copy .env.example to .env")
+            lines.append("     cp .env.example .env")
+            lines.append("")
+            lines.append("  2. Edit .env and add your API keys")
+            lines.append("")
+            lines.append("  3. Or use: /config --env-create")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"✗ Error loading .env status: {str(e)}"
+
+
+def validate_env_keys():
+    """Validate .env API keys"""
+    try:
+        from isaac.core.env_config import EnvConfigLoader
+
+        env_loader = EnvConfigLoader(auto_load=True)
+
+        lines = []
+        lines.append("=== Validating API Keys ===\n")
+
+        if not env_loader.has_env_file():
+            lines.append("✗ No .env file found")
+            lines.append("Run: /config --env-create")
+            return "\n".join(lines)
+
+        validation = env_loader.validate_keys()
+        all_api_keys = env_loader.get_all_api_keys()
+
+        lines.append("API Key Validation:")
+        for service, is_valid in validation.items():
+            if is_valid:
+                key = all_api_keys.get(service, "")
+                masked_key = key[:10] + "..." + key[-4:] if len(key) > 14 else key[:4] + "..."
+                lines.append(f"  ✓ {service:20} {masked_key}")
+            else:
+                lines.append(f"  ✗ {service:20} Not configured")
+
+        lines.append("")
+
+        # Count configured keys
+        configured_count = sum(1 for v in validation.values() if v)
+        total_count = len(validation)
+
+        if configured_count == 0:
+            lines.append("⚠️  No API keys configured in .env")
+            lines.append("Edit your .env file and add at least one API key")
+        elif configured_count < total_count:
+            lines.append(f"⚠️  {configured_count}/{total_count} API keys configured")
+            lines.append("Isaac will work with at least one provider configured")
+        else:
+            lines.append(f"✓ All {configured_count} API keys configured!")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"✗ Error validating keys: {str(e)}"
+
+
+def create_env_example():
+    """Create .env.example file"""
+    try:
+        from isaac.core.env_config import EnvConfigLoader
+        from pathlib import Path
+
+        env_loader = EnvConfigLoader(auto_load=False)
+
+        # Try project root first
+        project_root = Path.cwd()
+        output_path = project_root / '.env.example'
+
+        if env_loader.create_example_env(output_path):
+            return f"✓ Created .env.example at {output_path}\n\nNext steps:\n  1. Copy to .env: cp .env.example .env\n  2. Edit .env and add your API keys"
+        else:
+            return "✗ Failed to create .env.example"
+    except Exception as e:
+        return f"✗ Error creating .env.example: {str(e)}"
 
 
 if __name__ == "__main__":
