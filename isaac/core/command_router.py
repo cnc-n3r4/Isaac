@@ -4,6 +4,7 @@ SAFETY-CRITICAL: Ensures all commands go through appropriate validation
 """
 
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 from isaac.adapters.base_adapter import CommandResult
 from isaac.ai.query_classifier import QueryClassifier
@@ -15,7 +16,7 @@ from isaac.runtime import CommandDispatcher
 class CommandRouter:
     """Routes commands through tier validation and AI processing."""
 
-    def __init__(self, session_mgr, shell):
+    def __init__(self, session_mgr: Any, shell: Any) -> None:
         """Initialize with session manager and shell adapter."""
         self.session = session_mgr
         self.shell = shell
@@ -741,7 +742,7 @@ Current user query follows below:
 
     def _track_command_execution(
         self, command: str, result: CommandResult, tier: float, was_corrected: bool = False
-    ):
+    ) -> None:
         """Track command execution for learning system.
 
         Args:
@@ -796,7 +797,7 @@ Current user query follows below:
             logger = logging.getLogger(__name__)
             logger.debug(f"Failed to track command execution: {e}")
 
-    def _track_auto_correction(self, original: str, corrected: str, confidence: float):
+    def _track_auto_correction(self, original: str, corrected: str, confidence: float) -> None:
         """Track automatic command corrections for learning.
 
         Args:
@@ -825,7 +826,7 @@ Current user query follows below:
             logger = logging.getLogger(__name__)
             logger.debug(f"Failed to track auto-correction: {e}")
 
-    def _track_user_correction_acceptance(self, original: str, corrected: str, accepted: bool):
+    def _track_user_correction_acceptance(self, original: str, corrected: str, accepted: bool) -> None:
         """Track whether user accepted a suggested correction.
 
         Args:
