@@ -63,6 +63,14 @@ class CommandRouter:
         
         return True  # All pipes are quoted
 
+    def _is_unix_command(self, cmd: str) -> bool:
+        """Check if command is a Unix command that needs translation on Windows."""
+        unix_commands = {'ls', 'grep', 'ps', 'kill', 'find', 'cat', 'head', 'tail',
+                         'cp', 'mv', 'rm', 'pwd', 'which', 'echo', 'touch', 'mkdir',
+                         'wc', 'sort', 'uniq', 'chmod', 'chown', 'du', 'df'}
+        first_word = cmd.strip().split()[0] if cmd.strip() else ''
+        return first_word in unix_commands
+
     def _route_device_command(self, input_text: str) -> CommandResult:
         """Handle !alias device routing commands."""
         # Parse device alias and command
@@ -466,7 +474,24 @@ class CommandRouter:
                     output=f"Isaac > {result['error']}",
                     exit_code=-1
                 )
-        
+
+        # Cross-platform alias translation for Unix commands on Windows
+        import platform
+        current_platform = platform.system().lower()
+
+        if current_platform == 'windows' and self._is_unix_command(input_text):
+            try:
+                from isaac.core.unix_aliases import UnixAliasTranslator
+                translator = UnixAliasTranslator()
+                translated = translator.translate(input_text)
+                if translated:
+                    if translator.show_translation:
+                        print(f"Isaac > Translating Unix command: {input_text} -> {translated}")
+                    input_text = translated
+            except Exception as e:
+                # If translation fails, continue with original command
+                print(f"Isaac > Warning: Unix alias translation failed: {e}")
+
         # Regular command processing
         tier = self.validator.get_tier(input_text)
 

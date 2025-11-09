@@ -455,5 +455,4 @@ class BubbleManager:
             bubble.created_at = datetime.fromisoformat(data['created_at'])
             return bubble
         except Exception:
-            return None</content>
-<parameter name="filePath">c:\Projects\Isaac2\isaac\bubbles\bubble_manager.py
+            return None

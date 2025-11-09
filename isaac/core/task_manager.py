@@ -12,6 +12,7 @@ import json
 import time
 import threading
 import subprocess
+import shlex
 import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable
@@ -332,10 +333,10 @@ class TaskManager:
         try:
             # Execute command
             # For ISAAC commands, we need to call through the dispatcher
-            # For now, execute as shell command
+            # Use shlex.split() to safely parse the command and disable shell=True
             process = subprocess.Popen(
-                task.command,
-                shell=True,
+                shlex.split(task.command),
+                shell=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True

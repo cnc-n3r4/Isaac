@@ -86,10 +86,12 @@ class GitStatusPlugin(Plugin):
                 status = status_result.stdout.strip()
                 if status:
                     print(f"[Git] Uncommitted changes:")
-                    for line in status.split("\n")[:5]:  # Show first 5 files
+                    status_lines = status.split("\n")
+                    for line in status_lines[:5]:  # Show first 5 files
                         print(f"      {line}")
-                    if len(status.split("\n")) > 5:
-                        print(f"      ... and {len(status.split('\n')) - 5} more")
+                    if len(status_lines) > 5:
+                        remaining_count = len(status_lines) - 5
+                        print(f"      ... and {remaining_count} more")
                 else:
                     print("[Git] Working directory clean")
 
