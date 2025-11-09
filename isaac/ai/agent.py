@@ -6,7 +6,7 @@ Integrates AI router with tool calling for autonomous task execution
 from typing import Dict, Any, List, Optional
 import json
 from .router import AIRouter
-from ..tools import ReadTool, WriteTool, EditTool, GrepTool, GlobTool
+from ..tools import ReadTool, WriteTool, EditTool, GrepTool, GlobTool, ShellTool
 
 
 class IsaacAgent:
@@ -31,7 +31,8 @@ class IsaacAgent:
             'write': WriteTool(),
             'edit': EditTool(),
             'grep': GrepTool(),
-            'glob': GlobTool()
+            'glob': GlobTool(),
+            'shell': ShellTool()
         }
         
         # Get tool schemas for AI
@@ -45,7 +46,7 @@ class IsaacAgent:
         
         # System prompts
         self.system_prompts = {
-            'code_assistant': """You are Isaac, an AI code assistant with access to powerful file operation tools.
+            'code_assistant': """You are Isaac, an AI code assistant with access to powerful file operation and shell execution tools.
 
 Available Tools:
 - read: Read file contents with line numbers
@@ -53,6 +54,7 @@ Available Tools:
 - edit: Make exact string replacements in files
 - grep: Search for patterns across files
 - glob: Find files matching patterns
+- shell: Execute shell commands safely with tier-based validation
 
 You can use these tools to:
 1. Read and analyze code
@@ -60,8 +62,14 @@ You can use these tools to:
 3. Search for specific patterns
 4. Find files by pattern
 5. Create new files
+6. Execute safe shell commands (package management, system queries, etc.)
 
-Always use tools when the user asks about files or code. Be precise and helpful.""",
+For shell commands, use the 'shell' tool which automatically validates safety using Isaac's tier system:
+- Tier 1-2: Safe commands (ls, cd, grep) - execute immediately
+- Tier 2.5-3: Moderate commands (pip, git, npm) - validated but allowed
+- Tier 4: Dangerous commands (rm, format) - blocked
+
+When users ask to update dependencies, install packages, or run system commands, use the shell tool to execute them safely.""",
             
             'file_ops': """You are Isaac, a file operations specialist.
 Use the available tools to read, write, edit, search, and find files.

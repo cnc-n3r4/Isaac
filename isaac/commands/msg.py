@@ -292,6 +292,7 @@ SHORTCUTS:
   -x, --run ID    Execute suggested command (with confirmation)
   --execute ID    Same as --run
 
-The prompt shows message counts: $[!2¢1]> (2 system, 1 code pending)
+The prompt shows total message count: [7$]> (7 messages pending)
+Type /msg to see breakdown by type (! system, ¢ code, @ email)
 """</content>
 <parameter name="filePath">c:\Projects\Isaac2\isaac\commands\msg.py

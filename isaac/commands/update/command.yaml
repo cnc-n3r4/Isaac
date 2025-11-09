@@ -1,0 +1,38 @@
+triggers:
+  - "/update"
+  - "/upgrade"
+
+aliases:
+  - "/dep-update"
+  - "/pkg-update"
+
+args:
+  - name: manager
+    type: enum
+    enum: ["pip", "npm", "yarn", "auto"]
+    required: false
+    default: "auto"
+    description: "Package manager to use (auto-detects if not specified)"
+
+  - name: packages
+    type: string
+    required: false
+    default: ""
+    description: "Specific packages to update (comma-separated, empty = all outdated)"
+
+  - name: dry_run
+    type: bool
+    required: false
+    default: false
+    description: "Show what would be updated without actually updating"
+
+  - name: confirm
+    type: bool
+    required: false
+    default: true
+    description: "Ask for confirmation before updating"
+
+security:
+  resources:
+    timeout_ms: 300000  # 5 minutes for package updates
+    max_stdout_kib: 1024  # 1MB output limit

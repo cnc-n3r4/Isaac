@@ -285,9 +285,9 @@ class CommandRouter:
         if input_text.startswith('/f ') or input_text.startswith('/force '):
             # Extract actual command (skip /f or /force prefix)
             if input_text.startswith('/f '):
-                actual_command = input_text[3:]  # Skip '/f '
+                actual_command = input_text[3:].lstrip()  # Skip '/f ' and any extra spaces
             else:
-                actual_command = input_text[7:]  # Skip '/force '
+                actual_command = input_text[7:].lstrip()  # Skip '/force ' and any extra spaces
             
             print(f"Isaac > Force executing (bypassing AI validation): {actual_command}")
             return self.shell.execute(actual_command)

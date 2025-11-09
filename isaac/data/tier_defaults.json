@@ -8,6 +8,7 @@
     "echo",
     "cat",
     "type",
+    "dir",
     "Get-ChildItem",
     "Set-Location",
     "Get-Location"

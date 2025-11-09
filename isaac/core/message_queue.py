@@ -406,25 +406,15 @@ class MessageQueue:
 
     def get_prompt_indicator(self) -> str:
         """
-        Generate prompt indicator string showing pending message counts.
+        Generate prompt indicator string showing total pending message count.
 
         Returns:
-            String like '[!2¢1]>' or '$>' if no messages
+            String like '[7$]>' for 7 messages or '$>' if no messages
         """
         counts = self.get_pending_counts()
-        system_count = counts['system']
-        code_count = counts['code']
+        total_count = counts['system'] + counts['code']
 
-        if system_count == 0 and code_count == 0:
+        if total_count == 0:
             return "$>"
 
-        indicator = "["
-
-        if system_count > 0:
-            indicator += f"!{system_count}"
-
-        if code_count > 0:
-            indicator += f"¢{code_count}"
-
-        indicator += "]>"
-        return indicator
+        return f"[{total_count}$]>"

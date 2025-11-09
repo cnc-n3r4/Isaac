@@ -48,6 +48,11 @@ args:
     required: false
     enum: ["--sys", "--code", "--ack"]
     help: "Clear multiple messages (--clear [--sys|--code|--ack])"
+  - name: auto_run
+    type: string
+    required: false
+    enum: ["--auto-run", "-ar"]
+    help: "Auto-run safe recommendations from messages"
 
 stdin: false
 stdout:
@@ -80,3 +85,4 @@ examples:
   - "/msg --clear            # Clear all messages"
   - "/msg --clear --sys      # Clear all system messages"
   - "/msg --clear --ack      # Clear acknowledged messages"
+  - "/msg --auto-run         # Auto-run safe recommendations"

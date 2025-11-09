@@ -24,6 +24,15 @@ def test_msg_filtering():
         Path('isaac/commands')
     ])
 
+    print("Testing /msg --a (invalid)")
+    result = dispatcher.execute('/msg --a')
+    print(f"Result OK: {result.get('ok')}")
+    stdout = result.get('stdout', '')
+    stderr = result.get('stderr', '')
+    print(f"Stdout: {repr(stdout)}")
+    print(f"Stderr: {repr(stderr)}")
+    print()
+
     print("Testing /msg --sys")
     result = dispatcher.execute('/msg --sys')
     print(f"Result OK: {result.get('ok')}")

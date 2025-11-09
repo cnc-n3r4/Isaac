@@ -673,8 +673,8 @@ DESCRIPTION:
     ! - System operations (updates, monitoring, alerts)
     ¢ - Code operations (linting, testing, debugging)
 
-  The prompt indicator shows pending counts: [!2¢1]> means
-  2 system messages and 1 code message pending.
+  The prompt indicator shows total pending messages: [7$]> means
+  7 messages pending. Type /msg to see breakdown by type.
 
 VIEWING MESSAGES:
   /msg                    - List all pending messages (summary)

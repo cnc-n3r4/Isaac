@@ -35,21 +35,27 @@ def main():
         has_stdin = select.select([sys.stdin], [], [], 0)[0]
     
     if has_stdin:
+        print("DEBUG: Reading from stdin (dispatcher mode)", file=sys.stderr)
         # Running through dispatcher - read JSON payload
         try:
             payload = json.loads(sys.stdin.read())
             command = payload.get("command", "/msg")
+            print(f"DEBUG: Received command: '{command}'", file=sys.stderr)
             # Extract arguments from command (everything after "/msg")
             parts = command.split()
             if len(parts) > 1:
                 args = parts[1:]
             else:
                 args = []
+            print(f"DEBUG: Extracted args: {args}", file=sys.stderr)
         except (json.JSONDecodeError, KeyError):
             args = sys.argv[1:]
+            print(f"DEBUG: JSON decode failed, using sys.argv: {args}", file=sys.stderr)
     else:
+        print("DEBUG: No stdin, using sys.argv", file=sys.stderr)
         # Running directly - use command line args
         args = sys.argv[1:]
+        print(f"DEBUG: sys.argv args: {args}", file=sys.stderr)
 
     # Initialize message queue
     try:
@@ -69,10 +75,12 @@ def main():
     delete_id = None
     clear_all = False
     clear_type = None
+    auto_run = False
 
     i = 0
     while i < len(args):
         arg = args[i]
+        print(f"DEBUG: Processing arg {i}: '{arg}'", file=sys.stderr)  # Debug output
         if arg in ['--sys', '-s']:
             show_system = True
         elif arg in ['--code', '-c']:
@@ -115,8 +123,11 @@ def main():
                 elif args[i + 1] == '--ack':
                     clear_type = ('status', 'acknowledged')
                 i += 1
+        elif arg in ['--auto-run', '-ar']:
+            print("DEBUG: Setting auto_run = True", file=sys.stderr)  # Debug output
+            auto_run = True
         else:
-            print(f"Unknown argument: {arg}", file=sys.stderr)
+            print(f"DEBUG: Unknown argument: {arg}", file=sys.stderr)  # Debug output
             print("Usage: /msg [OPTIONS]", file=sys.stderr)
             print("  --sys, -s              Show system messages", file=sys.stderr)
             print("  --code, -c             Show code messages", file=sys.stderr)
@@ -126,8 +137,11 @@ def main():
             print("  --ack-all [--sys|--code]  Acknowledge all messages", file=sys.stderr)
             print("  --delete ID            Delete message", file=sys.stderr)
             print("  --clear [--sys|--code|--ack]  Clear messages", file=sys.stderr)
+            print("  --auto-run, -ar        Auto-run safe recommendations", file=sys.stderr)
             sys.exit(1)
         i += 1
+
+    print(f"DEBUG: Final auto_run = {auto_run}", file=sys.stderr)  # Debug output
 
     # Handle operations in priority order
 
@@ -202,8 +216,105 @@ def main():
             )
             _display_messages(code_msgs, "Code Messages")
 
+    # Auto-run safe recommendations if requested
+    if auto_run:
+        _auto_run_safe_recommendations(message_queue)
+        return
 
-def _display_full_message(message):
+
+def _auto_run_safe_recommendations(message_queue):
+    """Auto-run safe recommendations from pending messages."""
+    from isaac.core.tier_validator import TierValidator
+    from isaac.core.session_manager import SessionManager
+
+    # Get pending messages
+    messages = message_queue.get_messages(status='pending')
+    if not messages:
+        print("No pending messages to auto-run")
+        return
+
+    # Initialize components
+    session_mgr = SessionManager()
+    validator = TierValidator(session_mgr.preferences)
+
+    executed_count = 0
+    skipped_count = 0
+
+    print("🔍 Analyzing messages for safe auto-execution...")
+    print()
+
+    for msg in messages:
+        command = _extract_executable_command(msg)
+        if command:
+            # Check if command is in safe tier (1 or 2)
+            tier = validator.get_tier(command)
+            if tier in [1, 2]:
+                print(f"✓ Auto-executing safe command (tier {tier}): {command}")
+                try:
+                    # Import and execute through command router
+                    from isaac.core.command_router import CommandRouter
+                    from isaac.adapters.shell_detector import detect_shell
+
+                    shell_adapter = detect_shell()
+                    router = CommandRouter(session_mgr, shell_adapter)
+
+                    # Execute the command
+                    result = router.route_command(command)
+                    if result.success:
+                        print(f"  ✓ Success: {result.output.strip()[:100]}...")
+                        executed_count += 1
+                        # Acknowledge the message
+                        message_queue.acknowledge_message(msg['id'])
+                    else:
+                        print(f"  ✗ Failed: {result.output.strip()[:100]}...")
+                        skipped_count += 1
+
+                except Exception as e:
+                    print(f"  ✗ Error executing: {e}")
+                    skipped_count += 1
+            else:
+                print(f"⚠️ Skipping unsafe command (tier {tier}): {command}")
+                skipped_count += 1
+        else:
+            skipped_count += 1
+
+    print()
+    print(f"Auto-run complete: {executed_count} executed, {skipped_count} skipped")
+
+
+def _extract_executable_command(message):
+    """Extract executable command from message content or metadata."""
+    # First check metadata for explicitly marked safe commands
+    metadata = message.get('metadata', {})
+    if metadata and 'safe_commands' in metadata:
+        safe_commands = metadata['safe_commands']
+        if isinstance(safe_commands, list) and safe_commands:
+            # Return the first safe command
+            return safe_commands[0]
+
+    content = message.get('content', '').strip()
+
+    # Look for common command patterns in messages
+    import re
+
+    # Pattern 1: "Run 'command'" or "run 'command'"
+    run_pattern = r"[Rr]un\s+['\"]([^'\"]+)['\"]"
+    match = re.search(run_pattern, content)
+    if match:
+        return match.group(1)
+
+    # Pattern 2: Commands at the end of lines starting with common indicators
+    lines = content.split('\n')
+    for line in reversed(lines):  # Check from bottom up
+        line = line.strip()
+        if line and not line.startswith(('Found', 'There are', 'Metadata:', '-')):
+            # Check if it looks like a command (contains spaces or common command chars)
+            if ' ' in line or any(char in line for char in ['/', '\\', '-', '.']):
+                # Filter out obvious non-commands
+                if not any(word in line.lower() for word in ['found', 'available', 'run', 'see', 'details']):
+                    return line
+
+    return None
     """Display a single message in full detail."""
     print("=" * 70)
     print(f"Message ID: {message['id']}")
@@ -240,7 +351,20 @@ def _display_messages(messages, title):
         print("  No pending messages")
         return
 
-    print(f"\n{title} ({len(messages)} pending):")
+    # Calculate breakdown by type
+    system_count = sum(1 for msg in messages if msg['message_type'] == 'system')
+    code_count = sum(1 for msg in messages if msg['message_type'] == 'code')
+
+    breakdown = ""
+    if system_count > 0:
+        breakdown += f"!{system_count}"
+    if code_count > 0:
+        breakdown += f"¢{code_count}"
+
+    if breakdown:
+        breakdown = f" {breakdown}"
+
+    print(f"\n{title} ({len(messages)} pending{breakdown}):")
     print("-" * 60)
 
     for msg in messages:

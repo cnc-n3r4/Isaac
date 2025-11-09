@@ -12,49 +12,53 @@ isaac --start                 # Launch permanent shell assistant
 # Testing (run after tier/config changes)
 pytest tests/test_tier_validator.py -v           # Tier safety tests
 pytest tests/test_cloud_client.py -v             # Cloud sync tests
-pytest tests/ --cov=isaac --cov-report=term      # Full coverage
+pytest tests/ --cov=isaac --cov-report=term-missing  # Full coverage report
 ```
 
 ### Big Picture Architecture
 
 - **Permanent Shell Layer**: Isaac wraps the shell after launch (`isaac --start`), routing all commands through its engine. Natural language requires explicit "isaac" prefix.
-- **Session Roaming**: Cloud-based session persistence (GoDaddy PHP API), machine-aware command history, and privacy boundaries for AI queries.
-- **Tier System**: 5-tier command safety system (1: instant, 2: auto-correct, 2.5: confirm typo, 3: AI validation, 4: lockdown). User-customizable via `isaac/data/tier_defaults.json`.
-- **Task Mode**: Multi-step command planning, safety-based approval, interactive failure recovery (auto-fix, retry, skip, abort, suggest).
-- **Auto-Fix Learning**: Isaac learns from user corrections, syncs patterns, tracks machine compatibility, and confidence scores.
-- **Dual History**: Command history (machine-aware, arrow keys) and AI query history (private, machine-agnostic).
-- **Session Data Structure**: Six cloud JSON files (preferences, command_history, aiquery_history, task_history, learned_autofixes, learned_patterns), versioning, and rollback system.
-- **UI Simplification**: Simple prompt/output loop, meta-commands for config/status/help, no locked header or complex screen management.
-- **Offline Mode**: Local queueing, auto-reconnect, batch sync, prompt indicator.
-- **Agent Ecosystem**: Isaac is the gatekeeper; other agents (Sarah, Daniel) have defined access boundaries.
+- **Multi-Provider AI Router**: Intelligent fallback chain: Grok (xAI) → Claude (Anthropic) → OpenAI. Cost optimization via `TaskAnalyzer` and `CostOptimizer` in `isaac/ai/`.
+- **Tier System**: 5-tier command safety (1: instant, 2: auto-correct, 2.5: confirm, 3: AI validate, 4: lockdown). Configured in `isaac/data/tier_defaults.json`.
+- **Tool-Enabled Agent**: `IsaacAgent` class combines AI router with file tools (read/write/edit/grep/glob) for autonomous coding assistance.
+- **Plugin-Based Commands**: `CommandDispatcher` loads commands from `command.yaml` manifests in `isaac/commands/*/`. Each command can define triggers, args, security limits.
+- **Cross-Platform Shell Adapters**: `PowerShellAdapter` and `BashAdapter` provide unified `CommandResult` interface, never raise exceptions.
+- **Command Queue**: Offline-capable queue in `isaac/queue/command_queue.py` with background sync worker.
+- **Workspace Management**: Isolated project environments with optional venv and xAI Collections (RAG) support.
+- **Session Persistence**: Cloud sync via GoDaddy PHP API, machine-aware history, config in `~/.isaac/`.
 
 ### Developer Workflows
 
-- **Build & Setup**: `pip install -e .` (editable), `isaac --start` to launch.
-- **Testing**: `pytest tests/` (≥85% coverage required), integration tests in `instructions/test_integration/`.
-- **Meta-Commands**: `/help`, `/status`, `/config`, `/clear` (see `isaac/commands/`). `/config` supports subcommands for status, AI, cloud, plugins, and settings.
-- **Task Mode**: Use `isaac task: <goal>` for multi-step planning and execution. Failure recovery options: f/r/s/a/? (auto-fix, retry, skip, abort, suggest).
-- **Session Management**: All session data is cloud-synced; rollback via snapshots (manual or auto-triggered).
+- **Build & Setup**: `pip install -e .` creates `isaac`, `ask`, and `mine` entry points. Config in `~/.isaac/`.
+- **Testing**: `pytest tests/` (≥85% coverage required). Use fixtures from `tests/conftest.py`: `temp_isaac_dir`, `mock_api_client`, `sample_preferences`.
+- **Meta-Commands**: 21+ built-in commands in `isaac/commands/*/`. Each directory has `command.yaml` manifest and `run.py` implementation. New: `/update` command for intelligent package management.
+- **AI Providers**: Set `XAI_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENAI_API_KEY`. Router auto-selects based on task complexity via `TaskAnalyzer`.
+- **Tool Development**: Extend `BaseTool` from `isaac/tools/base.py`. See `ReadTool`, `WriteTool`, `EditTool`, `ShellTool` for patterns.
+- **Command Routing**: All input flows through `CommandRouter` → `TierValidator` → `CommandDispatcher` or shell adapter.
 
 ### Project-Specific Conventions
 
-- **Tier Classification**: See `isaac/data/tier_defaults.json` for command tiers. Tier 2.5 (find/sed/awk) requires confirmation after typo correction.
-- **Error Handling**: All shell adapters return `CommandResult` (never raise exceptions).
-- **Config Management**: Path-based config loading, user preferences in `~/.isaac/config.json`.
-- **Privacy**: AI query history is private to user/Isaac; other agents have restricted access.
-- **Auto-Fix Patterns**: Learned fixes stored in `learned_autofixes.json`, with machine-specific compatibility and cross-platform translation.
-- **Versioning**: Last 3 auto-snapshots + manual, rollback triggers (time, command count, manual, machine switch).
+- **Tier Classification**: Commands in `isaac/data/tier_defaults.json` by tier. Override via user preferences. Tier 2.5 requires post-correction confirmation.
+- **Error Handling**: Shell adapters return `CommandResult(success, output, exit_code)` - never raise exceptions. Validates in `BaseShellAdapter.execute()`.
+- **Config Management**: Use `Path(__file__).parent.parent / 'data'` for package data. User config in `Path.home() / '.isaac'`.
+- **AI Tool Schemas**: Tools define JSON Schema via `get_parameters_schema()`. Agent formats as function calls for provider APIs.
+- **Cross-Platform Paths**: Always use `pathlib.Path`, never string concatenation. Adapters handle shell-specific syntax.
+- **Provider Fallback**: `AIRouter.chat()` tries providers in order, preserves context on fallback. Tracks costs in `cost_tracking.json`.
+- **Command Manifests**: YAML format with `triggers`, `args`, `security.resources` (timeout_ms, max_stdout_kib). See `docs/command_plugin_spec.md`.
 
 ### Integration Points & Key Files
 
-- `isaac/core/command_router.py`: Command routing, meta-command handling, tier logic
-- `isaac/core/session_manager.py`: Session, config, cloud sync
-- `isaac/adapters/`: Shell abstraction (PowerShell, bash)
-- `isaac/commands/`: Meta-commands (`/help`, `/config`, `/status`, etc.)
-- `isaac/ui/permanent_shell.py`: Main shell loop (prompt/output)
-- `isaac/ai/`: AI validation, translation, task planning
-- `isaac/api/cloud_client.py`: Cloud sync (GoDaddy PHP API)
-- Session files: preferences.json, command_history.json, aiquery_history.json, task_history.json, learned_autofixes.json, learned_patterns.json
+- `isaac/core/command_router.py`: Routes input → tier validator → AI/dispatcher/shell. Handles `/`, `isaac`, `!device` prefixes.
+- `isaac/core/tier_validator.py`: Loads `tier_defaults.json`, applies user overrides, returns tier (1-4) for commands.
+- `isaac/core/session_manager.py`: Manages config, preferences, cloud sync. Central state hub.
+- `isaac/ai/router.py`: Multi-provider routing with `TaskAnalyzer` (complexity), `CostOptimizer` (budget), performance tracking.
+- `isaac/ai/agent.py`: `IsaacAgent` class - chat with tool execution. System prompts for code assistance.
+- `isaac/tools/`: `ReadTool`, `WriteTool`, `EditTool`, `GrepTool`, `GlobTool`, `ShellTool` - file ops with pathlib, cross-platform. ShellTool executes safe commands with tier validation.
+- `isaac/runtime/dispatcher.py`: `CommandDispatcher` loads `command.yaml` manifests, parses args, enforces security limits.
+- `isaac/adapters/`: `PowerShellAdapter`, `BashAdapter` extend `BaseShellAdapter`. Platform-specific `execute()` methods.
+- `isaac/commands/*/`: Plugin commands (ask, mine, workspace, status, config, update, etc). Each has `command.yaml` + `run.py`.
+- `isaac/queue/command_queue.py`: SQLite-based offline queue. `sync_worker.py` syncs when cloud available.
+- `tests/conftest.py`: Pytest fixtures - `temp_isaac_dir`, `mock_api_client`, `sample_preferences`, `tier_defaults_json`.
 
 ### UI & User Experience
 
@@ -76,10 +80,10 @@ pytest tests/ --cov=isaac --cov-report=term      # Full coverage
 
 ---
 For more details, see:
-- `VISUAL_20251018_isaac_design_session.md` (design session log)
-- `ui_simplification.md` (UI simplification instructions)
-- `decision flow chart.md` (command classification and execution swimlane)
-- `PORTING_NOTES.md` (platform notes)
+- `README.md` - User-facing quick start and feature overview
+- `QUICK_START_AI.md` - AI system setup and usage guide
+- `HOW_TO_GUIDE.md` - Detailed workflow examples (workspace, AI, tools)
+- `AI_ROUTING_BUILD_SUMMARY.md` - Multi-provider routing architecture
 
 ---
 **If unclear or incomplete, ask for feedback on specific sections to iterate.**
@@ -87,20 +91,20 @@ For more details, see:
 ## Meta-Commands System
 
 ### Current Implementation (`isaac/commands/`)
-Isaac currently has **simple Python scripts** for meta-commands, not the full YAML plugin system:
-- `help.py`: Display available commands and usage
-- `list.py`: List management functions
-- `backup.py` / `restore.py`: Configuration backup/restore
-- `togrok_handler.py`: x.ai API integration for vector search collections
+Isaac uses a **plugin-based command system** with `command.yaml` manifests:
+- Each command directory contains `command.yaml` (metadata) and implementation files
+- `CommandDispatcher` in `isaac/runtime/dispatcher.py` loads all manifests at startup
+- Commands are registered by `triggers` and `aliases` from manifests
+- 21+ built-in commands: help, ask, mine, workspace, status, config, backup, restore, etc.
 
 ### Command Types by Prefix
 
 **1. Local Meta-Commands** (`/command`):
 ```python
-# Handled in command_router.py before shell execution
+# Handled in command_router.py → CommandDispatcher
 if input_text.startswith('/'):
-    # Built-in Isaac commands like /help, /status, /config
-    # See isaac/commands/ directory for implementations
+    command_info = dispatcher.resolve_trigger(input_text)
+    # Execute via manifest specification (Python, shell, etc.)
 ```
 
 **2. Natural Language** (`isaac <query>`):
@@ -108,34 +112,49 @@ if input_text.startswith('/'):
 # Requires "isaac" prefix to trigger AI translation
 if input_text.lower().startswith('isaac '):
     query = input_text[6:].strip()
-    result = translate_query(query, shell_name, session)
+    result = translator.translate(query, shell_name, session)
     # Translated command goes through normal tier validation
 ```
 
-**3. Task Mode** (`isaac task: <description>`):
+**3. Device Routing** (`!device <cmd>`):
 ```python
-# Multi-step task planning and execution
-if input_text.lower().startswith('isaac task:'):
-    from isaac.ai.task_planner import execute_task
-    return execute_task(task_desc, shell, session)
+# Route commands to other machines in Isaac network
+if input_text.startswith('!'):
+    parts = input_text[1:].split(None, 1)  # !alias /command
+    queue_id = session.queue.enqueue(cmd, target_device=alias)
 ```
 
 **4. Regular Shell Commands** (no prefix):
 ```python
 # Standard shell commands go through tier validation
-tier = validator.get_tier(command)  # Returns 1-4 based on tier_defaults.json
+tier = validator.get_tier(command)  # From tier_defaults.json
 if tier <= 2:
-    execute_immediately()
-else:
-    route_to_ai_validation()
+    result = shell.execute(command)
+elif tier >= 3:
+    decision = ai_validator.validate(command)
 ```
 
-### Future Plugin Architecture
-The full YAML-based plugin system is documented in `docs/command_plugin_spec.md` but not yet implemented. When building this:
-- Place manifests in `isaac/commands/<name>/command.yaml`
-- Implement dispatcher in `isaac/runtime/dispatcher.py`
-- Support piping with `stdin: true` flag
-- Enforce `security.resources` limits (timeout_ms, max_stdout_kib)
+### Command Manifest Format
+Each `command.yaml` defines:
+- `triggers`: Primary command names (e.g., `/ask`, `/help`)
+- `aliases`: Alternative names
+- `args`: Array of argument specs (name, type, required, default)
+- `security.resources`: Runtime limits (timeout_ms, max_stdout_kib)
+- `execution`: How to run (python_module, shell_script, etc.)
+
+Example from a manifest:
+```yaml
+triggers: ["/workspace"]
+args:
+  - name: action
+    type: enum
+    enum: [create, list, switch, delete]
+    required: true
+security:
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 100
+```
 
 ## Command Orchestration Flow
 ```
@@ -259,20 +278,6 @@ Output area: Scroll region beneath header + prompt line
 ### Build & Setup
 ```bash
 pip install -e .  # Install in development mode with entry point 'isaac'
-pytest tests/ --cov=isaac --cov-report=term      # Full test suite with coverage
-```
-
-### Testing Patterns
-- **Test Discovery**: `pytest tests/` with `test_*.py` pattern
-- **Mock Fixtures**: Use `temp_isaac_dir` and `mock_api_client` from `tests/conftest.py`
-- **Coverage Target**: ≥85% coverage required
-- **Integration Tests**: Located in `instructions/test_integration/` with completion templates
-
-## Developer Workflows
-
-### Build & Setup
-```bash
-pip install -e .  # Install in development mode with entry point 'isaac'
 pytest tests/ --cov=isaac --cov-report=term-missing  # Run full test suite with coverage
 ```
 
@@ -282,13 +287,12 @@ pytest tests/ --cov=isaac --cov-report=term-missing  # Run full test suite with 
 - **Coverage Target**: ≥85% coverage required
 - **Integration Tests**: Located in `instructions/test_integration/` with completion templates
 
-### Debugging Terminal UI
-- **Screen Updates**: `TerminalControl` uses dirty flags (`header_dirty`, `body_dirty`)
-- **Terminal Size**: Dynamically calculated via `_update_terminal_size()`, not hardcoded
-- **Header Layout**: Fixed 5 lines (3 content + 2 borders) with column-aligned cells
-- **Output Area**: Scrollable region with `output_scroll_offset` for history navigation
-- **Config Mode**: Toggle with special key, uses `config_items` array with cursor navigation
-- **Status Thread**: Background `_update_status_thread()` refreshes indicators every 10 seconds
+### Debugging AI Router
+- **Provider Selection**: Check `TaskAnalyzer` output to see complexity scoring
+- **Cost Tracking**: `cost_tracking.json` in `~/.isaac/` has detailed usage by provider
+- **Fallback Logic**: `AIRouter.chat()` preserves conversation context across provider switches
+- **Tool Execution**: `IsaacAgent.chat()` returns `tool_executions` list showing all file ops performed
+- **Shell Commands**: `ShellTool` validates commands through tier system before execution
 
 ## Project Conventions
 
@@ -298,6 +302,7 @@ pytest tests/ --cov=isaac --cov-report=term-missing  # Run full test suite with 
 {
   "1": ["ls", "cd", "pwd"],           // Instant execution
   "2": ["grep", "head", "tail"],      // Standard commands
+  "2.5": ["find", "sed", "awk"],      // Moderate - requires confirmation
   "3": ["cp", "mv", "git"],           // Moderate risk
   "4": ["rm", "format", "dd"]         // Dangerous - requires confirmation
 }
@@ -330,10 +335,12 @@ config = json.load((data_dir / 'tier_defaults.json').open())
 ### AI Integration Patterns
 **Multi-Provider Support**:
 ```python
-# From isaac/ai/xai_client.py
-class XaiClient:
-    def __init__(self, api_key, api_url, model='grok-beta'):
+# From isaac/ai/router.py
+class AIRouter:
+    def __init__(self, config_path=None, session_mgr=None):
         # Provider abstraction with fallback handling
+        self.task_analyzer = TaskAnalyzer(config_manager=routing_config)
+        self.cost_optimizer = CostOptimizer(routing_config, cost_storage_path)
 ```
 
 **Command Enhancement Pipeline**:
@@ -366,9 +373,10 @@ class BaseShellAdapter(ABC):
 - `isaac/ui/advanced_input.py`: Keyboard handling for config mode navigation
 
 ### AI Components
-- `isaac/ai/validator.py`: Command validation and correction
-- `isaac/ai/translator.py`: Natural language to shell command conversion
-- `isaac/ai/task_planner.py`: Multi-step task decomposition
+- `isaac/ai/router.py`: Multi-provider routing with task analysis and cost optimization
+- `isaac/ai/agent.py`: `IsaacAgent` - chat interface with automatic tool execution
+- `isaac/ai/task_analyzer.py`: Complexity scoring for provider selection
+- `isaac/ai/cost_optimizer.py`: Budget tracking and cost-aware routing
 
 ### Cloud Integration
 - `isaac/api/cloud_client.py`: HTTP client for PHP API communication
@@ -384,7 +392,7 @@ class BaseShellAdapter(ABC):
 
 ### External Dependencies
 - **PHP API**: `https://n3r4.xyz/isaac/api/` with Bearer token auth
-- **AI Providers**: xAI (primary), Claude (fallback) via REST APIs
+- **AI Providers**: xAI (primary), Claude (fallback), OpenAI (backup) via REST APIs
 - **Shell Environments**: PowerShell (Windows), bash (Unix-like)
 
 ### Cross-Component Communication
@@ -395,7 +403,7 @@ class BaseShellAdapter(ABC):
 
 ### Development Environment Setup
 - **Python 3.8+** required with `requirements.txt` dependencies
-- **Editable Install**: `pip install -e .` creates `isaac` command
+- **Editable Install**: `pip install -e .` creates `isaac`, `ask`, `mine` commands
 - **Test Environment**: `pytest` with coverage reporting and mock fixtures
 - **Configuration**: `~/.isaac/` directory for user data and settings
 
