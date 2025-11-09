@@ -1,0 +1,79 @@
+name: tasks
+version: 1.0.0
+status: stable
+summary: "View and manage background tasks"
+description: |
+  Manage background task execution and view task status.
+
+  Background tasks run asynchronously and notify via /msg when complete.
+  Use this command to monitor task progress and manage task lifecycle.
+
+triggers: ["/tasks"]
+aliases: ["/t"]
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: list
+    type: bool
+    required: false
+    help: "List all tasks (default behavior)"
+  - name: running
+    type: bool
+    required: false
+    help: "Show only running tasks"
+  - name: completed
+    type: bool
+    required: false
+    help: "Show only completed tasks"
+  - name: failed
+    type: bool
+    required: false
+    help: "Show only failed tasks"
+  - name: show
+    type: string
+    required: false
+    help: "Show detailed info for specific task ID"
+  - name: cancel
+    type: string
+    required: false
+    help: "Cancel a running task by ID"
+  - name: clear
+    type: bool
+    required: false
+    help: "Clear all completed/failed/cancelled tasks"
+  - name: stats
+    type: bool
+    required: false
+    help: "Show task execution statistics"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: true
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 128
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/tasks                  # List all tasks"
+  - "/tasks --running        # Show running tasks"
+  - "/tasks --completed      # Show completed tasks"
+  - "/tasks --failed         # Show failed tasks"
+  - "/tasks --show abc123    # Show task details"
+  - "/tasks --cancel abc123  # Cancel running task"
+  - "/tasks --clear          # Clear completed tasks"
+  - "/tasks --stats          # Show statistics"
