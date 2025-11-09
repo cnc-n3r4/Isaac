@@ -55,6 +55,19 @@ def main():
                 elif flag_name == 'apikey' and arg1 and arg2:
                     flags['apikey'] = arg1
                     flags['api_key_value'] = arg2
+                elif flag_name == 'ai-routing-set' and arg1 and arg2:
+                    flags['ai-routing-set'] = arg1
+                    flags['set_value'] = arg2
+                elif flag_name == 'ai-routing-model' and arg1 and arg2:
+                    flags['ai-routing-model'] = arg1
+                    flags['model_value'] = arg2
+                elif flag_name == 'ai-routing-limits' and arg1 and arg2:
+                    flags['ai-routing-limits'] = arg1
+                    flags['limits_value'] = arg2
+                elif flag_name == 'ai-routing':
+                    flags['ai-routing'] = True
+                elif flag_name == 'ai-routing-reset':
+                    flags['ai-routing-reset'] = True
             else:
                 # Reject old positional syntax
                 flags = {}
@@ -91,6 +104,31 @@ def main():
             output = set_api_key(session, service, api_key)
         else:
             output = "Usage: /config --apikey <service> <api_key>\n\nSupported services:\n  xai-chat        - xAI API key for chat completion\n  xai-collections - xAI API key for collections\n  claude          - Anthropic Claude API key\n  openai          - OpenAI API key\n\nExamples:\n  /config --apikey xai-chat YOUR_XAI_API_KEY\n  /config --apikey xai-collections YOUR_XAI_API_KEY\n  /config --apikey claude YOUR_CLAUDE_API_KEY"
+    elif 'ai-routing' in flags:
+        output = show_ai_routing()
+    elif 'ai-routing-set' in flags:
+        key = flags.get('ai-routing-set')
+        value = flags.get('set_value')
+        if key and value:
+            output = set_ai_routing_preference(key, value)
+        else:
+            output = "Usage: /config --ai-routing-set <complexity|task_type> <provider>\n\nExamples:\n  /config --ai-routing-set simple grok\n  /config --ai-routing-set complex claude\n  /config --ai-routing-set code_write claude"
+    elif 'ai-routing-model' in flags:
+        provider = flags.get('ai-routing-model')
+        model = flags.get('model_value')
+        if provider and model:
+            output = set_ai_routing_model(provider, model)
+        else:
+            output = "Usage: /config --ai-routing-model <provider> <model>\n\nExamples:\n  /config --ai-routing-model claude claude-3-5-sonnet-20241022\n  /config --ai-routing-model grok grok-beta\n  /config --ai-routing-model openai gpt-4o-mini"
+    elif 'ai-routing-limits' in flags:
+        period = flags.get('ai-routing-limits')
+        amount = flags.get('limits_value')
+        if period and amount:
+            output = set_ai_routing_limits(period, amount)
+        else:
+            output = "Usage: /config --ai-routing-limits <daily|monthly> <amount>\n\nExamples:\n  /config --ai-routing-limits daily 10.0\n  /config --ai-routing-limits monthly 100.0"
+    elif 'ai-routing-reset' in flags:
+        output = reset_ai_routing()
     else:
         output = f"Unknown flag: {list(flags.keys())}\nUse /config for help"
 
@@ -113,13 +151,14 @@ def show_overview(session):
     lines.append(f"Default Tier: {session.get('user_prefs', {}).get('default_tier', 2)}")
     lines.append("")
     lines.append("Available subcommands:")
-    lines.append("  /config status     - System status check")
-    lines.append("  /config ai         - AI provider details")
-    lines.append("  /config cloud      - Cloud sync status")
-    lines.append("  /config plugins    - Available plugins")
-    lines.append("  /config collections - xAI Collections status")
-    lines.append("  /config console     - Interactive /mine settings TUI")
-    lines.append("  /config set <key> <value> - Change setting")
+    lines.append("  /config --status       - System status check")
+    lines.append("  /config --ai           - AI provider details")
+    lines.append("  /config --ai-routing   - AI routing configuration")
+    lines.append("  /config --cloud        - Cloud sync status")
+    lines.append("  /config --plugins      - Available plugins")
+    lines.append("  /config --collections  - xAI Collections status")
+    lines.append("  /config --console      - Interactive /mine settings TUI")
+    lines.append("  /config --set <key> <value> - Change setting")
     return "\n".join(lines)
 
 
@@ -277,6 +316,133 @@ def set_config(session, key, value):
         return f"✓ Set {key} = {converted_value}"
     except Exception as e:
         return f"✗ Error setting {key}: {str(e)}"
+
+
+def show_ai_routing():
+    """Show AI routing configuration"""
+    try:
+        from isaac.ai.routing_config import RoutingConfigManager
+
+        config_mgr = RoutingConfigManager()
+        config = config_mgr.get_all_settings()
+
+        lines = []
+        lines.append("=== AI Routing Configuration ===\n")
+
+        # Routing preferences
+        lines.append("Routing Preferences:")
+        routing_prefs = config['routing_preferences']
+        lines.append(f"  Simple tasks   → {routing_prefs.get('simple', 'openai')}")
+        lines.append(f"  Medium tasks   → {routing_prefs.get('medium', 'grok')}")
+        lines.append(f"  Complex tasks  → {routing_prefs.get('complex', 'claude')}")
+        lines.append(f"  Expert tasks   → {routing_prefs.get('expert', 'claude')}")
+        lines.append("")
+
+        # Task type overrides
+        lines.append("Task Type Overrides:")
+        lines.append(f"  Code writing   → {routing_prefs.get('code_write', 'claude')}")
+        lines.append(f"  Code debugging → {routing_prefs.get('code_debug', 'claude')}")
+        lines.append(f"  Tool use       → {routing_prefs.get('tool_use', 'claude')}")
+        lines.append("")
+
+        # Provider configs
+        lines.append("Providers:")
+        for provider, provider_config in config['providers'].items():
+            enabled = "✓" if provider_config.get('enabled', True) else "✗"
+            model = provider_config.get('model', 'unknown')
+            pricing = provider_config.get('pricing', {})
+            input_cost = pricing.get('input_per_1m', 0)
+            output_cost = pricing.get('output_per_1m', 0)
+
+            lines.append(f"  {enabled} {provider:8} - {model}")
+            lines.append(f"     Pricing: ${input_cost:.2f}/${output_cost:.2f} per 1M tokens")
+        lines.append("")
+
+        # Cost limits
+        cost_limits = config['cost_limits']
+        limits_enabled = "✓" if cost_limits.get('enabled', True) else "✗"
+        lines.append(f"Cost Limits: {limits_enabled}")
+        if cost_limits.get('enabled', True):
+            lines.append(f"  Daily:   ${cost_limits.get('daily_limit_usd', 10.0):.2f}")
+            lines.append(f"  Monthly: ${cost_limits.get('monthly_limit_usd', 100.0):.2f}")
+        lines.append("")
+
+        lines.append("Commands:")
+        lines.append("  /config --ai-routing-set <complexity> <provider>")
+        lines.append("  /config --ai-routing-model <provider> <model>")
+        lines.append("  /config --ai-routing-limits <period> <amount>")
+        lines.append("  /config --ai-routing-reset")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"✗ Error loading AI routing config: {str(e)}"
+
+
+def set_ai_routing_preference(key, provider):
+    """Set AI routing preference for complexity level or task type"""
+    try:
+        from isaac.ai.routing_config import RoutingConfigManager
+
+        config_mgr = RoutingConfigManager()
+
+        # Check if it's a complexity level or task type
+        valid_complexity = ['simple', 'medium', 'complex', 'expert']
+        if key in valid_complexity:
+            config_mgr.set_provider_for_complexity(key, provider)
+            return f"✓ Set {key} tasks to use {provider}"
+        else:
+            # Assume it's a task type
+            config_mgr.set_provider_for_task_type(key, provider)
+            return f"✓ Set {key} tasks to use {provider}"
+    except ValueError as e:
+        return f"✗ {str(e)}"
+    except Exception as e:
+        return f"✗ Error setting routing preference: {str(e)}"
+
+
+def set_ai_routing_model(provider, model):
+    """Set model for a specific provider"""
+    try:
+        from isaac.ai.routing_config import RoutingConfigManager
+
+        config_mgr = RoutingConfigManager()
+        config_mgr.set_provider_model(provider, model)
+
+        return f"✓ Set {provider} to use model {model}"
+    except ValueError as e:
+        return f"✗ {str(e)}"
+    except Exception as e:
+        return f"✗ Error setting model: {str(e)}"
+
+
+def set_ai_routing_limits(period, amount):
+    """Set cost limits for AI routing"""
+    try:
+        from isaac.ai.routing_config import RoutingConfigManager
+
+        config_mgr = RoutingConfigManager()
+        amount_float = float(amount)
+
+        config_mgr.set_cost_limit(period, amount_float)
+
+        return f"✓ Set {period} cost limit to ${amount_float:.2f}"
+    except ValueError as e:
+        return f"✗ Invalid amount: {amount}. Must be a number."
+    except Exception as e:
+        return f"✗ Error setting cost limit: {str(e)}"
+
+
+def reset_ai_routing():
+    """Reset AI routing configuration to defaults"""
+    try:
+        from isaac.ai.routing_config import RoutingConfigManager
+
+        config_mgr = RoutingConfigManager()
+        config_mgr.reset_to_defaults()
+
+        return "✓ AI routing configuration reset to defaults"
+    except Exception as e:
+        return f"✗ Error resetting configuration: {str(e)}"
 
 
 def set_api_key(session, service, api_key):
