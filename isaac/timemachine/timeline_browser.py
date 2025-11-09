@@ -6,7 +6,8 @@ Isaac's time machine interface
 import time
 from datetime import datetime
 from typing import List, Optional
-from isaac.timemachine.time_machine import TimeMachine, TimelineEntry
+
+from isaac.timemachine.time_machine import TimelineEntry, TimeMachine
 
 
 class TimelineBrowser:
@@ -37,10 +38,12 @@ class TimelineBrowser:
         stats = self.time_machine.get_timeline_stats()
         print("ðŸ• Workspace Timeline")
         print("=" * 50)
-        print(f"Total: {stats['total_snapshots']} | "
-              f"Span: {stats['span_days']:.1f} days | "
-              f"Auto: {stats.get('auto_snapshots', 0)} | "
-              f"Manual: {stats.get('manual_snapshots', 0)}")
+        print(
+            f"Total: {stats['total_snapshots']} | "
+            f"Span: {stats['span_days']:.1f} days | "
+            f"Auto: {stats.get('auto_snapshots', 0)} | "
+            f"Manual: {stats.get('manual_snapshots', 0)}"
+        )
         print()
 
         if not filtered_entries:
@@ -62,7 +65,7 @@ class TimelineBrowser:
             age_str = self._format_age(age_seconds)
 
             # Get branch info
-            branch = entry.metadata.get('git_branch', 'N/A')
+            branch = entry.metadata.get("git_branch", "N/A")
             if len(branch) > 12:
                 branch = branch[:9] + "..."
 
@@ -100,14 +103,14 @@ class TimelineBrowser:
                 if not command:
                     continue
 
-                if command.lower() == 'q':
+                if command.lower() == "q":
                     break
 
                 parts = command.split(None, 1)
                 cmd = parts[0].lower()
                 arg = parts[1] if len(parts) > 1 else ""
 
-                if cmd == 'r' and arg.isdigit():
+                if cmd == "r" and arg.isdigit():
                     # Restore to entry
                     index = int(arg)
                     if self._confirm_restore(index):
@@ -118,23 +121,23 @@ class TimelineBrowser:
                             print("âœ— Failed to restore")
                         time.sleep(2)
 
-                elif cmd == 'i' and arg.isdigit():
+                elif cmd == "i" and arg.isdigit():
                     # Show info
                     index = int(arg)
                     self._show_entry_info(index)
                     input("\nPress Enter to continue...")
 
-                elif cmd == 'f':
+                elif cmd == "f":
                     # Filter
                     current_filter = arg.lower() if arg else "all"
                     current_search = ""  # Clear search when filtering
 
-                elif cmd == 's':
+                elif cmd == "s":
                     # Search
                     current_search = arg
                     current_filter = "all"  # Clear filter when searching
 
-                elif cmd == 'c':
+                elif cmd == "c":
                     # Clear
                     current_filter = "all"
                     current_search = ""
@@ -147,8 +150,9 @@ class TimelineBrowser:
             except Exception as e:
                 print(f"Error: {e}")
 
-    def _filter_entries(self, entries: List[TimelineEntry], filter_type: str,
-                       search_query: str) -> List[TimelineEntry]:
+    def _filter_entries(
+        self, entries: List[TimelineEntry], filter_type: str, search_query: str
+    ) -> List[TimelineEntry]:
         """Filter timeline entries."""
         filtered = entries
 
@@ -159,8 +163,12 @@ class TimelineBrowser:
         # Apply search filter
         if search_query:
             query_lower = search_query.lower()
-            filtered = [e for e in filtered if query_lower in
-                       f"{e.description} {e.change_type} {e.metadata.get('bubble_name', '')}".lower()]
+            filtered = [
+                e
+                for e in filtered
+                if query_lower
+                in f"{e.description} {e.change_type} {e.metadata.get('bubble_name', '')}".lower()
+            ]
 
         return filtered
 
@@ -179,7 +187,7 @@ class TimelineBrowser:
             print(f"No bubble information found for entry {index}")
             return
 
-        bubble = bubble_info['bubble']
+        bubble = bubble_info["bubble"]
 
         # Show info
         print(f"Entry Index: {index}")
@@ -214,7 +222,7 @@ class TimelineBrowser:
         message += "Continue? (y/N): "
 
         response = input(message).strip().lower()
-        return response in ['y', 'yes']
+        return response in ["y", "yes"]
 
     def _format_age(self, seconds: float) -> str:
         """Format age in compact form."""
@@ -250,13 +258,15 @@ class TimelineBrowser:
 
                 # Show current entry info
                 dt = datetime.fromtimestamp(entry.timestamp)
-                print(f"Entry {i}/{len(entries)} | {dt.strftime('%Y-%m-%d %H:%M:%S')} | {entry.change_type}")
+                print(
+                    f"Entry {i}/{len(entries)} | {dt.strftime('%Y-%m-%d %H:%M:%S')} | {entry.change_type}"
+                )
                 print("-" * 50)
 
                 # Show bubble info if available
                 bubble_info = self.time_machine.get_snapshot_info(entry.bubble_id)
                 if bubble_info:
-                    bubble = bubble_info['bubble']
+                    bubble = bubble_info["bubble"]
                     info = f"Branch: {bubble.git_branch or 'N/A'} | Processes: {len(bubble.running_processes)} | Files: {len(bubble.open_files)}"
                     print(info)
 
@@ -300,9 +310,8 @@ class TimelineBrowser:
             # Create visual representation
             line = f"{date_str}: "
             for change_type, count in type_counts.items():
-                symbol = {'auto': 'o', 'manual': '*', 'restore': '#'}.get(change_type, 'x')
+                symbol = {"auto": "o", "manual": "*", "restore": "#"}.get(change_type, "x")
                 line += f"{symbol}{count} "
             line += f"({len(day_entries)} total)"
 
             print(line)
-

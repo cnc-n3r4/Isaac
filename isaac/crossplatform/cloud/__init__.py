@@ -9,4 +9,4 @@ from .cloud_executor import CloudExecutor
 from .cloud_storage import CloudStorage
 from .remote_workspace import RemoteWorkspace
 
-__all__ = ['CloudExecutor', 'CloudStorage', 'RemoteWorkspace']
+__all__ = ["CloudExecutor", "CloudStorage", "RemoteWorkspace"]

@@ -3,9 +3,9 @@
 Config Command Handler - Plugin format
 """
 
-import sys
 import json
 import socket
+import sys
 
 from isaac.ui.config_console import show_config_console
 
@@ -16,9 +16,9 @@ def parse_flags(args):
     i = 0
     while i < len(args):
         arg = args[i]
-        if arg.startswith('--'):
+        if arg.startswith("--"):
             flag = arg[2:]  # Remove --
-            if i + 1 < len(args) and not args[i + 1].startswith('--'):
+            if i + 1 < len(args) and not args[i + 1].startswith("--"):
                 flags[flag] = args[i + 1]
                 i += 1
             else:
@@ -40,40 +40,40 @@ def main():
         flags = parse_flags(args)
     else:
         # New format: args is a dict from dispatcher
-        subcommand = args.get('subcommand')
-        arg1 = args.get('arg1')
-        arg2 = args.get('arg2')
-        
+        subcommand = args.get("subcommand")
+        arg1 = args.get("arg1")
+        arg2 = args.get("arg2")
+
         if subcommand:
-            if subcommand.startswith('--'):
+            if subcommand.startswith("--"):
                 flag_name = subcommand[2:]  # Remove --
                 flags = {flag_name: arg1 if arg1 else True}
                 # Handle special cases that need two arguments
-                if flag_name == 'set' and arg1 and arg2:
-                    flags['set'] = arg1
-                    flags['set_value'] = arg2
-                elif flag_name == 'apikey' and arg1 and arg2:
-                    flags['apikey'] = arg1
-                    flags['api_key_value'] = arg2
-                elif flag_name == 'ai-routing-set' and arg1 and arg2:
-                    flags['ai-routing-set'] = arg1
-                    flags['set_value'] = arg2
-                elif flag_name == 'ai-routing-model' and arg1 and arg2:
-                    flags['ai-routing-model'] = arg1
-                    flags['model_value'] = arg2
-                elif flag_name == 'ai-routing-limits' and arg1 and arg2:
-                    flags['ai-routing-limits'] = arg1
-                    flags['limits_value'] = arg2
-                elif flag_name == 'ai-routing':
-                    flags['ai-routing'] = True
-                elif flag_name == 'ai-routing-reset':
-                    flags['ai-routing-reset'] = True
-                elif flag_name == 'env':
-                    flags['env'] = True
-                elif flag_name == 'env-validate':
-                    flags['env-validate'] = True
-                elif flag_name == 'env-create':
-                    flags['env-create'] = True
+                if flag_name == "set" and arg1 and arg2:
+                    flags["set"] = arg1
+                    flags["set_value"] = arg2
+                elif flag_name == "apikey" and arg1 and arg2:
+                    flags["apikey"] = arg1
+                    flags["api_key_value"] = arg2
+                elif flag_name == "ai-routing-set" and arg1 and arg2:
+                    flags["ai-routing-set"] = arg1
+                    flags["set_value"] = arg2
+                elif flag_name == "ai-routing-model" and arg1 and arg2:
+                    flags["ai-routing-model"] = arg1
+                    flags["model_value"] = arg2
+                elif flag_name == "ai-routing-limits" and arg1 and arg2:
+                    flags["ai-routing-limits"] = arg1
+                    flags["limits_value"] = arg2
+                elif flag_name == "ai-routing":
+                    flags["ai-routing"] = True
+                elif flag_name == "ai-routing-reset":
+                    flags["ai-routing-reset"] = True
+                elif flag_name == "env":
+                    flags["env"] = True
+                elif flag_name == "env-validate":
+                    flags["env-validate"] = True
+                elif flag_name == "env-create":
+                    flags["env-create"] = True
             else:
                 # Reject old positional syntax
                 flags = {}
@@ -82,75 +82,70 @@ def main():
 
     if not flags:
         output = show_overview(session)
-    elif 'help' in flags:
+    elif "help" in flags:
         output = show_overview(session)  # Same as default for now
-    elif 'status' in flags:
+    elif "status" in flags:
         output = show_status(session)
-    elif 'ai' in flags:
+    elif "ai" in flags:
         output = show_ai_details(session)
-    elif 'cloud' in flags:
+    elif "cloud" in flags:
         output = show_cloud_details(session)
-    elif 'plugins' in flags:
+    elif "plugins" in flags:
         output = show_plugins()
-    elif 'collections' in flags:
+    elif "collections" in flags:
         output = show_collections_config(session)
-    elif 'console' in flags:
+    elif "console" in flags:
         output = show_config_console(session)
-    elif 'set' in flags:
-        key = flags.get('set')
-        value = flags.get('set_value')
+    elif "set" in flags:
+        key = flags.get("set")
+        value = flags.get("set_value")
         if key and value:
             output = set_config(session, key, value)
         else:
             output = "Usage: /config --set <key> <value>"
-    elif 'apikey' in flags or 'key' in flags:
-        service = flags.get('apikey') or flags.get('key')
-        api_key = flags.get('api_key_value')
+    elif "apikey" in flags or "key" in flags:
+        service = flags.get("apikey") or flags.get("key")
+        api_key = flags.get("api_key_value")
         if service and api_key:
             output = set_api_key(session, service, api_key)
         else:
             output = "Usage: /config --apikey <service> <api_key>\n\nSupported services:\n  xai-chat        - xAI API key for chat completion\n  xai-collections - xAI API key for collections\n  claude          - Anthropic Claude API key\n  openai          - OpenAI API key\n\nExamples:\n  /config --apikey xai-chat YOUR_XAI_API_KEY\n  /config --apikey xai-collections YOUR_XAI_API_KEY\n  /config --apikey claude YOUR_CLAUDE_API_KEY"
-    elif 'ai-routing' in flags:
+    elif "ai-routing" in flags:
         output = show_ai_routing()
-    elif 'ai-routing-set' in flags:
-        key = flags.get('ai-routing-set')
-        value = flags.get('set_value')
+    elif "ai-routing-set" in flags:
+        key = flags.get("ai-routing-set")
+        value = flags.get("set_value")
         if key and value:
             output = set_ai_routing_preference(key, value)
         else:
             output = "Usage: /config --ai-routing-set <complexity|task_type> <provider>\n\nExamples:\n  /config --ai-routing-set simple grok\n  /config --ai-routing-set complex claude\n  /config --ai-routing-set code_write claude"
-    elif 'ai-routing-model' in flags:
-        provider = flags.get('ai-routing-model')
-        model = flags.get('model_value')
+    elif "ai-routing-model" in flags:
+        provider = flags.get("ai-routing-model")
+        model = flags.get("model_value")
         if provider and model:
             output = set_ai_routing_model(provider, model)
         else:
             output = "Usage: /config --ai-routing-model <provider> <model>\n\nExamples:\n  /config --ai-routing-model claude claude-3-5-sonnet-20241022\n  /config --ai-routing-model grok grok-beta\n  /config --ai-routing-model openai gpt-4o-mini"
-    elif 'ai-routing-limits' in flags:
-        period = flags.get('ai-routing-limits')
-        amount = flags.get('limits_value')
+    elif "ai-routing-limits" in flags:
+        period = flags.get("ai-routing-limits")
+        amount = flags.get("limits_value")
         if period and amount:
             output = set_ai_routing_limits(period, amount)
         else:
             output = "Usage: /config --ai-routing-limits <daily|monthly> <amount>\n\nExamples:\n  /config --ai-routing-limits daily 10.0\n  /config --ai-routing-limits monthly 100.0"
-    elif 'ai-routing-reset' in flags:
+    elif "ai-routing-reset" in flags:
         output = reset_ai_routing()
-    elif 'env' in flags:
+    elif "env" in flags:
         output = show_env_status()
-    elif 'env-validate' in flags:
+    elif "env-validate" in flags:
         output = validate_env_keys()
-    elif 'env-create' in flags:
+    elif "env-create" in flags:
         output = create_env_example()
     else:
         output = f"Unknown flag: {list(flags.keys())}\nUse /config for help"
 
     # Return envelope
-    print(json.dumps({
-        "ok": True,
-        "kind": "text",
-        "stdout": output,
-        "meta": {}
-    }))
+    print(json.dumps({"ok": True, "kind": "text", "stdout": output, "meta": {}}))
 
 
 def show_overview(session):
@@ -254,12 +249,12 @@ def show_collections_config(session):
     lines.append("=== xAI Collections ===")
 
     # Check if collections are enabled
-    enabled = session.get('collections_enabled', False)
+    enabled = session.get("collections_enabled", False)
     lines.append(f"Enabled: {'✓' if enabled else '✗'}")
 
     # Show collection IDs (masked for security)
-    tc_collection = session.get('tc_log_collection_id')
-    cpf_collection = session.get('cpf_log_collection_id')
+    tc_collection = session.get("tc_log_collection_id")
+    cpf_collection = session.get("cpf_log_collection_id")
 
     if tc_collection:
         masked_tc = tc_collection[:20] + "..." if len(tc_collection) > 20 else tc_collection
@@ -285,16 +280,16 @@ def set_config(session, key, value):
     """Set a configuration value"""
     # Define allowed config keys
     allowed_keys = {
-        'default_tier': int,
-        'sync_enabled': lambda v: v.lower() in ['true', '1', 'yes'],
-        'ai_provider': str,
-        'ai_model': str,
-        'collections_enabled': lambda v: v.lower() in ['true', '1', 'yes'],
-        'tc_log_collection_id': str,
-        'cpf_log_collection_id': str,
-        'xai_management_api_key': str,
-        'xai_api_host': str,
-        'xai_management_api_host': str,
+        "default_tier": int,
+        "sync_enabled": lambda v: v.lower() in ["true", "1", "yes"],
+        "ai_provider": str,
+        "ai_model": str,
+        "collections_enabled": lambda v: v.lower() in ["true", "1", "yes"],
+        "tc_log_collection_id": str,
+        "cpf_log_collection_id": str,
+        "xai_management_api_key": str,
+        "xai_api_host": str,
+        "xai_management_api_host": str,
     }
 
     if key not in allowed_keys:
@@ -307,24 +302,25 @@ def set_config(session, key, value):
 
         # Load existing config
         from pathlib import Path
-        isaac_dir = Path.home() / '.isaac'
+
+        isaac_dir = Path.home() / ".isaac"
         isaac_dir.mkdir(exist_ok=True)
-        config_file = isaac_dir / 'config.json'
-        
+        config_file = isaac_dir / "config.json"
+
         if config_file.exists():
             try:
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     config = json.load(f)
             except:
                 config = {}
         else:
             config = {}
-        
+
         # Update the config
         config[key] = converted_value
-        
+
         # Save back to file
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config, f, indent=2)
 
         return f"✓ Set {key} = {converted_value}"
@@ -345,7 +341,7 @@ def show_ai_routing():
 
         # Routing preferences
         lines.append("Routing Preferences:")
-        routing_prefs = config['routing_preferences']
+        routing_prefs = config["routing_preferences"]
         lines.append(f"  Simple tasks   → {routing_prefs.get('simple', 'openai')}")
         lines.append(f"  Medium tasks   → {routing_prefs.get('medium', 'grok')}")
         lines.append(f"  Complex tasks  → {routing_prefs.get('complex', 'claude')}")
@@ -361,22 +357,22 @@ def show_ai_routing():
 
         # Provider configs
         lines.append("Providers:")
-        for provider, provider_config in config['providers'].items():
-            enabled = "✓" if provider_config.get('enabled', True) else "✗"
-            model = provider_config.get('model', 'unknown')
-            pricing = provider_config.get('pricing', {})
-            input_cost = pricing.get('input_per_1m', 0)
-            output_cost = pricing.get('output_per_1m', 0)
+        for provider, provider_config in config["providers"].items():
+            enabled = "✓" if provider_config.get("enabled", True) else "✗"
+            model = provider_config.get("model", "unknown")
+            pricing = provider_config.get("pricing", {})
+            input_cost = pricing.get("input_per_1m", 0)
+            output_cost = pricing.get("output_per_1m", 0)
 
             lines.append(f"  {enabled} {provider:8} - {model}")
             lines.append(f"     Pricing: ${input_cost:.2f}/${output_cost:.2f} per 1M tokens")
         lines.append("")
 
         # Cost limits
-        cost_limits = config['cost_limits']
-        limits_enabled = "✓" if cost_limits.get('enabled', True) else "✗"
+        cost_limits = config["cost_limits"]
+        limits_enabled = "✓" if cost_limits.get("enabled", True) else "✗"
         lines.append(f"Cost Limits: {limits_enabled}")
-        if cost_limits.get('enabled', True):
+        if cost_limits.get("enabled", True):
             lines.append(f"  Daily:   ${cost_limits.get('daily_limit_usd', 10.0):.2f}")
             lines.append(f"  Monthly: ${cost_limits.get('monthly_limit_usd', 100.0):.2f}")
         lines.append("")
@@ -400,7 +396,7 @@ def set_ai_routing_preference(key, provider):
         config_mgr = RoutingConfigManager()
 
         # Check if it's a complexity level or task type
-        valid_complexity = ['simple', 'medium', 'complex', 'expert']
+        valid_complexity = ["simple", "medium", "complex", "expert"]
         if key in valid_complexity:
             config_mgr.set_provider_for_complexity(key, provider)
             return f"✓ Set {key} tasks to use {provider}"
@@ -464,36 +460,37 @@ def set_api_key(session, service, api_key):
     try:
         # Map service names to config keys
         service_map = {
-            'xai-chat': 'xai.chat.api_key',
-            'xai-collections': 'xai.collections.api_key',
-            'xai': 'xai_api_key',  # Legacy fallback
-            'claude': 'claude_api_key',
-            'openai': 'openai_api_key',
+            "xai-chat": "xai.chat.api_key",
+            "xai-collections": "xai.collections.api_key",
+            "xai": "xai_api_key",  # Legacy fallback
+            "claude": "claude_api_key",
+            "openai": "openai_api_key",
         }
-        
+
         if service not in service_map:
             return f"✗ Unknown service '{service}'. Supported services: {', '.join(service_map.keys())}"
-        
+
         config_key = service_map[service]
-        
+
         # Load existing config
         from pathlib import Path
-        isaac_dir = Path.home() / '.isaac'
+
+        isaac_dir = Path.home() / ".isaac"
         isaac_dir.mkdir(exist_ok=True)
-        config_file = isaac_dir / 'config.json'
-        
+        config_file = isaac_dir / "config.json"
+
         if config_file.exists():
             try:
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     config = json.load(f)
             except:
                 config = {}
         else:
             config = {}
-        
+
         # Set the API key in nested structure for xAI services
-        if service.startswith('xai-'):
-            parts = config_key.split('.')
+        if service.startswith("xai-"):
+            parts = config_key.split(".")
             current = config
             for part in parts[:-1]:
                 if part not in current:
@@ -503,9 +500,9 @@ def set_api_key(session, service, api_key):
         else:
             # Flat structure for other services
             config[config_key] = api_key
-        
+
         # Save back to file
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config, f, indent=2)
 
         return f"✓ Set {service} API key (stored as {config_key})"
@@ -534,7 +531,9 @@ def show_env_status():
 
             for service, is_valid in validation.items():
                 status = "✓" if is_valid else "✗"
-                lines.append(f"  {status} {service:20} {'Configured' if is_valid else 'Not configured'}")
+                lines.append(
+                    f"  {status} {service:20} {'Configured' if is_valid else 'Not configured'}"
+                )
 
             lines.append("")
             lines.append("Configuration Priority:")
@@ -608,14 +607,15 @@ def validate_env_keys():
 def create_env_example():
     """Create .env.example file"""
     try:
-        from isaac.core.env_config import EnvConfigLoader
         from pathlib import Path
+
+        from isaac.core.env_config import EnvConfigLoader
 
         env_loader = EnvConfigLoader(auto_load=False)
 
         # Try project root first
         project_root = Path.cwd()
-        output_path = project_root / '.env.example'
+        output_path = project_root / ".env.example"
 
         if env_loader.create_example_env(output_path):
             return f"✓ Created .env.example at {output_path}\n\nNext steps:\n  1. Copy to .env: cp .env.example .env\n  2. Edit .env and add your API keys"

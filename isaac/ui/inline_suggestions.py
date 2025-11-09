@@ -3,10 +3,11 @@ Inline Suggestions - Show predictive completions as gray text in prompt_toolkit
 """
 
 from typing import Iterable, Optional, Tuple
+
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
 
-from .predictive_completer import PredictiveCompleter, PredictionContext
+from .predictive_completer import PredictionContext, PredictiveCompleter
 
 
 class InlineSuggestionCompleter(Completer):
@@ -27,11 +28,7 @@ class InlineSuggestionCompleter(Completer):
 
     def _default_context(self) -> PredictionContext:
         """Default context provider when none is specified."""
-        return PredictionContext(
-            current_directory="",
-            recent_commands=[],
-            session_commands=[]
-        )
+        return PredictionContext(current_directory="", recent_commands=[], session_commands=[])
 
     def get_completions(self, document: Document, complete_event) -> Iterable[Completion]:
         """Get completions for the current document."""
@@ -54,13 +51,13 @@ class InlineSuggestionCompleter(Completer):
             self.last_shown_suggestion = suggestion[0]  # Track what was shown
 
             # Return completion that shows the rest of the suggestion
-            remaining = suggestion[0][len(text):]
+            remaining = suggestion[0][len(text) :]
             if remaining:
                 yield Completion(
                     text=remaining,
                     start_position=0,
                     display=remaining,
-                    display_meta=f"{suggestion[1]:.1%} confidence"
+                    display_meta=f"{suggestion[1]:.1%} confidence",
                 )
         else:
             self.current_suggestion = None
@@ -88,9 +85,7 @@ class InlineSuggestionCompleter(Completer):
         if self.last_shown_suggestion and self.last_shown_suggestion != actual_command:
             # A correction was made - learn from it
             self.predictive.learn_from_correction(
-                self.last_shown_suggestion,
-                actual_command,
-                context
+                self.last_shown_suggestion, actual_command, context
             )
 
         # Reset the last shown suggestion
@@ -120,7 +115,7 @@ class InlineSuggestionDisplay:
         suggestion = self.completer.get_current_suggestion()
 
         if suggestion and suggestion[0].startswith(current_text):
-            remaining = suggestion[0][len(current_text):]
+            remaining = suggestion[0][len(current_text) :]
             confidence = suggestion[1]
 
             # Show confidence indicator for high-confidence suggestions
@@ -129,7 +124,7 @@ class InlineSuggestionDisplay:
             elif confidence > 0.5:
                 return f"\033[37m{remaining}\033[0m"  # Light gray
             else:
-                return f"\033[2m{remaining}\033[0m"    # Dim text
+                return f"\033[2m{remaining}\033[0m"  # Dim text
 
         return ""
 

@@ -4,12 +4,13 @@ Provides beautiful terminal output with colors, formatting, and visual feedback
 """
 
 import re
-from typing import List, Tuple
 from enum import Enum
+from typing import List, Tuple
 
 
 class Color(Enum):
     """ANSI color codes for terminal output."""
+
     # Basic colors
     BLACK = "\033[30m"
     RED = "\033[31m"
@@ -47,14 +48,14 @@ class VisualEnhancer:
 
         # Syntax highlighting patterns
         self.syntax_patterns = {
-            'command': re.compile(r'^(\$|\w+>)\s*(\w+)'),
-            'path': re.compile(r'(/[\w./-]+|[\w./-]+\.[\w]+|~\w*|./[\w./-]+)'),
-            'option': re.compile(r'(-\w|--[\w-]+)'),
-            'string': re.compile(r"'[^']*'|" + r'"[^"]*"'),
-            'number': re.compile(r'\b\d+\b'),
-            'error': re.compile(r'(error|Error|ERROR|failed|Failed|FAILED)'),
-            'success': re.compile(r'(success|Success|SUCCESS|ok|OK|done|Done|DONE)'),
-            'warning': re.compile(r'(warning|Warning|WARNING|caution|Caution|CAUTION)'),
+            "command": re.compile(r"^(\$|\w+>)\s*(\w+)"),
+            "path": re.compile(r"(/[\w./-]+|[\w./-]+\.[\w]+|~\w*|./[\w./-]+)"),
+            "option": re.compile(r"(-\w|--[\w-]+)"),
+            "string": re.compile(r"'[^']*'|" + r'"[^"]*"'),
+            "number": re.compile(r"\b\d+\b"),
+            "error": re.compile(r"(error|Error|ERROR|failed|Failed|FAILED)"),
+            "success": re.compile(r"(success|Success|SUCCESS|ok|OK|done|Done|DONE)"),
+            "warning": re.compile(r"(warning|Warning|WARNING|caution|Caution|CAUTION)"),
         }
 
     def enable_colors(self, enabled: bool = True):
@@ -80,14 +81,14 @@ class VisualEnhancer:
 
         # Apply highlighting in order of priority
         highlights = [
-            ('error', Color.BRIGHT_RED),
-            ('warning', Color.BRIGHT_YELLOW),
-            ('success', Color.BRIGHT_GREEN),
-            ('command', Color.BRIGHT_BLUE),
-            ('path', Color.CYAN),
-            ('option', Color.YELLOW),
-            ('string', Color.GREEN),
-            ('number', Color.MAGENTA),
+            ("error", Color.BRIGHT_RED),
+            ("warning", Color.BRIGHT_YELLOW),
+            ("success", Color.BRIGHT_GREEN),
+            ("command", Color.BRIGHT_BLUE),
+            ("path", Color.CYAN),
+            ("option", Color.YELLOW),
+            ("string", Color.GREEN),
+            ("number", Color.MAGENTA),
         ]
 
         for pattern_name, color in highlights:
@@ -104,19 +105,21 @@ class VisualEnhancer:
         status_icon = "✓" if success else "✗"
         status_color = Color.BRIGHT_GREEN if success else Color.BRIGHT_RED
 
-        command_line = f"{self.colorize_text(status_icon, status_color)} {self.highlight_syntax(command)}"
+        command_line = (
+            f"{self.colorize_text(status_icon, status_color)} {self.highlight_syntax(command)}"
+        )
         lines.append(command_line)
 
         # Output with syntax highlighting
         if output.strip():
-            for line in output.split('\n'):
+            for line in output.split("\n"):
                 if line.strip():
                     highlighted_line = self.highlight_syntax(line)
                     lines.append(f"  {highlighted_line}")
                 else:
                     lines.append("")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def format_prompt(self, prompt_type: str, text: str = "") -> str:
         """Format different types of prompts."""
@@ -124,10 +127,10 @@ class VisualEnhancer:
             return f"{prompt_type}> {text}"
 
         prompts = {
-            'isaac': (Color.BRIGHT_CYAN, 'isaac'),
-            'user': (Color.BRIGHT_YELLOW, 'user'),
-            'system': (Color.BRIGHT_MAGENTA, 'system'),
-            'error': (Color.BRIGHT_RED, 'error'),
+            "isaac": (Color.BRIGHT_CYAN, "isaac"),
+            "user": (Color.BRIGHT_YELLOW, "user"),
+            "system": (Color.BRIGHT_MAGENTA, "system"),
+            "error": (Color.BRIGHT_RED, "error"),
         }
 
         color, prefix = prompts.get(prompt_type, (Color.WHITE, prompt_type))
@@ -184,9 +187,7 @@ class VisualEnhancer:
 
         # Data rows
         for row in rows:
-            row_line = "  ".join(
-                str(row[i]).ljust(col_widths[i]) for i in range(len(row))
-            )
+            row_line = "  ".join(str(row[i]).ljust(col_widths[i]) for i in range(len(row)))
             lines.append(row_line)
 
         return "\n".join(lines)
@@ -200,7 +201,10 @@ class VisualEnhancer:
             "",
             self.colorize_text("╔══════════════════════════════════════╗", Color.CYAN),
             self.colorize_text("║                                      ║", Color.CYAN),
-            self.colorize_text("║     ", Color.CYAN) + self.colorize_text("Isaac 2.0", Color.BRIGHT_YELLOW) + self.colorize_text(" - AI Shell Assistant", Color.CYAN) + self.colorize_text("     ║", Color.CYAN),
+            self.colorize_text("║     ", Color.CYAN)
+            + self.colorize_text("Isaac 2.0", Color.BRIGHT_YELLOW)
+            + self.colorize_text(" - AI Shell Assistant", Color.CYAN)
+            + self.colorize_text("     ║", Color.CYAN),
             self.colorize_text("║                                      ║", Color.CYAN),
             self.colorize_text("╚══════════════════════════════════════╝", Color.CYAN),
             "",

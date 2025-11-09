@@ -4,6 +4,7 @@ Shows War Games reference, ASCII art, and loading sequence
 """
 
 import time
+
 from isaac.ui.terminal_control import TerminalControl
 
 
@@ -47,13 +48,7 @@ class SplashScreen:
         width, height = self.terminal.get_terminal_size()
         center_y = height // 2 - 2
 
-        lines = [
-            "",
-            "Shall we play a game?",
-            "",
-            "... nah!!",
-            ""
-        ]
+        lines = ["", "Shall we play a game?", "", "... nah!!", ""]
 
         for i, line in enumerate(lines):
             x = (width - len(line)) // 2
@@ -76,7 +71,7 @@ class SplashScreen:
             "   _| |_ /\\__/ /  __  \\ \\__ /\\",
             "   \\___/ \\____/_/    \\_\\____/",
             "",
-            "   Intelligent System Agent And Control"
+            "   Intelligent System Agent And Control",
         ]
 
         for i, line in enumerate(logo_lines):
@@ -92,7 +87,7 @@ class SplashScreen:
         messages = [
             "Loading session data...",
             "Connecting to cloud storage...",
-            "Initializing AI layer..."
+            "Initializing AI layer...",
         ]
 
         for message in messages:

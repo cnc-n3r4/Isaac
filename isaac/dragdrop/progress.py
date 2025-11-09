@@ -3,18 +3,19 @@ Progress Indicators for Smart Drag-Drop System
 Provides visual feedback during file processing operations.
 """
 
-import time
 import threading
-from typing import Optional, Callable
+import time
 from enum import Enum
+from typing import Callable, Optional
 
 
 class ProgressStyle(Enum):
     """Different progress display styles"""
+
     PERCENTAGE = "percentage"  # 0-100% with bar
-    SPINNER = "spinner"        # Spinning indicator
-    DOTS = "dots"             # Progress dots
-    SIMPLE = "simple"         # Simple text updates
+    SPINNER = "spinner"  # Spinning indicator
+    DOTS = "dots"  # Progress dots
+    SIMPLE = "simple"  # Simple text updates
 
 
 class ProgressIndicator:
@@ -22,10 +23,11 @@ class ProgressIndicator:
     Visual progress indicator for long-running operations.
     """
 
-    SPINNER_CHARS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    SPINNER_CHARS = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
-    def __init__(self, style: ProgressStyle = ProgressStyle.SPINNER,
-                 prefix: str = "", suffix: str = ""):
+    def __init__(
+        self, style: ProgressStyle = ProgressStyle.SPINNER, prefix: str = "", suffix: str = ""
+    ):
         self.style = style
         self.prefix = prefix
         self.suffix = suffix
@@ -109,7 +111,7 @@ class ProgressIndicator:
     def _update_display(self, frame: int = 0, final: bool = False) -> None:
         """Update the display."""
         # Clear current line
-        print('\r' + ' ' * 80 + '\r', end='', flush=True)
+        print("\r" + " " * 80 + "\r", end="", flush=True)
 
         display = self.prefix
 
@@ -117,7 +119,7 @@ class ProgressIndicator:
             percentage = int((self._current / self._total) * 100) if self._total > 0 else 0
             bar_width = 20
             filled = int(bar_width * self._current / self._total) if self._total > 0 else 0
-            bar = '█' * filled + '░' * (bar_width - filled)
+            bar = "█" * filled + "░" * (bar_width - filled)
             display += f"[{bar}] {percentage:3d}% {self._message}"
 
         elif self.style == ProgressStyle.SPINNER:
@@ -125,7 +127,7 @@ class ProgressIndicator:
             display += f"{spinner} {self._message}"
 
         elif self.style == ProgressStyle.DOTS:
-            dots = '.' * ((frame % 4) + 1)
+            dots = "." * ((frame % 4) + 1)
             display += f"{self._message}{dots}"
 
         elif self.style == ProgressStyle.SIMPLE:
@@ -136,7 +138,7 @@ class ProgressIndicator:
         if final:
             display += " ✓" if "Complete" in self._message else " ❌"
 
-        print(display, end='', flush=True)
+        print(display, end="", flush=True)
 
 
 class BatchProgressManager:
@@ -163,16 +165,10 @@ class BatchProgressManager:
         self._current_operation = operation
 
         if self.style == ProgressStyle.PERCENTAGE:
-            indicator = ProgressIndicator(
-                style=ProgressStyle.PERCENTAGE,
-                prefix=f"{operation}: "
-            )
+            indicator = ProgressIndicator(style=ProgressStyle.PERCENTAGE, prefix=f"{operation}: ")
             indicator.start(f"Processing {total_files} files", total_files)
         else:
-            indicator = ProgressIndicator(
-                style=self.style,
-                prefix=f"{operation}: "
-            )
+            indicator = ProgressIndicator(style=self.style, prefix=f"{operation}: ")
             indicator.start(f"Processing {total_files} files")
 
         operation_key = f"{operation}_{id(self)}"
@@ -209,6 +205,7 @@ class BatchProgressManager:
         Returns:
             Progress callback function
         """
+
         def callback(message: str) -> None:
             print(f"[{operation}] {message}")
 
@@ -223,8 +220,10 @@ class ProgressCallback:
     @staticmethod
     def console_callback(operation: str) -> Callable[[str], None]:
         """Create a simple console progress callback."""
+
         def callback(message: str) -> None:
             print(f"[{operation}] {message}")
+
         return callback
 
     @staticmethod
@@ -247,8 +246,9 @@ class ProgressCallback:
 
 
 # Convenience functions
-def create_progress_indicator(style: ProgressStyle = ProgressStyle.SPINNER,
-                            prefix: str = "", suffix: str = "") -> ProgressIndicator:
+def create_progress_indicator(
+    style: ProgressStyle = ProgressStyle.SPINNER, prefix: str = "", suffix: str = ""
+) -> ProgressIndicator:
     """Create a progress indicator."""
     return ProgressIndicator(style, prefix, suffix)
 
@@ -263,6 +263,7 @@ def with_progress(operation: str, style: ProgressStyle = ProgressStyle.SPINNER):
             # Function implementation
             pass
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             indicator = ProgressIndicator(style, prefix=f"{operation}: ")
@@ -277,4 +278,5 @@ def with_progress(operation: str, style: ProgressStyle = ProgressStyle.SPINNER):
                 raise
 
         return wrapper
+
     return decorator

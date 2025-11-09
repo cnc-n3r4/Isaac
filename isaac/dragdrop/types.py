@@ -3,13 +3,14 @@ Shared types for Smart Drag-Drop System
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class RoutingResult:
     """Result of routing operation"""
+
     success: bool
     message: str
     processed_files: List[Path]
@@ -24,6 +25,7 @@ class RoutingResult:
 @dataclass
 class BatchConfig:
     """Configuration for batch operations"""
+
     max_workers: int = 4  # Concurrent processing threads
     batch_size: int = 10  # Files per batch
     retry_attempts: int = 3  # Retry failed operations
@@ -35,6 +37,7 @@ class BatchConfig:
 @dataclass
 class BatchResult:
     """Result of a batch operation"""
+
     total_files: int
     processed_files: int
     failed_files: int

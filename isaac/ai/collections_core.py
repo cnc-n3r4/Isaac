@@ -7,21 +7,22 @@ Enables background file chunking, incremental updates, and semantic search
 import ast
 import hashlib
 import json
-import re
 import logging
-import time
-from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Any, Callable
-from datetime import datetime
-from threading import Thread, Event
 import mimetypes
+import re
+import time
+from datetime import datetime
+from pathlib import Path
+from threading import Event, Thread
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
 # Optional watchdog support
 try:
+    from watchdog.events import FileSystemEvent, FileSystemEventHandler
     from watchdog.observers import Observer
-    from watchdog.events import FileSystemEventHandler, FileSystemEvent
+
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
@@ -37,23 +38,47 @@ class FileChunker:
     MAX_CHUNK_SIZE = 2000
 
     # Supported languages for AST parsing
-    AST_LANGUAGES = {'.py'}
+    AST_LANGUAGES = {".py"}
 
     # Supported text file extensions
     TEXT_EXTENSIONS = {
-        '.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.c', '.cpp', '.h', '.hpp',
-        '.cs', '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.scala',
-        '.sh', '.bash', '.yaml', '.yml', '.json', '.xml', '.html', '.css',
-        '.md', '.txt', '.rst', '.toml', '.ini', '.conf', '.cfg'
+        ".py",
+        ".js",
+        ".ts",
+        ".jsx",
+        ".tsx",
+        ".java",
+        ".c",
+        ".cpp",
+        ".h",
+        ".hpp",
+        ".cs",
+        ".go",
+        ".rs",
+        ".rb",
+        ".php",
+        ".swift",
+        ".kt",
+        ".scala",
+        ".sh",
+        ".bash",
+        ".yaml",
+        ".yml",
+        ".json",
+        ".xml",
+        ".html",
+        ".css",
+        ".md",
+        ".txt",
+        ".rst",
+        ".toml",
+        ".ini",
+        ".conf",
+        ".cfg",
     }
 
     def __init__(self):
-        self.stats = {
-            'files_chunked': 0,
-            'chunks_created': 0,
-            'ast_parsed': 0,
-            'regex_parsed': 0
-        }
+        self.stats = {"files_chunked": 0, "chunks_created": 0, "ast_parsed": 0, "regex_parsed": 0}
 
     def is_text_file(self, file_path: Path) -> bool:
         """Check if file is a supported text file"""
@@ -63,7 +88,7 @@ class FileChunker:
 
         # Check MIME type
         mime_type, _ = mimetypes.guess_type(str(file_path))
-        if mime_type and mime_type.startswith('text/'):
+        if mime_type and mime_type.startswith("text/"):
             return True
 
         return False
@@ -94,21 +119,21 @@ class FileChunker:
 
         try:
             # Read file content
-            content = file_path.read_text(encoding='utf-8', errors='ignore')
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
 
             # Choose chunking strategy
-            if file_path.suffix == '.py':
+            if file_path.suffix == ".py":
                 chunks = self._chunk_python_ast(content, file_path)
-                self.stats['ast_parsed'] += 1
-            elif file_path.suffix in {'.js', '.ts', '.jsx', '.tsx'}:
+                self.stats["ast_parsed"] += 1
+            elif file_path.suffix in {".js", ".ts", ".jsx", ".tsx"}:
                 chunks = self._chunk_javascript_regex(content, file_path)
-                self.stats['regex_parsed'] += 1
+                self.stats["regex_parsed"] += 1
             else:
                 chunks = self._chunk_generic(content, file_path)
-                self.stats['regex_parsed'] += 1
+                self.stats["regex_parsed"] += 1
 
-            self.stats['files_chunked'] += 1
-            self.stats['chunks_created'] += len(chunks)
+            self.stats["files_chunked"] += 1
+            self.stats["chunks_created"] += len(chunks)
 
             return chunks
 
@@ -122,37 +147,43 @@ class FileChunker:
 
         try:
             tree = ast.parse(content)
-            lines = content.split('\n')
+            lines = content.split("\n")
 
             # Extract top-level definitions
             for node in ast.walk(tree):
                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                     # Get source lines for this node
-                    if hasattr(node, 'lineno') and hasattr(node, 'end_lineno'):
+                    if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
                         start_line = node.lineno
                         end_line = node.end_lineno or start_line
 
                         # Extract content
-                        chunk_content = '\n'.join(lines[start_line-1:end_line])
+                        chunk_content = "\n".join(lines[start_line - 1 : end_line])
 
                         # Get docstring if available
                         docstring = ast.get_docstring(node)
                         if docstring:
                             chunk_content = f'"""{docstring}"""\n\n{chunk_content}'
 
-                        node_type = 'function' if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) else 'class'
+                        node_type = (
+                            "function"
+                            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                            else "class"
+                        )
 
-                        chunks.append({
-                            "content": chunk_content,
-                            "metadata": {
-                                "file": str(file_path),
-                                "chunk_index": len(chunks),
-                                "start_line": start_line,
-                                "end_line": end_line,
-                                "type": node_type,
-                                "name": node.name
+                        chunks.append(
+                            {
+                                "content": chunk_content,
+                                "metadata": {
+                                    "file": str(file_path),
+                                    "chunk_index": len(chunks),
+                                    "start_line": start_line,
+                                    "end_line": end_line,
+                                    "type": node_type,
+                                    "name": node.name,
+                                },
                             }
-                        })
+                        )
 
             # If no chunks created (e.g., script file), fall back to generic chunking
             if not chunks:
@@ -168,18 +199,18 @@ class FileChunker:
     def _chunk_javascript_regex(self, content: str, file_path: Path) -> List[Dict[str, Any]]:
         """Chunk JavaScript/TypeScript using regex patterns"""
         chunks = []
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         # Regex patterns for function/class definitions
         patterns = [
             # Function declarations: function foo() {...}
-            r'^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)',
+            r"^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)",
             # Arrow functions: const foo = () => {...}
-            r'^\s*(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>',
+            r"^\s*(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>",
             # Class declarations: class Foo {...}
-            r'^\s*(?:export\s+)?class\s+(\w+)',
+            r"^\s*(?:export\s+)?class\s+(\w+)",
             # Method definitions: foo() {...}
-            r'^\s*(?:async\s+)?(\w+)\s*\([^)]*\)\s*\{',
+            r"^\s*(?:async\s+)?(\w+)\s*\([^)]*\)\s*\{",
         ]
 
         compiled_patterns = [re.compile(p) for p in patterns]
@@ -196,56 +227,62 @@ class FileChunker:
                 if match:
                     # Save previous chunk if exists
                     if current_chunk:
-                        chunks.append({
-                            "content": '\n'.join(current_chunk),
-                            "metadata": {
-                                "file": str(file_path),
-                                "chunk_index": len(chunks),
-                                "start_line": current_start,
-                                "end_line": i - 1,
-                                "name": current_name or f"chunk_{len(chunks)}"
+                        chunks.append(
+                            {
+                                "content": "\n".join(current_chunk),
+                                "metadata": {
+                                    "file": str(file_path),
+                                    "chunk_index": len(chunks),
+                                    "start_line": current_start,
+                                    "end_line": i - 1,
+                                    "name": current_name or f"chunk_{len(chunks)}",
+                                },
                             }
-                        })
+                        )
 
                     # Start new chunk
                     current_chunk = [line]
                     current_start = i
                     current_name = match.group(1) if match.groups() else None
-                    brace_depth = line.count('{') - line.count('}')
+                    brace_depth = line.count("{") - line.count("}")
                     break
             else:
                 # Continue current chunk
                 current_chunk.append(line)
-                brace_depth += line.count('{') - line.count('}')
+                brace_depth += line.count("{") - line.count("}")
 
                 # Check if chunk is getting too large
-                if len('\n'.join(current_chunk)) > self.MAX_CHUNK_SIZE and brace_depth == 0:
-                    chunks.append({
-                        "content": '\n'.join(current_chunk),
-                        "metadata": {
-                            "file": str(file_path),
-                            "chunk_index": len(chunks),
-                            "start_line": current_start,
-                            "end_line": i,
-                            "name": current_name or f"chunk_{len(chunks)}"
+                if len("\n".join(current_chunk)) > self.MAX_CHUNK_SIZE and brace_depth == 0:
+                    chunks.append(
+                        {
+                            "content": "\n".join(current_chunk),
+                            "metadata": {
+                                "file": str(file_path),
+                                "chunk_index": len(chunks),
+                                "start_line": current_start,
+                                "end_line": i,
+                                "name": current_name or f"chunk_{len(chunks)}",
+                            },
                         }
-                    })
+                    )
                     current_chunk = []
                     current_start = i + 1
                     current_name = None
 
         # Save final chunk
         if current_chunk:
-            chunks.append({
-                "content": '\n'.join(current_chunk),
-                "metadata": {
-                    "file": str(file_path),
-                    "chunk_index": len(chunks),
-                    "start_line": current_start,
-                    "end_line": len(lines),
-                    "name": current_name or f"chunk_{len(chunks)}"
+            chunks.append(
+                {
+                    "content": "\n".join(current_chunk),
+                    "metadata": {
+                        "file": str(file_path),
+                        "chunk_index": len(chunks),
+                        "start_line": current_start,
+                        "end_line": len(lines),
+                        "name": current_name or f"chunk_{len(chunks)}",
+                    },
                 }
-            })
+            )
 
         # Fall back to generic if no chunks created
         if not chunks:
@@ -256,7 +293,7 @@ class FileChunker:
     def _chunk_generic(self, content: str, file_path: Path) -> List[Dict[str, Any]]:
         """Generic text chunking with overlap"""
         chunks = []
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         # Chunk by line count (approximately MAX_CHUNK_SIZE characters)
         lines_per_chunk = max(50, self.MAX_CHUNK_SIZE // 80)  # Assume ~80 chars/line
@@ -267,15 +304,17 @@ class FileChunker:
             end = min(i + lines_per_chunk, len(lines))
             chunk_lines = lines[i:end]
 
-            chunks.append({
-                "content": '\n'.join(chunk_lines),
-                "metadata": {
-                    "file": str(file_path),
-                    "chunk_index": len(chunks),
-                    "start_line": i + 1,
-                    "end_line": end
+            chunks.append(
+                {
+                    "content": "\n".join(chunk_lines),
+                    "metadata": {
+                        "file": str(file_path),
+                        "chunk_index": len(chunks),
+                        "start_line": i + 1,
+                        "end_line": end,
+                    },
                 }
-            })
+            )
 
             # Move to next chunk with overlap
             i += lines_per_chunk - overlap
@@ -292,12 +331,26 @@ class IsaacIgnore:
 
         # Default ignore patterns
         self.default_patterns = [
-            '.git/', '__pycache__/', '*.pyc', '.pytest_cache/',
-            'node_modules/', 'venv/', '.venv/', 'env/', '.env/',
-            '.tox/', '.mypy_cache/', '.ruff_cache/',
-            '*.egg-info/', 'dist/', 'build/',
-            '.DS_Store', 'Thumbs.db',
-            '.isaac/', '*.log', '*.tmp'
+            ".git/",
+            "__pycache__/",
+            "*.pyc",
+            ".pytest_cache/",
+            "node_modules/",
+            "venv/",
+            ".venv/",
+            "env/",
+            ".env/",
+            ".tox/",
+            ".mypy_cache/",
+            ".ruff_cache/",
+            "*.egg-info/",
+            "dist/",
+            "build/",
+            ".DS_Store",
+            "Thumbs.db",
+            ".isaac/",
+            "*.log",
+            "*.tmp",
         ]
 
         self._load_patterns()
@@ -309,13 +362,13 @@ class IsaacIgnore:
             self._add_pattern(pattern)
 
         # Load custom patterns
-        ignore_file = self.project_root / '.isaacignore'
+        ignore_file = self.project_root / ".isaacignore"
         if ignore_file.exists():
             try:
                 content = ignore_file.read_text()
-                for line in content.split('\n'):
+                for line in content.split("\n"):
                     line = line.strip()
-                    if line and not line.startswith('#'):
+                    if line and not line.startswith("#"):
                         self._add_pattern(line)
                 logger.info(f"Loaded .isaacignore with {len(self.patterns)} patterns")
             except Exception as e:
@@ -323,24 +376,24 @@ class IsaacIgnore:
 
     def _add_pattern(self, pattern: str):
         """Convert gitignore pattern to regex"""
-        is_negation = pattern.startswith('!')
+        is_negation = pattern.startswith("!")
         if is_negation:
             pattern = pattern[1:]
 
         # Convert gitignore pattern to regex
-        regex_pattern = pattern.replace('.', r'\.')
-        regex_pattern = regex_pattern.replace('*', '[^/]*')
-        regex_pattern = regex_pattern.replace('?', '.')
+        regex_pattern = pattern.replace(".", r"\.")
+        regex_pattern = regex_pattern.replace("*", "[^/]*")
+        regex_pattern = regex_pattern.replace("?", ".")
 
         # Handle directory patterns (ending with /)
-        if pattern.endswith('/'):
-            regex_pattern = regex_pattern[:-1] + r'(/|$)'
+        if pattern.endswith("/"):
+            regex_pattern = regex_pattern[:-1] + r"(/|$)"
 
         # Anchor pattern
-        if pattern.startswith('/'):
-            regex_pattern = '^' + regex_pattern[1:]
+        if pattern.startswith("/"):
+            regex_pattern = "^" + regex_pattern[1:]
         else:
-            regex_pattern = '(^|/)' + regex_pattern
+            regex_pattern = "(^|/)" + regex_pattern
 
         try:
             compiled = re.compile(regex_pattern)
@@ -370,7 +423,7 @@ class IsaacIgnore:
 class FileWatcherHandler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
     """Handler for file system events"""
 
-    def __init__(self, knowledge_base: 'ProjectKnowledgeBase', ignore: IsaacIgnore):
+    def __init__(self, knowledge_base: "ProjectKnowledgeBase", ignore: IsaacIgnore):
         if WATCHDOG_AVAILABLE:
             super().__init__()
         self.knowledge_base = knowledge_base
@@ -421,7 +474,9 @@ class FileWatcherHandler(FileSystemEventHandler if WATCHDOG_AVAILABLE else objec
 class FileWatcher:
     """File system watcher for incremental updates"""
 
-    def __init__(self, knowledge_base: 'ProjectKnowledgeBase', update_callback: Optional[Callable] = None):
+    def __init__(
+        self, knowledge_base: "ProjectKnowledgeBase", update_callback: Optional[Callable] = None
+    ):
         """
         Initialize file watcher
 
@@ -453,16 +508,13 @@ class FileWatcher:
         try:
             # Create handler
             self.handler = FileWatcherHandler(
-                knowledge_base=self.knowledge_base,
-                ignore=self.knowledge_base.ignore
+                knowledge_base=self.knowledge_base, ignore=self.knowledge_base.ignore
             )
 
             # Create and start observer
             self.observer = Observer()
             self.observer.schedule(
-                self.handler,
-                str(self.knowledge_base.project_root),
-                recursive=True
+                self.handler, str(self.knowledge_base.project_root), recursive=True
             )
             self.observer.start()
 
@@ -537,7 +589,14 @@ class ProjectKnowledgeBase:
     Manages background indexing, incremental updates, and semantic search
     """
 
-    def __init__(self, project_root: Path, xai_client, task_manager=None, message_queue=None, auto_watch: bool = False):
+    def __init__(
+        self,
+        project_root: Path,
+        xai_client,
+        task_manager=None,
+        message_queue=None,
+        auto_watch: bool = False,
+    ):
         """
         Initialize project knowledge base
 
@@ -561,7 +620,7 @@ class ProjectKnowledgeBase:
         # State
         self.collection_id: Optional[str] = None
         self.indexed_files: Dict[str, str] = {}  # file_path -> content_hash
-        self.state_file = Path.home() / '.isaac' / 'collections_state.json'
+        self.state_file = Path.home() / ".isaac" / "collections_state.json"
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load previous state
@@ -577,14 +636,14 @@ class ProjectKnowledgeBase:
             return
 
         try:
-            with open(self.state_file, 'r') as f:
+            with open(self.state_file, "r") as f:
                 state = json.load(f)
 
             # Load collection ID for this project
             project_key = str(self.project_root)
             if project_key in state:
-                self.collection_id = state[project_key].get('collection_id')
-                self.indexed_files = state[project_key].get('indexed_files', {})
+                self.collection_id = state[project_key].get("collection_id")
+                self.indexed_files = state[project_key].get("indexed_files", {})
                 logger.info(f"Loaded state: {len(self.indexed_files)} files indexed")
 
         except Exception as e:
@@ -596,19 +655,19 @@ class ProjectKnowledgeBase:
             # Load existing state
             state = {}
             if self.state_file.exists():
-                with open(self.state_file, 'r') as f:
+                with open(self.state_file, "r") as f:
                     state = json.load(f)
 
             # Update this project's state
             project_key = str(self.project_root)
             state[project_key] = {
-                'collection_id': self.collection_id,
-                'indexed_files': self.indexed_files,
-                'last_updated': datetime.now().isoformat()
+                "collection_id": self.collection_id,
+                "indexed_files": self.indexed_files,
+                "last_updated": datetime.now().isoformat(),
             }
 
             # Save
-            with open(self.state_file, 'w') as f:
+            with open(self.state_file, "w") as f:
                 json.dump(state, f, indent=2)
 
         except Exception as e:
@@ -632,7 +691,7 @@ class ProjectKnowledgeBase:
         """
         files_to_index = []
 
-        for file_path in self.project_root.rglob('*'):
+        for file_path in self.project_root.rglob("*"):
             # Skip directories
             if file_path.is_dir():
                 continue
@@ -645,8 +704,9 @@ class ProjectKnowledgeBase:
             file_key = str(file_path.relative_to(self.project_root))
             current_hash = self._compute_file_hash(file_path)
 
-            if current_hash and (file_key not in self.indexed_files or
-                                  self.indexed_files[file_key] != current_hash):
+            if current_hash and (
+                file_key not in self.indexed_files or self.indexed_files[file_key] != current_hash
+            ):
                 files_to_index.append(file_path)
 
         return files_to_index
@@ -664,13 +724,10 @@ class ProjectKnowledgeBase:
         if self.task_manager:
             # Queue background indexing task
             task_id = self.task_manager.spawn_task(
-                command='isaac_index_project',
-                task_type='system',
-                priority='low',
-                metadata={
-                    'project_root': str(self.project_root),
-                    'operation': 'index_project'
-                }
+                command="isaac_index_project",
+                task_type="system",
+                priority="low",
+                metadata={"project_root": str(self.project_root), "operation": "index_project"},
             )
 
             logger.info(f"Started background indexing: {task_id}")
@@ -698,15 +755,13 @@ class ProjectKnowledgeBase:
             try:
                 result = self.xai_client.create_collection(
                     name=collection_name,
-                    chunk_configuration={
-                        'max_chunk_size': FileChunker.MAX_CHUNK_SIZE
-                    }
+                    chunk_configuration={"max_chunk_size": FileChunker.MAX_CHUNK_SIZE},
                 )
-                self.collection_id = result['id']
+                self.collection_id = result["id"]
                 logger.info(f"Created collection: {collection_name} ({self.collection_id})")
             except Exception as e:
                 logger.error(f"Failed to create collection: {e}")
-                return {'success': False, 'error': str(e)}
+                return {"success": False, "error": str(e)}
 
         # Get files to index
         files = self.get_files_to_index()
@@ -742,11 +797,11 @@ class ProjectKnowledgeBase:
         self._save_state()
 
         stats = {
-            'success': True,
-            'files_indexed': len(files),
-            'total_chunks': total_chunks,
-            'collection_id': self.collection_id,
-            'chunker_stats': self.chunker.stats
+            "success": True,
+            "files_indexed": len(files),
+            "total_chunks": total_chunks,
+            "collection_id": self.collection_id,
+            "chunker_stats": self.chunker.stats,
         }
 
         logger.info(f"Indexing complete: {stats}")
@@ -764,29 +819,17 @@ class ProjectKnowledgeBase:
             Search results with file context
         """
         if not self.collection_id:
-            return {
-                'success': False,
-                'error': 'Project not indexed. Run index_project() first.'
-            }
+            return {"success": False, "error": "Project not indexed. Run index_project() first."}
 
         try:
             results = self.xai_client.search_collection(
-                collection_id=self.collection_id,
-                query=query,
-                top_k=top_k
+                collection_id=self.collection_id, query=query, top_k=top_k
             )
 
-            return {
-                'success': True,
-                'results': results.get('results', []),
-                'query': query
-            }
+            return {"success": True, "results": results.get("results", []), "query": query}
 
         except Exception as e:
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def start_watching(self):
         """Start file watcher for incremental updates"""
@@ -794,10 +837,7 @@ class ProjectKnowledgeBase:
             logger.warning("File watcher already running")
             return
 
-        self.watcher = FileWatcher(
-            knowledge_base=self,
-            update_callback=self._notify_progress
-        )
+        self.watcher = FileWatcher(knowledge_base=self, update_callback=self._notify_progress)
         self.watcher.start()
         logger.info("File watcher started")
 
@@ -820,23 +860,25 @@ class ProjectKnowledgeBase:
         if self.message_queue:
             try:
                 # Send notification via message queue
-                self.message_queue.send({
-                    'type': 'indexing_progress',
-                    'message': message,
-                    'project': str(self.project_root),
-                    'timestamp': datetime.now().isoformat()
-                })
+                self.message_queue.send(
+                    {
+                        "type": "indexing_progress",
+                        "message": message,
+                        "project": str(self.project_root),
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                )
             except Exception as e:
                 logger.error(f"Failed to send progress notification: {e}")
 
     def get_stats(self) -> Dict[str, Any]:
         """Get indexing statistics"""
         return {
-            'project_root': str(self.project_root),
-            'collection_id': self.collection_id,
-            'files_indexed': len(self.indexed_files),
-            'chunker_stats': self.chunker.stats,
-            'watching': self.watcher is not None
+            "project_root": str(self.project_root),
+            "collection_id": self.collection_id,
+            "files_indexed": len(self.indexed_files),
+            "chunker_stats": self.chunker.stats,
+            "watching": self.watcher is not None,
         }
 
 
@@ -860,17 +902,16 @@ def get_knowledge_base(project_root: Path, xai_client, task_manager=None) -> Pro
 
     if project_key not in _knowledge_bases:
         _knowledge_bases[project_key] = ProjectKnowledgeBase(
-            project_root=project_root,
-            xai_client=xai_client,
-            task_manager=task_manager
+            project_root=project_root, xai_client=xai_client, task_manager=task_manager
         )
 
     return _knowledge_bases[project_key]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test the chunker
     import sys
+
     logging.basicConfig(level=logging.DEBUG)
 
     if len(sys.argv) > 1:
@@ -884,9 +925,9 @@ if __name__ == '__main__':
         for i, chunk in enumerate(chunks):
             print(f"Chunk {i}:")
             print(f"  Lines: {chunk['metadata']['start_line']}-{chunk['metadata']['end_line']}")
-            if 'name' in chunk['metadata']:
+            if "name" in chunk["metadata"]:
                 print(f"  Name: {chunk['metadata']['name']}")
-            if 'type' in chunk['metadata']:
+            if "type" in chunk["metadata"]:
                 print(f"  Type: {chunk['metadata']['type']}")
             print(f"  Size: {len(chunk['content'])} chars")
             print()

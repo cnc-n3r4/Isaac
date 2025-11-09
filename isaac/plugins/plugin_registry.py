@@ -1,11 +1,11 @@
 """Plugin Registry - Central plugin repository management."""
 
-import json
 import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Optional, Any
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.plugins.plugin_api import PluginMetadata
 
@@ -94,8 +94,7 @@ class PluginRegistry:
 
             self._last_update = datetime.fromisoformat(data["updated_at"])
             self._registry = {
-                name: RegistryEntry.from_dict(entry)
-                for name, entry in data["entries"].items()
+                name: RegistryEntry.from_dict(entry) for name, entry in data["entries"].items()
             }
         except Exception:
             # Ignore cache errors
@@ -162,10 +161,7 @@ class PluginRegistry:
         if local_registry.exists():
             with open(local_registry) as f:
                 data = json.load(f)
-                return {
-                    name: RegistryEntry.from_dict(entry)
-                    for name, entry in data.items()
-                }
+                return {name: RegistryEntry.from_dict(entry) for name, entry in data.items()}
 
         # In production, this would make an HTTP request to the registry URL
         # For now, return built-in plugins
@@ -215,9 +211,7 @@ class PluginRegistry:
         # Filter by tags
         if tags:
             results = [
-                entry
-                for entry in results
-                if any(tag in entry.metadata.tags for tag in tags)
+                entry for entry in results if any(tag in entry.metadata.tags for tag in tags)
             ]
 
         # Filter by featured

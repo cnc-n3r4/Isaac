@@ -8,9 +8,10 @@ Provides interface for viewing and managing AI assistant notifications.
 """
 
 import shlex
-from typing import List, Dict, Any
-from isaac.core.message_queue import MessageQueue, MessageType
+from typing import Any, Dict, List
+
 from isaac.commands.base import BaseCommand
+from isaac.core.message_queue import MessageQueue, MessageType
 
 
 class MsgCommand(BaseCommand):
@@ -50,25 +51,25 @@ class MsgCommand(BaseCommand):
         i = 0
         while i < len(args):
             arg = args[i]
-            if arg in ['--sys', '-s']:
+            if arg in ["--sys", "-s"]:
                 show_system = True
-            elif arg in ['--code', '-c']:
+            elif arg in ["--code", "-c"]:
                 show_code = True
-            elif arg in ['--all', '-a']:
+            elif arg in ["--all", "-a"]:
                 show_all = True
-            elif arg == '--ack' and i + 1 < len(args):
+            elif arg == "--ack" and i + 1 < len(args):
                 try:
                     ack_id = int(args[i + 1])
                     i += 1
                 except ValueError:
                     print("Error: --ack requires a valid message ID")
                     return False
-            elif arg == '--ack-all':
+            elif arg == "--ack-all":
                 ack_all = True
-                if i + 1 < len(args) and args[i + 1] in ['--sys', '--code']:
-                    ack_type = MessageType.SYSTEM if args[i + 1] == '--sys' else MessageType.CODE
+                if i + 1 < len(args) and args[i + 1] in ["--sys", "--code"]:
+                    ack_type = MessageType.SYSTEM if args[i + 1] == "--sys" else MessageType.CODE
                     i += 1
-            elif arg in ['--run', '--execute', '-x'] and i + 1 < len(args):
+            elif arg in ["--run", "--execute", "-x"] and i + 1 < len(args):
                 try:
                     run_id = int(args[i + 1])
                     i += 1
@@ -113,15 +114,16 @@ class MsgCommand(BaseCommand):
                 return False
 
             # Check if message has a suggested command
-            metadata = message.get('metadata', {})
+            metadata = message.get("metadata", {})
             if isinstance(metadata, str):
                 import json
+
                 try:
                     metadata = json.loads(metadata)
                 except:
                     metadata = {}
 
-            suggested_command = metadata.get('suggested_command')
+            suggested_command = metadata.get("suggested_command")
 
             if not suggested_command:
                 print(f"✗ Message {run_id} has no suggested command to execute")
@@ -135,7 +137,7 @@ class MsgCommand(BaseCommand):
             print()
             confirm = input("Execute this command? [y/N]: ").strip().lower()
 
-            if confirm not in ['y', 'yes']:
+            if confirm not in ["y", "yes"]:
                 print("✗ Execution cancelled")
                 return False
 
@@ -144,6 +146,7 @@ class MsgCommand(BaseCommand):
             print("=" * 60)
 
             import subprocess
+
             try:
                 # Use shlex.split() to safely parse the command and disable shell=True
                 result = subprocess.run(
@@ -151,7 +154,7 @@ class MsgCommand(BaseCommand):
                     shell=False,
                     capture_output=False,
                     text=True,
-                    check=False
+                    check=False,
                 )
 
                 print("=" * 60)
@@ -173,19 +176,19 @@ class MsgCommand(BaseCommand):
         # Determine what to show
         if show_all or (not show_system and not show_code):
             # Show all messages (default behavior)
-            messages = message_queue.get_messages(status='pending')
+            messages = message_queue.get_messages(status="pending")
             self._display_messages(messages, "All Messages")
         else:
             # Show specific types
             if show_system:
                 system_msgs = message_queue.get_messages(
-                    message_type=MessageType.SYSTEM, status='pending'
+                    message_type=MessageType.SYSTEM, status="pending"
                 )
                 self._display_messages(system_msgs, "System Messages")
 
             if show_code:
                 code_msgs = message_queue.get_messages(
-                    message_type=MessageType.CODE, status='pending'
+                    message_type=MessageType.CODE, status="pending"
                 )
                 self._display_messages(code_msgs, "Code Messages")
 
@@ -203,50 +206,51 @@ class MsgCommand(BaseCommand):
 
         for msg in messages:
             # Priority indicator
-            priority = msg['priority']
-            if priority == 'urgent':
+            priority = msg["priority"]
+            if priority == "urgent":
                 pri_indicator = "🔴"
-            elif priority == 'high':
+            elif priority == "high":
                 pri_indicator = "🟠"
-            elif priority == 'normal':
+            elif priority == "normal":
                 pri_indicator = "🟡"
             else:
                 pri_indicator = "🟢"
 
             # Type indicator
-            msg_type = msg['message_type']
-            type_indicator = "!" if msg_type == 'system' else "¢"
+            msg_type = msg["message_type"]
+            type_indicator = "!" if msg_type == "system" else "¢"
 
             # Format message
             print(f"{pri_indicator} {type_indicator} [{msg['id']}] {msg['title']}")
 
             # Show content if present
-            if msg['content']:
+            if msg["content"]:
                 # Truncate long content
-                content = msg['content']
+                content = msg["content"]
                 if len(content) > 100:
                     content = content[:97] + "..."
                 print(f"    {content}")
 
             # Parse metadata
-            metadata = msg.get('metadata')
+            metadata = msg.get("metadata")
             if metadata:
                 if isinstance(metadata, str):
                     import json
+
                     try:
                         metadata = json.loads(metadata)
                     except:
                         metadata = {}
 
                 # Check for suggested command
-                if 'suggested_command' in metadata:
+                if "suggested_command" in metadata:
                     print(f"    💡 Suggested: {metadata['suggested_command']}")
                     print(f"    ▶️  Run with: /msg --run {msg['id']}")
 
                 # Show other metadata
                 metadata_items = []
                 for key, value in metadata.items():
-                    if key != 'suggested_command' and isinstance(value, (str, int, float, bool)):
+                    if key != "suggested_command" and isinstance(value, (str, int, float, bool)):
                         metadata_items.append(f"{key}={value}")
                 if metadata_items:
                     print(f"    Metadata: {', '.join(metadata_items)}")

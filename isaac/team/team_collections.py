@@ -2,11 +2,11 @@
 
 import json
 import os
-from pathlib import Path
-from typing import Optional, List, Dict
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
 
-from .models import SharedResource, ResourceType
+from .models import ResourceType, SharedResource
 
 
 class TeamCollections:
@@ -21,9 +21,15 @@ class TeamCollections:
         self.base_dir = Path(base_dir or os.path.expanduser("~/.isaac/team_collections"))
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
-    def share_collection(self, team_id: str, collection_id: str,
-                        shared_by: str, name: str = "", description: str = "",
-                        content: Optional[Dict] = None) -> SharedResource:
+    def share_collection(
+        self,
+        team_id: str,
+        collection_id: str,
+        shared_by: str,
+        name: str = "",
+        description: str = "",
+        content: Optional[Dict] = None,
+    ) -> SharedResource:
         """Share a collection with a team.
 
         Args:
@@ -46,16 +52,16 @@ class TeamCollections:
             name=name or f"Collection {datetime.now().strftime('%Y-%m-%d')}",
             description=description,
             metadata={
-                'item_count': len(content.get('items', [])) if content else 0,
-                'tags': content.get('tags', []) if content else [],
-            }
+                "item_count": len(content.get("items", [])) if content else 0,
+                "tags": content.get("tags", []) if content else [],
+            },
         )
 
         # Save collection data
         if content:
             collection_file = self.base_dir / team_id / f"{collection_id}.json"
             collection_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(collection_file, 'w') as f:
+            with open(collection_file, "w") as f:
                 json.dump(content, f, indent=2)
 
         return resource
@@ -77,8 +83,9 @@ class TeamCollections:
         with open(collection_file) as f:
             return json.load(f)
 
-    def update_collection(self, team_id: str, collection_id: str,
-                         content: Dict, updated_by: str) -> bool:
+    def update_collection(
+        self, team_id: str, collection_id: str, content: Dict, updated_by: str
+    ) -> bool:
         """Update a shared collection.
 
         Args:
@@ -94,18 +101,17 @@ class TeamCollections:
         collection_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Add update metadata
-        content['last_updated_by'] = updated_by
-        content['last_updated_at'] = datetime.now().isoformat()
+        content["last_updated_by"] = updated_by
+        content["last_updated_at"] = datetime.now().isoformat()
 
         try:
-            with open(collection_file, 'w') as f:
+            with open(collection_file, "w") as f:
                 json.dump(content, f, indent=2)
             return True
         except Exception:
             return False
 
-    def add_item(self, team_id: str, collection_id: str, item: Dict,
-                added_by: str) -> bool:
+    def add_item(self, team_id: str, collection_id: str, item: Dict, added_by: str) -> bool:
         """Add an item to a shared collection.
 
         Args:
@@ -119,14 +125,14 @@ class TeamCollections:
         """
         content = self.get_collection(team_id, collection_id)
         if content is None:
-            content = {'items': [], 'tags': []}
+            content = {"items": [], "tags": []}
 
         # Add metadata to item
-        item['added_by'] = added_by
-        item['added_at'] = datetime.now().isoformat()
+        item["added_by"] = added_by
+        item["added_at"] = datetime.now().isoformat()
 
         # Add item
-        content['items'].append(item)
+        content["items"].append(item)
 
         return self.update_collection(team_id, collection_id, content, added_by)
 
@@ -156,15 +162,17 @@ class TeamCollections:
                 collection_id = collection_file.stem
 
                 # Search in items
-                for item in content.get('items', []):
+                for item in content.get("items", []):
                     # Search in item text fields
                     item_text = json.dumps(item).lower()
                     if query_lower in item_text:
-                        results.append({
-                            'collection_id': collection_id,
-                            'item': item,
-                            'match_type': 'content',
-                        })
+                        results.append(
+                            {
+                                "collection_id": collection_id,
+                                "item": item,
+                                "match_type": "content",
+                            }
+                        )
 
             except Exception:
                 continue
@@ -207,15 +215,17 @@ class TeamCollections:
                 with open(collection_file) as f:
                     content = json.load(f)
 
-                collections.append({
-                    'collection_id': collection_file.stem,
-                    'name': content.get('name', collection_file.stem),
-                    'description': content.get('description', ''),
-                    'item_count': len(content.get('items', [])),
-                    'tags': content.get('tags', []),
-                    'last_updated_at': content.get('last_updated_at'),
-                    'last_updated_by': content.get('last_updated_by'),
-                })
+                collections.append(
+                    {
+                        "collection_id": collection_file.stem,
+                        "name": content.get("name", collection_file.stem),
+                        "description": content.get("description", ""),
+                        "item_count": len(content.get("items", [])),
+                        "tags": content.get("tags", []),
+                        "last_updated_at": content.get("last_updated_at"),
+                        "last_updated_by": content.get("last_updated_by"),
+                    }
+                )
             except Exception:
                 continue
 
@@ -237,14 +247,15 @@ class TeamCollections:
             return False
 
         try:
-            with open(export_path, 'w') as f:
+            with open(export_path, "w") as f:
                 json.dump(content, f, indent=2)
             return True
         except Exception:
             return False
 
-    def import_collection(self, team_id: str, import_path: str,
-                         shared_by: str, name: Optional[str] = None) -> Optional[str]:
+    def import_collection(
+        self, team_id: str, import_path: str, shared_by: str, name: Optional[str] = None
+    ) -> Optional[str]:
         """Import a collection from a file.
 
         Args:
@@ -262,18 +273,19 @@ class TeamCollections:
 
             # Generate collection ID
             import uuid
+
             collection_id = str(uuid.uuid4())
 
             # Update metadata
             if name:
-                content['name'] = name
-            content['imported_at'] = datetime.now().isoformat()
-            content['imported_by'] = shared_by
+                content["name"] = name
+            content["imported_at"] = datetime.now().isoformat()
+            content["imported_by"] = shared_by
 
             # Save collection
             collection_file = self.base_dir / team_id / f"{collection_id}.json"
             collection_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(collection_file, 'w') as f:
+            with open(collection_file, "w") as f:
                 json.dump(content, f, indent=2)
 
             return collection_id

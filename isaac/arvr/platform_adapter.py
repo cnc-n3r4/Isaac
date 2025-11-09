@@ -8,15 +8,16 @@ Provides extensible architecture for integrating with different AR/VR platforms
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Callable
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
-from isaac.arvr.spatial_api import Vector3D, Transform3D, SpatialWorkspace
 from isaac.arvr.multimodal_input import MultimodalInput
+from isaac.arvr.spatial_api import SpatialWorkspace, Transform3D, Vector3D
 
 
 class Platform(Enum):
     """Supported AR/VR platforms"""
+
     GENERIC = "generic"
     OCULUS_QUEST = "oculus_quest"
     META_QUEST = "meta_quest"
@@ -31,6 +32,7 @@ class Platform(Enum):
 
 class InputCapability(Enum):
     """Input capabilities of platforms"""
+
     HAND_TRACKING = "hand_tracking"
     CONTROLLER = "controller"
     EYE_TRACKING = "eye_tracking"
@@ -42,6 +44,7 @@ class InputCapability(Enum):
 
 class DisplayMode(Enum):
     """Display modes"""
+
     VR_IMMERSIVE = "vr_immersive"  # Full VR
     AR_PASSTHROUGH = "ar_passthrough"  # AR with camera passthrough
     AR_TRANSPARENT = "ar_transparent"  # AR with transparent displays
@@ -52,6 +55,7 @@ class DisplayMode(Enum):
 @dataclass
 class PlatformCapabilities:
     """Capabilities of a platform"""
+
     platform: Platform
     display_mode: DisplayMode
     input_capabilities: List[InputCapability]
@@ -67,24 +71,25 @@ class PlatformCapabilities:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'platform': self.platform.value,
-            'display_mode': self.display_mode.value,
-            'input_capabilities': [cap.value for cap in self.input_capabilities],
-            'max_fov': self.max_fov,
-            'tracking_volume': self.tracking_volume.to_dict(),
-            'refresh_rate': self.refresh_rate,
-            'supports_6dof': self.supports_6dof,
-            'supports_hand_tracking': self.supports_hand_tracking,
-            'supports_eye_tracking': self.supports_eye_tracking,
-            'supports_spatial_audio': self.supports_spatial_audio,
-            'max_concurrent_apps': self.max_concurrent_apps,
-            'metadata': self.metadata
+            "platform": self.platform.value,
+            "display_mode": self.display_mode.value,
+            "input_capabilities": [cap.value for cap in self.input_capabilities],
+            "max_fov": self.max_fov,
+            "tracking_volume": self.tracking_volume.to_dict(),
+            "refresh_rate": self.refresh_rate,
+            "supports_6dof": self.supports_6dof,
+            "supports_hand_tracking": self.supports_hand_tracking,
+            "supports_eye_tracking": self.supports_eye_tracking,
+            "supports_spatial_audio": self.supports_spatial_audio,
+            "max_concurrent_apps": self.max_concurrent_apps,
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class DeviceState:
     """Current state of the AR/VR device"""
+
     head_transform: Transform3D
     left_hand_transform: Optional[Transform3D] = None
     right_hand_transform: Optional[Transform3D] = None
@@ -146,16 +151,14 @@ class GenericPlatform(PlatformInterface):
             input_capabilities=[
                 InputCapability.CONTROLLER,
                 InputCapability.GESTURE,
-                InputCapability.VOICE
-            ]
+                InputCapability.VOICE,
+            ],
         )
         super().__init__(capabilities)
 
     def initialize(self) -> bool:
         self.is_initialized = True
-        self.device_state = DeviceState(
-            head_transform=Transform3D(position=Vector3D(0, 1.7, 0))
-        )
+        self.device_state = DeviceState(head_transform=Transform3D(position=Vector3D(0, 1.7, 0)))
         return True
 
     def shutdown(self) -> None:
@@ -187,22 +190,18 @@ class TerminalPlatform(PlatformInterface):
         capabilities = PlatformCapabilities(
             platform=Platform.TERMINAL,
             display_mode=DisplayMode.DESKTOP,
-            input_capabilities=[
-                InputCapability.VOICE,
-                InputCapability.GESTURE
-            ],
-            supports_6dof=False
+            input_capabilities=[InputCapability.VOICE, InputCapability.GESTURE],
+            supports_6dof=False,
         )
         super().__init__(capabilities)
         self.renderer = None
 
     def initialize(self) -> bool:
         from isaac.arvr.prototype_mode import PrototypeRenderer
+
         self.renderer = PrototypeRenderer()
         self.is_initialized = True
-        self.device_state = DeviceState(
-            head_transform=Transform3D(position=Vector3D(0, 0, 5))
-        )
+        self.device_state = DeviceState(head_transform=Transform3D(position=Vector3D(0, 0, 5)))
         return True
 
     def shutdown(self) -> None:
@@ -235,18 +234,16 @@ class WebXRPlatform(PlatformInterface):
             input_capabilities=[
                 InputCapability.CONTROLLER,
                 InputCapability.HAND_TRACKING,
-                InputCapability.VOICE
+                InputCapability.VOICE,
             ],
-            supports_hand_tracking=True
+            supports_hand_tracking=True,
         )
         super().__init__(capabilities)
 
     def initialize(self) -> bool:
         # WebXR initialization would happen in browser
         self.is_initialized = True
-        self.device_state = DeviceState(
-            head_transform=Transform3D(position=Vector3D(0, 1.7, 0))
-        )
+        self.device_state = DeviceState(head_transform=Transform3D(position=Vector3D(0, 1.7, 0)))
         return True
 
     def shutdown(self) -> None:
@@ -294,7 +291,7 @@ class PlatformAdapter:
 
         success = self.current_platform.initialize()
         if success:
-            self._trigger_event('platform_initialized', {'platform': platform})
+            self._trigger_event("platform_initialized", {"platform": platform})
 
         return success
 
@@ -302,7 +299,7 @@ class PlatformAdapter:
         """Shutdown current platform"""
         if self.current_platform:
             self.current_platform.shutdown()
-            self._trigger_event('platform_shutdown', {})
+            self._trigger_event("platform_shutdown", {})
             self.current_platform = None
 
     def get_current_platform(self) -> Optional[PlatformInterface]:
@@ -366,32 +363,36 @@ class PlatformAdapter:
     def save_configuration(self, filepath: str) -> None:
         """Save current configuration"""
         config = {
-            'current_platform': self.current_platform.capabilities.platform.value if self.current_platform else None,
-            'capabilities': self.current_platform.capabilities.to_dict() if self.current_platform else None
+            "current_platform": (
+                self.current_platform.capabilities.platform.value if self.current_platform else None
+            ),
+            "capabilities": (
+                self.current_platform.capabilities.to_dict() if self.current_platform else None
+            ),
         }
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(config, f, indent=2)
 
     def create_platform_report(self) -> Dict[str, Any]:
         """Create comprehensive platform report"""
         report = {
-            'available_platforms': [p.value for p in self.get_available_platforms()],
-            'current_platform': None,
-            'capabilities': None,
-            'device_state': None
+            "available_platforms": [p.value for p in self.get_available_platforms()],
+            "current_platform": None,
+            "capabilities": None,
+            "device_state": None,
         }
 
         if self.current_platform:
             caps = self.current_platform.get_capabilities()
             state = self.current_platform.update()
 
-            report['current_platform'] = caps.platform.value
-            report['capabilities'] = caps.to_dict()
-            report['device_state'] = {
-                'is_connected': state.is_connected,
-                'battery_level': state.battery_level,
-                'head_position': state.head_transform.position.to_dict()
+            report["current_platform"] = caps.platform.value
+            report["capabilities"] = caps.to_dict()
+            report["device_state"] = {
+                "is_connected": state.is_connected,
+                "battery_level": state.battery_level,
+                "head_position": state.head_transform.position.to_dict(),
             }
 
         return report

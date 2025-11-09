@@ -4,7 +4,7 @@ Provides standard interface for all file operation tools
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class BaseTool(ABC):
@@ -43,12 +43,12 @@ class BaseTool(ABC):
             dict: Tool definition in OpenAI tool format
         """
         return {
-            'type': 'function',
-            'function': {
-                'name': self.name,
-                'description': self.description,
-                'parameters': self.get_parameters_schema()
-            }
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.get_parameters_schema(),
+            },
         }
 
     @abstractmethod
@@ -70,4 +70,4 @@ class BaseTool(ABC):
         Returns:
             bool: True if result is valid
         """
-        return isinstance(result, dict) and 'success' in result
+        return isinstance(result, dict) and "success" in result

@@ -2,11 +2,11 @@
 Cloud Storage - Manage workspace state in cloud storage
 """
 
+import asyncio
 import json
-from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pathlib import Path
-import asyncio
+from typing import Any, Dict, List, Optional
 
 
 class CloudStorage:
@@ -14,9 +14,14 @@ class CloudStorage:
     Manages workspace state storage in cloud infrastructure
     """
 
-    def __init__(self, provider: str = 'generic', bucket: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        provider: str = "generic",
+        bucket: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
+    ):
         self.provider = provider
-        self.bucket = bucket or 'isaac-workspaces'
+        self.bucket = bucket or "isaac-workspaces"
         self.config = config or {}
         self.cache = {}
 
@@ -34,17 +39,17 @@ class CloudStorage:
         key = f"workspaces/{workspace_id}/state.json"
 
         # Add metadata
-        data['_metadata'] = {
-            'uploaded_at': datetime.utcnow().isoformat(),
-            'version': '1.0.0',
-            'provider': self.provider
+        data["_metadata"] = {
+            "uploaded_at": datetime.utcnow().isoformat(),
+            "version": "1.0.0",
+            "provider": self.provider,
         }
 
         # Serialize data
         serialized = json.dumps(data, indent=2)
 
         # Upload to cloud
-        await self._upload_to_provider(key, serialized.encode('utf-8'))
+        await self._upload_to_provider(key, serialized.encode("utf-8"))
 
         # Update cache
         self.cache[workspace_id] = data
@@ -71,7 +76,7 @@ class CloudStorage:
             data = await self._download_from_provider(key)
 
             if data:
-                workspace_data = json.loads(data.decode('utf-8'))
+                workspace_data = json.loads(data.decode("utf-8"))
                 self.cache[workspace_id] = workspace_data
                 return workspace_data
 
@@ -93,7 +98,7 @@ class CloudStorage:
             Cloud storage key
         """
         # Normalize path
-        normalized_path = file_path.replace('\\', '/')
+        normalized_path = file_path.replace("\\", "/")
         key = f"workspaces/{workspace_id}/files/{normalized_path}"
 
         await self._upload_to_provider(key, content)
@@ -111,12 +116,12 @@ class CloudStorage:
         Returns:
             File content or None if not found
         """
-        normalized_path = file_path.replace('\\', '/')
+        normalized_path = file_path.replace("\\", "/")
         key = f"workspaces/{workspace_id}/files/{normalized_path}"
 
         return await self._download_from_provider(key)
 
-    async def list_files(self, workspace_id: str, prefix: str = '') -> List[str]:
+    async def list_files(self, workspace_id: str, prefix: str = "") -> List[str]:
         """
         List files in workspace
 
@@ -151,10 +156,7 @@ class CloudStorage:
         return success
 
     async def sync_workspace(
-        self,
-        workspace_id: str,
-        local_path: Path,
-        direction: str = 'bidirectional'
+        self, workspace_id: str, local_path: Path, direction: str = "bidirectional"
     ) -> Dict[str, Any]:
         """
         Sync workspace between local and cloud
@@ -167,29 +169,24 @@ class CloudStorage:
         Returns:
             Sync statistics
         """
-        stats = {
-            'uploaded': 0,
-            'downloaded': 0,
-            'conflicts': 0,
-            'errors': []
-        }
+        stats = {"uploaded": 0, "downloaded": 0, "conflicts": 0, "errors": []}
 
-        if direction in ['upload', 'bidirectional']:
+        if direction in ["upload", "bidirectional"]:
             # Upload changed files
-            for file_path in local_path.rglob('*'):
+            for file_path in local_path.rglob("*"):
                 if file_path.is_file():
                     try:
                         relative_path = file_path.relative_to(local_path)
-                        with open(file_path, 'rb') as f:
+                        with open(file_path, "rb") as f:
                             content = f.read()
 
                         await self.upload_file(workspace_id, str(relative_path), content)
-                        stats['uploaded'] += 1
+                        stats["uploaded"] += 1
 
                     except Exception as e:
-                        stats['errors'].append(f"Upload error for {file_path}: {e}")
+                        stats["errors"].append(f"Upload error for {file_path}: {e}")
 
-        if direction in ['download', 'bidirectional']:
+        if direction in ["download", "bidirectional"]:
             # Download files
             cloud_files = await self.list_files(workspace_id)
 
@@ -201,56 +198,56 @@ class CloudStorage:
                         local_file = local_path / file_path
                         local_file.parent.mkdir(parents=True, exist_ok=True)
 
-                        with open(local_file, 'wb') as f:
+                        with open(local_file, "wb") as f:
                             f.write(content)
 
-                        stats['downloaded'] += 1
+                        stats["downloaded"] += 1
 
                 except Exception as e:
-                    stats['errors'].append(f"Download error for {file_path}: {e}")
+                    stats["errors"].append(f"Download error for {file_path}: {e}")
 
         return stats
 
     async def _upload_to_provider(self, key: str, content: bytes):
         """Upload to specific cloud provider"""
-        if self.provider == 'aws':
+        if self.provider == "aws":
             await self._upload_s3(key, content)
-        elif self.provider == 'gcp':
+        elif self.provider == "gcp":
             await self._upload_gcs(key, content)
-        elif self.provider == 'azure':
+        elif self.provider == "azure":
             await self._upload_azure(key, content)
         else:
             await self._upload_generic(key, content)
 
     async def _download_from_provider(self, key: str) -> Optional[bytes]:
         """Download from specific cloud provider"""
-        if self.provider == 'aws':
+        if self.provider == "aws":
             return await self._download_s3(key)
-        elif self.provider == 'gcp':
+        elif self.provider == "gcp":
             return await self._download_gcs(key)
-        elif self.provider == 'azure':
+        elif self.provider == "azure":
             return await self._download_azure(key)
         else:
             return await self._download_generic(key)
 
     async def _list_from_provider(self, prefix: str) -> List[str]:
         """List from specific cloud provider"""
-        if self.provider == 'aws':
+        if self.provider == "aws":
             return await self._list_s3(prefix)
-        elif self.provider == 'gcp':
+        elif self.provider == "gcp":
             return await self._list_gcs(prefix)
-        elif self.provider == 'azure':
+        elif self.provider == "azure":
             return await self._list_azure(prefix)
         else:
             return await self._list_generic(prefix)
 
     async def _delete_from_provider(self, prefix: str) -> bool:
         """Delete from specific cloud provider"""
-        if self.provider == 'aws':
+        if self.provider == "aws":
             return await self._delete_s3(prefix)
-        elif self.provider == 'gcp':
+        elif self.provider == "gcp":
             return await self._delete_gcs(prefix)
-        elif self.provider == 'azure':
+        elif self.provider == "azure":
             return await self._delete_azure(prefix)
         else:
             return await self._delete_generic(prefix)
@@ -339,7 +336,7 @@ class CloudStorage:
     def get_storage_stats(self) -> Dict[str, Any]:
         """Get storage statistics"""
         return {
-            'provider': self.provider,
-            'bucket': self.bucket,
-            'cached_workspaces': len(self.cache)
+            "provider": self.provider,
+            "bucket": self.bucket,
+            "cached_workspaces": len(self.cache),
         }

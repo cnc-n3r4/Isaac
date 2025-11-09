@@ -4,19 +4,19 @@ Provides access to AI pair mode, task division, code review, and metrics
 """
 
 from datetime import datetime
-from typing import Dict, List, Any, Optional
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 from isaac.pairing import (
-    PairProgrammingMode,
-    TaskDivider,
     CodeReviewer,
-    SuggestionSystem,
     PairingLearner,
     PairMetrics,
+    PairProgrammingMode,
     PairRole,
-    PairStyle
+    PairStyle,
+    SuggestionSystem,
+    TaskDivider,
 )
 
 
@@ -53,33 +53,33 @@ class PairCommand:
 
         subcommand = args[0].lower()
 
-        if subcommand == 'start':
+        if subcommand == "start":
             return self._start_session(args[1:])
-        elif subcommand == 'end':
+        elif subcommand == "end":
             return self._end_session(args[1:])
-        elif subcommand == 'switch':
+        elif subcommand == "switch":
             return self._switch_roles(args[1:])
-        elif subcommand == 'tasks':
+        elif subcommand == "tasks":
             return self._show_tasks(args[1:])
-        elif subcommand == 'divide':
+        elif subcommand == "divide":
             return self._divide_task(args[1:])
-        elif subcommand == 'review':
+        elif subcommand == "review":
             return self._review_code(args[1:])
-        elif subcommand == 'suggest':
+        elif subcommand == "suggest":
             return self._show_suggestions(args[1:])
-        elif subcommand == 'learn':
+        elif subcommand == "learn":
             return self._show_learning(args[1:])
-        elif subcommand == 'metrics':
+        elif subcommand == "metrics":
             return self._show_metrics(args[1:])
-        elif subcommand == 'history':
+        elif subcommand == "history":
             return self._show_history(args[1:])
-        elif subcommand == 'help':
+        elif subcommand == "help":
             return self._show_help()
         else:
             return {
-                'success': False,
-                'output': f"Unknown subcommand: {subcommand}\n{self._get_help_text()}",
-                'exit_code': 1
+                "success": False,
+                "output": f"Unknown subcommand: {subcommand}\n{self._get_help_text()}",
+                "exit_code": 1,
             }
 
     def _show_status(self) -> Dict[str, Any]:
@@ -107,7 +107,11 @@ class PairCommand:
             if tasks:
                 output += f"📋 Tasks ({len(tasks)} total):\n"
                 for task in tasks[:5]:
-                    status_icon = "✅" if task.status == "completed" else "🔄" if task.status == "in_progress" else "⏳"
+                    status_icon = (
+                        "✅"
+                        if task.status == "completed"
+                        else "🔄" if task.status == "in_progress" else "⏳"
+                    )
                     output += f"   {status_icon} {task.title} ({task.assignee})\n"
 
                 if len(tasks) > 5:
@@ -116,19 +120,15 @@ class PairCommand:
             output += "No active pairing session.\n"
             output += "\nStart a session with: /pair start <task-description>\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _start_session(self, args: List[str]) -> Dict[str, Any]:
         """Start a new pairing session."""
         if not args:
             return {
-                'success': False,
-                'output': 'Usage: /pair start <task-description> [--style <style>] [--role <role>]',
-                'exit_code': 1
+                "success": False,
+                "output": "Usage: /pair start <task-description> [--style <style>] [--role <role>]",
+                "exit_code": 1,
             }
 
         # Parse arguments
@@ -139,20 +139,20 @@ class PairCommand:
         # Simple argument parsing
         i = 1
         while i < len(args):
-            if args[i] == '--style' and i + 1 < len(args):
+            if args[i] == "--style" and i + 1 < len(args):
                 style_map = {
-                    'ping-pong': PairStyle.PING_PONG,
-                    'driver-navigator': PairStyle.DRIVER_NAVIGATOR,
-                    'collaborative': PairStyle.COLLABORATIVE,
-                    'async': PairStyle.ASYNCHRONOUS
+                    "ping-pong": PairStyle.PING_PONG,
+                    "driver-navigator": PairStyle.DRIVER_NAVIGATOR,
+                    "collaborative": PairStyle.COLLABORATIVE,
+                    "async": PairStyle.ASYNCHRONOUS,
                 }
                 style = style_map.get(args[i + 1], PairStyle.DRIVER_NAVIGATOR)
                 i += 2
-            elif args[i] == '--role' and i + 1 < len(args):
+            elif args[i] == "--role" and i + 1 < len(args):
                 role_map = {
-                    'driver': PairRole.DRIVER,
-                    'navigator': PairRole.NAVIGATOR,
-                    'both': PairRole.BOTH
+                    "driver": PairRole.DRIVER,
+                    "navigator": PairRole.NAVIGATOR,
+                    "both": PairRole.BOTH,
                 }
                 role = role_map.get(args[i + 1], PairRole.NAVIGATOR)
                 i += 2
@@ -169,29 +169,21 @@ class PairCommand:
         output += f"Isaac's Role: {session.current_role}\n\n"
         output += "Let's build something great together! 🚀\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _end_session(self, args: List[str]) -> Dict[str, Any]:
         """End the current pairing session."""
         session = self.pair_mode.get_active_session()
 
         if not session:
-            return {
-                'success': False,
-                'output': 'No active pairing session.',
-                'exit_code': 1
-            }
+            return {"success": False, "output": "No active pairing session.", "exit_code": 1}
 
         # Calculate metrics before ending
         session_data = {
-            'start_time': session.start_time,
-            'end_time': datetime.now().timestamp(),
-            'files_touched': session.files_touched,
-            'tasks_total': len(self.task_divider.get_session_tasks(session.id))
+            "start_time": session.start_time,
+            "end_time": datetime.now().timestamp(),
+            "files_touched": session.files_touched,
+            "tasks_total": len(self.task_divider.get_session_tasks(session.id)),
         }
 
         metrics = self.metrics.calculate_session_metrics(session.id, session_data)
@@ -199,7 +191,7 @@ class PairCommand:
         # End the session
         self.pair_mode.end_session(session.id)
 
-        duration = session_data['end_time'] - session_data['start_time']
+        duration = session_data["end_time"] - session_data["start_time"]
         hours = int(duration // 3600)
         minutes = int((duration % 3600) // 60)
 
@@ -217,11 +209,7 @@ class PairCommand:
 
         output += "Great work! 🎊\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _switch_roles(self, args: List[str]) -> Dict[str, Any]:
         """Switch roles between driver and navigator."""
@@ -232,28 +220,16 @@ class PairCommand:
             output += f"Your New Role: {human_role}\n"
             output += f"Isaac's New Role: {isaac_role}\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except ValueError as e:
-            return {
-                'success': False,
-                'output': str(e),
-                'exit_code': 1
-            }
+            return {"success": False, "output": str(e), "exit_code": 1}
 
     def _show_tasks(self, args: List[str]) -> Dict[str, Any]:
         """Show tasks for the current session."""
         session = self.pair_mode.get_active_session()
 
         if not session:
-            return {
-                'success': False,
-                'output': 'No active pairing session.',
-                'exit_code': 1
-            }
+            return {"success": False, "output": "No active pairing session.", "exit_code": 1}
 
         tasks = self.task_divider.get_session_tasks(session.id)
 
@@ -265,26 +241,23 @@ class PairCommand:
         else:
             for task in tasks:
                 status_icon = {
-                    'completed': '✅',
-                    'in_progress': '🔄',
-                    'pending': '⏳',
-                    'blocked': '🚫',
-                    'cancelled': '❌'
-                }.get(task.status, '❓')
+                    "completed": "✅",
+                    "in_progress": "🔄",
+                    "pending": "⏳",
+                    "blocked": "🚫",
+                    "cancelled": "❌",
+                }.get(task.status, "❓")
 
-                priority_icon = {
-                    'critical': '🔴',
-                    'high': '🟠',
-                    'medium': '🟡',
-                    'low': '🟢'
-                }.get(task.priority, '⚪')
+                priority_icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}.get(
+                    task.priority, "⚪"
+                )
 
                 assignee_icon = {
-                    'isaac': '🤖',
-                    'human': '👤',
-                    'both': '👥',
-                    'unassigned': '❓'
-                }.get(task.assignee, '❓')
+                    "isaac": "🤖",
+                    "human": "👤",
+                    "both": "👥",
+                    "unassigned": "❓",
+                }.get(task.assignee, "❓")
 
                 output += f"{status_icon} {priority_icon} {assignee_icon} {task.title}\n"
                 output += f"   {task.description}\n"
@@ -292,33 +265,25 @@ class PairCommand:
                     output += f"   Depends on: {len(task.dependencies)} task(s)\n"
                 output += "\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _divide_task(self, args: List[str]) -> Dict[str, Any]:
         """Divide a task into subtasks."""
         if not args:
             return {
-                'success': False,
-                'output': 'Usage: /pair divide <task-description>',
-                'exit_code': 1
+                "success": False,
+                "output": "Usage: /pair divide <task-description>",
+                "exit_code": 1,
             }
 
-        task_description = ' '.join(args)
+        task_description = " ".join(args)
         suggested_tasks = self.task_divider.suggest_task_division(task_description)
 
         output = "🔍 Suggested Task Division\n"
         output += "=" * 60 + "\n\n"
 
         for i, task in enumerate(suggested_tasks, 1):
-            assignee_icon = {
-                'isaac': '🤖',
-                'human': '👤',
-                'both': '👥'
-            }.get(task.assignee, '❓')
+            assignee_icon = {"isaac": "🤖", "human": "👤", "both": "👥"}.get(task.assignee, "❓")
 
             output += f"{i}. {assignee_icon} {task.title}\n"
             output += f"   {task.description}\n"
@@ -329,11 +294,7 @@ class PairCommand:
 
         output += f"Created {len(suggested_tasks)} tasks.\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _review_code(self, args: List[str]) -> Dict[str, Any]:
         """Review code in a file."""
@@ -357,30 +318,22 @@ class PairCommand:
                     output += f"\n📄 {file_path}\n"
                     for suggestion in file_suggestions:
                         severity_icon = {
-                            'error': '🔴',
-                            'warning': '🟠',
-                            'suggestion': '🟡',
-                            'info': '🔵'
-                        }.get(suggestion.severity, '⚪')
+                            "error": "🔴",
+                            "warning": "🟠",
+                            "suggestion": "🟡",
+                            "info": "🔵",
+                        }.get(suggestion.severity, "⚪")
 
                         output += f"  Line {suggestion.line_number}: {severity_icon} {suggestion.message}\n"
                         output += f"    {suggestion.suggestion}\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         else:
             # Review specific file
             file_path = args[0]
 
             if not Path(file_path).exists():
-                return {
-                    'success': False,
-                    'output': f'File not found: {file_path}',
-                    'exit_code': 1
-                }
+                return {"success": False, "output": f"File not found: {file_path}", "exit_code": 1}
 
             suggestions = self.code_reviewer.review_code(file_path)
 
@@ -392,21 +345,19 @@ class PairCommand:
             else:
                 for suggestion in suggestions:
                     severity_icon = {
-                        'error': '🔴',
-                        'warning': '🟠',
-                        'suggestion': '🟡',
-                        'info': '🔵'
-                    }.get(suggestion.severity, '⚪')
+                        "error": "🔴",
+                        "warning": "🟠",
+                        "suggestion": "🟡",
+                        "info": "🔵",
+                    }.get(suggestion.severity, "⚪")
 
-                    output += f"Line {suggestion.line_number}: {severity_icon} {suggestion.message}\n"
+                    output += (
+                        f"Line {suggestion.line_number}: {severity_icon} {suggestion.message}\n"
+                    )
                     output += f"  Code: {suggestion.code_snippet}\n"
                     output += f"  {suggestion.suggestion}\n\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
 
     def _show_suggestions(self, args: List[str]) -> Dict[str, Any]:
         """Show suggestion statistics."""
@@ -422,16 +373,12 @@ class PairCommand:
         output += f"Acceptance Rate: {stats['acceptance_rate']:.1%}\n"
         output += f"Average Confidence: {stats['average_confidence']:.2f}\n\n"
 
-        if stats['by_type']:
+        if stats["by_type"]:
             output += "By Type:\n"
-            for suggestion_type, count in stats['by_type'].items():
+            for suggestion_type, count in stats["by_type"].items():
                 output += f"  {suggestion_type}: {count}\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _show_learning(self, args: List[str]) -> Dict[str, Any]:
         """Show learned preferences and patterns."""
@@ -452,11 +399,7 @@ class PairCommand:
                     output += f"   Examples: {', '.join(pref.examples[:3])}\n"
                 output += "\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _show_metrics(self, args: List[str]) -> Dict[str, Any]:
         """Show pairing metrics."""
@@ -472,15 +415,11 @@ class PairCommand:
         output += f"Code Reviews: {stats['totals']['code_reviews_performed']}\n\n"
 
         output += "Average Scores:\n"
-        for metric_name, score in stats['average_scores'].items():
+        for metric_name, score in stats["average_scores"].items():
             bar = self._get_score_bar(score)
             output += f"  {metric_name.title():15} {score:5.1f}/100 {bar}\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _show_history(self, args: List[str]) -> Dict[str, Any]:
         """Show session history."""
@@ -510,19 +449,11 @@ class PairCommand:
                 output += f"   Style: {session.pair_style}\n"
                 output += f"   Files: {len(session.files_touched)}\n\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _show_help(self) -> Dict[str, Any]:
         """Show help information."""
-        return {
-            'success': True,
-            'output': self._get_help_text(),
-            'exit_code': 0
-        }
+        return {"success": True, "output": self._get_help_text(), "exit_code": 0}
 
     def _get_help_text(self) -> str:
         """Get help text."""
@@ -569,7 +500,7 @@ Learn more: https://docs.isaac.dev/pair-programming
         """
         filled = int(score / 10)
         empty = 10 - filled
-        return '█' * filled + '░' * empty
+        return "█" * filled + "░" * empty
 
     def cleanup(self):
         """Cleanup resources."""

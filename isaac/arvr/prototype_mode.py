@@ -5,25 +5,28 @@ Provides ASCII-based visualization and testing of spatial layouts,
 gestures, and multimodal interactions in a standard terminal.
 """
 
-import os
 import math
-from typing import List, Tuple
+import os
 from dataclasses import dataclass
+from typing import List, Tuple
 
-from isaac.arvr.spatial_api import Vector3D, SpatialObject, SpatialWorkspace
-from isaac.arvr.spatial_layouts import Layout, LayoutNode
 from isaac.arvr.gesture_api import Gesture
 from isaac.arvr.multimodal_input import MultimodalInput
+from isaac.arvr.spatial_api import SpatialObject, SpatialWorkspace, Vector3D
+from isaac.arvr.spatial_layouts import Layout, LayoutNode
 
 
 @dataclass
 class Camera:
     """Virtual camera for 2D projection"""
+
     position: Vector3D
     target: Vector3D
     fov: float = 60.0  # degrees
 
-    def project_to_2d(self, point: Vector3D, screen_width: int, screen_height: int) -> Tuple[int, int]:
+    def project_to_2d(
+        self, point: Vector3D, screen_width: int, screen_height: int
+    ) -> Tuple[int, int]:
         """Project 3D point to 2D screen coordinates"""
         # Simple orthographic projection for now
         # Transform to camera space
@@ -45,16 +48,13 @@ class PrototypeRenderer:
     def __init__(self, width: int = 80, height: int = 30):
         self.width = width
         self.height = height
-        self.camera = Camera(
-            position=Vector3D(0, 0, 5),
-            target=Vector3D(0, 0, 0)
-        )
+        self.camera = Camera(position=Vector3D(0, 0, 5), target=Vector3D(0, 0, 0))
         self.buffer: List[List[str]] = []
         self._clear_buffer()
 
     def _clear_buffer(self) -> None:
         """Clear the rendering buffer"""
-        self.buffer = [[' ' for _ in range(self.width)] for _ in range(self.height)]
+        self.buffer = [[" " for _ in range(self.width)] for _ in range(self.height)]
 
     def _set_pixel(self, x: int, y: int, char: str) -> None:
         """Set a character in the buffer"""
@@ -66,7 +66,7 @@ class PrototypeRenderer:
         for i, char in enumerate(text):
             self._set_pixel(x + i, y, char)
 
-    def _draw_box(self, x: int, y: int, width: int, height: int, char: str = '#') -> None:
+    def _draw_box(self, x: int, y: int, width: int, height: int, char: str = "#") -> None:
         """Draw a box outline"""
         # Top and bottom
         for i in range(width):
@@ -78,7 +78,7 @@ class PrototypeRenderer:
             self._set_pixel(x, y + i, char)
             self._set_pixel(x + width - 1, y + i, char)
 
-    def _draw_line(self, x1: int, y1: int, x2: int, y2: int, char: str = '-') -> None:
+    def _draw_line(self, x1: int, y1: int, x2: int, y2: int, char: str = "-") -> None:
         """Draw a line using Bresenham's algorithm"""
         dx = abs(x2 - x1)
         dy = abs(y2 - y1)
@@ -105,7 +105,7 @@ class PrototypeRenderer:
         self._clear_buffer()
 
         # Draw border
-        self._draw_box(0, 0, self.width, self.height, '█')
+        self._draw_box(0, 0, self.width, self.height, "█")
 
         # Draw title
         title = f"Workspace: {workspace.name}"
@@ -131,10 +131,10 @@ class PrototypeRenderer:
         x, y = self.camera.project_to_2d(world_pos, self.width, self.height)
 
         # Draw object representation
-        if obj.metadata.get('is_focus', False):
-            self._set_pixel(x, y, '+')
+        if obj.metadata.get("is_focus", False):
+            self._set_pixel(x, y, "+")
         else:
-            self._set_pixel(x, y, 'O')
+            self._set_pixel(x, y, "O")
 
         # Draw label if space allows
         if y + 1 < self.height - 1:
@@ -146,7 +146,7 @@ class PrototypeRenderer:
         self._clear_buffer()
 
         # Draw border
-        self._draw_box(0, 0, self.width, self.height, '█')
+        self._draw_box(0, 0, self.width, self.height, "█")
 
         # Draw title
         title = f"Layout: {layout.name} ({layout.type.value})"
@@ -154,7 +154,7 @@ class PrototypeRenderer:
 
         # Draw center
         cx, cy = self.camera.project_to_2d(layout.center, self.width, self.height)
-        self._set_pixel(cx, cy, '*')
+        self._set_pixel(cx, cy, "*")
 
         # Render nodes
         for node in layout.nodes:
@@ -172,9 +172,9 @@ class PrototypeRenderer:
 
         # Draw node
         if node.priority > 5:
-            self._set_pixel(x, y, '+')  # High priority
+            self._set_pixel(x, y, "+")  # High priority
         else:
-            self._set_pixel(x, y, 'o')
+            self._set_pixel(x, y, "o")
 
         # Draw label
         label = node.name[:8]
@@ -184,14 +184,14 @@ class PrototypeRenderer:
         cx, cy = self.camera.project_to_2d(layout.center, self.width, self.height)
         distance = abs(x - cx) + abs(y - cy)
         if distance < 20:  # Only draw lines for nearby nodes
-            self._draw_line(cx, cy, x, y, '.')
+            self._draw_line(cx, cy, x, y, ".")
 
     def render_gesture(self, gesture: Gesture) -> str:
         """Render a gesture trajectory to ASCII"""
         self._clear_buffer()
 
         # Draw border
-        self._draw_box(0, 0, self.width, self.height, '█')
+        self._draw_box(0, 0, self.width, self.height, "█")
 
         # Draw title
         title = f"Gesture: {gesture.type.value} ({gesture.hand.value})"
@@ -211,7 +211,7 @@ class PrototypeRenderer:
                 x1, y1 = self.camera.project_to_2d(p1, self.width, self.height)
                 x2, y2 = self.camera.project_to_2d(p2, self.width, self.height)
 
-                self._draw_line(x1, y1, x2, y2, '*')
+                self._draw_line(x1, y1, x2, y2, "*")
 
             # Mark start and end
             start = gesture.points[0].position
@@ -220,8 +220,8 @@ class PrototypeRenderer:
             sx, sy = self.camera.project_to_2d(start, self.width, self.height)
             ex, ey = self.camera.project_to_2d(end, self.width, self.height)
 
-            self._set_pixel(sx, sy, 'S')
-            self._set_pixel(ex, ey, 'E')
+            self._set_pixel(sx, sy, "S")
+            self._set_pixel(ex, ey, "E")
 
         return self._buffer_to_string()
 
@@ -230,7 +230,7 @@ class PrototypeRenderer:
         self._clear_buffer()
 
         # Draw border
-        self._draw_box(0, 0, self.width, self.height, '█')
+        self._draw_box(0, 0, self.width, self.height, "█")
 
         # Draw title
         title = f"Multimodal Input: {multimodal_input.modality.value}"
@@ -242,7 +242,9 @@ class PrototypeRenderer:
         if multimodal_input.voice_command:
             self._draw_text(2, line, "Voice: " + multimodal_input.voice_command.text)
             line += 1
-            self._draw_text(2, line, f"  Confidence: {multimodal_input.voice_command.confidence:.2f}")
+            self._draw_text(
+                2, line, f"  Confidence: {multimodal_input.voice_command.confidence:.2f}"
+            )
             line += 2
 
         # Gesture
@@ -270,13 +272,13 @@ class PrototypeRenderer:
         self,
         workspace: SpatialWorkspace,
         active_gestures: List[Gesture],
-        recent_inputs: List[MultimodalInput]
+        recent_inputs: List[MultimodalInput],
     ) -> str:
         """Render complete scene with all elements"""
         self._clear_buffer()
 
         # Draw border
-        self._draw_box(0, 0, self.width, self.height, '█')
+        self._draw_box(0, 0, self.width, self.height, "█")
 
         # Title
         self._draw_text(2, 1, "AR/VR Prototype Scene Overview")
@@ -306,17 +308,17 @@ class PrototypeRenderer:
         for obj in list(workspace.objects.values())[:5]:  # Show up to 5 objects
             world_pos = obj.get_world_position(workspace)
             x, y_pos = self.camera.project_to_2d(world_pos, self.width, self.height)
-            self._set_pixel(x, y_pos, 'O')
+            self._set_pixel(x, y_pos, "O")
 
         return self._buffer_to_string()
 
     def _buffer_to_string(self) -> str:
         """Convert buffer to string"""
-        return '\n'.join(''.join(row) for row in self.buffer)
+        return "\n".join("".join(row) for row in self.buffer)
 
     def clear_screen(self) -> None:
         """Clear the terminal screen"""
-        os.system('clear' if os.name != 'nt' else 'cls')
+        os.system("clear" if os.name != "nt" else "cls")
 
     def render_and_display(self, content: str) -> None:
         """Clear screen and display rendered content"""
@@ -331,21 +333,17 @@ class PrototypeRenderer:
 
         # Create some objects
         positions = [
-            Vector3D(0, 0, 0),      # Center
-            Vector3D(1, 0, -1),     # Front right
-            Vector3D(-1, 0, -1),    # Front left
-            Vector3D(0, 1, -1),     # Top
-            Vector3D(0, -1, -1),    # Bottom
+            Vector3D(0, 0, 0),  # Center
+            Vector3D(1, 0, -1),  # Front right
+            Vector3D(-1, 0, -1),  # Front left
+            Vector3D(0, 1, -1),  # Top
+            Vector3D(0, -1, -1),  # Bottom
         ]
 
         names = ["Center", "Terminal", "Editor", "Browser", "Debugger"]
 
         for i, (name, pos) in enumerate(zip(names, positions)):
-            obj = SpatialObject(
-                id=f"demo_{i}",
-                name=name,
-                transform=Transform3D(position=pos)
-            )
+            obj = SpatialObject(id=f"demo_{i}", name=name, transform=Transform3D(position=pos))
             workspace.add_object(obj)
 
         return workspace
@@ -374,23 +372,20 @@ class PrototypeRenderer:
             print(renderer())
 
             user_input = input("\nPress Enter for next, or 'quit' to exit: ").strip().lower()
-            if user_input == 'quit':
+            if user_input == "quit":
                 break
 
             idx += 1
 
     def _demo_layout(self) -> str:
         """Create demo layout"""
-        from isaac.arvr.spatial_layouts import Layout, LayoutType, LayoutNode
+        from isaac.arvr.spatial_layouts import Layout, LayoutNode, LayoutType
 
-        layout = Layout(
-            name="demo_layout",
-            type=LayoutType.CIRCULAR,
-            center=Vector3D(0, 0, -2)
-        )
+        layout = Layout(name="demo_layout", type=LayoutType.CIRCULAR, center=Vector3D(0, 0, -2))
 
         # Add nodes in a circle
         import math
+
         radius = 1.5
         for i in range(6):
             angle = i * (2 * math.pi / 6)
@@ -401,7 +396,7 @@ class PrototypeRenderer:
                 id=f"node_{i}",
                 name=f"Window{i+1}",
                 position=Vector3D(x, 0, z),
-                priority=5 if i == 0 else 1
+                priority=5 if i == 0 else 1,
             )
             layout.add_node(node)
 
@@ -409,15 +404,16 @@ class PrototypeRenderer:
 
     def _demo_gesture(self) -> str:
         """Create demo gesture"""
-        from isaac.arvr.gesture_api import Gesture, GestureType, HandType, GesturePoint
         import time
+
+        from isaac.arvr.gesture_api import Gesture, GesturePoint, GestureType, HandType
 
         gesture = Gesture(
             type=GestureType.SWIPE,
             hand=HandType.RIGHT,
             start_time=time.time() - 1.0,
             end_time=time.time(),
-            confidence=0.95
+            confidence=0.95,
         )
 
         # Create swipe trajectory
@@ -426,10 +422,7 @@ class PrototypeRenderer:
             x = -1.0 + 2.0 * t  # Swipe from left to right
             y = 0.2 * math.sin(t * math.pi)  # Slight curve
 
-            point = GesturePoint(
-                position=Vector3D(x, y, -1),
-                timestamp=time.time() - 1.0 + t
-            )
+            point = GesturePoint(position=Vector3D(x, y, -1), timestamp=time.time() - 1.0 + t)
             gesture.points.append(point)
 
         return self.render_gesture(gesture)

@@ -2,11 +2,11 @@
 
 import json
 import os
-from pathlib import Path
-from typing import Optional, List, Dict
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
 
-from .models import SharedResource, ResourceType
+from .models import ResourceType, SharedResource
 
 
 class WorkspaceSharer:
@@ -21,8 +21,14 @@ class WorkspaceSharer:
         self.base_dir = Path(base_dir or os.path.expanduser("~/.isaac/shared_workspaces"))
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
-    def share_workspace(self, team_id: str, workspace_data: Dict,
-                       shared_by: str, name: str = "", description: str = "") -> SharedResource:
+    def share_workspace(
+        self,
+        team_id: str,
+        workspace_data: Dict,
+        shared_by: str,
+        name: str = "",
+        description: str = "",
+    ) -> SharedResource:
         """Share a workspace with a team.
 
         Args:
@@ -37,11 +43,12 @@ class WorkspaceSharer:
         """
         # Generate resource ID
         import uuid
+
         resource_id = str(uuid.uuid4())
 
         # Save workspace data
         workspace_file = self.base_dir / f"{resource_id}.json"
-        with open(workspace_file, 'w') as f:
+        with open(workspace_file, "w") as f:
             json.dump(workspace_data, f, indent=2)
 
         # Create shared resource
@@ -53,17 +60,24 @@ class WorkspaceSharer:
             name=name or f"Workspace {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             description=description,
             metadata={
-                'file_path': str(workspace_file),
-                'git_branch': workspace_data.get('git_branch'),
-                'file_count': len(workspace_data.get('open_files', [])),
-                'process_count': len(workspace_data.get('processes', [])),
-            }
+                "file_path": str(workspace_file),
+                "git_branch": workspace_data.get("git_branch"),
+                "file_count": len(workspace_data.get("open_files", [])),
+                "process_count": len(workspace_data.get("processes", [])),
+            },
         )
 
         return resource
 
-    def share_bubble(self, team_id: str, bubble_id: str, bubble_manager,
-                    shared_by: str, name: str = "", description: str = "") -> Optional[SharedResource]:
+    def share_bubble(
+        self,
+        team_id: str,
+        bubble_id: str,
+        bubble_manager,
+        shared_by: str,
+        name: str = "",
+        description: str = "",
+    ) -> Optional[SharedResource]:
         """Share a bubble with a team.
 
         Args:
@@ -91,7 +105,7 @@ class WorkspaceSharer:
             workspace_data=bubble_data,
             shared_by=shared_by,
             name=name or bubble.name,
-            description=description or bubble.description
+            description=description or bubble.description,
         )
 
     def get_workspace(self, resource_id: str) -> Optional[Dict]:
@@ -110,8 +124,9 @@ class WorkspaceSharer:
         with open(workspace_file) as f:
             return json.load(f)
 
-    def import_workspace(self, resource_id: str, bubble_manager, user_id: str,
-                        name: Optional[str] = None) -> Optional[str]:
+    def import_workspace(
+        self, resource_id: str, bubble_manager, user_id: str, name: Optional[str] = None
+    ) -> Optional[str]:
         """Import a shared workspace as a new bubble.
 
         Args:
@@ -128,16 +143,19 @@ class WorkspaceSharer:
             return None
 
         # Import as new bubble
-        from isaac.bubbles.models import Bubble
         import uuid
 
+        from isaac.bubbles.models import Bubble
+
         bubble_id = str(uuid.uuid4())
-        bubble = Bubble.from_dict({
-            **workspace_data,
-            'bubble_id': bubble_id,
-            'name': name or workspace_data.get('name', 'Imported Workspace'),
-            'created_at': datetime.now().isoformat(),
-        })
+        bubble = Bubble.from_dict(
+            {
+                **workspace_data,
+                "bubble_id": bubble_id,
+                "name": name or workspace_data.get("name", "Imported Workspace"),
+                "created_at": datetime.now().isoformat(),
+            }
+        )
 
         # Save bubble
         bubble_manager._save_bubble(bubble)
@@ -154,10 +172,7 @@ class WorkspaceSharer:
         Returns:
             List of SharedResource objects
         """
-        return team_manager.get_shared_resources(
-            team_id,
-            resource_type=ResourceType.WORKSPACE
-        )
+        return team_manager.get_shared_resources(team_id, resource_type=ResourceType.WORKSPACE)
 
     def delete_shared_workspace(self, resource_id: str) -> bool:
         """Delete a shared workspace.

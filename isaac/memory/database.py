@@ -3,18 +3,19 @@ Persistent AI Memory System for Isaac
 Manages conversation contexts, memory storage, and retrieval across sessions.
 """
 
-import sqlite3
-import json
-import time
-from pathlib import Path
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass, asdict
 import hashlib
+import json
+import sqlite3
+import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class MemoryEntry:
     """A single memory entry"""
+
     id: Optional[int] = None
     session_id: str = ""
     timestamp: float = 0.0
@@ -47,7 +48,7 @@ class MemoryEntry:
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'MemoryEntry':
+    def from_dict(cls, data: Dict[str, Any]) -> "MemoryEntry":
         """Create from dictionary"""
         return cls(**data)
 
@@ -55,6 +56,7 @@ class MemoryEntry:
 @dataclass
 class ConversationContext:
     """A conversation context window"""
+
     id: Optional[int] = None
     session_id: str = ""
     context_id: str = ""
@@ -82,7 +84,7 @@ class ConversationContext:
             "role": role,
             "content": content,
             "timestamp": time.time(),
-            "metadata": metadata or {}
+            "metadata": metadata or {},
         }
         self.messages.append(message)
         self.updated_at = time.time()
@@ -98,7 +100,7 @@ class ConversationContext:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ConversationContext':
+    def from_dict(cls, data: Dict[str, Any]) -> "ConversationContext":
         """Create from dictionary"""
         return cls(**data)
 
@@ -114,7 +116,8 @@ class MemoryDatabase:
     def _init_db(self):
         """Initialize database tables"""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS memories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     session_id TEXT NOT NULL,
@@ -127,9 +130,11 @@ class MemoryDatabase:
                     checksum TEXT UNIQUE,
                     created_at REAL DEFAULT (strftime('%s', 'now'))
                 )
-            ''')
+            """
+            )
 
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS contexts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     session_id TEXT NOT NULL,
@@ -140,37 +145,48 @@ class MemoryDatabase:
                     updated_at REAL NOT NULL,
                     metadata TEXT NOT NULL
                 )
-            ''')
+            """
+            )
 
             # Create indexes for performance
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_memories_session ON memories(session_id)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_memories_type ON memories(memory_type)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_memories_timestamp ON memories(timestamp)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_memories_checksum ON memories(checksum)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_contexts_session ON contexts(session_id)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_contexts_context_id ON contexts(context_id)')
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_session ON memories(session_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_type ON memories(memory_type)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_timestamp ON memories(timestamp)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_memories_checksum ON memories(checksum)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_contexts_session ON contexts(session_id)")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_contexts_context_id ON contexts(context_id)"
+            )
 
     def store_memory(self, entry: MemoryEntry) -> Optional[int]:
         """Store a memory entry"""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 INSERT OR REPLACE INTO memories
                 (session_id, timestamp, memory_type, content, metadata, importance, tags, checksum)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                entry.session_id,
-                entry.timestamp,
-                entry.memory_type,
-                json.dumps(entry.content),
-                json.dumps(entry.metadata),
-                entry.importance,
-                json.dumps(entry.tags),
-                entry.checksum
-            ))
+            """,
+                (
+                    entry.session_id,
+                    entry.timestamp,
+                    entry.memory_type,
+                    json.dumps(entry.content),
+                    json.dumps(entry.metadata),
+                    entry.importance,
+                    json.dumps(entry.tags),
+                    entry.checksum,
+                ),
+            )
             return cursor.lastrowid
 
-    def get_memories(self, session_id: Optional[str] = None, memory_type: Optional[str] = None,
-                    limit: int = 100, offset: int = 0) -> List[MemoryEntry]:
+    def get_memories(
+        self,
+        session_id: Optional[str] = None,
+        memory_type: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[MemoryEntry]:
         """Retrieve memories with optional filtering"""
         query = "SELECT * FROM memories WHERE 1=1"
         params = []
@@ -193,21 +209,23 @@ class MemoryDatabase:
             memories = []
             for row in cursor:
                 entry = MemoryEntry(
-                    id=row['id'],
-                    session_id=row['session_id'],
-                    timestamp=row['timestamp'],
-                    memory_type=row['memory_type'],
-                    content=json.loads(row['content']),
-                    metadata=json.loads(row['metadata']),
-                    importance=row['importance'],
-                    tags=json.loads(row['tags']),
-                    checksum=row['checksum']
+                    id=row["id"],
+                    session_id=row["session_id"],
+                    timestamp=row["timestamp"],
+                    memory_type=row["memory_type"],
+                    content=json.loads(row["content"]),
+                    metadata=json.loads(row["metadata"]),
+                    importance=row["importance"],
+                    tags=json.loads(row["tags"]),
+                    checksum=row["checksum"],
                 )
                 memories.append(entry)
 
             return memories
 
-    def search_memories(self, query: str, session_id: Optional[str] = None, limit: int = 50) -> List[MemoryEntry]:
+    def search_memories(
+        self, query: str, session_id: Optional[str] = None, limit: int = 50
+    ) -> List[MemoryEntry]:
         """Search memories by content"""
         search_query = """
             SELECT * FROM memories WHERE 1=1
@@ -234,15 +252,15 @@ class MemoryDatabase:
             memories = []
             for row in cursor:
                 entry = MemoryEntry(
-                    id=row['id'],
-                    session_id=row['session_id'],
-                    timestamp=row['timestamp'],
-                    memory_type=row['memory_type'],
-                    content=json.loads(row['content']),
-                    metadata=json.loads(row['metadata']),
-                    importance=row['importance'],
-                    tags=json.loads(row['tags']),
-                    checksum=row['checksum']
+                    id=row["id"],
+                    session_id=row["session_id"],
+                    timestamp=row["timestamp"],
+                    memory_type=row["memory_type"],
+                    content=json.loads(row["content"]),
+                    metadata=json.loads(row["metadata"]),
+                    importance=row["importance"],
+                    tags=json.loads(row["tags"]),
+                    checksum=row["checksum"],
                 )
                 memories.append(entry)
 
@@ -251,45 +269,47 @@ class MemoryDatabase:
     def store_context(self, context: ConversationContext) -> Optional[int]:
         """Store a conversation context"""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 INSERT OR REPLACE INTO contexts
                 (session_id, context_id, title, messages, created_at, updated_at, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                context.session_id,
-                context.context_id,
-                context.title,
-                json.dumps(context.messages),
-                context.created_at,
-                context.updated_at,
-                json.dumps(context.metadata)
-            ))
+            """,
+                (
+                    context.session_id,
+                    context.context_id,
+                    context.title,
+                    json.dumps(context.messages),
+                    context.created_at,
+                    context.updated_at,
+                    json.dumps(context.metadata),
+                ),
+            )
             return cursor.lastrowid
 
     def get_context(self, context_id: str) -> Optional[ConversationContext]:
         """Retrieve a conversation context"""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
-            cursor = conn.execute(
-                "SELECT * FROM contexts WHERE context_id = ?",
-                (context_id,)
-            )
+            cursor = conn.execute("SELECT * FROM contexts WHERE context_id = ?", (context_id,))
 
             row = cursor.fetchone()
             if row:
                 return ConversationContext(
-                    id=row['id'],
-                    session_id=row['session_id'],
-                    context_id=row['context_id'],
-                    title=row['title'],
-                    messages=json.loads(row['messages']),
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at'],
-                    metadata=json.loads(row['metadata'])
+                    id=row["id"],
+                    session_id=row["session_id"],
+                    context_id=row["context_id"],
+                    title=row["title"],
+                    messages=json.loads(row["messages"]),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    metadata=json.loads(row["metadata"]),
                 )
             return None
 
-    def get_contexts(self, session_id: Optional[str] = None, limit: int = 20) -> List[ConversationContext]:
+    def get_contexts(
+        self, session_id: Optional[str] = None, limit: int = 20
+    ) -> List[ConversationContext]:
         """Get recent conversation contexts"""
         query = "SELECT * FROM contexts WHERE 1=1"
         params = []
@@ -308,14 +328,14 @@ class MemoryDatabase:
             contexts = []
             for row in cursor:
                 context = ConversationContext(
-                    id=row['id'],
-                    session_id=row['session_id'],
-                    context_id=row['context_id'],
-                    title=row['title'],
-                    messages=json.loads(row['messages']),
-                    created_at=row['created_at'],
-                    updated_at=row['updated_at'],
-                    metadata=json.loads(row['metadata'])
+                    id=row["id"],
+                    session_id=row["session_id"],
+                    context_id=row["context_id"],
+                    title=row["title"],
+                    messages=json.loads(row["messages"]),
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    metadata=json.loads(row["metadata"]),
                 )
                 contexts.append(context)
 
@@ -326,10 +346,13 @@ class MemoryDatabase:
         cutoff_time = time.time() - (days_old * 24 * 60 * 60)
 
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 DELETE FROM memories
                 WHERE timestamp < ? AND importance < ?
-            ''', (cutoff_time, min_importance))
+            """,
+                (cutoff_time, min_importance),
+            )
 
             return cursor.rowcount
 
@@ -337,7 +360,8 @@ class MemoryDatabase:
         """Get memory database statistics"""
         with sqlite3.connect(self.db_path) as conn:
             # Memory stats
-            memory_cursor = conn.execute('''
+            memory_cursor = conn.execute(
+                """
                 SELECT
                     COUNT(*) as total_memories,
                     COUNT(DISTINCT session_id) as sessions,
@@ -345,23 +369,34 @@ class MemoryDatabase:
                     MIN(timestamp) as oldest_memory,
                     MAX(timestamp) as newest_memory
                 FROM memories
-            ''')
+            """
+            )
             memory_row = memory_cursor.fetchone()
-            memory_stats = dict(zip([desc[0] for desc in memory_cursor.description], memory_row)) if memory_row else {}
+            memory_stats = (
+                dict(zip([desc[0] for desc in memory_cursor.description], memory_row))
+                if memory_row
+                else {}
+            )
 
             # Context stats
-            context_cursor = conn.execute('''
+            context_cursor = conn.execute(
+                """
                 SELECT
                     COUNT(*) as total_contexts,
                     COUNT(DISTINCT session_id) as context_sessions,
                     AVG(LENGTH(messages)) as avg_context_size
                 FROM contexts
-            ''')
+            """
+            )
             context_row = context_cursor.fetchone()
-            context_stats = dict(zip([desc[0] for desc in context_cursor.description], context_row)) if context_row else {}
+            context_stats = (
+                dict(zip([desc[0] for desc in context_cursor.description], context_row))
+                if context_row
+                else {}
+            )
 
             return {
                 "memories": memory_stats,
                 "contexts": context_stats,
-                "database_size_mb": self.db_path.stat().st_size / (1024 * 1024)
+                "database_size_mb": self.db_path.stat().st_size / (1024 * 1024),
             }

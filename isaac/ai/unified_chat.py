@@ -7,8 +7,8 @@ automatic workspace-aware routing.
 """
 
 import logging
-from typing import Dict, Optional, Any
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -39,18 +39,18 @@ class UnifiedChatRouter:
 
         # Query patterns
         self.code_patterns = [
-            r'\b(function|class|method|variable|import|define|implement)\b',
-            r'\b(how does|what is|explain|show me)\b.*\b(code|file|function|class)\b',
-            r'\b(find|search|locate|where is)\b',
-            r'\brefactor\b',
-            r'\b(debug|fix|error|bug)\b',
+            r"\b(function|class|method|variable|import|define|implement)\b",
+            r"\b(how does|what is|explain|show me)\b.*\b(code|file|function|class)\b",
+            r"\b(find|search|locate|where is)\b",
+            r"\brefactor\b",
+            r"\b(debug|fix|error|bug)\b",
         ]
 
         self.refactor_patterns = [
-            r'\brefactor\b',
-            r'\brename\b.*\bto\b',
-            r'\bchange\b.*\bacross\b',
-            r'\breplace\b.*\bin all\b',
+            r"\brefactor\b",
+            r"\brename\b.*\bto\b",
+            r"\bchange\b.*\bacross\b",
+            r"\breplace\b.*\bin all\b",
         ]
 
         logger.info("Unified chat router initialized")
@@ -59,8 +59,8 @@ class UnifiedChatRouter:
         """Initialize RAG engine and multi-file manager"""
         try:
             from isaac.ai.rag_engine import RAGQueryEngine
-            from isaac.core.multifile_ops import MultiFileOperationManager
             from isaac.core.fallback_manager import get_fallback_manager
+            from isaac.core.multifile_ops import MultiFileOperationManager
 
             # Get xAI client from workspace
             xai_client = self.workspace_context._get_xai_client()
@@ -70,13 +70,13 @@ class UnifiedChatRouter:
                 self.rag_engine = RAGQueryEngine(
                     xai_client=xai_client,
                     knowledge_base=kb,
-                    fallback_manager=get_fallback_manager()
+                    fallback_manager=get_fallback_manager(),
                 )
 
             if self.workspace_context._current_workspace_path:
                 self.multifile_mgr = MultiFileOperationManager(
                     project_root=self.workspace_context._current_workspace_path,
-                    rag_engine=self.rag_engine
+                    rag_engine=self.rag_engine,
                 )
 
         except Exception as e:
@@ -94,17 +94,17 @@ class UnifiedChatRouter:
             Chat result with routing info
         """
         # Detect mode if not specified
-        if mode is None or mode == 'auto':
+        if mode is None or mode == "auto":
             mode = self._detect_mode(prompt)
 
         logger.info(f"Routing query to: {mode}")
 
         # Route to appropriate handler
-        if mode == 'rag' and self.rag_engine:
+        if mode == "rag" and self.rag_engine:
             return self._handle_rag(prompt)
-        elif mode == 'refactor' and self.multifile_mgr:
+        elif mode == "refactor" and self.multifile_mgr:
             return self._handle_refactor(prompt)
-        elif mode == 'direct':
+        elif mode == "direct":
             return self._handle_direct(prompt)
         else:
             # Fallback to direct if components not available
@@ -125,30 +125,30 @@ class UnifiedChatRouter:
         for pattern in self.refactor_patterns:
             if re.search(pattern, prompt_lower, re.IGNORECASE):
                 logger.debug("Detected refactoring intent")
-                return 'refactor'
+                return "refactor"
 
         # Check for code question intent
         for pattern in self.code_patterns:
             if re.search(pattern, prompt_lower, re.IGNORECASE):
                 logger.debug("Detected code question")
-                return 'rag'
+                return "rag"
 
         # Default to direct chat
         logger.debug("Using direct chat")
-        return 'direct'
+        return "direct"
 
     def _handle_rag(self, prompt: str) -> Dict[str, Any]:
         """Handle RAG query (codebase-aware)"""
         try:
             result = self.rag_engine.query(prompt, use_codebase=True)
 
-            if result['success']:
+            if result["success"]:
                 return {
-                    'success': True,
-                    'response': result['response'],
-                    'mode': 'rag',
-                    'context_used': len(result.get('context_used', [])),
-                    'source': result.get('source', 'unknown')
+                    "success": True,
+                    "response": result["response"],
+                    "mode": "rag",
+                    "context_used": len(result.get("context_used", [])),
+                    "source": result.get("source", "unknown"),
                 }
             else:
                 # Fallback to direct
@@ -165,23 +165,19 @@ class UnifiedChatRouter:
             # Extract files if mentioned
             # For now, suggest using explicit file specification
             return {
-                'success': True,
-                'response': "For refactoring operations, please use:\n\n"
-                           "1. /refactor <description> <files> - AI-assisted refactoring\n"
-                           "2. /batch-replace <pattern> <replacement> - Pattern replacement\n"
-                           "3. /find <symbol> - Find symbol definitions\n\n"
-                           f"Or describe your refactoring goal in detail:\n{prompt}",
-                'mode': 'refactor',
-                'suggestion': 'Use specialized refactoring commands'
+                "success": True,
+                "response": "For refactoring operations, please use:\n\n"
+                "1. /refactor <description> <files> - AI-assisted refactoring\n"
+                "2. /batch-replace <pattern> <replacement> - Pattern replacement\n"
+                "3. /find <symbol> - Find symbol definitions\n\n"
+                f"Or describe your refactoring goal in detail:\n{prompt}",
+                "mode": "refactor",
+                "suggestion": "Use specialized refactoring commands",
             }
 
         except Exception as e:
             logger.error(f"Refactor handler error: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'mode': 'refactor'
-            }
+            return {"success": False, "error": str(e), "mode": "refactor"}
 
     def _handle_direct(self, prompt: str) -> Dict[str, Any]:
         """Handle direct chat (no codebase context)"""
@@ -189,41 +185,27 @@ class UnifiedChatRouter:
             xai_client = self.workspace_context._get_xai_client()
 
             if not xai_client:
-                return {
-                    'success': False,
-                    'error': 'xAI client not configured',
-                    'mode': 'direct'
-                }
+                return {"success": False, "error": "xAI client not configured", "mode": "direct"}
 
             from isaac.core.fallback_manager import get_fallback_manager
 
             fallback_mgr = get_fallback_manager()
             result = fallback_mgr.call_with_fallback(
-                'xai_chat',
-                primary_fn=lambda: xai_client.chat(prompt),
-                fallback_fn=None
+                "xai_chat", primary_fn=lambda: xai_client.chat(prompt), fallback_fn=None
             )
 
-            if result['success']:
-                return {
-                    'success': True,
-                    'response': result['result'],
-                    'mode': 'direct'
-                }
+            if result["success"]:
+                return {"success": True, "response": result["result"], "mode": "direct"}
             else:
                 return {
-                    'success': False,
-                    'error': result.get('error', 'Chat failed'),
-                    'mode': 'direct'
+                    "success": False,
+                    "error": result.get("error", "Chat failed"),
+                    "mode": "direct",
                 }
 
         except Exception as e:
             logger.error(f"Direct chat error: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'mode': 'direct'
-            }
+            return {"success": False, "error": str(e), "mode": "direct"}
 
 
 class WorkspaceAwareDefaults:
@@ -240,35 +222,35 @@ class WorkspaceAwareDefaults:
     def _detect_defaults(self) -> Dict[str, Any]:
         """Detect appropriate defaults from workspace"""
         defaults = {
-            'auto_index': False,
-            'use_codebase': True,
-            'watch_files': False,
-            'max_context': 5
+            "auto_index": False,
+            "use_codebase": True,
+            "watch_files": False,
+            "max_context": 5,
         }
 
         # Check if workspace is active
         context = self.workspace_context.get_current_context()
 
-        if context['active']:
+        if context["active"]:
             # Check project size
-            ws_path = Path(context['workspace']['path'])
-            py_files = list(ws_path.glob('**/*.py'))
+            ws_path = Path(context["workspace"]["path"])
+            py_files = list(ws_path.glob("**/*.py"))
 
             if len(py_files) < 100:
                 # Small project: enable auto-features
-                defaults['auto_index'] = True
-                defaults['watch_files'] = True
-                defaults['max_context'] = 10
+                defaults["auto_index"] = True
+                defaults["watch_files"] = True
+                defaults["max_context"] = 10
             elif len(py_files) < 500:
                 # Medium project: selective features
-                defaults['auto_index'] = False
-                defaults['watch_files'] = True
-                defaults['max_context'] = 5
+                defaults["auto_index"] = False
+                defaults["watch_files"] = True
+                defaults["max_context"] = 5
             else:
                 # Large project: conservative
-                defaults['auto_index'] = False
-                defaults['watch_files'] = False
-                defaults['max_context'] = 3
+                defaults["auto_index"] = False
+                defaults["watch_files"] = False
+                defaults["max_context"] = 3
 
         return defaults
 
@@ -277,18 +259,20 @@ class WorkspaceAwareDefaults:
         return self.defaults.get(key, fallback)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test unified chat router
-    import sys
     import os
+    import sys
+
     logging.basicConfig(level=logging.INFO)
 
     from pathlib import Path
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
     from isaac.core.workspace_integration import WorkspaceContext
 
-    api_key = os.getenv('XAI_API_KEY')
+    api_key = os.getenv("XAI_API_KEY")
 
     if not api_key:
         print("=== Unified Chat Router ===\n")

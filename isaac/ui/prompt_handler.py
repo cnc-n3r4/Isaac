@@ -4,13 +4,15 @@ Manages isaac> user> interaction and command input
 """
 
 from typing import Tuple
-from isaac.ui.terminal_control import TerminalControl
-from isaac.ui.advanced_input import AdvancedInputHandler
-from isaac.ui.visual_enhancer import VisualEnhancer
+
 from isaac.core.tier_validator import TierValidator
+from isaac.ui.advanced_input import AdvancedInputHandler
+from isaac.ui.terminal_control import TerminalControl
+from isaac.ui.visual_enhancer import VisualEnhancer
 
 try:
     import colorama
+
     colorama.init()
     HAS_COLORAMA = True
 except ImportError:
@@ -111,7 +113,7 @@ class PromptHandler:
 
         # Check if we need to scroll
         formatted_output = self.visual.format_command_output(command, output, success)
-        output_lines = formatted_output.count('\n') + 1
+        output_lines = formatted_output.count("\n") + 1
 
         if self.current_output_line + output_lines >= height:
             self._scroll_output_area()
@@ -120,13 +122,13 @@ class PromptHandler:
         self.terminal.move_cursor(0, self.current_output_line)
 
         # Display formatted output
-        lines = formatted_output.split('\n')
+        lines = formatted_output.split("\n")
         for i, line in enumerate(lines):
             if self.current_output_line + i < height:
                 self.terminal.move_cursor(0, self.current_output_line + i)
                 # Truncate line if too long
                 if len(line) > width - 1:
-                    line = line[:width - 4] + "..."
+                    line = line[: width - 4] + "..."
                 print(line, flush=True)
 
         self.current_output_line += len(lines)
@@ -165,6 +167,6 @@ class PromptHandler:
             2.0: "🟡",  # Yellow circle
             2.5: "🟠",  # Orange circle
             3.0: "🟠",  # Orange circle
-            4.0: "🔴"   # Red circle
+            4.0: "🔴",  # Red circle
         }
         return indicators.get(tier, "⚪")  # White circle for unknown

@@ -4,9 +4,9 @@ Cache Manager - Manage local cache for offline access
 
 import json
 import sqlite3
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 class CacheManager:
@@ -16,12 +16,12 @@ class CacheManager:
 
     def __init__(self, storage_path: Optional[str] = None, max_size_mb: int = 500):
         if storage_path is None:
-            storage_path = Path.home() / '.isaac' / 'cache'
+            storage_path = Path.home() / ".isaac" / "cache"
 
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
-        self.db_path = self.storage_path / 'cache.db'
+        self.db_path = self.storage_path / "cache.db"
         self.max_size_bytes = max_size_mb * 1024 * 1024
 
         self._init_database()
@@ -31,7 +31,8 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS cache (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
@@ -42,15 +43,20 @@ class CacheManager:
                 expires_at TEXT,
                 access_count INTEGER DEFAULT 0
             )
-        ''')
+        """
+        )
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_category ON cache(category)
-        ''')
+        """
+        )
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_expires_at ON cache(expires_at)
-        ''')
+        """
+        )
 
         conn.commit()
         conn.close()
@@ -60,7 +66,7 @@ class CacheManager:
         key: str,
         value: Any,
         category: Optional[str] = None,
-        ttl_seconds: Optional[int] = None
+        ttl_seconds: Optional[int] = None,
     ):
         """
         Set cache entry
@@ -73,27 +79,28 @@ class CacheManager:
         """
         # Serialize value
         serialized = json.dumps(value)
-        size = len(serialized.encode('utf-8'))
+        size = len(serialized.encode("utf-8"))
 
         # Calculate expiration
         expires_at = None
         if ttl_seconds:
-            expires_at = (
-                datetime.utcnow() + timedelta(seconds=ttl_seconds)
-            ).isoformat()
+            expires_at = (datetime.utcnow() + timedelta(seconds=ttl_seconds)).isoformat()
 
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
         now = datetime.utcnow().isoformat()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO cache
             (key, value, category, size, created_at, last_accessed, expires_at, access_count)
             VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(
                 (SELECT access_count FROM cache WHERE key = ?), 0
             ))
-        ''', (key, serialized, category, size, now, now, expires_at, key))
+        """,
+            (key, serialized, category, size, now, now, expires_at, key),
+        )
 
         conn.commit()
         conn.close()
@@ -114,11 +121,14 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT value, expires_at
             FROM cache
             WHERE key = ?
-        ''', (key,))
+        """,
+            (key,),
+        )
 
         result = cursor.fetchone()
 
@@ -132,18 +142,21 @@ class CacheManager:
         if expires_at:
             if datetime.utcnow() > datetime.fromisoformat(expires_at):
                 # Expired, delete it
-                cursor.execute('DELETE FROM cache WHERE key = ?', (key,))
+                cursor.execute("DELETE FROM cache WHERE key = ?", (key,))
                 conn.commit()
                 conn.close()
                 return None
 
         # Update access stats
-        cursor.execute('''
+        cursor.execute(
+            """
             UPDATE cache
             SET last_accessed = ?,
                 access_count = access_count + 1
             WHERE key = ?
-        ''', (datetime.utcnow().isoformat(), key))
+        """,
+            (datetime.utcnow().isoformat(), key),
+        )
 
         conn.commit()
         conn.close()
@@ -156,7 +169,7 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM cache WHERE key = ?', (key,))
+        cursor.execute("DELETE FROM cache WHERE key = ?", (key,))
         deleted = cursor.rowcount > 0
 
         conn.commit()
@@ -169,7 +182,7 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM cache WHERE category = ?', (category,))
+        cursor.execute("DELETE FROM cache WHERE category = ?", (category,))
         deleted = cursor.rowcount
 
         conn.commit()
@@ -182,11 +195,14 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             DELETE FROM cache
             WHERE expires_at IS NOT NULL
             AND expires_at < ?
-        ''', (datetime.utcnow().isoformat(),))
+        """,
+            (datetime.utcnow().isoformat(),),
+        )
 
         deleted = cursor.rowcount
         conn.commit()
@@ -208,11 +224,13 @@ class CacheManager:
         # Calculate how much to evict
         to_evict = total_size - self.max_size_bytes
 
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT key, size
             FROM cache
             ORDER BY last_accessed ASC
-        ''')
+        """
+        )
 
         evicted_size = 0
         keys_to_delete = []
@@ -226,7 +244,7 @@ class CacheManager:
 
         # Delete selected entries
         for key in keys_to_delete:
-            cursor.execute('DELETE FROM cache WHERE key = ?', (key,))
+            cursor.execute("DELETE FROM cache WHERE key = ?", (key,))
 
         conn.commit()
         conn.close()
@@ -236,7 +254,7 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT SUM(size) FROM cache')
+        cursor.execute("SELECT SUM(size) FROM cache")
         result = cursor.fetchone()
 
         conn.close()
@@ -248,18 +266,14 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT COUNT(*) FROM cache')
+        cursor.execute("SELECT COUNT(*) FROM cache")
         count = cursor.fetchone()[0]
 
         conn.close()
 
         return count
 
-    def list_keys(
-        self,
-        category: Optional[str] = None,
-        limit: int = 100
-    ) -> List[str]:
+    def list_keys(self, category: Optional[str] = None, limit: int = 100) -> List[str]:
         """
         List cache keys
 
@@ -274,20 +288,26 @@ class CacheManager:
         cursor = conn.cursor()
 
         if category:
-            cursor.execute('''
+            cursor.execute(
+                """
                 SELECT key
                 FROM cache
                 WHERE category = ?
                 ORDER BY last_accessed DESC
                 LIMIT ?
-            ''', (category, limit))
+            """,
+                (category, limit),
+            )
         else:
-            cursor.execute('''
+            cursor.execute(
+                """
                 SELECT key
                 FROM cache
                 ORDER BY last_accessed DESC
                 LIMIT ?
-            ''', (limit,))
+            """,
+                (limit,),
+            )
 
         results = cursor.fetchall()
         conn.close()
@@ -300,27 +320,26 @@ class CacheManager:
         cursor = conn.cursor()
 
         # Get category stats
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT category, COUNT(*), SUM(size)
             FROM cache
             GROUP BY category
-        ''')
+        """
+        )
 
         category_stats = {}
         for cat, count, size in cursor.fetchall():
-            category_stats[cat or 'uncategorized'] = {
-                'count': count,
-                'size': size or 0
-            }
+            category_stats[cat or "uncategorized"] = {"count": count, "size": size or 0}
 
         conn.close()
 
         return {
-            'total_entries': self.get_entry_count(),
-            'total_size': self.get_cache_size(),
-            'max_size': self.max_size_bytes,
-            'usage_percent': (self.get_cache_size() / self.max_size_bytes * 100),
-            'categories': category_stats
+            "total_entries": self.get_entry_count(),
+            "total_size": self.get_cache_size(),
+            "max_size": self.max_size_bytes,
+            "usage_percent": (self.get_cache_size() / self.max_size_bytes * 100),
+            "categories": category_stats,
         }
 
     def clear_all(self):
@@ -328,7 +347,7 @@ class CacheManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM cache')
+        cursor.execute("DELETE FROM cache")
 
         conn.commit()
         conn.close()

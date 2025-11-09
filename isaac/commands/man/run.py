@@ -3,15 +3,14 @@
 Man Command - Display Manual Pages
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add Isaac to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from isaac.core.man_pages import get_generator
-
 
 ISAAC_MANUAL = """
 ISAAC(1)                         User Commands                        ISAAC(1)
@@ -170,5 +169,5 @@ def main():
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

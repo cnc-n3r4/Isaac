@@ -3,8 +3,8 @@
 import resource
 import signal
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, List, Optional, Set
 from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Set
 
 
 @dataclass
@@ -27,14 +27,16 @@ class SecurityPolicy:
     allowed_write_paths: Set[str] = field(default_factory=set)
 
     # Blocked modules
-    blocked_modules: Set[str] = field(default_factory=lambda: {
-        "os.system",
-        "subprocess",
-        "socket",
-        "http",
-        "urllib",
-        "requests",
-    })
+    blocked_modules: Set[str] = field(
+        default_factory=lambda: {
+            "os.system",
+            "subprocess",
+            "socket",
+            "http",
+            "urllib",
+            "requests",
+        }
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -64,13 +66,7 @@ class PluginSandbox:
         self.policy = policy or SecurityPolicy()
         self._original_import = None
 
-    def execute(
-        self,
-        func: Callable,
-        *args,
-        timeout: Optional[int] = None,
-        **kwargs
-    ) -> Any:
+    def execute(self, func: Callable, *args, timeout: Optional[int] = None, **kwargs) -> Any:
         """Execute a function in a sandboxed environment.
 
         Args:
@@ -121,8 +117,7 @@ class PluginSandbox:
                 try:
                     original_limits["cpu"] = resource.getrlimit(resource.RLIMIT_CPU)
                     resource.setrlimit(
-                        resource.RLIMIT_CPU,
-                        (self.policy.max_cpu_time, self.policy.max_cpu_time)
+                        resource.RLIMIT_CPU, (self.policy.max_cpu_time, self.policy.max_cpu_time)
                     )
                 except (ValueError, OSError):
                     # Can't set limit
@@ -172,7 +167,7 @@ class PluginSandbox:
 
         # Handle __builtins__ which can be dict or module
         if isinstance(__builtins__, dict):
-            original_import = __builtins__['__import__']
+            original_import = __builtins__["__import__"]
         else:
             original_import = __builtins__.__import__
 
@@ -218,13 +213,10 @@ class PluginSandbox:
                 # Check if path is in allowed write paths
                 if self.policy.allowed_write_paths:
                     allowed = any(
-                        file_path.startswith(path)
-                        for path in self.policy.allowed_write_paths
+                        file_path.startswith(path) for path in self.policy.allowed_write_paths
                     )
                     if not allowed:
-                        raise PermissionError(
-                            f"Write access to '{file_path}' is not allowed"
-                        )
+                        raise PermissionError(f"Write access to '{file_path}' is not allowed")
 
             # Check read permissions
             if "r" in mode:
@@ -234,18 +226,16 @@ class PluginSandbox:
                 # Check if path is in allowed read paths
                 if self.policy.allowed_read_paths:
                     allowed = any(
-                        file_path.startswith(path)
-                        for path in self.policy.allowed_read_paths
+                        file_path.startswith(path) for path in self.policy.allowed_read_paths
                     )
                     if not allowed:
-                        raise PermissionError(
-                            f"Read access to '{file_path}' is not allowed"
-                        )
+                        raise PermissionError(f"Read access to '{file_path}' is not allowed")
 
             return original_open(file, mode, *args, **kwargs)
 
         # Replace open
         import builtins
+
         builtins.open = guarded_open
 
         try:

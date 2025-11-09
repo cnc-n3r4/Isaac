@@ -3,13 +3,14 @@ Flag Parser Utility - Centralized flag parsing for ISAAC commands
 Standardizes flag handling across all commands.
 """
 
-from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
 class ParsedFlags:
     """Result of flag parsing"""
+
     flags: Dict[str, Any]
     positional_args: List[str]
     raw_args: List[str]
@@ -35,19 +36,19 @@ class FlagParser:
     def __init__(self):
         # Common flag aliases
         self.flag_aliases = {
-            'h': 'help',
-            'v': 'verbose',
-            'q': 'quiet',
-            'f': 'force',
-            'y': 'yes',
-            'n': 'no',
-            'd': 'dry-run',
-            'i': 'interactive',
-            'a': 'all',
-            'r': 'recursive',
-            's': 'search',
-            'w': 'whatis',
-            'm': 'man'
+            "h": "help",
+            "v": "verbose",
+            "q": "quiet",
+            "f": "force",
+            "y": "yes",
+            "n": "no",
+            "d": "dry-run",
+            "i": "interactive",
+            "a": "all",
+            "r": "recursive",
+            "s": "search",
+            "w": "whatis",
+            "m": "man",
         }
 
     def parse(self, args: List[str], command_spec: Optional[Dict[str, Any]] = None) -> ParsedFlags:
@@ -69,12 +70,12 @@ class FlagParser:
         while i < len(args):
             arg = args[i]
 
-            if arg == '--':
+            if arg == "--":
                 # End of flags, rest are positional
-                positional_args.extend(args[i + 1:])
+                positional_args.extend(args[i + 1 :])
                 break
 
-            elif arg.startswith('--'):
+            elif arg.startswith("--"):
                 # Long flag
                 flag_name, flag_value = self._parse_long_flag(arg)
                 resolved_name = self._resolve_alias(flag_name)
@@ -83,19 +84,19 @@ class FlagParser:
                     flags[resolved_name] = flag_value
                 else:
                     # Check if next arg is a value
-                    if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                    if i + 1 < len(args) and not args[i + 1].startswith("-"):
                         flags[resolved_name] = args[i + 1]
                         i += 1
                     else:
                         flags[resolved_name] = True
 
-            elif arg.startswith('-') and len(arg) > 1:
+            elif arg.startswith("-") and len(arg) > 1:
                 # Short flag(s)
                 short_flags = arg[1:]
                 resolved_flags = self._parse_short_flags(short_flags, args, i)
 
-                flags.update(resolved_flags['flags'])
-                i = resolved_flags['new_index'] - 1  # -1 because loop will increment
+                flags.update(resolved_flags["flags"])
+                i = resolved_flags["new_index"] - 1  # -1 because loop will increment
 
             else:
                 # Positional argument
@@ -111,13 +112,15 @@ class FlagParser:
 
     def _parse_long_flag(self, arg: str) -> Tuple[str, Optional[str]]:
         """Parse a long flag like --flag=value or --flag"""
-        if '=' in arg:
-            parts = arg.split('=', 1)
+        if "=" in arg:
+            parts = arg.split("=", 1)
             return parts[0][2:], parts[1]  # Remove -- prefix
         else:
             return arg[2:], None  # Remove -- prefix
 
-    def _parse_short_flags(self, short_flags: str, all_args: List[str], current_index: int) -> Dict[str, Any]:
+    def _parse_short_flags(
+        self, short_flags: str, all_args: List[str], current_index: int
+    ) -> Dict[str, Any]:
         """Parse short flags like -abc or -f value"""
         flags = {}
         new_index = current_index + 1
@@ -128,7 +131,7 @@ class FlagParser:
             resolved_name = self._resolve_alias(flag_char)
 
             if self._flag_expects_value(resolved_name):
-                if new_index < len(all_args) and not all_args[new_index].startswith('-'):
+                if new_index < len(all_args) and not all_args[new_index].startswith("-"):
                     flags[resolved_name] = all_args[new_index]
                     new_index += 1
                 else:
@@ -141,7 +144,7 @@ class FlagParser:
                 resolved_name = self._resolve_alias(flag_char)
                 flags[resolved_name] = True
 
-        return {'flags': flags, 'new_index': new_index}
+        return {"flags": flags, "new_index": new_index}
 
     def _resolve_alias(self, flag_name: str) -> str:
         """Resolve flag alias to canonical name"""
@@ -150,21 +153,34 @@ class FlagParser:
     def _flag_expects_value(self, flag_name: str) -> bool:
         """Check if a flag typically expects a value"""
         value_flags = {
-            'file', 'path', 'dir', 'output', 'input', 'config', 'search',
-            'filter', 'limit', 'offset', 'count', 'name', 'value', 'key',
-            'force'  # -f flag expects a value in the test
+            "file",
+            "path",
+            "dir",
+            "output",
+            "input",
+            "config",
+            "search",
+            "filter",
+            "limit",
+            "offset",
+            "count",
+            "name",
+            "value",
+            "key",
+            "force",  # -f flag expects a value in the test
         }
         return flag_name in value_flags
 
-    def _validate_flags(self, flags: Dict[str, Any], positional: List[str],
-                       command_spec: Dict[str, Any]) -> None:
+    def _validate_flags(
+        self, flags: Dict[str, Any], positional: List[str], command_spec: Dict[str, Any]
+    ) -> None:
         """Validate parsed flags against command specification"""
         # This could be extended to validate against the command.yaml spec
         # For now, just basic validation
 
     def format_help_flags(self, command_spec: Dict[str, Any]) -> str:
         """Format flag help from command specification"""
-        args = command_spec.get('args', [])
+        args = command_spec.get("args", [])
 
         if not args:
             return "No flags available"
@@ -172,13 +188,13 @@ class FlagParser:
         output = ["Available flags:"]
 
         for arg in args:
-            name = arg['name']
-            arg_type = arg.get('type', 'string')
-            required = arg.get('required', False)
-            help_text = arg.get('help', 'No description')
+            name = arg["name"]
+            arg_type = arg.get("type", "string")
+            required = arg.get("required", False)
+            help_text = arg.get("help", "No description")
 
             flag_format = f"--{name}"
-            if arg_type in ['int', 'float', 'string']:
+            if arg_type in ["int", "float", "string"]:
                 flag_format += f" <{arg_type}>"
 
             required_text = " (required)" if required else " (optional)"

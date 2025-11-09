@@ -3,10 +3,10 @@
 Machines Command Handler - Machine orchestration status and management
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -40,20 +40,10 @@ def main():
             output = f"Unknown action: {action}"
 
         # Return envelope
-        print(json.dumps({
-            "ok": True,
-            "kind": "text",
-            "stdout": output,
-            "meta": {}
-        }))
+        print(json.dumps({"ok": True, "kind": "text", "stdout": output, "meta": {}}))
 
     except Exception as e:
-        print(json.dumps({
-            "ok": False,
-            "kind": "text",
-            "stdout": f"Error: {str(e)}",
-            "meta": {}
-        }))
+        print(json.dumps({"ok": False, "kind": "text", "stdout": f"Error: {str(e)}", "meta": {}}))
 
 
 def get_orchestration_status(verbose: bool = False) -> str:
@@ -64,7 +54,7 @@ def get_orchestration_status(verbose: bool = False) -> str:
     lines.append("=" * 70)
 
     try:
-        from isaac.orchestration import MachineRegistry, LoadBalancer
+        from isaac.orchestration import LoadBalancer, MachineRegistry
 
         registry = MachineRegistry()
         load_balancer = LoadBalancer(registry)
@@ -112,7 +102,9 @@ def get_orchestration_status(verbose: bool = False) -> str:
                 lines.append(f"      Tags: {', '.join(machine.tags) if machine.tags else 'none'}")
 
                 if machine.capabilities.gpu_count > 0:
-                    lines.append(f"      GPU: {machine.capabilities.gpu_count}x ({machine.capabilities.gpu_memory_gb:.1f}GB)")
+                    lines.append(
+                        f"      GPU: {machine.capabilities.gpu_count}x ({machine.capabilities.gpu_memory_gb:.1f}GB)"
+                    )
 
         if verbose and total_groups > 0:
             lines.append(f"\n👥 Groups")
@@ -122,8 +114,10 @@ def get_orchestration_status(verbose: bool = False) -> str:
                 lines.append(f"  {group_name}: {online_count}/{machine_count} online")
 
         # Load balancing stats
-        if hasattr(load_balancer, 'performance_history'):
-            total_executions = sum(len(times) for times in load_balancer.performance_history.values())
+        if hasattr(load_balancer, "performance_history"):
+            total_executions = sum(
+                len(times) for times in load_balancer.performance_history.values()
+            )
             if total_executions > 0:
                 lines.append(f"\n⚖️  Load Balancing")
                 lines.append(f"  Total Executions Tracked: {total_executions}")
@@ -132,11 +126,13 @@ def get_orchestration_status(verbose: bool = False) -> str:
                 if load_balancer.performance_history:
                     fastest_machine = min(
                         load_balancer.performance_history.items(),
-                        key=lambda x: sum(x[1]) / len(x[1]) if x[1] else float('inf')
+                        key=lambda x: sum(x[1]) / len(x[1]) if x[1] else float("inf"),
                     )
                     if fastest_machine[1]:
                         avg_time = sum(fastest_machine[1]) / len(fastest_machine[1])
-                        lines.append(f"  Fastest Machine: {fastest_machine[0]} ({avg_time:.2f}s avg)")
+                        lines.append(
+                            f"  Fastest Machine: {fastest_machine[0]} ({avg_time:.2f}s avg)"
+                        )
 
     except Exception as e:
         lines.append(f"\n⚠️  Error loading orchestration status: {str(e)}")
@@ -214,7 +210,7 @@ def list_groups(verbose: bool = False) -> str:
 def show_load_distribution(verbose: bool = False) -> str:
     """Show current load distribution across machines"""
     try:
-        from isaac.orchestration import MachineRegistry, LoadBalancer
+        from isaac.orchestration import LoadBalancer, MachineRegistry
 
         registry = MachineRegistry()
         load_balancer = LoadBalancer(registry)
@@ -237,8 +233,10 @@ def show_load_distribution(verbose: bool = False) -> str:
 
             if verbose:
                 factors = score.factors
-                lines.append(f"    CPU: {factors['cpu']:.3f}, Memory: {factors['memory']:.3f}, Load: {factors['load']:.3f}")
-                if 'performance' in factors:
+                lines.append(
+                    f"    CPU: {factors['cpu']:.3f}, Memory: {factors['memory']:.3f}, Load: {factors['load']:.3f}"
+                )
+                if "performance" in factors:
                     lines.append(f"    Performance: {factors['performance']:.3f}")
 
         return "\n".join(lines)
@@ -250,11 +248,17 @@ def show_load_distribution(verbose: bool = False) -> str:
 def register_machine(target: str, args: Dict[str, Any]) -> str:
     """Register a new machine"""
     if not target:
-        return "Usage: /machines register <hostname> [--ip <ip>] [--port <port>] [--tags <tag1,tag2>]"
+        return (
+            "Usage: /machines register <hostname> [--ip <ip>] [--port <port>] [--tags <tag1,tag2>]"
+        )
 
     try:
         from isaac.orchestration import MachineRegistry
-        from isaac.orchestration.registry import Machine, MachineCapabilities, MachineStatus
+        from isaac.orchestration.registry import (
+            Machine,
+            MachineCapabilities,
+            MachineStatus,
+        )
 
         registry = MachineRegistry()
 
@@ -272,7 +276,7 @@ def register_machine(target: str, args: Dict[str, Any]) -> str:
             port=port,
             capabilities=MachineCapabilities(),
             status=MachineStatus(),
-            tags=tags
+            tags=tags,
         )
 
         if registry.register_machine(machine):

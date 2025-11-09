@@ -3,14 +3,14 @@ Terminal Control - Traditional terminal interface for Isaac
 Provides a clean, traditional terminal experience with status bar
 """
 
-import os
-import sys
-import time
 import datetime
-import threading
+import os
 import re
-from typing import Optional
+import sys
+import threading
+import time
 from pathlib import Path
+from typing import Optional
 
 try:
     HAS_REQUESTS = True
@@ -19,6 +19,7 @@ except ImportError:
 
 try:
     import colorama
+
     colorama.init()
     HAS_COLORAMA = True
 except ImportError:
@@ -30,7 +31,7 @@ except ImportError:
     HAS_PSUTIL = False
 
 # Regex for stripping ANSI escape codes
-ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
 
 
 class TerminalControl:
@@ -46,14 +47,14 @@ class TerminalControl:
         self.current_tier = "1 (Safe)"
         self.connection_status = "Online"
         self.session_id = self._generate_session_id()
-        
+
         # New header status fields
         self.version = "3.4.2"  # Will be set from package version
-        self.user_name = os.getenv('USERNAME', 'user')
+        self.user_name = os.getenv("USERNAME", "user")
         self.system_state = "READY"
         self.current_mode = "EXEC"
         self.cloud_status = "OK"
-        self.ai_status = "OK" 
+        self.ai_status = "OK"
         self.vpn_status = "ON"
         self.history_count = 0
         self.log_enabled = True
@@ -63,39 +64,54 @@ class TerminalControl:
         self.cpu_usage = "--"
         self.network_status = "OK"
         self.wrap_width = self.terminal_width  # Use actual terminal width
-        
+
         # Body content management
         self.command_prompt = "> "
         self.current_output = []
         self.log_entries = []
         self.max_log_entries = 10
-        
+
         # Scrolling support
         self.output_scroll_offset = 0  # How many lines to scroll back
         # Calculate max visible output lines: terminal height - header(5) - prompt(1) - separator(1) - bottom(1) - spacing(1)
         self.max_visible_output_lines = max(1, self.terminal_height - 9)
-        
+
         # Config mode state
         self.config_mode = False
         self.config_cursor = 0
         self.config_items = [
-            {"type": "checkbox", "label": "Enable auto-validate (T>2)", "value": True, "key": "auto_validate"},
+            {
+                "type": "checkbox",
+                "label": "Enable auto-validate (T>2)",
+                "value": True,
+                "key": "auto_validate",
+            },
             {"type": "checkbox", "label": "Show CPU in header", "value": False, "key": "show_cpu"},
-            {"type": "text", "label": "Cloud storage:", "value": "GoDaddy", "key": "cloud_provider"},
+            {
+                "type": "text",
+                "label": "Cloud storage:",
+                "value": "GoDaddy",
+                "key": "cloud_provider",
+            },
             {"type": "text", "label": "AI provider:", "value": "gpt-x", "key": "ai_provider"},
-            {"type": "text", "label": "Workspace root:", "value": "~/projects", "key": "workspace_root"},
+            {
+                "type": "text",
+                "label": "Workspace root:",
+                "value": "~/projects",
+                "key": "workspace_root",
+            },
             {"type": "text", "label": "VPN required:", "value": "Yes/No", "key": "vpn_required"},
         ]
-        
+
         # x.ai status tracking
         self.xai_status = "Loading..."
         self.status_thread = None
-        
+
         # Screen update tracking
         self.header_dirty = False
         self.body_dirty = False
         self.last_header_hash = ""
-        
+
         self._start_status_monitor()
 
     def _generate_session_id(self) -> str:
@@ -115,10 +131,7 @@ class TerminalControl:
 
     def _start_status_monitor(self):
         """Start background thread to monitor all service statuses."""
-        self.status_thread = threading.Thread(
-            target=self._monitor_statuses, 
-            daemon=True
-        )
+        self.status_thread = threading.Thread(target=self._monitor_statuses, daemon=True)
         self.status_thread.start()
 
     def _draw_status_bar(self):
@@ -160,24 +173,32 @@ class TerminalControl:
         # Helper to build top/bottom header lines
         def header_top_line():
             return (
-                "┌" +
-                ("─" * w1) + "╥" +
-                ("─" * w2) + "╥" +
-                ("─" * w3) + "╥" +
-                ("─" * w4) + "╥" +
-                ("─" * w5) +
-                "┐"
+                "┌"
+                + ("─" * w1)
+                + "╥"
+                + ("─" * w2)
+                + "╥"
+                + ("─" * w3)
+                + "╥"
+                + ("─" * w4)
+                + "╥"
+                + ("─" * w5)
+                + "┐"
             )
 
         def header_sep_line():
             return (
-                "╞" +
-                ("═" * w1) + "╩" +
-                ("═" * w2) + "╩" +
-                ("═" * w3) + "╩" +
-                ("═" * w4) + "╩" +
-                ("═" * w5) +
-                "╡"
+                "╞"
+                + ("═" * w1)
+                + "╩"
+                + ("═" * w2)
+                + "╩"
+                + ("═" * w3)
+                + "╩"
+                + ("═" * w4)
+                + "╩"
+                + ("═" * w5)
+                + "╡"
             )
 
         # Print top header border
@@ -186,7 +207,7 @@ class TerminalControl:
         print("\033[2;1H", end="", flush=True)
 
         # Build header content lines
-        machine_name = os.getenv('COMPUTERNAME', 'machine')
+        machine_name = os.getenv("COMPUTERNAME", "machine")
         ip_address = self._get_ip_address()
 
         # Content for three lines
@@ -216,9 +237,7 @@ class TerminalControl:
 
         # Helper to print a header row with separators
         def print_header_row(l, c, r1, r2, r3, row_idx):
-            line = (
-                "│" + l[:w1] + "║" + c[:w2] + "║" + r1[:w3] + "║" + r2[:w4] + "║" + r3[:w5] + "│"
-            )
+            line = "│" + l[:w1] + "║" + c[:w2] + "║" + r1[:w3] + "║" + r2[:w4] + "║" + r3[:w5] + "│"
             print(f"\033[{row_idx};1H" + line, end="", flush=True)
 
         # Three header rows
@@ -231,9 +250,13 @@ class TerminalControl:
 
         # Save computed widths for later body rendering
         self._frame_cached = {
-            'total_width': total_width,
-            'inner_width': inner_width,
-            'w1': w1, 'w2': w2, 'w3': w3, 'w4': w4, 'w5': w5
+            "total_width": total_width,
+            "inner_width": inner_width,
+            "w1": w1,
+            "w2": w2,
+            "w3": w3,
+            "w4": w4,
+            "w5": w5,
         }
 
         # Position cursor for body start (line 6)
@@ -255,6 +278,7 @@ class TerminalControl:
             return
         try:
             import requests  # type: ignore
+
             resp = requests.get("https://status.x.ai/feed.xml", timeout=5)
             if resp.status_code != 200:
                 self.ai_status = "OFF"
@@ -286,6 +310,7 @@ class TerminalControl:
             if HAS_PSUTIL:
                 try:
                     import psutil  # type: ignore
+
                     self.cpu_usage = f"{psutil.cpu_percent(interval=0.1):.0f}"
                 except Exception:
                     self.cpu_usage = "--"
@@ -300,12 +325,12 @@ class TerminalControl:
         self._update_terminal_size()
         self._clear_screen()
         self._setup_scroll_region()
-        
+
         # Initial full draw
         self._draw_status_bar()
         self.draw_body()
         self._position_cursor_for_input()
-        
+
         # Mark as clean for future updates
         self.header_dirty = False
         self.body_dirty = False
@@ -315,6 +340,7 @@ class TerminalControl:
         """Get current terminal dimensions."""
         try:
             import shutil
+
             size = shutil.get_terminal_size()
             self.terminal_width = size.columns
             self.terminal_height = size.lines
@@ -335,7 +361,7 @@ class TerminalControl:
         """Set up scroll region for the main terminal area."""
         # Set scroll region from line 6 (after header) to bottom of terminal
         scroll_start = self.status_lines + 1  # Line 6
-        scroll_end = self.terminal_height     # Bottom of terminal
+        scroll_end = self.terminal_height  # Bottom of terminal
         if scroll_end > scroll_start:
             print(f"\033[{scroll_start};{scroll_end}r", end="", flush=True)
 
@@ -343,6 +369,7 @@ class TerminalControl:
         """Get the local IP address."""
         try:
             import socket
+
             # Get the local IP by connecting to a dummy address
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))  # Connect to Google DNS
@@ -376,8 +403,12 @@ class TerminalControl:
         """Always return True since this is Windows-only."""
         return True
 
-    def update_status(self, tier: Optional[str] = None, status: Optional[str] = None,
-                     connection: Optional[str] = None):
+    def update_status(
+        self,
+        tier: Optional[str] = None,
+        status: Optional[str] = None,
+        connection: Optional[str] = None,
+    ):
         """Update status bar information."""
         if tier:
             self.current_tier = tier
@@ -394,7 +425,7 @@ class TerminalControl:
         scroll_start = self.status_lines + 1  # Line 4
 
         # Windows - clear entire screen and redraw status bar
-        os.system('cls')
+        os.system("cls")
         self._draw_status_bar()
         # Position cursor at start of scroll region (line 4)
         print(f"\033[{scroll_start};1H", end="", flush=True)
@@ -449,21 +480,25 @@ class TerminalControl:
     def add_output(self, text: str):
         """Add text to the output area."""
         # Strip the text to remove any trailing newlines
-        text = text.rstrip('\n\r')
-        
+        text = text.rstrip("\n\r")
+
         # Wrap text to fit inside frame with gutter: inner_width - 1 for gutter
         # inner_width = terminal_width - 2 (for borders), so max text = terminal_width - 3
         max_text_width = self.wrap_width - 3  # -2 for borders, -1 for gutter
         wrapped_lines = self._wrap_text(text, max_text_width)
-        
+
         self.current_output.extend(wrapped_lines)
-        
+
         # Auto-scroll to show latest output
         self.output_scroll_offset = 0
-        
+
         # Keep only recent output (but allow scrolling back)
-        max_output_lines = self.terminal_height - self.status_lines - 8  # Leave room for prompt and logs
-        if len(self.current_output) > max_output_lines * 2:  # Keep 2x the visible amount for scrolling
+        max_output_lines = (
+            self.terminal_height - self.status_lines - 8
+        )  # Leave room for prompt and logs
+        if (
+            len(self.current_output) > max_output_lines * 2
+        ):  # Keep 2x the visible amount for scrolling
             # Remove oldest lines but keep enough for scrolling
             excess = len(self.current_output) - (max_output_lines * 2)
             self.current_output = self.current_output[excess:]
@@ -476,11 +511,12 @@ class TerminalControl:
     def add_log_entry(self, entry_type: str, tier: str, message: str):
         """Add an entry to the chronological log."""
         import datetime
+
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         log_entry = f"{timestamp} {tier} {entry_type}: {message}"
-        
+
         self.log_entries.append(log_entry)
-        
+
         # Keep only recent log entries
         if len(self.log_entries) > self.max_log_entries:
             self.log_entries.pop(0)
@@ -495,14 +531,14 @@ class TerminalControl:
     def draw_normal_body(self):
         """Draw the normal body area (output/logs)."""
         # Retrieve cached frame widths (fallback if not set)
-        frame = getattr(self, '_frame_cached', None)
+        frame = getattr(self, "_frame_cached", None)
         if not frame:
             self._draw_status_bar()
             frame = self._frame_cached
 
-        frame['total_width']
-        inner_width = frame['inner_width']
-        
+        frame["total_width"]
+        inner_width = frame["inner_width"]
+
         # DEBUG: Print actual widths (will appear in terminal)
         # print(f"\033[30;1HDEBUG: total_width={total_width}, inner_width={inner_width}", end="", flush=True)
 
@@ -553,21 +589,23 @@ class TerminalControl:
                 content = ""
 
             # Strip ANSI codes to measure visible width properly
-            visible_content = ANSI_ESCAPE.sub('', content)
-            
+            visible_content = ANSI_ESCAPE.sub("", content)
+
             # Reserve 1 char for gutter at the right edge
             max_text_width = inner_width - 1
-            
+
             # Truncate visible content if needed, keeping original with ANSI codes if it fits
             if len(visible_content) <= max_text_width:
                 text = content  # Keep ANSI codes
             else:
                 # Content too long, truncate the visible part (strips ANSI codes)
                 text = visible_content[:max_text_width]
-            
+
             # Determine gutter indicator arrows
-            is_top_row = (i == 0)
-            is_bottom_row = (i == len(visible_lines) - 1) or (i == self.max_visible_output_lines - 1)
+            is_top_row = i == 0
+            is_bottom_row = (i == len(visible_lines) - 1) or (
+                i == self.max_visible_output_lines - 1
+            )
             show_up = start_idx > 0
             show_down = end_idx < total_lines
             gutter = gutter_char
@@ -577,9 +615,9 @@ class TerminalControl:
                 gutter = "-"
 
             # Build inside: pad visible width to exactly inner_width-1, then add gutter
-            visible_text = ANSI_ESCAPE.sub('', text)
+            visible_text = ANSI_ESCAPE.sub("", text)
             padding_needed = max_text_width - len(visible_text)
-            text_padded = text + (' ' * padding_needed)
+            text_padded = text + (" " * padding_needed)
             inside = text_padded + gutter
             print(f"\033[{row};1H│" + inside + "│", end="", flush=True)
 
@@ -594,10 +632,10 @@ class TerminalControl:
         if self.session_manager:
             config = self.session_manager.get_config()
             for item in self.config_items:
-                key = item['key']
+                key = item["key"]
                 if key in config:
-                    item['value'] = config[key]
-        
+                    item["value"] = config[key]
+
         self.config_mode = True
         self.config_cursor = 0
         self.mark_body_dirty()
@@ -615,20 +653,21 @@ class TerminalControl:
         """Save configuration changes."""
         if not self.session_manager:
             return
-            
+
         # Update config with current values
         config = self.session_manager.get_config()
         for item in self.config_items:
-            key = item['key']
-            value = item['value']
+            key = item["key"]
+            value = item["value"]
             config[key] = value
-            
+
         # Save the updated config
         try:
             import json
-            config_file = Path.home() / '.isaac' / 'config.json'
+
+            config_file = Path.home() / ".isaac" / "config.json"
             config_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(config_file, 'w') as f:
+            with open(config_file, "w") as f:
                 json.dump(config, f, indent=2)
         except Exception:
             pass  # Silently fail for now
@@ -655,23 +694,23 @@ class TerminalControl:
         body_start = self.status_lines + 1
         for line in range(body_start, self.terminal_height):
             print(f"\033[{line};1H\033[K", end="", flush=True)
-        
+
         # Draw config items
         for i, item in enumerate(self.config_items):
             line_num = body_start + i
             if line_num >= self.terminal_height - 2:  # Leave room for help
                 break
-                
+
             cursor = ">" if i == self.config_cursor else " "
-            
+
             if item["type"] == "checkbox":
                 check = "[x]" if item["value"] else "[ ]"
                 text = f"{cursor} {check} {item['label']}"
             else:  # text field
                 text = f"{cursor} {item['label']} [{item['value']}]"
-            
+
             print(f"\033[{line_num};1H{text}", end="", flush=True)
-        
+
         # Draw help text
         help_line = self.terminal_height - 1
         help_text = "Tab: move   Space: toggle   Enter: save   Esc: cancel"
@@ -680,19 +719,20 @@ class TerminalControl:
     def _calculate_header_hash(self) -> str:
         """Calculate a hash of current header state to detect changes."""
         import hashlib
+
         header_state = f"{self.version}{self.session_id}{self.system_state}{self.current_mode}{self.cloud_status}{self.ai_status}{self.vpn_status}{self.history_count}{self.log_enabled}{self.validation_level}{self.last_command}{self.last_command_status}{self.cpu_usage}{self.network_status}{self.wrap_width}{self.working_directory}"
         return hashlib.md5(header_state.encode()).hexdigest()
 
     def update_screen(self):
         """Efficiently update the screen, only redrawing changed parts."""
         current_hash = self._calculate_header_hash()
-        
+
         # Update header if it changed
         if self.header_dirty or current_hash != self.last_header_hash:
             self._draw_status_bar()
             self.last_header_hash = current_hash
             self.header_dirty = False
-        
+
         # Update body if needed
         if self.body_dirty:
             self.draw_body()
@@ -709,10 +749,10 @@ class TerminalControl:
     def _wrap_text(self, text: str, width: int) -> list:
         """Wrap text to specified width, accounting for ANSI escape codes."""
         lines = []
-        for line in text.split('\n'):
+        for line in text.split("\n"):
             # Strip ANSI codes to measure visible width
-            visible_line = ANSI_ESCAPE.sub('', line)
-            
+            visible_line = ANSI_ESCAPE.sub("", line)
+
             if len(visible_line) <= width:
                 # Line fits, keep it as-is with ANSI codes
                 if line.strip():
@@ -731,7 +771,7 @@ class TerminalControl:
     def restore_terminal(self):
         """Restore terminal to normal state."""
         # Windows - clear screen and show cursor
-        os.system('cls')
+        os.system("cls")
         print("\033[?25h", end="", flush=True)
 
     def get_terminal_size(self):

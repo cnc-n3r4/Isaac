@@ -5,7 +5,8 @@ Manages .env file loading and integration with Isaac's configuration system
 
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from dotenv import load_dotenv
 
 
@@ -14,22 +15,22 @@ class EnvConfigLoader:
 
     # Mapping of service names to environment variables
     ENV_MAPPING = {
-        'xai-chat': 'XAI_CHAT_API_KEY',
-        'xai-collections': 'XAI_COLLECTIONS_API_KEY',
-        'xai': 'XAI_API_KEY',
-        'claude': 'CLAUDE_API_KEY',
-        'anthropic': 'ANTHROPIC_API_KEY',
-        'openai': 'OPENAI_API_KEY',
+        "xai-chat": "XAI_CHAT_API_KEY",
+        "xai-collections": "XAI_COLLECTIONS_API_KEY",
+        "xai": "XAI_API_KEY",
+        "claude": "CLAUDE_API_KEY",
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
     }
 
     # Mapping to Isaac config keys
     CONFIG_KEY_MAPPING = {
-        'XAI_API_KEY': 'xai_api_key',
-        'XAI_CHAT_API_KEY': 'xai.chat.api_key',
-        'XAI_COLLECTIONS_API_KEY': 'xai.collections.api_key',
-        'CLAUDE_API_KEY': 'claude_api_key',
-        'ANTHROPIC_API_KEY': 'claude_api_key',  # Map to same key
-        'OPENAI_API_KEY': 'openai_api_key',
+        "XAI_API_KEY": "xai_api_key",
+        "XAI_CHAT_API_KEY": "xai.chat.api_key",
+        "XAI_COLLECTIONS_API_KEY": "xai.collections.api_key",
+        "CLAUDE_API_KEY": "claude_api_key",
+        "ANTHROPIC_API_KEY": "claude_api_key",  # Map to same key
+        "OPENAI_API_KEY": "openai_api_key",
     }
 
     def __init__(self, env_path: Optional[Path] = None, auto_load: bool = True):
@@ -43,9 +44,9 @@ class EnvConfigLoader:
         if env_path is None:
             # Try to find .env in project root or current directory
             possible_paths = [
-                Path.cwd() / '.env',
-                Path(__file__).parent.parent.parent / '.env',  # Isaac project root
-                Path.home() / '.isaac' / '.env',  # User config directory
+                Path.cwd() / ".env",
+                Path(__file__).parent.parent.parent / ".env",  # Isaac project root
+                Path.home() / ".isaac" / ".env",  # User config directory
             ]
 
             self.env_path = None
@@ -56,7 +57,7 @@ class EnvConfigLoader:
 
             # If not found, use current directory as default
             if self.env_path is None:
-                self.env_path = Path.cwd() / '.env'
+                self.env_path = Path.cwd() / ".env"
         else:
             self.env_path = env_path
 
@@ -128,8 +129,8 @@ class EnvConfigLoader:
                 continue
 
             # Handle nested keys (e.g., 'xai.chat.api_key')
-            if '.' in config_key:
-                parts = config_key.split('.')
+            if "." in config_key:
+                parts = config_key.split(".")
                 current = config
                 for part in parts[:-1]:
                     if part not in current:
@@ -184,7 +185,7 @@ class EnvConfigLoader:
             True if created successfully
         """
         if output_path is None:
-            output_path = self.env_path.parent / '.env.example'
+            output_path = self.env_path.parent / ".env.example"
 
         template = """# Isaac AI Assistant Configuration
 # Copy this file to .env and add your API keys
@@ -211,7 +212,7 @@ OPENAI_API_KEY=
 """
 
         try:
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 f.write(template)
             return True
         except Exception:
@@ -264,24 +265,24 @@ OPENAI_API_KEY=
         # Read existing .env file
         lines = []
         if self.env_path.exists():
-            with open(self.env_path, 'r') as f:
+            with open(self.env_path, "r") as f:
                 lines = f.readlines()
 
         # Update or add the key
         key_found = False
         for i, line in enumerate(lines):
-            if line.startswith(f'{env_var}='):
-                lines[i] = f'{env_var}={api_key}\n'
+            if line.startswith(f"{env_var}="):
+                lines[i] = f"{env_var}={api_key}\n"
                 key_found = True
                 break
 
         if not key_found:
-            lines.append(f'{env_var}={api_key}\n')
+            lines.append(f"{env_var}={api_key}\n")
 
         # Write back to file
         try:
             self.env_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.env_path, 'w') as f:
+            with open(self.env_path, "w") as f:
                 f.writelines(lines)
 
             # Reload environment
@@ -303,9 +304,9 @@ OPENAI_API_KEY=
             API key if found
         """
         provider_env_map = {
-            'grok': 'XAI_API_KEY',
-            'claude': 'ANTHROPIC_API_KEY',
-            'openai': 'OPENAI_API_KEY',
+            "grok": "XAI_API_KEY",
+            "claude": "ANTHROPIC_API_KEY",
+            "openai": "OPENAI_API_KEY",
         }
 
         env_var = provider_env_map.get(provider)

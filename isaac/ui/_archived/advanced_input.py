@@ -3,9 +3,10 @@ Advanced Input Handler - Enhanced input processing for Isaac
 Provides tab completion, history navigation, and keyboard shortcuts
 """
 
-import sys
 import os
+import sys
 from typing import List, Tuple
+
 from isaac.core.tier_validator import TierValidator
 
 
@@ -22,9 +23,30 @@ class AdvancedInputHandler:
 
         # Common commands for tab completion
         self.common_commands = [
-            "ls", "cd", "pwd", "echo", "cat", "grep", "find", "head", "tail",
-            "cp", "mv", "mkdir", "rmdir", "touch", "chmod", "chown", "ps",
-            "git", "npm", "pip", "python", "node", "docker", "kubectl"
+            "ls",
+            "cd",
+            "pwd",
+            "echo",
+            "cat",
+            "grep",
+            "find",
+            "head",
+            "tail",
+            "cp",
+            "mv",
+            "mkdir",
+            "rmdir",
+            "touch",
+            "chmod",
+            "chown",
+            "ps",
+            "git",
+            "npm",
+            "pip",
+            "python",
+            "node",
+            "docker",
+            "kubectl",
         ]
 
     def get_input_with_advanced_features(self, prompt: str = "isaac> ") -> Tuple[str, str]:
@@ -44,19 +66,19 @@ class AdvancedInputHandler:
                 # Read single character
                 char = self._get_char()
 
-                if char == '\t':  # Tab completion
+                if char == "\t":  # Tab completion
                     self._handle_tab_completion()
-                elif char == '\x1b[A':  # Up arrow - history previous
+                elif char == "\x1b[A":  # Up arrow - history previous
                     self._navigate_history(-1)
-                elif char == '\x1b[B':  # Down arrow - history next
+                elif char == "\x1b[B":  # Down arrow - history next
                     self._navigate_history(1)
-                elif char == '\x1b[C':  # Right arrow
+                elif char == "\x1b[C":  # Right arrow
                     self._move_cursor_right()
-                elif char == '\x1b[D':  # Left arrow
+                elif char == "\x1b[D":  # Left arrow
                     self._move_cursor_left()
-                elif char == '\x7f' or char == '\b':  # Backspace
+                elif char == "\x7f" or char == "\b":  # Backspace
                     self._handle_backspace()
-                elif char == '\r' or char == '\n':  # Enter
+                elif char == "\r" or char == "\n":  # Enter
                     print()  # New line
                     command = self.current_input.strip()
                     if command and command not in self.command_history[-5:]:  # Avoid duplicates
@@ -72,18 +94,20 @@ class AdvancedInputHandler:
 
     def _get_char(self) -> str:
         """Get a single character from stdin."""
-        if os.name == 'nt':  # Windows
+        if os.name == "nt":  # Windows
             import msvcrt
-            return msvcrt.getch().decode('utf-8', errors='ignore')
+
+            return msvcrt.getch().decode("utf-8", errors="ignore")
         else:  # Unix-like
-            import tty
             import termios
+            import tty
+
             fd = sys.stdin.fileno()
             old_settings = termios.tcgetattr(fd)
             try:
                 tty.setraw(sys.stdin.fileno())
                 ch = sys.stdin.read(1)
-                if ch == '\x1b':  # Escape sequence
+                if ch == "\x1b":  # Escape sequence
                     ch += sys.stdin.read(2)
                 return ch
             finally:
@@ -95,7 +119,7 @@ class AdvancedInputHandler:
             return
 
         # Get current word being typed
-        words = self.current_input[:self.cursor_position].split()
+        words = self.current_input[: self.cursor_position].split()
         if not words:
             return
 
@@ -111,8 +135,8 @@ class AdvancedInputHandler:
         if len(completions) == 1:
             # Single completion - complete it
             completion = completions[0]
-            prefix = self.current_input[:self.cursor_position - len(current_word)]
-            self.current_input = prefix + completion + self.current_input[self.cursor_position:]
+            prefix = self.current_input[: self.cursor_position - len(current_word)]
+            self.current_input = prefix + completion + self.current_input[self.cursor_position :]
             self.cursor_position = len(prefix) + len(completion)
             self._redraw_input()
         else:
@@ -161,15 +185,20 @@ class AdvancedInputHandler:
     def _handle_backspace(self):
         """Handle backspace key."""
         if self.cursor_position > 0:
-            self.current_input = (self.current_input[:self.cursor_position - 1] +
-                                self.current_input[self.cursor_position:])
+            self.current_input = (
+                self.current_input[: self.cursor_position - 1]
+                + self.current_input[self.cursor_position :]
+            )
             self.cursor_position -= 1
             self._redraw_input()
 
     def _insert_character(self, char: str):
         """Insert character at cursor position."""
-        self.current_input = (self.current_input[:self.cursor_position] + char +
-                            self.current_input[self.cursor_position:])
+        self.current_input = (
+            self.current_input[: self.cursor_position]
+            + char
+            + self.current_input[self.cursor_position :]
+        )
         self.cursor_position += 1
         self._redraw_input()
 

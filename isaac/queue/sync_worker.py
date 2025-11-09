@@ -6,10 +6,10 @@ Sync Worker - Background thread for automatic command queue sync.
 Monitors cloud availability and syncs pending commands when online.
 """
 
+import logging
 import threading
 import time
 from typing import Callable, Optional
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class SyncWorker:
                 logger.error(f"Sync loop error: {e}")
 
             # Exponential backoff on failures (max 5 minutes)
-            wait_time = min(self.interval * (2 ** consecutive_failures), 300)
+            wait_time = min(self.interval * (2**consecutive_failures), 300)
             time.sleep(wait_time)
 
     def _is_cloud_available(self) -> bool:
@@ -124,7 +124,7 @@ class SyncWorker:
         synced_count = 0
 
         for cmd in pending:
-            queue_id = cmd['id']
+            queue_id = cmd["id"]
 
             try:
                 # Mark as syncing (prevents duplicate processing)
@@ -155,19 +155,19 @@ class SyncWorker:
         Returns:
             True if successfully synced
         """
-        command_type = cmd['command_type']
-        command_text = cmd['command_text']
-        target_device = cmd['target_device']
+        command_type = cmd["command_type"]
+        command_text = cmd["command_text"]
+        target_device = cmd["target_device"]
 
-        if command_type == 'device_route':
+        if command_type == "device_route":
             # Route to target device via cloud
             return self.cloud.route_command(target_device, command_text)
 
-        elif command_type == 'meta':
+        elif command_type == "meta":
             # Meta-command that needs cloud (e.g., /sync-history)
             return self.cloud.execute_cloud_meta(command_text)
 
-        elif command_type == 'shell':
+        elif command_type == "shell":
             # Shell command that was queued (rare, but possible)
             # Log to cloud history for roaming
             return self.cloud.log_command_history(command_text)

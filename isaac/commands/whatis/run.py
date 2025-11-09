@@ -3,8 +3,8 @@
 Whatis Command - One-line Command Description
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add Isaac to path
@@ -39,5 +39,5 @@ def main():
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -8,12 +8,13 @@ objects, transformations, and spatial relationships.
 import json
 import math
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class CoordinateSystem(Enum):
     """Coordinate system types for spatial computing"""
+
     WORLD = "world"  # Global coordinate system
     LOCAL = "local"  # Object-relative coordinates
     SCREEN = "screen"  # 2D screen projection
@@ -24,6 +25,7 @@ class CoordinateSystem(Enum):
 @dataclass
 class Vector3D:
     """3D vector with common operations"""
+
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
@@ -32,64 +34,63 @@ class Vector3D:
         """Calculate vector magnitude"""
         return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
-    def normalize(self) -> 'Vector3D':
+    def normalize(self) -> "Vector3D":
         """Return normalized vector"""
         mag = self.magnitude()
         if mag == 0:
             return Vector3D(0, 0, 0)
-        return Vector3D(self.x/mag, self.y/mag, self.z/mag)
+        return Vector3D(self.x / mag, self.y / mag, self.z / mag)
 
-    def dot(self, other: 'Vector3D') -> float:
+    def dot(self, other: "Vector3D") -> float:
         """Dot product with another vector"""
         return self.x * other.x + self.y * other.y + self.z * other.z
 
-    def cross(self, other: 'Vector3D') -> 'Vector3D':
+    def cross(self, other: "Vector3D") -> "Vector3D":
         """Cross product with another vector"""
         return Vector3D(
             self.y * other.z - self.z * other.y,
             self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x
+            self.x * other.y - self.y * other.x,
         )
 
-    def distance_to(self, other: 'Vector3D') -> float:
+    def distance_to(self, other: "Vector3D") -> float:
         """Calculate distance to another point"""
         return math.sqrt(
-            (self.x - other.x)**2 +
-            (self.y - other.y)**2 +
-            (self.z - other.z)**2
+            (self.x - other.x) ** 2 + (self.y - other.y) ** 2 + (self.z - other.z) ** 2
         )
 
-    def __add__(self, other: 'Vector3D') -> 'Vector3D':
+    def __add__(self, other: "Vector3D") -> "Vector3D":
         return Vector3D(self.x + other.x, self.y + other.y, self.z + other.z)
 
-    def __sub__(self, other: 'Vector3D') -> 'Vector3D':
+    def __sub__(self, other: "Vector3D") -> "Vector3D":
         return Vector3D(self.x - other.x, self.y - other.y, self.z - other.z)
 
-    def __mul__(self, scalar: float) -> 'Vector3D':
+    def __mul__(self, scalar: float) -> "Vector3D":
         return Vector3D(self.x * scalar, self.y * scalar, self.z * scalar)
 
     def to_dict(self) -> Dict[str, float]:
-        return {'x': self.x, 'y': self.y, 'z': self.z}
+        return {"x": self.x, "y": self.y, "z": self.z}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, float]) -> 'Vector3D':
-        return cls(data['x'], data['y'], data['z'])
+    def from_dict(cls, data: Dict[str, float]) -> "Vector3D":
+        return cls(data["x"], data["y"], data["z"])
 
 
 @dataclass
 class Quaternion:
     """Quaternion for 3D rotations"""
+
     w: float = 1.0
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
 
-    def normalize(self) -> 'Quaternion':
+    def normalize(self) -> "Quaternion":
         """Return normalized quaternion"""
         mag = math.sqrt(self.w**2 + self.x**2 + self.y**2 + self.z**2)
         if mag == 0:
             return Quaternion(1, 0, 0, 0)
-        return Quaternion(self.w/mag, self.x/mag, self.y/mag, self.z/mag)
+        return Quaternion(self.w / mag, self.x / mag, self.y / mag, self.z / mag)
 
     def to_euler(self) -> Tuple[float, float, float]:
         """Convert to Euler angles (pitch, yaw, roll)"""
@@ -113,7 +114,7 @@ class Quaternion:
         return (pitch, yaw, roll)
 
     @classmethod
-    def from_euler(cls, pitch: float, yaw: float, roll: float) -> 'Quaternion':
+    def from_euler(cls, pitch: float, yaw: float, roll: float) -> "Quaternion":
         """Create quaternion from Euler angles"""
         cy = math.cos(yaw * 0.5)
         sy = math.sin(yaw * 0.5)
@@ -126,39 +127,41 @@ class Quaternion:
             w=cr * cp * cy + sr * sp * sy,
             x=sr * cp * cy - cr * sp * sy,
             y=cr * sp * cy + sr * cp * sy,
-            z=cr * cp * sy - sr * sp * cy
+            z=cr * cp * sy - sr * sp * cy,
         )
 
     def to_dict(self) -> Dict[str, float]:
-        return {'w': self.w, 'x': self.x, 'y': self.y, 'z': self.z}
+        return {"w": self.w, "x": self.x, "y": self.y, "z": self.z}
 
 
 @dataclass
 class Transform3D:
     """Complete 3D transformation (position, rotation, scale)"""
+
     position: Vector3D = field(default_factory=Vector3D)
     rotation: Quaternion = field(default_factory=Quaternion)
     scale: Vector3D = field(default_factory=lambda: Vector3D(1, 1, 1))
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'position': self.position.to_dict(),
-            'rotation': self.rotation.to_dict(),
-            'scale': self.scale.to_dict()
+            "position": self.position.to_dict(),
+            "rotation": self.rotation.to_dict(),
+            "scale": self.scale.to_dict(),
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Transform3D':
+    def from_dict(cls, data: Dict[str, Any]) -> "Transform3D":
         return cls(
-            position=Vector3D.from_dict(data['position']),
-            rotation=Quaternion(**data['rotation']),
-            scale=Vector3D.from_dict(data['scale'])
+            position=Vector3D.from_dict(data["position"]),
+            rotation=Quaternion(**data["rotation"]),
+            scale=Vector3D.from_dict(data["scale"]),
         )
 
 
 @dataclass
 class SpatialObject:
     """Base class for objects in 3D space"""
+
     id: str
     name: str
     transform: Transform3D = field(default_factory=Transform3D)
@@ -168,7 +171,7 @@ class SpatialObject:
     visible: bool = True
     interactive: bool = True
 
-    def get_world_position(self, workspace: 'SpatialWorkspace') -> Vector3D:
+    def get_world_position(self, workspace: "SpatialWorkspace") -> Vector3D:
         """Get position in world coordinates"""
         if self.parent is None:
             return self.transform.position
@@ -180,7 +183,7 @@ class SpatialObject:
 
         return self.transform.position
 
-    def distance_to(self, other: 'SpatialObject', workspace: 'SpatialWorkspace') -> float:
+    def distance_to(self, other: "SpatialObject", workspace: "SpatialWorkspace") -> float:
         """Calculate distance to another object"""
         pos1 = self.get_world_position(workspace)
         pos2 = other.get_world_position(workspace)
@@ -188,14 +191,14 @@ class SpatialObject:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'id': self.id,
-            'name': self.name,
-            'transform': self.transform.to_dict(),
-            'parent': self.parent,
-            'children': self.children,
-            'metadata': self.metadata,
-            'visible': self.visible,
-            'interactive': self.interactive
+            "id": self.id,
+            "name": self.name,
+            "transform": self.transform.to_dict(),
+            "parent": self.parent,
+            "children": self.children,
+            "metadata": self.metadata,
+            "visible": self.visible,
+            "interactive": self.interactive,
         }
 
 
@@ -260,52 +263,52 @@ class SpatialWorkspace:
 
         def build_tree(obj: SpatialObject) -> Dict[str, Any]:
             return {
-                'id': obj.id,
-                'name': obj.name,
-                'children': [build_tree(self.objects[child_id])
-                           for child_id in obj.children if child_id in self.objects]
+                "id": obj.id,
+                "name": obj.name,
+                "children": [
+                    build_tree(self.objects[child_id])
+                    for child_id in obj.children
+                    if child_id in self.objects
+                ],
             }
 
-        return {
-            'workspace': self.name,
-            'roots': [build_tree(obj) for obj in roots]
-        }
+        return {"workspace": self.name, "roots": [build_tree(obj) for obj in roots]}
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize workspace to dictionary"""
         return {
-            'name': self.name,
-            'coordinate_system': self.coordinate_system.value,
-            'origin': self.origin.to_dict(),
-            'objects': {obj_id: obj.to_dict() for obj_id, obj in self.objects.items()}
+            "name": self.name,
+            "coordinate_system": self.coordinate_system.value,
+            "origin": self.origin.to_dict(),
+            "objects": {obj_id: obj.to_dict() for obj_id, obj in self.objects.items()},
         }
 
     def save(self, filepath: str) -> None:
         """Save workspace to JSON file"""
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(self.to_dict(), f, indent=2)
 
     @classmethod
-    def load(cls, filepath: str) -> 'SpatialWorkspace':
+    def load(cls, filepath: str) -> "SpatialWorkspace":
         """Load workspace from JSON file"""
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             data = json.load(f)
 
-        workspace = cls(data['name'])
-        workspace.coordinate_system = CoordinateSystem(data['coordinate_system'])
-        workspace.origin = Vector3D.from_dict(data['origin'])
+        workspace = cls(data["name"])
+        workspace.coordinate_system = CoordinateSystem(data["coordinate_system"])
+        workspace.origin = Vector3D.from_dict(data["origin"])
 
         # Load objects
-        for obj_id, obj_data in data['objects'].items():
+        for obj_id, obj_data in data["objects"].items():
             obj = SpatialObject(
-                id=obj_data['id'],
-                name=obj_data['name'],
-                transform=Transform3D.from_dict(obj_data['transform']),
-                parent=obj_data['parent'],
-                children=obj_data['children'],
-                metadata=obj_data['metadata'],
-                visible=obj_data['visible'],
-                interactive=obj_data['interactive']
+                id=obj_data["id"],
+                name=obj_data["name"],
+                transform=Transform3D.from_dict(obj_data["transform"]),
+                parent=obj_data["parent"],
+                children=obj_data["children"],
+                metadata=obj_data["metadata"],
+                visible=obj_data["visible"],
+                interactive=obj_data["interactive"],
             )
             workspace.objects[obj_id] = obj
 
@@ -341,10 +344,7 @@ class SpatialAPI:
         return False
 
     def create_object(
-        self,
-        name: str,
-        position: Optional[Vector3D] = None,
-        workspace: Optional[str] = None
+        self, name: str, position: Optional[Vector3D] = None, workspace: Optional[str] = None
     ) -> Optional[SpatialObject]:
         """Create a new spatial object"""
         ws = self.get_workspace(workspace)
@@ -352,19 +352,15 @@ class SpatialAPI:
             return None
 
         import uuid
+
         obj = SpatialObject(
-            id=str(uuid.uuid4()),
-            name=name,
-            transform=Transform3D(position=position or Vector3D())
+            id=str(uuid.uuid4()), name=name, transform=Transform3D(position=position or Vector3D())
         )
         ws.add_object(obj)
         return obj
 
     def calculate_spatial_relationships(
-        self,
-        obj1_id: str,
-        obj2_id: str,
-        workspace: Optional[str] = None
+        self, obj1_id: str, obj2_id: str, workspace: Optional[str] = None
     ) -> Dict[str, Any]:
         """Calculate spatial relationships between two objects"""
         ws = self.get_workspace(workspace)
@@ -384,8 +380,8 @@ class SpatialAPI:
         distance = pos1.distance_to(pos2)
 
         return {
-            'distance': distance,
-            'direction': direction.to_dict(),
-            'obj1_position': pos1.to_dict(),
-            'obj2_position': pos2.to_dict()
+            "distance": distance,
+            "direction": direction.to_dict(),
+            "obj1_position": pos1.to_dict(),
+            "obj2_position": pos2.to_dict(),
         }

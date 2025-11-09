@@ -3,9 +3,9 @@ Offline Manager - Manages offline/online state and synchronization
 """
 
 import asyncio
-from typing import Dict, Any, Callable
-from datetime import datetime
 import socket
+from datetime import datetime
+from typing import Any, Callable, Dict
 
 
 class OfflineManager:
@@ -99,20 +99,17 @@ class OfflineManager:
     def get_status(self) -> Dict[str, Any]:
         """Get offline mode status"""
         return {
-            'is_online': self.is_online,
-            'last_online': self.last_online,
-            'last_sync': self.last_sync,
-            'queued_operations': self.sync_queue.get_queue_size(),
-            'cache_size': self.cache_manager.get_cache_size()
+            "is_online": self.is_online,
+            "last_online": self.last_online,
+            "last_sync": self.last_sync,
+            "queued_operations": self.sync_queue.get_queue_size(),
+            "cache_size": self.cache_manager.get_cache_size(),
         }
 
     async def force_sync(self) -> Dict[str, Any]:
         """Force synchronization regardless of online state"""
         if not self.is_online:
-            return {
-                'success': False,
-                'error': 'Cannot sync while offline'
-            }
+            return {"success": False, "error": "Cannot sync while offline"}
 
         return await self._sync_queued_operations()
 
@@ -125,10 +122,7 @@ class OfflineManager:
         self.is_online = True
 
     async def queue_operation(
-        self,
-        operation_type: str,
-        data: Dict[str, Any],
-        priority: int = 5
+        self, operation_type: str, data: Dict[str, Any], priority: int = 5
     ) -> str:
         """
         Queue an operation for later sync
@@ -144,11 +138,7 @@ class OfflineManager:
         return await self.sync_queue.add(operation_type, data, priority)
 
     async def execute_with_fallback(
-        self,
-        online_func: Callable,
-        offline_func: Callable,
-        *args,
-        **kwargs
+        self, online_func: Callable, offline_func: Callable, *args, **kwargs
     ) -> Any:
         """
         Execute function with online/offline fallback

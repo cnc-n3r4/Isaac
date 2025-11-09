@@ -9,6 +9,7 @@ Handles:
 """
 
 from typing import List
+
 from isaac.core.cli_command_router import CommandResult
 
 
@@ -52,8 +53,8 @@ class ListHandler:
             return CommandResult(
                 success=False,
                 message=f"Unknown list target: {target}",
-                status_symbol='✗',
-                suggestion="Usage: isaac list [history|backups]"
+                status_symbol="✗",
+                suggestion="Usage: isaac list [history|backups]",
             )
 
     def _list_history(self) -> CommandResult:
@@ -74,14 +75,11 @@ class ListHandler:
             "✓ backup documents to /mnt/external [2025-10-19 14:32]",
             "⊘ restore sensitive-data [2025-10-19 14:33] - Cancelled by user",
             "",
-            "Tip: Commands logged to session for learning"
+            "Tip: Commands logged to session for learning",
         ]
 
         return CommandResult(
-            success=True,
-            message="\n".join(history_lines),
-            status_symbol='✓',
-            suggestion=None
+            success=True, message="\n".join(history_lines), status_symbol="✓", suggestion=None
         )
 
     def _list_backups(self) -> CommandResult:
@@ -101,12 +99,9 @@ class ListHandler:
             "📁 projects (2025-10-19 13:30) → /backup/projects",
             "📄 config.json (2025-10-19 12:00) → /backup/config.json",
             "",
-            "Tip: Use 'isaac restore <name> from <backup_path>' to restore"
+            "Tip: Use 'isaac restore <name> from <backup_path>' to restore",
         ]
 
         return CommandResult(
-            success=True,
-            message="\n".join(backup_lines),
-            status_symbol='✓',
-            suggestion=None
+            success=True, message="\n".join(backup_lines), status_symbol="✓", suggestion=None
         )

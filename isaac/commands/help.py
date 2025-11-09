@@ -11,11 +11,13 @@ Handles:
 """
 
 from typing import List
+
 from isaac.core.cli_command_router import CommandResult
 
 # Try to import man_pages generator for advanced help
 try:
     from isaac.core.man_pages import get_generator
+
     MAN_PAGES_AVAILABLE = True
 except ImportError:
     MAN_PAGES_AVAILABLE = False
@@ -55,10 +57,10 @@ class HelpHandler:
             CommandResult with formatted help text
         """
         # Handle special flags
-        if args and args[0] == '--search' and len(args) > 1:
+        if args and args[0] == "--search" and len(args) > 1:
             # Apropos mode: search by keyword
             return self._search_commands(args[1])
-        elif args and args[0] == '--whatis' and len(args) > 1:
+        elif args and args[0] == "--whatis" and len(args) > 1:
             # Whatis mode: one-line summary
             return self._show_whatis(args[1])
         elif not args or args[0] == "overview":
@@ -147,12 +149,7 @@ Note: Legacy commands (/read, /write, /grep, /glob, /man, /apropos,
 /whatis) still work but are deprecated in favor of unified commands.
         """.strip()
 
-        return CommandResult(
-            success=True,
-            message=help_text,
-            status_symbol='✓',
-            suggestion=None
-        )
+        return CommandResult(success=True, message=help_text, status_symbol="✓", suggestion=None)
 
     def _show_backup_help(self) -> CommandResult:
         """
@@ -197,12 +194,7 @@ NOTES:
   - Existing files at destination will be overwritten after confirmation
         """.strip()
 
-        return CommandResult(
-            success=True,
-            message=help_text,
-            status_symbol='✓',
-            suggestion=None
-        )
+        return CommandResult(success=True, message=help_text, status_symbol="✓", suggestion=None)
 
     def _show_restore_help(self) -> CommandResult:
         """
@@ -248,12 +240,7 @@ NOTES:
   - Always confirms before overwriting
         """.strip()
 
-        return CommandResult(
-            success=True,
-            message=help_text,
-            status_symbol='✓',
-            suggestion=None
-        )
+        return CommandResult(success=True, message=help_text, status_symbol="✓", suggestion=None)
 
     def _show_list_help(self) -> CommandResult:
         """
@@ -295,12 +282,7 @@ NOTES:
   - Use --show-log for quick history view
         """.strip()
 
-        return CommandResult(
-            success=True,
-            message=help_text,
-            status_symbol='✓',
-            suggestion=None
-        )
+        return CommandResult(success=True, message=help_text, status_symbol="✓", suggestion=None)
 
     def _show_meta_commands_help(self) -> CommandResult:
         """
@@ -327,12 +309,7 @@ Natural Language:
   isaac <query>      - AI query or command translation
 """.strip()
 
-        return CommandResult(
-            success=True,
-            message=help_text,
-            status_symbol='✓',
-            suggestion=None
-        )
+        return CommandResult(success=True, message=help_text, status_symbol="✓", suggestion=None)
 
     def _show_category_help(self, category: str) -> CommandResult:
         """
@@ -354,8 +331,8 @@ Natural Language:
             return CommandResult(
                 success=False,
                 message=f"Unknown category: {category}",
-                status_symbol='✗',
-                suggestion="Try: help [backup|restore|list]"
+                status_symbol="✗",
+                suggestion="Try: help [backup|restore|list]",
             )
 
     def _show_man_page(self, command: str) -> CommandResult:
@@ -372,36 +349,33 @@ Natural Language:
             return CommandResult(
                 success=False,
                 message="Man pages not available. Using basic help.",
-                status_symbol='⚠',
-                suggestion="Install man page system for detailed help"
+                status_symbol="⚠",
+                suggestion="Install man page system for detailed help",
             )
 
         # Normalize command name
-        if not command.startswith('/'):
-            command = '/' + command
+        if not command.startswith("/"):
+            command = "/" + command
 
         try:
             man_page = self.man_generator.generate(command)
             if man_page:
                 return CommandResult(
-                    success=True,
-                    message=man_page,
-                    status_symbol='✓',
-                    suggestion=None
+                    success=True, message=man_page, status_symbol="✓", suggestion=None
                 )
             else:
                 return CommandResult(
                     success=False,
                     message=f"No manual entry for {command}",
-                    status_symbol='✗',
-                    suggestion="Try: /help --search <keyword> to find commands"
+                    status_symbol="✗",
+                    suggestion="Try: /help --search <keyword> to find commands",
                 )
         except Exception as e:
             return CommandResult(
                 success=False,
                 message=f"Error retrieving man page: {e}",
-                status_symbol='✗',
-                suggestion="Use /help for basic help"
+                status_symbol="✗",
+                suggestion="Use /help for basic help",
             )
 
     def _search_commands(self, keyword: str) -> CommandResult:
@@ -418,8 +392,8 @@ Natural Language:
             return CommandResult(
                 success=False,
                 message="Command search not available.",
-                status_symbol='⚠',
-                suggestion="Use /help for basic command list"
+                status_symbol="⚠",
+                suggestion="Use /help for basic command list",
             )
 
         try:
@@ -429,16 +403,16 @@ Natural Language:
                 return CommandResult(
                     success=False,
                     message=f"No commands found matching '{keyword}'",
-                    status_symbol='✗',
-                    suggestion="Try a different keyword or /help for overview"
+                    status_symbol="✗",
+                    suggestion="Try a different keyword or /help for overview",
                 )
 
             # Format results
             output = [f"Commands matching '{keyword}':", "=" * 70, ""]
             for result in results:
-                trigger = result['trigger']
-                version = result.get('version', '1.0.0')
-                summary = result['summary']
+                trigger = result["trigger"]
+                version = result.get("version", "1.0.0")
+                summary = result["summary"]
 
                 # Truncate long summaries
                 if len(summary) > 50:
@@ -451,17 +425,14 @@ Natural Language:
             output.append(f"Use '/help <command>' for detailed information")
 
             return CommandResult(
-                success=True,
-                message="\n".join(output),
-                status_symbol='✓',
-                suggestion=None
+                success=True, message="\n".join(output), status_symbol="✓", suggestion=None
             )
         except Exception as e:
             return CommandResult(
                 success=False,
                 message=f"Error searching commands: {e}",
-                status_symbol='✗',
-                suggestion="Use /help for basic help"
+                status_symbol="✗",
+                suggestion="Use /help for basic help",
             )
 
     def _show_whatis(self, command: str) -> CommandResult:
@@ -478,35 +449,32 @@ Natural Language:
             return CommandResult(
                 success=False,
                 message="Whatis not available.",
-                status_symbol='⚠',
-                suggestion="Use /help for basic command list"
+                status_symbol="⚠",
+                suggestion="Use /help for basic command list",
             )
 
         # Normalize command name
-        if not command.startswith('/'):
-            command = '/' + command
+        if not command.startswith("/"):
+            command = "/" + command
 
         try:
             summary = self.man_generator.whatis(command)
 
             if summary:
                 return CommandResult(
-                    success=True,
-                    message=summary,
-                    status_symbol='✓',
-                    suggestion=None
+                    success=True, message=summary, status_symbol="✓", suggestion=None
                 )
             else:
                 return CommandResult(
                     success=False,
                     message=f"{command}: nothing appropriate",
-                    status_symbol='✗',
-                    suggestion="Use /help --search <keyword> to find commands"
+                    status_symbol="✗",
+                    suggestion="Use /help --search <keyword> to find commands",
                 )
         except Exception as e:
             return CommandResult(
                 success=False,
                 message=f"Error: {e}",
-                status_symbol='✗',
-                suggestion="Use /help for basic help"
+                status_symbol="✗",
+                suggestion="Use /help for basic help",
             )

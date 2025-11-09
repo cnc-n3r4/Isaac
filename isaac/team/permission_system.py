@@ -1,10 +1,10 @@
 """Permission system for team collaboration access control."""
 
-import sqlite3
-from pathlib import Path
-from typing import Optional, List, Dict
-from datetime import datetime
 import os
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
 
 from .models import Permission, PermissionLevel, ResourceType
 
@@ -26,7 +26,8 @@ class PermissionSystem:
     def _init_db(self):
         """Initialize the database."""
         with sqlite3.connect(str(self.db_path)) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS permissions (
                     permission_id TEXT PRIMARY KEY,
                     resource_id TEXT NOT NULL,
@@ -38,15 +39,20 @@ class PermissionSystem:
                     expires_at TEXT,
                     UNIQUE(resource_id, user_id)
                 )
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_permissions_resource
                 ON permissions(resource_id)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_permissions_user
                 ON permissions(user_id)
-            """)
+            """
+            )
             conn.commit()
 
     def grant_permission(self, permission: Permission) -> bool:
@@ -59,6 +65,7 @@ class PermissionSystem:
             True if granted, False on error
         """
         import uuid
+
         permission_id = str(uuid.uuid4())
 
         try:
@@ -67,10 +74,16 @@ class PermissionSystem:
                     """INSERT OR REPLACE INTO permissions
                        (permission_id, resource_id, resource_type, user_id, level, granted_by, granted_at, expires_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (permission_id, permission.resource_id, permission.resource_type.value,
-                     permission.user_id, permission.level.value, permission.granted_by,
-                     permission.granted_at.isoformat(),
-                     permission.expires_at.isoformat() if permission.expires_at else None)
+                    (
+                        permission_id,
+                        permission.resource_id,
+                        permission.resource_type.value,
+                        permission.user_id,
+                        permission.level.value,
+                        permission.granted_by,
+                        permission.granted_at.isoformat(),
+                        permission.expires_at.isoformat() if permission.expires_at else None,
+                    ),
                 )
                 conn.commit()
                 return True
@@ -90,7 +103,7 @@ class PermissionSystem:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.execute(
                 "DELETE FROM permissions WHERE resource_id = ? AND user_id = ?",
-                (resource_id, user_id)
+                (resource_id, user_id),
             )
             conn.commit()
             return cursor.rowcount > 0
@@ -109,26 +122,27 @@ class PermissionSystem:
             conn.row_factory = sqlite3.Row
             row = conn.execute(
                 "SELECT * FROM permissions WHERE resource_id = ? AND user_id = ?",
-                (resource_id, user_id)
+                (resource_id, user_id),
             ).fetchone()
 
             if not row:
                 return None
 
             permission = Permission(
-                resource_id=row['resource_id'],
-                resource_type=ResourceType(row['resource_type']),
-                user_id=row['user_id'],
-                level=PermissionLevel(row['level']),
-                granted_by=row['granted_by'],
-                granted_at=datetime.fromisoformat(row['granted_at']),
-                expires_at=datetime.fromisoformat(row['expires_at']) if row['expires_at'] else None,
+                resource_id=row["resource_id"],
+                resource_type=ResourceType(row["resource_type"]),
+                user_id=row["user_id"],
+                level=PermissionLevel(row["level"]),
+                granted_by=row["granted_by"],
+                granted_at=datetime.fromisoformat(row["granted_at"]),
+                expires_at=datetime.fromisoformat(row["expires_at"]) if row["expires_at"] else None,
             )
 
             return permission
 
-    def check_permission(self, resource_id: str, user_id: str,
-                        required_level: PermissionLevel) -> bool:
+    def check_permission(
+        self, resource_id: str, user_id: str, required_level: PermissionLevel
+    ) -> bool:
         """Check if a user has the required permission level.
 
         Args:
@@ -161,9 +175,12 @@ class PermissionSystem:
 
         return user_level >= required
 
-    def list_permissions(self, resource_id: Optional[str] = None,
-                        user_id: Optional[str] = None,
-                        resource_type: Optional[ResourceType] = None) -> List[Permission]:
+    def list_permissions(
+        self,
+        resource_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        resource_type: Optional[ResourceType] = None,
+    ) -> List[Permission]:
         """List permissions.
 
         Args:
@@ -197,13 +214,15 @@ class PermissionSystem:
             permissions = []
             for row in rows:
                 permission = Permission(
-                    resource_id=row['resource_id'],
-                    resource_type=ResourceType(row['resource_type']),
-                    user_id=row['user_id'],
-                    level=PermissionLevel(row['level']),
-                    granted_by=row['granted_by'],
-                    granted_at=datetime.fromisoformat(row['granted_at']),
-                    expires_at=datetime.fromisoformat(row['expires_at']) if row['expires_at'] else None,
+                    resource_id=row["resource_id"],
+                    resource_type=ResourceType(row["resource_type"]),
+                    user_id=row["user_id"],
+                    level=PermissionLevel(row["level"]),
+                    granted_by=row["granted_by"],
+                    granted_at=datetime.fromisoformat(row["granted_at"]),
+                    expires_at=(
+                        datetime.fromisoformat(row["expires_at"]) if row["expires_at"] else None
+                    ),
                 )
 
                 # Only include valid permissions
@@ -212,8 +231,9 @@ class PermissionSystem:
 
             return permissions
 
-    def update_permission_level(self, resource_id: str, user_id: str,
-                               new_level: PermissionLevel) -> bool:
+    def update_permission_level(
+        self, resource_id: str, user_id: str, new_level: PermissionLevel
+    ) -> bool:
         """Update a permission level.
 
         Args:
@@ -227,7 +247,7 @@ class PermissionSystem:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.execute(
                 "UPDATE permissions SET level = ? WHERE resource_id = ? AND user_id = ?",
-                (new_level.value, resource_id, user_id)
+                (new_level.value, resource_id, user_id),
             )
             conn.commit()
             return cursor.rowcount > 0
@@ -241,7 +261,7 @@ class PermissionSystem:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.execute(
                 "DELETE FROM permissions WHERE expires_at IS NOT NULL AND expires_at < ?",
-                (datetime.now().isoformat(),)
+                (datetime.now().isoformat(),),
             )
             conn.commit()
             return cursor.rowcount
@@ -258,8 +278,9 @@ class PermissionSystem:
         permissions = self.list_permissions(resource_id=resource_id)
         return {p.user_id: p.level for p in permissions}
 
-    def get_user_permissions(self, user_id: str,
-                            resource_type: Optional[ResourceType] = None) -> Dict[str, PermissionLevel]:
+    def get_user_permissions(
+        self, user_id: str, resource_type: Optional[ResourceType] = None
+    ) -> Dict[str, PermissionLevel]:
         """Get all permissions for a user.
 
         Args:
@@ -272,9 +293,15 @@ class PermissionSystem:
         permissions = self.list_permissions(user_id=user_id, resource_type=resource_type)
         return {p.resource_id: p.level for p in permissions}
 
-    def grant_team_permissions(self, team_manager, team_id: str, resource_id: str,
-                              resource_type: ResourceType, granted_by: str,
-                              default_level: PermissionLevel = PermissionLevel.READ) -> int:
+    def grant_team_permissions(
+        self,
+        team_manager,
+        team_id: str,
+        resource_id: str,
+        resource_type: ResourceType,
+        granted_by: str,
+        default_level: PermissionLevel = PermissionLevel.READ,
+    ) -> int:
         """Grant permissions to all team members for a resource.
 
         Args:

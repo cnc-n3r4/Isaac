@@ -3,19 +3,20 @@ Pattern Library - Isaac's Code Pattern Learning and Application System
 Phase 3.4: Learn from user's code patterns and apply them intelligently
 """
 
-import os
-import json
 import ast
+import json
+import os
 import re
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, field, asdict
-from pathlib import Path
 import time
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
 class CodePattern:
     """Represents a learned code pattern."""
+
     id: str
     name: str
     description: str
@@ -50,6 +51,7 @@ class CodePattern:
 @dataclass
 class PatternMatch:
     """Result of matching a pattern against code."""
+
     pattern: CodePattern
     confidence: float
     matched_code: str
@@ -62,6 +64,7 @@ class PatternMatch:
 @dataclass
 class PatternAnalysis:
     """Analysis of code for patterns."""
+
     file_path: str
     patterns_found: List[PatternMatch]
     anti_patterns_found: List[PatternMatch]
@@ -77,24 +80,24 @@ class PatternLearner:
         """Initialize pattern learner."""
         self.config = config or {}
         self.patterns: Dict[str, CodePattern] = {}
-        self.patterns_file = Path.home() / '.isaac' / 'patterns' / 'learned_patterns.json'
+        self.patterns_file = Path.home() / ".isaac" / "patterns" / "learned_patterns.json"
         self.analysis_cache: Dict[str, PatternAnalysis] = {}
 
         # Learning parameters
-        self.min_pattern_frequency = self.config.get('min_pattern_frequency', 3)
-        self.min_confidence_threshold = self.config.get('min_confidence_threshold', 0.7)
-        self.max_patterns_per_file = self.config.get('max_patterns_per_file', 50)
+        self.min_pattern_frequency = self.config.get("min_pattern_frequency", 3)
+        self.min_confidence_threshold = self.config.get("min_confidence_threshold", 0.7)
+        self.max_patterns_per_file = self.config.get("max_patterns_per_file", 50)
 
         # Pattern categories to learn
         self.categories = {
-            'function': self._learn_function_patterns,
-            'class': self._learn_class_patterns,
-            'loop': self._learn_loop_patterns,
-            'error_handling': self._learn_error_handling_patterns,
-            'async': self._learn_async_patterns,
-            'data_structure': self._learn_data_structure_patterns,
-            'naming': self._learn_naming_patterns,
-            'style': self._learn_style_patterns
+            "function": self._learn_function_patterns,
+            "class": self._learn_class_patterns,
+            "loop": self._learn_loop_patterns,
+            "error_handling": self._learn_error_handling_patterns,
+            "async": self._learn_async_patterns,
+            "data_structure": self._learn_data_structure_patterns,
+            "naming": self._learn_naming_patterns,
+            "style": self._learn_style_patterns,
         }
 
         self._load_patterns()
@@ -103,7 +106,7 @@ class PatternLearner:
         """Load learned patterns from disk."""
         try:
             if self.patterns_file.exists():
-                with open(self.patterns_file, 'r', encoding='utf-8') as f:
+                with open(self.patterns_file, "r", encoding="utf-8") as f:
                     patterns_data = json.load(f)
                     for pattern_data in patterns_data:
                         pattern = CodePattern(**pattern_data)
@@ -116,7 +119,7 @@ class PatternLearner:
         try:
             self.patterns_file.parent.mkdir(parents=True, exist_ok=True)
             patterns_data = [asdict(p) for p in self.patterns.values()]
-            with open(self.patterns_file, 'w', encoding='utf-8') as f:
+            with open(self.patterns_file, "w", encoding="utf-8") as f:
                 json.dump(patterns_data, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"Error saving patterns: {e}")
@@ -130,7 +133,7 @@ class PatternLearner:
                 return cached
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             language = self._detect_language(file_path)
@@ -149,7 +152,9 @@ class PatternLearner:
 
             for category, analyzer in self.categories.items():
                 try:
-                    category_patterns, category_anti_patterns, category_suggestions = analyzer(tree, content, language)
+                    category_patterns, category_anti_patterns, category_suggestions = analyzer(
+                        tree, content, language
+                    )
                     patterns_found.extend(category_patterns)
                     anti_patterns_found.extend(category_anti_patterns)
                     suggestions.extend(category_suggestions)
@@ -164,7 +169,7 @@ class PatternLearner:
                 patterns_found=patterns_found,
                 anti_patterns_found=anti_patterns_found,
                 suggestions=suggestions,
-                overall_score=overall_score
+                overall_score=overall_score,
             )
 
             self.analysis_cache[file_path] = analysis
@@ -178,22 +183,22 @@ class PatternLearner:
         """Detect programming language from file extension."""
         ext = Path(file_path).suffix.lower()
         language_map = {
-            '.py': 'python',
-            '.js': 'javascript',
-            '.ts': 'typescript',
-            '.java': 'java',
-            '.cpp': 'cpp',
-            '.c': 'c',
-            '.go': 'go',
-            '.rs': 'rust',
-            '.php': 'php'
+            ".py": "python",
+            ".js": "javascript",
+            ".ts": "typescript",
+            ".java": "java",
+            ".cpp": "cpp",
+            ".c": "c",
+            ".go": "go",
+            ".rs": "rust",
+            ".php": "php",
         }
         return language_map.get(ext)
 
     def _parse_code(self, content: str, language: str) -> Optional[Any]:
         """Parse code into AST or similar structure."""
         try:
-            if language == 'python':
+            if language == "python":
                 return ast.parse(content)
             # For other languages, we'd need their respective parsers
             # For now, return None for unsupported languages
@@ -201,13 +206,15 @@ class PatternLearner:
         except:
             return None
 
-    def _learn_function_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_function_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         """Learn function definition patterns."""
         patterns = []
         anti_patterns = []
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return patterns, anti_patterns, suggestions
 
         for node in ast.walk(tree):
@@ -223,27 +230,31 @@ class PatternLearner:
                         suggestions.append(anti_pattern_check.explanation)
 
                     # Learn positive patterns
-                    if pattern_info['confidence'] > self.min_confidence_threshold:
+                    if pattern_info["confidence"] > self.min_confidence_threshold:
                         pattern = self._create_function_pattern(pattern_info, node, content)
                         if pattern:
-                            patterns.append(PatternMatch(
-                                pattern=pattern,
-                                confidence=pattern_info['confidence'],
-                                matched_code=self._get_node_source(node, content),
-                                suggested_replacement="",  # Would be generated by pattern application
-                                line_number=node.lineno,
-                                explanation=f"Learned function pattern: {pattern.name}"
-                            ))
+                            patterns.append(
+                                PatternMatch(
+                                    pattern=pattern,
+                                    confidence=pattern_info["confidence"],
+                                    matched_code=self._get_node_source(node, content),
+                                    suggested_replacement="",  # Would be generated by pattern application
+                                    line_number=node.lineno,
+                                    explanation=f"Learned function pattern: {pattern.name}",
+                                )
+                            )
 
         return patterns, anti_patterns, suggestions
 
-    def _analyze_function_pattern(self, node: ast.FunctionDef, content: str) -> Optional[Dict[str, Any]]:
+    def _analyze_function_pattern(
+        self, node: ast.FunctionDef, content: str
+    ) -> Optional[Dict[str, Any]]:
         """Analyze a function definition for patterns."""
         # Count various elements
         arg_count = len(node.args.args)
         has_docstring = self._has_docstring(node)
         has_type_hints = self._has_type_hints(node)
-        line_count = len(self._get_node_source(node, content).split('\n'))
+        line_count = len(self._get_node_source(node, content).split("\n"))
         complexity = self._calculate_complexity(node)
 
         # Determine pattern type based on characteristics
@@ -259,16 +270,20 @@ class PatternLearner:
             pattern_type = "standard_function"
 
         return {
-            'pattern_type': pattern_type,
-            'arg_count': arg_count,
-            'has_docstring': has_docstring,
-            'has_type_hints': has_type_hints,
-            'line_count': line_count,
-            'complexity': complexity,
-            'confidence': min(1.0, (arg_count + (1 if has_docstring else 0) + (1 if has_type_hints else 0)) / 5.0)
+            "pattern_type": pattern_type,
+            "arg_count": arg_count,
+            "has_docstring": has_docstring,
+            "has_type_hints": has_type_hints,
+            "line_count": line_count,
+            "complexity": complexity,
+            "confidence": min(
+                1.0, (arg_count + (1 if has_docstring else 0) + (1 if has_type_hints else 0)) / 5.0
+            ),
         }
 
-    def _check_function_anti_patterns(self, node: ast.FunctionDef, content: str) -> Optional[PatternMatch]:
+    def _check_function_anti_patterns(
+        self, node: ast.FunctionDef, content: str
+    ) -> Optional[PatternMatch]:
         """Check for function anti-patterns."""
         issues = []
 
@@ -277,7 +292,7 @@ class PatternLearner:
             issues.append("Function has too many parameters (>7)")
 
         # Too long function
-        source_lines = self._get_node_source(node, content).split('\n')
+        source_lines = self._get_node_source(node, content).split("\n")
         if len(source_lines) > 50:
             issues.append("Function is too long (>50 lines)")
 
@@ -306,21 +321,25 @@ class PatternLearner:
                     alternative_suggestions=[
                         "Break down large functions into smaller ones",
                         "Add docstrings and type hints",
-                        "Reduce parameter count using data classes or config objects"
-                    ]
+                        "Reduce parameter count using data classes or config objects",
+                    ],
                 ),
                 confidence=0.8,
                 matched_code=self._get_node_source(node, content),
                 suggested_replacement="",
                 line_number=node.lineno,
-                explanation="; ".join(issues)
+                explanation="; ".join(issues),
             )
 
         return None
 
-    def _create_function_pattern(self, pattern_info: Dict[str, Any], node: ast.FunctionDef, content: str) -> Optional[CodePattern]:
+    def _create_function_pattern(
+        self, pattern_info: Dict[str, Any], node: ast.FunctionDef, content: str
+    ) -> Optional[CodePattern]:
         """Create a pattern from function analysis."""
-        pattern_id = f"func_{pattern_info['pattern_type']}_{hash(self._get_node_source(node, content))}"
+        pattern_id = (
+            f"func_{pattern_info['pattern_type']}_{hash(self._get_node_source(node, content))}"
+        )
 
         # Skip if we already have this pattern
         if pattern_id in self.patterns:
@@ -338,19 +357,21 @@ class PatternLearner:
             pattern_type="structural",
             template=template,
             variables=self._extract_function_variables(node),
-            examples=[self._get_node_source(node, content)]
+            examples=[self._get_node_source(node, content)],
         )
 
         self.patterns[pattern_id] = pattern
         return pattern
 
-    def _learn_class_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_class_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         """Learn class definition patterns."""
         patterns = []
         anti_patterns = []
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return patterns, anti_patterns, suggestions
 
         for node in ast.walk(tree):
@@ -366,27 +387,29 @@ class PatternLearner:
                         suggestions.append(anti_pattern_check.explanation)
 
                     # Learn positive patterns
-                    if pattern_info['confidence'] > self.min_confidence_threshold:
+                    if pattern_info["confidence"] > self.min_confidence_threshold:
                         pattern = self._create_class_pattern(pattern_info, node, content)
                         if pattern:
-                            patterns.append(PatternMatch(
-                                pattern=pattern,
-                                confidence=pattern_info['confidence'],
-                                matched_code=self._get_node_source(node, content),
-                                suggested_replacement="",
-                                line_number=node.lineno,
-                                explanation=f"Learned class pattern: {pattern.name}"
-                            ))
+                            patterns.append(
+                                PatternMatch(
+                                    pattern=pattern,
+                                    confidence=pattern_info["confidence"],
+                                    matched_code=self._get_node_source(node, content),
+                                    suggested_replacement="",
+                                    line_number=node.lineno,
+                                    explanation=f"Learned class pattern: {pattern.name}",
+                                )
+                            )
 
         return patterns, anti_patterns, suggestions
 
     def _analyze_class_pattern(self, node: ast.ClassDef, content: str) -> Optional[Dict[str, Any]]:
         """Analyze a class definition for patterns."""
         method_count = len([n for n in node.body if isinstance(n, ast.FunctionDef)])
-        has_init = any(isinstance(n, ast.FunctionDef) and n.name == '__init__' for n in node.body)
+        has_init = any(isinstance(n, ast.FunctionDef) and n.name == "__init__" for n in node.body)
         has_docstring = self._has_docstring(node)
         inheritance_count = len(node.bases)
-        line_count = len(self._get_node_source(node, content).split('\n'))
+        line_count = len(self._get_node_source(node, content).split("\n"))
 
         # Determine pattern type
         if method_count == 0:
@@ -401,16 +424,20 @@ class PatternLearner:
             pattern_type = "standard_class"
 
         return {
-            'pattern_type': pattern_type,
-            'method_count': method_count,
-            'has_init': has_init,
-            'has_docstring': has_docstring,
-            'inheritance_count': inheritance_count,
-            'line_count': line_count,
-            'confidence': min(1.0, (method_count + (1 if has_init else 0) + (1 if has_docstring else 0)) / 5.0)
+            "pattern_type": pattern_type,
+            "method_count": method_count,
+            "has_init": has_init,
+            "has_docstring": has_docstring,
+            "inheritance_count": inheritance_count,
+            "line_count": line_count,
+            "confidence": min(
+                1.0, (method_count + (1 if has_init else 0) + (1 if has_docstring else 0)) / 5.0
+            ),
         }
 
-    def _check_class_anti_patterns(self, node: ast.ClassDef, content: str) -> Optional[PatternMatch]:
+    def _check_class_anti_patterns(
+        self, node: ast.ClassDef, content: str
+    ) -> Optional[PatternMatch]:
         """Check for class anti-patterns."""
         issues = []
 
@@ -447,25 +474,27 @@ class PatternLearner:
                     alternative_suggestions=[
                         "Split large classes into smaller ones",
                         "Add docstrings to classes",
-                        "Use dataclasses for simple data containers"
-                    ]
+                        "Use dataclasses for simple data containers",
+                    ],
                 ),
                 confidence=0.8,
                 matched_code=self._get_node_source(node, content),
                 suggested_replacement="",
                 line_number=node.lineno,
-                explanation="; ".join(issues)
+                explanation="; ".join(issues),
             )
 
         return None
 
-    def _learn_loop_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_loop_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         """Learn loop patterns."""
         patterns = []
         anti_patterns = []
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return patterns, anti_patterns, suggestions
 
         for node in ast.walk(tree):
@@ -489,7 +518,7 @@ class PatternLearner:
 
         # Loop body too long
         loop_body = self._get_node_source(node, content)
-        line_count = len(loop_body.split('\n'))
+        line_count = len(loop_body.split("\n"))
         if line_count > 20:
             issues.append("Loop body too long (>20 lines)")
 
@@ -509,25 +538,27 @@ class PatternLearner:
                     alternative_suggestions=[
                         "Extract nested loops into separate functions",
                         "Use list comprehensions for simple transformations",
-                        "Consider using itertools for complex iterations"
-                    ]
+                        "Consider using itertools for complex iterations",
+                    ],
                 ),
                 confidence=0.8,
                 matched_code=self._get_node_source(node, content),
                 suggested_replacement="",
                 line_number=node.lineno,
-                explanation="; ".join(issues)
+                explanation="; ".join(issues),
             )
 
         return None
 
-    def _learn_error_handling_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_error_handling_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         """Learn error handling patterns."""
         patterns = []
         anti_patterns = []
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return patterns, anti_patterns, suggestions
 
         for node in ast.walk(tree):
@@ -540,7 +571,9 @@ class PatternLearner:
 
         return patterns, anti_patterns, suggestions
 
-    def _check_error_handling_anti_patterns(self, node: ast.Try, content: str) -> Optional[PatternMatch]:
+    def _check_error_handling_anti_patterns(
+        self, node: ast.Try, content: str
+    ) -> Optional[PatternMatch]:
         """Check for error handling anti-patterns."""
         issues = []
 
@@ -552,7 +585,7 @@ class PatternLearner:
         # Too broad exception handling
         for handler in node.handlers:
             if isinstance(handler, ast.ExceptHandler) and handler.type:
-                if isinstance(handler.type, ast.Name) and handler.type.id == 'Exception':
+                if isinstance(handler.type, ast.Name) and handler.type.id == "Exception":
                     issues.append("Catching base 'Exception' class")
 
         # No finally block for resource cleanup
@@ -561,12 +594,15 @@ class PatternLearner:
         if not has_finally and not has_with_statements:
             # Check if there are file operations or other resources
             has_resource_operations = any(
-                isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and
-                n.func.id in ['open', 'connect', 'socket']
+                isinstance(n, ast.Call)
+                and isinstance(n.func, ast.Name)
+                and n.func.id in ["open", "connect", "socket"]
                 for n in ast.walk(node)
             )
             if has_resource_operations:
-                issues.append("Resource operations without proper cleanup (finally or context manager)")
+                issues.append(
+                    "Resource operations without proper cleanup (finally or context manager)"
+                )
 
         if issues:
             return PatternMatch(
@@ -584,34 +620,36 @@ class PatternLearner:
                     alternative_suggestions=[
                         "Catch specific exceptions instead of bare 'except'",
                         "Use context managers (with statements) for resource cleanup",
-                        "Avoid catching base Exception class"
-                    ]
+                        "Avoid catching base Exception class",
+                    ],
                 ),
                 confidence=0.8,
                 matched_code=self._get_node_source(node, content),
                 suggested_replacement="",
                 line_number=node.lineno,
-                explanation="; ".join(issues)
+                explanation="; ".join(issues),
             )
 
         return None
 
-    def _learn_naming_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_naming_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         """Learn naming convention patterns."""
         patterns = []
         anti_patterns = []
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return patterns, anti_patterns, suggestions
 
         # Analyze variable and function names
         names = []
         for node in ast.walk(tree):
             if isinstance(node, (ast.Name, ast.FunctionDef, ast.ClassDef)):
-                if hasattr(node, 'name'):
+                if hasattr(node, "name"):
                     names.append(node.name)
-                elif hasattr(node, 'id'):
+                elif hasattr(node, "id"):
                     names.append(node.id)
 
         # Check naming conventions
@@ -627,24 +665,34 @@ class PatternLearner:
         issues = []
 
         # Check for inconsistent naming
-        snake_case = [n for n in names if re.match(r'^[a-z][a-z0-9_]*_[a-z0-9_]*$', n)]  # Must have underscore
-        camel_case = [n for n in names if re.match(r'^[a-z][a-zA-Z0-9]*[A-Z][a-zA-Z0-9]*$', n)]  # Must have uppercase
-        pascal_case = [n for n in names if re.match(r'^[A-Z][a-zA-Z0-9]*$', n)]
-        screaming_snake = [n for n in names if re.match(r'^[A-Z][A-Z0-9_]*_[A-Z0-9_]*$', n)]  # Must have underscore
+        snake_case = [
+            n for n in names if re.match(r"^[a-z][a-z0-9_]*_[a-z0-9_]*$", n)
+        ]  # Must have underscore
+        camel_case = [
+            n for n in names if re.match(r"^[a-z][a-zA-Z0-9]*[A-Z][a-zA-Z0-9]*$", n)
+        ]  # Must have uppercase
+        pascal_case = [n for n in names if re.match(r"^[A-Z][a-zA-Z0-9]*$", n)]
+        screaming_snake = [
+            n for n in names if re.match(r"^[A-Z][A-Z0-9_]*_[A-Z0-9_]*$", n)
+        ]  # Must have underscore
 
         # If we have mixed conventions, it might be an issue
-        conventions_used = sum([
-            1 if snake_case else 0,
-            1 if camel_case else 0,
-            1 if pascal_case else 0,
-            1 if screaming_snake else 0
-        ])
+        conventions_used = sum(
+            [
+                1 if snake_case else 0,
+                1 if camel_case else 0,
+                1 if pascal_case else 0,
+                1 if screaming_snake else 0,
+            ]
+        )
 
         if conventions_used > 2:
             issues.append("Mixed naming conventions detected")
 
         # Check for single-letter variable names (except common ones)
-        single_letter_vars = [n for n in names if len(n) == 1 and n not in ['i', 'j', 'k', 'x', 'y', 'z', '_']]
+        single_letter_vars = [
+            n for n in names if len(n) == 1 and n not in ["i", "j", "k", "x", "y", "z", "_"]
+        ]
         if single_letter_vars:
             issues.append(f"Single-letter variable names: {', '.join(single_letter_vars[:3])}")
 
@@ -664,78 +712,90 @@ class PatternLearner:
                     alternative_suggestions=[
                         "Use consistent naming conventions (snake_case for variables/functions)",
                         "Avoid single-letter variable names except for common loop indices",
-                        "Follow PEP 8 naming conventions"
-                    ]
+                        "Follow PEP 8 naming conventions",
+                    ],
                 ),
                 confidence=0.7,
                 matched_code="",  # This applies to the whole file
                 suggested_replacement="",
                 line_number=1,
-                explanation="; ".join(issues)
+                explanation="; ".join(issues),
             )
 
         return None
 
-    def _learn_style_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_style_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         """Learn code style patterns."""
         patterns = []
         anti_patterns = []
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return patterns, anti_patterns, suggestions
 
         # Check line length
-        lines = content.split('\n')
-        long_lines = [i for i, line in enumerate(lines, 1) if len(line) > 88]  # PEP 8 recommends 79, but 88 is common
+        lines = content.split("\n")
+        long_lines = [
+            i for i, line in enumerate(lines, 1) if len(line) > 88
+        ]  # PEP 8 recommends 79, but 88 is common
 
         if long_lines:
-            anti_patterns.append(PatternMatch(
-                pattern=CodePattern(
-                    id="anti_pattern_long_lines",
-                    name="Long Lines",
-                    description="Lines exceed recommended length",
-                    category="style",
-                    language="python",
-                    pattern_type="anti_pattern",
-                    template="",
-                    variables={},
-                    is_anti_pattern=True,
-                    anti_pattern_reason=f"{len(long_lines)} lines exceed 88 characters",
-                    alternative_suggestions=[
-                        "Break long lines using parentheses or backslashes",
-                        "Extract complex expressions into variables",
-                        "Use shorter variable names where appropriate"
-                    ]
-                ),
-                confidence=0.9,
-                matched_code="",  # Applies to multiple lines
-                suggested_replacement="",
-                line_number=long_lines[0],
-                explanation=f"Found {len(long_lines)} lines longer than 88 characters"
-            ))
+            anti_patterns.append(
+                PatternMatch(
+                    pattern=CodePattern(
+                        id="anti_pattern_long_lines",
+                        name="Long Lines",
+                        description="Lines exceed recommended length",
+                        category="style",
+                        language="python",
+                        pattern_type="anti_pattern",
+                        template="",
+                        variables={},
+                        is_anti_pattern=True,
+                        anti_pattern_reason=f"{len(long_lines)} lines exceed 88 characters",
+                        alternative_suggestions=[
+                            "Break long lines using parentheses or backslashes",
+                            "Extract complex expressions into variables",
+                            "Use shorter variable names where appropriate",
+                        ],
+                    ),
+                    confidence=0.9,
+                    matched_code="",  # Applies to multiple lines
+                    suggested_replacement="",
+                    line_number=long_lines[0],
+                    explanation=f"Found {len(long_lines)} lines longer than 88 characters",
+                )
+            )
 
         return patterns, anti_patterns, suggestions
 
     # Placeholder methods for other pattern types
-    def _learn_async_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_async_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         return [], [], []
 
-    def _learn_data_structure_patterns(self, tree: ast.AST, content: str, language: str) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
+    def _learn_data_structure_patterns(
+        self, tree: ast.AST, content: str, language: str
+    ) -> Tuple[List[PatternMatch], List[PatternMatch], List[str]]:
         return [], [], []
 
     # Helper methods
     def _has_docstring(self, node: ast.AST) -> bool:
         """Check if a node has a docstring."""
-        if hasattr(node, 'body') and node.body:
+        if hasattr(node, "body") and node.body:
             first_stmt = node.body[0]
             if isinstance(first_stmt, ast.Expr):
                 # Handle both old (ast.Str) and new (ast.Constant) AST formats
-                ast_str = getattr(ast, 'Str', None)
+                ast_str = getattr(ast, "Str", None)
                 if ast_str and isinstance(first_stmt.value, ast_str):
                     return True
                 # Try new format (Python >= 3.8)
-                if isinstance(first_stmt.value, ast.Constant) and isinstance(first_stmt.value.value, str):
+                if isinstance(first_stmt.value, ast.Constant) and isinstance(
+                    first_stmt.value.value, str
+                ):
                     return True
         return False
 
@@ -770,11 +830,11 @@ class PatternLearner:
 
     def _get_node_source(self, node: ast.AST, content: str) -> str:
         """Extract source code for a node."""
-        if hasattr(node, 'lineno') and hasattr(node, 'end_lineno'):
-            lines = content.split('\n')
+        if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
+            lines = content.split("\n")
             start_line = node.lineno - 1
             end_line = node.end_lineno
-            return '\n'.join(lines[start_line:end_line])
+            return "\n".join(lines[start_line:end_line])
         return ""
 
     def _file_modified_time(self, file_path: str) -> float:
@@ -784,7 +844,9 @@ class PatternLearner:
         except:
             return 0.0
 
-    def _calculate_code_score(self, patterns: List[PatternMatch], anti_patterns: List[PatternMatch]) -> float:
+    def _calculate_code_score(
+        self, patterns: List[PatternMatch], anti_patterns: List[PatternMatch]
+    ) -> float:
         """Calculate overall code quality score."""
         pattern_score = len(patterns) * 0.1  # Positive patterns add points
         anti_pattern_penalty = len(anti_patterns) * 0.2  # Anti-patterns subtract points
@@ -801,11 +863,11 @@ class PatternLearner:
         # In a real implementation, this would be more sophisticated
         source = self._get_node_source(node, content)
         # Replace specific names with placeholders
-        template = re.sub(r'\b' + re.escape(node.name) + r'\b', '{{function_name}}', source)
+        template = re.sub(r"\b" + re.escape(node.name) + r"\b", "{{function_name}}", source)
 
         # Replace argument names
         for arg in node.args.args:
-            template = re.sub(r'\b' + re.escape(arg.arg) + r'\b', '{{' + arg.arg + '}}', template)
+            template = re.sub(r"\b" + re.escape(arg.arg) + r"\b", "{{" + arg.arg + "}}", template)
 
         return template
 
@@ -814,20 +876,24 @@ class PatternLearner:
         variables = {}
 
         # Function name
-        variables['function_name'] = node.name
+        variables["function_name"] = node.name
 
         # Arguments
         for arg in node.args.args:
             variables[arg.arg] = {
-                'type': 'argument',
-                'annotation': str(arg.annotation) if arg.annotation else None
+                "type": "argument",
+                "annotation": str(arg.annotation) if arg.annotation else None,
             }
 
         return variables
 
-    def _create_class_pattern(self, pattern_info: Dict[str, Any], node: ast.ClassDef, content: str) -> Optional[CodePattern]:
+    def _create_class_pattern(
+        self, pattern_info: Dict[str, Any], node: ast.ClassDef, content: str
+    ) -> Optional[CodePattern]:
         """Create a pattern from class analysis."""
-        pattern_id = f"class_{pattern_info['pattern_type']}_{hash(self._get_node_source(node, content))}"
+        pattern_id = (
+            f"class_{pattern_info['pattern_type']}_{hash(self._get_node_source(node, content))}"
+        )
 
         if pattern_id in self.patterns:
             return None
@@ -843,7 +909,7 @@ class PatternLearner:
             pattern_type="structural",
             template=template,
             variables=self._extract_class_variables(node),
-            examples=[self._get_node_source(node, content)]
+            examples=[self._get_node_source(node, content)],
         )
 
         self.patterns[pattern_id] = pattern
@@ -852,19 +918,19 @@ class PatternLearner:
     def _create_class_template(self, node: ast.ClassDef, content: str) -> str:
         """Create a template from class definition."""
         source = self._get_node_source(node, content)
-        template = re.sub(r'\b' + re.escape(node.name) + r'\b', '{{class_name}}', source)
+        template = re.sub(r"\b" + re.escape(node.name) + r"\b", "{{class_name}}", source)
         return template
 
     def _extract_class_variables(self, node: ast.ClassDef) -> Dict[str, Any]:
         """Extract variable information from class."""
-        variables = {'class_name': node.name}
+        variables = {"class_name": node.name}
 
         # Methods
         for item in node.body:
             if isinstance(item, ast.FunctionDef):
                 variables[item.name] = {
-                    'type': 'method',
-                    'args': [arg.arg for arg in item.args.args]
+                    "type": "method",
+                    "args": [arg.arg for arg in item.args.args],
                 }
 
         return variables
@@ -893,7 +959,9 @@ class PatternLearner:
 
         return results
 
-    def get_patterns(self, category: Optional[str] = None, language: Optional[str] = None) -> List[CodePattern]:
+    def get_patterns(
+        self, category: Optional[str] = None, language: Optional[str] = None
+    ) -> List[CodePattern]:
         """Get learned patterns, optionally filtered."""
         patterns = list(self.patterns.values())
 
@@ -915,12 +983,12 @@ class PatternLearner:
     def export_patterns(self, file_path: str):
         """Export patterns to a file."""
         patterns_data = [asdict(p) for p in self.patterns.values()]
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(patterns_data, f, indent=2, ensure_ascii=False)
 
     def import_patterns(self, file_path: str):
         """Import patterns from a file."""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             patterns_data = json.load(f)
 
         for pattern_data in patterns_data:

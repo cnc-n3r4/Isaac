@@ -5,14 +5,14 @@ Learn from pair programming sessions to improve future assistance.
 
 import json
 import sqlite3
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from pathlib import Path
-from collections import defaultdict
-import uuid
 import threading
 import time
+import uuid
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 
@@ -20,6 +20,7 @@ from isaac.core.session_manager import SessionManager
 @dataclass
 class PairingPattern:
     """A learned pattern from pairing sessions."""
+
     id: str
     pattern_type: str  # 'code_style', 'workflow', 'preference', 'reaction'
     description: str
@@ -39,6 +40,7 @@ class PairingPattern:
 @dataclass
 class StylePreference:
     """User's coding style preference."""
+
     category: str  # 'naming', 'formatting', 'structure', 'documentation'
     preference: str
     examples: List[str]
@@ -57,11 +59,11 @@ class PairingLearner:
             start_background_learning: Start background learning thread
         """
         self.session_manager = session_manager
-        self.data_dir = Path.home() / '.isaac' / 'pairing'
+        self.data_dir = Path.home() / ".isaac" / "pairing"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Database for learned patterns
-        self.db_path = self.data_dir / 'learned_patterns.db'
+        self.db_path = self.data_dir / "learned_patterns.db"
         self._init_database()
 
         # In-memory cache of patterns
@@ -80,7 +82,8 @@ class PairingLearner:
     def _init_database(self):
         """Initialize SQLite database for pattern storage."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS pairing_patterns (
                     id TEXT PRIMARY KEY,
                     pattern_type TEXT,
@@ -93,10 +96,12 @@ class PairingLearner:
                     last_seen REAL,
                     metadata TEXT
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_type ON pairing_patterns(pattern_type)')
+            """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_type ON pairing_patterns(pattern_type)")
 
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS style_preferences (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     category TEXT,
@@ -105,11 +110,13 @@ class PairingLearner:
                     confidence REAL,
                     learned_at REAL
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_category ON style_preferences(category)')
+            """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_category ON style_preferences(category)")
 
             # Interaction history for learning
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS pairing_interactions (
                     id TEXT PRIMARY KEY,
                     session_id TEXT,
@@ -121,18 +128,23 @@ class PairingLearner:
                     user_response TEXT,
                     metadata TEXT
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_session ON pairing_interactions(session_id)')
+            """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_session ON pairing_interactions(session_id)"
+            )
 
     def _load_patterns(self):
         """Load patterns from database."""
         with sqlite3.connect(self.db_path) as conn:
             # Load pairing patterns
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT id, pattern_type, description, trigger_context, learned_behavior,
                        confidence, occurrence_count, created_at, last_seen, metadata
                 FROM pairing_patterns
-            ''')
+            """
+            )
 
             for row in cursor:
                 pattern = PairingPattern(
@@ -145,15 +157,17 @@ class PairingLearner:
                     occurrence_count=row[6],
                     created_at=row[7],
                     last_seen=row[8],
-                    metadata=json.loads(row[9]) if row[9] else {}
+                    metadata=json.loads(row[9]) if row[9] else {},
                 )
                 self.patterns[pattern.id] = pattern
 
             # Load style preferences
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT category, preference, examples, confidence, learned_at
                 FROM style_preferences
-            ''')
+            """
+            )
 
             for row in cursor:
                 pref = StylePreference(
@@ -161,7 +175,7 @@ class PairingLearner:
                     preference=row[1],
                     examples=json.loads(row[2]) if row[2] else [],
                     confidence=row[3],
-                    learned_at=row[4]
+                    learned_at=row[4],
                 )
                 self.style_preferences[row[0]] = pref
 
@@ -172,7 +186,7 @@ class PairingLearner:
         context: Dict[str, Any],
         user_action: str,
         isaac_suggestion: Optional[str] = None,
-        user_response: Optional[str] = None
+        user_response: Optional[str] = None,
     ):
         """Record a pairing interaction for learning.
 
@@ -187,29 +201,28 @@ class PairingLearner:
         interaction_id = str(uuid.uuid4())
 
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT INTO pairing_interactions
                 (id, session_id, timestamp, interaction_type, context,
                  user_action, isaac_suggestion, user_response, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                interaction_id,
-                session_id,
-                datetime.now().timestamp(),
-                interaction_type,
-                json.dumps(context),
-                user_action,
-                isaac_suggestion,
-                user_response,
-                json.dumps({})
-            ))
+            """,
+                (
+                    interaction_id,
+                    session_id,
+                    datetime.now().timestamp(),
+                    interaction_type,
+                    json.dumps(context),
+                    user_action,
+                    isaac_suggestion,
+                    user_response,
+                    json.dumps({}),
+                ),
+            )
 
     def learn_from_code_edit(
-        self,
-        file_path: str,
-        old_code: str,
-        new_code: str,
-        context: Optional[Dict[str, Any]] = None
+        self, file_path: str, old_code: str, new_code: str, context: Optional[Dict[str, Any]] = None
     ):
         """Learn from a code edit.
 
@@ -238,38 +251,32 @@ class PairingLearner:
             code: Code to analyze
             file_ext: File extension
         """
-        if file_ext != '.py':
+        if file_ext != ".py":
             return
 
         # Simple pattern matching for Python naming
         import re
 
         # Find variable names
-        var_pattern = r'\b([a-z_][a-z0-9_]*)\s*='
+        var_pattern = r"\b([a-z_][a-z0-9_]*)\s*="
         variables = re.findall(var_pattern, code)
 
         if variables:
             # Check if snake_case is used
-            snake_case_count = sum(1 for v in variables if '_' in v)
+            snake_case_count = sum(1 for v in variables if "_" in v)
             if snake_case_count / len(variables) > 0.7:
                 self._update_style_preference(
-                    'naming',
-                    'Prefers snake_case for variable names',
-                    variables[:5],
-                    0.8
+                    "naming", "Prefers snake_case for variable names", variables[:5], 0.8
                 )
 
         # Find class names
-        class_pattern = r'class\s+([A-Z][a-zA-Z0-9]*)'
+        class_pattern = r"class\s+([A-Z][a-zA-Z0-9]*)"
         classes = re.findall(class_pattern, code)
 
         if classes:
             # All start with uppercase - PascalCase
             self._update_style_preference(
-                'naming',
-                'Uses PascalCase for class names',
-                classes[:5],
-                0.9
+                "naming", "Uses PascalCase for class names", classes[:5], 0.9
             )
 
     def _learn_formatting_preferences(self, code: str, file_ext: str):
@@ -279,13 +286,13 @@ class PairingLearner:
             code: Code to analyze
             file_ext: File extension
         """
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         # Check indentation
         indent_counts = defaultdict(int)
         for line in lines:
-            if line.strip() and line[0] == ' ':
-                leading_spaces = len(line) - len(line.lstrip(' '))
+            if line.strip() and line[0] == " ":
+                leading_spaces = len(line) - len(line.lstrip(" "))
                 if leading_spaces > 0:
                     indent_counts[leading_spaces] += 1
 
@@ -293,27 +300,18 @@ class PairingLearner:
             most_common_indent = max(indent_counts.items(), key=lambda x: x[1])[0]
             if most_common_indent == 4:
                 self._update_style_preference(
-                    'formatting',
-                    'Uses 4-space indentation',
-                    ['4 spaces'],
-                    0.9
+                    "formatting", "Uses 4-space indentation", ["4 spaces"], 0.9
                 )
             elif most_common_indent == 2:
                 self._update_style_preference(
-                    'formatting',
-                    'Uses 2-space indentation',
-                    ['2 spaces'],
-                    0.9
+                    "formatting", "Uses 2-space indentation", ["2 spaces"], 0.9
                 )
 
         # Check line length preference
         long_lines = sum(1 for line in lines if len(line) > 80)
         if long_lines / max(len(lines), 1) < 0.1:
             self._update_style_preference(
-                'formatting',
-                'Keeps lines under 80 characters',
-                ['Short lines'],
-                0.7
+                "formatting", "Keeps lines under 80 characters", ["Short lines"], 0.7
             )
 
     def _learn_structure_preferences(self, old_code: str, new_code: str, file_ext: str):
@@ -327,28 +325,21 @@ class PairingLearner:
         # Analyze what structural changes were made
         # This is a simplified version - real implementation would be more sophisticated
 
-        if 'def ' in new_code and 'def ' not in old_code:
+        if "def " in new_code and "def " not in old_code:
             self._update_style_preference(
-                'structure',
-                'Extracts functionality into separate functions',
-                ['Function extraction'],
-                0.6
+                "structure",
+                "Extracts functionality into separate functions",
+                ["Function extraction"],
+                0.6,
             )
 
-        if 'class ' in new_code and 'class ' not in old_code:
+        if "class " in new_code and "class " not in old_code:
             self._update_style_preference(
-                'structure',
-                'Organizes code into classes',
-                ['Class usage'],
-                0.6
+                "structure", "Organizes code into classes", ["Class usage"], 0.6
             )
 
     def _update_style_preference(
-        self,
-        category: str,
-        preference: str,
-        examples: List[str],
-        confidence: float
+        self, category: str, preference: str, examples: List[str], confidence: float
     ):
         """Update a style preference.
 
@@ -376,7 +367,7 @@ class PairingLearner:
                         preference=preference,
                         examples=examples,
                         confidence=confidence,
-                        learned_at=datetime.now().timestamp()
+                        learned_at=datetime.now().timestamp(),
                     )
         else:
             # New preference
@@ -385,7 +376,7 @@ class PairingLearner:
                 preference=preference,
                 examples=examples,
                 confidence=confidence,
-                learned_at=datetime.now().timestamp()
+                learned_at=datetime.now().timestamp(),
             )
 
         # Save to database
@@ -399,10 +390,7 @@ class PairingLearner:
         """
         return self.style_preferences.copy()
 
-    def get_pattern_suggestions(
-        self,
-        context: Dict[str, Any]
-    ) -> List[PairingPattern]:
+    def get_pattern_suggestions(self, context: Dict[str, Any]) -> List[PairingPattern]:
         """Get pattern-based suggestions for current context.
 
         Args:
@@ -424,9 +412,7 @@ class PairingLearner:
         return relevant_patterns
 
     def _context_matches(
-        self,
-        trigger_context: Dict[str, Any],
-        current_context: Dict[str, Any]
+        self, trigger_context: Dict[str, Any], current_context: Dict[str, Any]
     ) -> bool:
         """Check if current context matches trigger context.
 
@@ -464,13 +450,16 @@ class PairingLearner:
         cutoff_time = datetime.now().timestamp() - (24 * 60 * 60)  # Last 24 hours
 
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT session_id, interaction_type, context, user_action,
                        isaac_suggestion, user_response
                 FROM pairing_interactions
                 WHERE timestamp >= ?
                 ORDER BY timestamp DESC
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
 
             interactions = cursor.fetchall()
 
@@ -494,20 +483,23 @@ class PairingLearner:
         """
         with sqlite3.connect(self.db_path) as conn:
             # Delete existing preference in this category
-            conn.execute('DELETE FROM style_preferences WHERE category = ?', (preference.category,))
+            conn.execute("DELETE FROM style_preferences WHERE category = ?", (preference.category,))
 
             # Insert new preference
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT INTO style_preferences
                 (category, preference, examples, confidence, learned_at)
                 VALUES (?, ?, ?, ?, ?)
-            ''', (
-                preference.category,
-                preference.preference,
-                json.dumps(preference.examples),
-                preference.confidence,
-                preference.learned_at
-            ))
+            """,
+                (
+                    preference.category,
+                    preference.preference,
+                    json.dumps(preference.examples),
+                    preference.confidence,
+                    preference.learned_at,
+                ),
+            )
 
     def cleanup(self):
         """Cleanup resources."""

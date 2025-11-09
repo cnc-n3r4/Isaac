@@ -7,7 +7,7 @@ Provides a single entry point for managing workspace-scoped AI contexts.
 
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,8 @@ class WorkspaceContext:
             message_queue: Optional MessageQueue for notifications
         """
         # Import managers (lazy to avoid circular imports)
-        from isaac.core.workspace_sessions import get_workspace_manager
         from isaac.ai.session_manager import get_session_manager
+        from isaac.core.workspace_sessions import get_workspace_manager
 
         self.workspace_manager = get_workspace_manager()
         self.session_manager = get_session_manager()
@@ -57,9 +57,9 @@ class WorkspaceContext:
         """Lazy load xAI client"""
         if self._xai_client is None and self.xai_api_key:
             from isaac.ai.xai_client import XaiClient
+
             self._xai_client = XaiClient(
-                api_key=self.xai_api_key,
-                session_id=self._current_session_id
+                api_key=self.xai_api_key, session_id=self._current_session_id
             )
         return self._xai_client
 
@@ -67,12 +67,13 @@ class WorkspaceContext:
         """Lazy load collections client"""
         if self._collections_client is None and self.xai_api_key:
             from isaac.ai.xai_collections_client import XaiCollectionsClient
-            self._collections_client = XaiCollectionsClient(
-                api_key=self.xai_api_key
-            )
+
+            self._collections_client = XaiCollectionsClient(api_key=self.xai_api_key)
         return self._collections_client
 
-    def activate_workspace(self, path: Optional[Path] = None, auto_index: bool = False) -> Dict[str, Any]:
+    def activate_workspace(
+        self, path: Optional[Path] = None, auto_index: bool = False
+    ) -> Dict[str, Any]:
         """
         Activate workspace with automatic session and knowledge base setup
 
@@ -88,8 +89,8 @@ class WorkspaceContext:
             workspace_path = self.workspace_manager.detect_workspace()
             if not workspace_path:
                 return {
-                    'success': False,
-                    'error': 'No workspace detected. Are you in a project directory?'
+                    "success": False,
+                    "error": "No workspace detected. Are you in a project directory?",
                 }
         else:
             workspace_path = Path(path).resolve()
@@ -97,7 +98,7 @@ class WorkspaceContext:
         # Switch to workspace
         success, message = self.workspace_manager.switch_workspace(workspace_path)
         if not success:
-            return {'success': False, 'error': message}
+            return {"success": False, "error": message}
 
         # Get workspace name for session
         workspace_name = self.workspace_manager.get_workspace_name(workspace_path)
@@ -124,7 +125,7 @@ class WorkspaceContext:
             kb = get_knowledge_base(
                 project_root=workspace_path,
                 xai_client=self._get_collections_client(),
-                task_manager=self.task_manager
+                task_manager=self.task_manager,
             )
             self._current_knowledge_base = kb
 
@@ -133,11 +134,10 @@ class WorkspaceContext:
                 collection_name = f"isaac_{workspace_name}"
                 try:
                     result = self._get_collections_client().create_collection(
-                        name=collection_name,
-                        chunk_configuration={'max_chunk_size': 2000}
+                        name=collection_name, chunk_configuration={"max_chunk_size": 2000}
                     )
-                    kb.collection_id = result['id']
-                    collection_id = result['id']
+                    kb.collection_id = result["id"]
+                    collection_id = result["id"]
 
                     # Bind to workspace
                     self.workspace_manager.bind_collection(workspace_path, collection_id)
@@ -156,20 +156,15 @@ class WorkspaceContext:
         session_info = self.session_manager.get_session_info(workspace_name)
 
         return {
-            'success': True,
-            'workspace': {
-                'name': workspace_name,
-                'path': str(workspace_path)
+            "success": True,
+            "workspace": {"name": workspace_name, "path": str(workspace_path)},
+            "session": {
+                "id": session_id,
+                "age": session_info.get("age") if session_info else None,
+                "remaining": session_info.get("remaining") if session_info else None,
             },
-            'session': {
-                'id': session_id,
-                'age': session_info.get('age') if session_info else None,
-                'remaining': session_info.get('remaining') if session_info else None
-            },
-            'collection': {
-                'id': collection_id
-            } if collection_id else None,
-            'message': f"Activated workspace '{workspace_name}'"
+            "collection": {"id": collection_id} if collection_id else None,
+            "message": f"Activated workspace '{workspace_name}'",
         }
 
     def get_current_context(self) -> Dict[str, Any]:
@@ -180,19 +175,13 @@ class WorkspaceContext:
             Context metadata including workspace, session, and knowledge base info
         """
         if not self._current_workspace_path:
-            return {
-                'active': False,
-                'message': 'No active workspace'
-            }
+            return {"active": False, "message": "No active workspace"}
 
         workspace_info = self.workspace_manager.get_workspace_info(self._current_workspace_path)
         if not workspace_info:
-            return {
-                'active': False,
-                'message': 'Workspace not registered'
-            }
+            return {"active": False, "message": "Workspace not registered"}
 
-        workspace_name = workspace_info['name']
+        workspace_name = workspace_info["name"]
         session_info = self.session_manager.get_session_info(workspace_name)
 
         kb_stats = None
@@ -200,20 +189,20 @@ class WorkspaceContext:
             kb_stats = self._current_knowledge_base.get_stats()
 
         return {
-            'active': True,
-            'workspace': {
-                'name': workspace_name,
-                'path': str(self._current_workspace_path),
-                'created_at': workspace_info.get('created_at'),
-                'last_accessed': workspace_info.get('last_accessed')
+            "active": True,
+            "workspace": {
+                "name": workspace_name,
+                "path": str(self._current_workspace_path),
+                "created_at": workspace_info.get("created_at"),
+                "last_accessed": workspace_info.get("last_accessed"),
             },
-            'session': {
-                'id': self._current_session_id,
-                'age': session_info.get('age') if session_info else None,
-                'remaining': session_info.get('remaining') if session_info else None,
-                'rotations': session_info.get('rotation_count') if session_info else 0
+            "session": {
+                "id": self._current_session_id,
+                "age": session_info.get("age") if session_info else None,
+                "remaining": session_info.get("remaining") if session_info else None,
+                "rotations": session_info.get("rotation_count") if session_info else 0,
             },
-            'knowledge_base': kb_stats
+            "knowledge_base": kb_stats,
         }
 
     def chat(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -249,8 +238,8 @@ class WorkspaceContext:
         """
         if not self._current_knowledge_base:
             return {
-                'success': False,
-                'error': 'No knowledge base active. Activate a workspace first.'
+                "success": False,
+                "error": "No knowledge base active. Activate a workspace first.",
             }
 
         return self._current_knowledge_base.search(query, top_k)
@@ -300,9 +289,9 @@ class WorkspaceContext:
 _workspace_context: Optional[WorkspaceContext] = None
 
 
-def get_workspace_context(xai_api_key: Optional[str] = None,
-                          task_manager=None,
-                          message_queue=None) -> WorkspaceContext:
+def get_workspace_context(
+    xai_api_key: Optional[str] = None, task_manager=None, message_queue=None
+) -> WorkspaceContext:
     """
     Get or create global workspace context instance
 
@@ -318,18 +307,16 @@ def get_workspace_context(xai_api_key: Optional[str] = None,
 
     if _workspace_context is None:
         _workspace_context = WorkspaceContext(
-            xai_api_key=xai_api_key,
-            task_manager=task_manager,
-            message_queue=message_queue
+            xai_api_key=xai_api_key, task_manager=task_manager, message_queue=message_queue
         )
 
     return _workspace_context
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test workspace integration
-    import sys
     import os
+    import sys
     from pathlib import Path
 
     # Add project root to path
@@ -338,7 +325,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
     # Get API key from environment
-    api_key = os.getenv('XAI_API_KEY')
+    api_key = os.getenv("XAI_API_KEY")
     if not api_key:
         print("Warning: XAI_API_KEY not set, some features will be unavailable")
 
@@ -350,7 +337,7 @@ if __name__ == '__main__':
     result = ctx.activate_workspace()
     print(f"Activation result:")
     print(f"  Success: {result['success']}")
-    if result['success']:
+    if result["success"]:
         print(f"  Workspace: {result['workspace']['name']}")
         print(f"  Session ID: {result['session']['id']}")
         print(f"  Message: {result['message']}")
@@ -358,7 +345,7 @@ if __name__ == '__main__':
     # Get current context
     print("\nCurrent context:")
     context = ctx.get_current_context()
-    if context['active']:
+    if context["active"]:
         print(f"  Workspace: {context['workspace']['name']}")
         print(f"  Path: {context['workspace']['path']}")
         print(f"  Session age: {context['session']['age']}")

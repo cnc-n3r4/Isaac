@@ -13,6 +13,7 @@ import os
 import shutil
 from pathlib import Path
 from typing import List, Optional, Tuple
+
 from isaac.core.cli_command_router import CommandResult
 
 
@@ -51,8 +52,8 @@ class RestoreHandler:
             return CommandResult(
                 success=False,
                 message="Restore failed: No backup name specified",
-                status_symbol='✗',
-                suggestion="Usage: isaac restore <name> from <backup_source>"
+                status_symbol="✗",
+                suggestion="Usage: isaac restore <name> from <backup_source>",
             )
 
         # Get backup source (prompt if not provided)
@@ -62,8 +63,8 @@ class RestoreHandler:
                 return CommandResult(
                     success=False,
                     message="Restore cancelled: No backup source specified",
-                    status_symbol='⊘',
-                    suggestion=None
+                    status_symbol="⊘",
+                    suggestion=None,
                 )
 
         # Resolve backup source path
@@ -72,8 +73,8 @@ class RestoreHandler:
             return CommandResult(
                 success=False,
                 message=f"Restore failed: Backup not found: {backup_source}",
-                status_symbol='✗',
-                suggestion="Verify backup source path and try again"
+                status_symbol="✗",
+                suggestion="Verify backup source path and try again",
             )
 
         # Determine destination (current directory by default)
@@ -84,8 +85,8 @@ class RestoreHandler:
             return CommandResult(
                 success=False,
                 message="Restore cancelled by user",
-                status_symbol='⊘',
-                suggestion=None
+                status_symbol="⊘",
+                suggestion=None,
             )
 
         # Execute restore
@@ -99,8 +100,8 @@ class RestoreHandler:
             return CommandResult(
                 success=True,
                 message=f"Restore complete: {resolved_source} → {destination}",
-                status_symbol='✓',
-                suggestion=None
+                status_symbol="✓",
+                suggestion=None,
             )
 
         except Exception as e:
@@ -111,8 +112,8 @@ class RestoreHandler:
             return CommandResult(
                 success=False,
                 message=f"Restore failed: {str(e)}",
-                status_symbol='✗',
-                suggestion="Check permissions and ensure destination is writable"
+                status_symbol="✗",
+                suggestion="Check permissions and ensure destination is writable",
             )
 
     def _parse_args(self, args: List[str]) -> Tuple[Optional[str], Optional[str]]:
@@ -135,12 +136,12 @@ class RestoreHandler:
         # Check for "from" keyword
         if "from" in args:
             from_index = args.index("from")
-            name = ' '.join(args[:from_index])
-            backup_source = ' '.join(args[from_index + 1:]) if from_index + 1 < len(args) else None
+            name = " ".join(args[:from_index])
+            backup_source = " ".join(args[from_index + 1 :]) if from_index + 1 < len(args) else None
             return (name, backup_source)
         else:
             # No "from" keyword - only name provided
-            name = ' '.join(args)
+            name = " ".join(args)
             return (name, None)
 
     def _resolve_path(self, path_str: str) -> Optional[Path]:
@@ -173,7 +174,7 @@ class RestoreHandler:
             Backup source path string or None if cancelled
         """
         try:
-            print("\nBackup source path: ", end='', flush=True)
+            print("\nBackup source path: ", end="", flush=True)
             source = input().strip()
             return source if source else None
         except (KeyboardInterrupt, EOFError):
@@ -206,16 +207,16 @@ class RestoreHandler:
                 print(f"  Size: {size_mb:.2f} MB")
             elif source.is_dir():
                 # Estimate directory size
-                total_size = sum(f.stat().st_size for f in source.rglob('*') if f.is_file())
+                total_size = sum(f.stat().st_size for f in source.rglob("*") if f.is_file())
                 size_mb = total_size / (1024 * 1024)
                 print(f"  Size: ~{size_mb:.2f} MB")
         except Exception:
             pass  # Skip size if can't calculate
 
         try:
-            print("\nExecute restore? (y/n): ", end='', flush=True)
+            print("\nExecute restore? (y/n): ", end="", flush=True)
             response = input().strip().lower()
-            return response in ['y', 'yes']
+            return response in ["y", "yes"]
         except (KeyboardInterrupt, EOFError):
             return False
 

@@ -8,12 +8,12 @@ all monitoring agents in the autonomous AI assistant system.
 """
 
 import logging
-from typing import Dict, List, Optional, Any
 from threading import Lock
+from typing import Any, Dict, List, Optional
 
 from isaac.monitoring.base_monitor import BaseMonitor
-from isaac.monitoring.system_monitor import SystemMonitor
 from isaac.monitoring.code_monitor import CodeMonitor
+from isaac.monitoring.system_monitor import SystemMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +37,11 @@ class MonitorManager:
             try:
                 # System monitor
                 system_monitor = SystemMonitor()
-                self.monitors['system'] = system_monitor
+                self.monitors["system"] = system_monitor
 
                 # Code monitor
                 code_monitor = CodeMonitor()
-                self.monitors['code'] = code_monitor
+                self.monitors["code"] = code_monitor
 
                 # Future monitors can be added here:
                 # self.monitors['cloud'] = CloudMonitor()
@@ -120,9 +120,9 @@ class MonitorManager:
             status = {}
             for name, monitor in self.monitors.items():
                 status[name] = {
-                    'running': monitor.running,
-                    'check_interval_minutes': monitor.check_interval.total_seconds() / 60,
-                    'last_check': monitor.last_check.isoformat() if monitor.last_check else None
+                    "running": monitor.running,
+                    "check_interval_minutes": monitor.check_interval.total_seconds() / 60,
+                    "last_check": monitor.last_check.isoformat() if monitor.last_check else None,
                 }
             return status
 

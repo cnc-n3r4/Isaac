@@ -4,11 +4,11 @@ Analytics Database
 Stores all analytics data with efficient querying capabilities.
 """
 
-import sqlite3
 import os
-from datetime import datetime
-from typing import Dict, List, Any, Optional
+import sqlite3
 from contextlib import contextmanager
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 class AnalyticsDatabase:
@@ -28,7 +28,8 @@ class AnalyticsDatabase:
         """Initialize database schema"""
         with self._get_connection() as conn:
             # Productivity metrics table
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS productivity_metrics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -38,10 +39,12 @@ class AnalyticsDatabase:
                     metric_value REAL NOT NULL,
                     metadata TEXT
                 )
-            """)
+            """
+            )
 
             # Code quality metrics table
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS code_quality_metrics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -54,10 +57,12 @@ class AnalyticsDatabase:
                     after_value REAL,
                     metadata TEXT
                 )
-            """)
+            """
+            )
 
             # Learning analytics table
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS learning_analytics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -69,10 +74,12 @@ class AnalyticsDatabase:
                     success_rate REAL,
                     metadata TEXT
                 )
-            """)
+            """
+            )
 
             # Team analytics table
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS team_analytics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -83,10 +90,12 @@ class AnalyticsDatabase:
                     activity_value REAL,
                     metadata TEXT
                 )
-            """)
+            """
+            )
 
             # Command execution analytics
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS command_analytics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -97,10 +106,12 @@ class AnalyticsDatabase:
                     error_message TEXT,
                     metadata TEXT
                 )
-            """)
+            """
+            )
 
             # Custom metrics table
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS custom_metrics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -111,29 +122,40 @@ class AnalyticsDatabase:
                     tags TEXT,
                     metadata TEXT
                 )
-            """)
+            """
+            )
 
             # Create indexes for efficient querying
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_productivity_timestamp
                 ON productivity_metrics(timestamp)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_code_quality_timestamp
                 ON code_quality_metrics(timestamp)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_learning_timestamp
                 ON learning_analytics(timestamp)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_team_timestamp
                 ON team_analytics(timestamp)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_command_timestamp
                 ON command_analytics(timestamp)
-            """)
+            """
+            )
 
             conn.commit()
 
@@ -153,22 +175,25 @@ class AnalyticsDatabase:
         metric_name: str,
         metric_value: float,
         session_id: Optional[str] = None,
-        metadata: Optional[str] = None
+        metadata: Optional[str] = None,
     ):
         """Record a productivity metric"""
         with self._get_connection() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO productivity_metrics
                 (timestamp, session_id, metric_type, metric_name, metric_value, metadata)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().isoformat(),
-                session_id,
-                metric_type,
-                metric_name,
-                metric_value,
-                metadata
-            ))
+            """,
+                (
+                    datetime.now().isoformat(),
+                    session_id,
+                    metric_type,
+                    metric_name,
+                    metric_value,
+                    metadata,
+                ),
+            )
             conn.commit()
 
     def record_code_quality_metric(
@@ -180,26 +205,29 @@ class AnalyticsDatabase:
         before_value: Optional[float] = None,
         after_value: Optional[float] = None,
         session_id: Optional[str] = None,
-        metadata: Optional[str] = None
+        metadata: Optional[str] = None,
     ):
         """Record a code quality metric"""
         with self._get_connection() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO code_quality_metrics
                 (timestamp, session_id, file_path, metric_type, metric_name,
                  metric_value, before_value, after_value, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().isoformat(),
-                session_id,
-                file_path,
-                metric_type,
-                metric_name,
-                metric_value,
-                before_value,
-                after_value,
-                metadata
-            ))
+            """,
+                (
+                    datetime.now().isoformat(),
+                    session_id,
+                    file_path,
+                    metric_type,
+                    metric_name,
+                    metric_value,
+                    before_value,
+                    after_value,
+                    metadata,
+                ),
+            )
             conn.commit()
 
     def record_learning_metric(
@@ -210,25 +238,28 @@ class AnalyticsDatabase:
         usage_count: int = 0,
         success_rate: Optional[float] = None,
         session_id: Optional[str] = None,
-        metadata: Optional[str] = None
+        metadata: Optional[str] = None,
     ):
         """Record a learning analytics metric"""
         with self._get_connection() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO learning_analytics
                 (timestamp, session_id, learning_type, learning_item,
                  confidence, usage_count, success_rate, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().isoformat(),
-                session_id,
-                learning_type,
-                learning_item,
-                confidence,
-                usage_count,
-                success_rate,
-                metadata
-            ))
+            """,
+                (
+                    datetime.now().isoformat(),
+                    session_id,
+                    learning_type,
+                    learning_item,
+                    confidence,
+                    usage_count,
+                    success_rate,
+                    metadata,
+                ),
+            )
             conn.commit()
 
     def record_team_activity(
@@ -238,24 +269,27 @@ class AnalyticsDatabase:
         activity_value: float,
         team_id: Optional[str] = None,
         user_id: Optional[str] = None,
-        metadata: Optional[str] = None
+        metadata: Optional[str] = None,
     ):
         """Record a team analytics activity"""
         with self._get_connection() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO team_analytics
                 (timestamp, team_id, user_id, activity_type, activity_name,
                  activity_value, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().isoformat(),
-                team_id,
-                user_id,
-                activity_type,
-                activity_name,
-                activity_value,
-                metadata
-            ))
+            """,
+                (
+                    datetime.now().isoformat(),
+                    team_id,
+                    user_id,
+                    activity_type,
+                    activity_name,
+                    activity_value,
+                    metadata,
+                ),
+            )
             conn.commit()
 
     def record_command_execution(
@@ -265,24 +299,27 @@ class AnalyticsDatabase:
         success: bool,
         error_message: Optional[str] = None,
         session_id: Optional[str] = None,
-        metadata: Optional[str] = None
+        metadata: Optional[str] = None,
     ):
         """Record command execution analytics"""
         with self._get_connection() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO command_analytics
                 (timestamp, session_id, command_name, execution_time,
                  success, error_message, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().isoformat(),
-                session_id,
-                command_name,
-                execution_time,
-                1 if success else 0,
-                error_message,
-                metadata
-            ))
+            """,
+                (
+                    datetime.now().isoformat(),
+                    session_id,
+                    command_name,
+                    execution_time,
+                    1 if success else 0,
+                    error_message,
+                    metadata,
+                ),
+            )
             conn.commit()
 
     def record_custom_metric(
@@ -292,24 +329,27 @@ class AnalyticsDatabase:
         metric_value: float,
         tags: Optional[str] = None,
         session_id: Optional[str] = None,
-        metadata: Optional[str] = None
+        metadata: Optional[str] = None,
     ):
         """Record a custom metric"""
         with self._get_connection() as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO custom_metrics
                 (timestamp, session_id, metric_category, metric_name,
                  metric_value, tags, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().isoformat(),
-                session_id,
-                metric_category,
-                metric_name,
-                metric_value,
-                tags,
-                metadata
-            ))
+            """,
+                (
+                    datetime.now().isoformat(),
+                    session_id,
+                    metric_category,
+                    metric_name,
+                    metric_value,
+                    tags,
+                    metadata,
+                ),
+            )
             conn.commit()
 
     def query_metrics(
@@ -318,7 +358,7 @@ class AnalyticsDatabase:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         filters: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """Query metrics with optional filters"""
         query = f"SELECT * FROM {table} WHERE 1=1"
@@ -352,7 +392,7 @@ class AnalyticsDatabase:
         metric_column: str,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        group_by: Optional[str] = None
+        group_by: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get aggregate statistics for a metric"""
         query = f"""
@@ -391,25 +431,20 @@ class AnalyticsDatabase:
 
     def clear_old_data(self, days: int = 90):
         """Clear analytics data older than specified days"""
-        cutoff = datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         cutoff = cutoff.replace(day=cutoff.day - days)
         cutoff_str = cutoff.isoformat()
 
         tables = [
-            'productivity_metrics',
-            'code_quality_metrics',
-            'learning_analytics',
-            'team_analytics',
-            'command_analytics',
-            'custom_metrics'
+            "productivity_metrics",
+            "code_quality_metrics",
+            "learning_analytics",
+            "team_analytics",
+            "command_analytics",
+            "custom_metrics",
         ]
 
         with self._get_connection() as conn:
             for table in tables:
-                conn.execute(
-                    f"DELETE FROM {table} WHERE timestamp < ?",
-                    (cutoff_str,)
-                )
+                conn.execute(f"DELETE FROM {table} WHERE timestamp < ?", (cutoff_str,))
             conn.commit()

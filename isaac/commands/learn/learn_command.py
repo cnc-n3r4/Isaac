@@ -4,18 +4,18 @@ Provides access to mistake learning, behavior adjustment, and metrics
 """
 
 import time
-from typing import Dict, List, Any, Optional
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 from isaac.learning import (
-    MistakeLearner,
     BehaviorAdjustmentEngine,
     LearningMetricsDashboard,
-    UserPreferenceLearner,
+    MistakeLearner,
     MistakeRecord,
-    UserFeedback
+    UserFeedback,
+    UserPreferenceLearner,
 )
 
 
@@ -34,9 +34,7 @@ class LearnCommand:
         self.mistake_learner = MistakeLearner(self.session_manager, start_background_learning=True)
         self.behavior_engine = BehaviorAdjustmentEngine(self.session_manager, self.mistake_learner)
         self.metrics_dashboard = LearningMetricsDashboard(
-            self.session_manager,
-            self.mistake_learner,
-            self.behavior_engine
+            self.session_manager, self.mistake_learner, self.behavior_engine
         )
         self.preference_learner = UserPreferenceLearner(self.session_manager)
 
@@ -54,31 +52,31 @@ class LearnCommand:
 
         subcommand = args[0].lower()
 
-        if subcommand == 'stats':
+        if subcommand == "stats":
             return self._show_stats(args[1:])
-        elif subcommand == 'mistakes':
+        elif subcommand == "mistakes":
             return self._show_mistakes(args[1:])
-        elif subcommand == 'patterns':
+        elif subcommand == "patterns":
             return self._show_patterns(args[1:])
-        elif subcommand == 'behavior':
+        elif subcommand == "behavior":
             return self._show_behavior(args[1:])
-        elif subcommand == 'metrics':
+        elif subcommand == "metrics":
             return self._show_metrics(args[1:])
-        elif subcommand == 'preferences':
+        elif subcommand == "preferences":
             return self._show_preferences(args[1:])
-        elif subcommand == 'track':
+        elif subcommand == "track":
             return self._track_mistake(args[1:])
-        elif subcommand == 'feedback':
+        elif subcommand == "feedback":
             return self._record_feedback(args[1:])
-        elif subcommand == 'reset':
+        elif subcommand == "reset":
             return self._reset_learning(args[1:])
-        elif subcommand == 'help':
+        elif subcommand == "help":
             return self._show_help()
         else:
             return {
-                'success': False,
-                'output': f"Unknown subcommand: {subcommand}\n{self._get_help_text()}",
-                'exit_code': 1
+                "success": False,
+                "output": f"Unknown subcommand: {subcommand}\n{self._get_help_text()}",
+                "exit_code": 1,
             }
 
     def _show_dashboard(self) -> Dict[str, Any]:
@@ -92,7 +90,7 @@ class LearnCommand:
             output += "=" * 60 + "\n\n"
 
             # Health score with visual indicator
-            health = summary['current_health_score']
+            health = summary["current_health_score"]
             health_bar = self._get_health_bar(health)
             output += f"📊 Learning Health: {health:.1f}/100 {health_bar}\n"
             output += f"📈 Trend: {summary['health_trend'].upper()}\n\n"
@@ -105,13 +103,13 @@ class LearnCommand:
             output += f"  • Learning Rate: {summary['learning_rate']:.1%}\n\n"
 
             # Active insights
-            if summary['active_insights'] > 0:
+            if summary["active_insights"] > 0:
                 output += f"⚠️  {summary['active_insights']} Active Insights\n\n"
 
             # Recommendations
-            if summary['recommendations']:
+            if summary["recommendations"]:
                 output += "💡 Recommendations:\n"
-                for i, rec in enumerate(summary['recommendations'][:3], 1):
+                for i, rec in enumerate(summary["recommendations"][:3], 1):
                     output += f"  {i}. {rec}\n"
                 output += "\n"
 
@@ -119,17 +117,9 @@ class LearnCommand:
             output += "💡 Use '/learn stats' for detailed statistics\n"
             output += "💡 Use '/learn help' for all available commands\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"Error generating dashboard: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Error generating dashboard: {e}", "exit_code": 1}
 
     def _get_health_bar(self, score: float) -> str:
         """Generate visual health bar."""
@@ -165,20 +155,22 @@ class LearnCommand:
             output += f"  Learning Patterns: {mistake_stats['learning_patterns']}\n"
             output += f"  Learning Rate: {mistake_stats['learning_rate']:.1%}\n"
 
-            if mistake_stats['mistake_types']:
+            if mistake_stats["mistake_types"]:
                 output += "\n  Mistake Types:\n"
-                for mtype, count in mistake_stats['mistake_types'].items():
+                for mtype, count in mistake_stats["mistake_types"].items():
                     output += f"    • {mtype}: {count}\n"
 
             # Behavior Adjustment
             output += "\n🎯 Behavior Adjustment:\n"
-            if behavior_analysis.get('total_adjustments', 0) > 0:
+            if behavior_analysis.get("total_adjustments", 0) > 0:
                 output += f"  Total Adjustments: {behavior_analysis['total_adjustments']}\n"
-                output += f"  Most Adjusted: {behavior_analysis.get('most_adjusted_category', 'N/A')}\n"
+                output += (
+                    f"  Most Adjusted: {behavior_analysis.get('most_adjusted_category', 'N/A')}\n"
+                )
 
-                if 'category_effectiveness' in behavior_analysis:
+                if "category_effectiveness" in behavior_analysis:
                     output += "\n  By Category:\n"
-                    for cat, data in behavior_analysis['category_effectiveness'].items():
+                    for cat, data in behavior_analysis["category_effectiveness"].items():
                         output += f"    • {cat}: {data['total_adjustments']} adjustments "
                         output += f"(confidence: {data['avg_confidence']:.1%})\n"
             else:
@@ -186,31 +178,23 @@ class LearnCommand:
 
             # User Preferences
             output += "\n👤 User Preferences:\n"
-            if preference_stats.get('total_patterns', 0) > 0:
+            if preference_stats.get("total_patterns", 0) > 0:
                 output += f"  Total Patterns: {preference_stats['total_patterns']}\n"
                 output += f"  High Confidence: {preference_stats['high_confidence_patterns']}\n"
                 output += f"  Profile Age: {preference_stats['profile_age_days']:.1f} days\n"
                 output += f"  Last Updated: {preference_stats['last_updated']}\n"
 
-                if preference_stats.get('learning_categories'):
+                if preference_stats.get("learning_categories"):
                     output += "\n  Learning Categories:\n"
-                    for cat in preference_stats['learning_categories']:
+                    for cat in preference_stats["learning_categories"]:
                         output += f"    • {cat}\n"
             else:
                 output += "  No preferences learned yet\n"
 
             output += "\n"
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"Error generating statistics: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Error generating statistics: {e}", "exit_code": 1}
 
     def _show_mistakes(self, args: List[str]) -> Dict[str, Any]:
         """Show recent mistakes."""
@@ -220,7 +204,7 @@ class LearnCommand:
                 limit = int(args[0])
 
             # Get recent mistakes from different types
-            mistake_types = ['command_error', 'ai_response', 'pattern_failure']
+            mistake_types = ["command_error", "ai_response", "pattern_failure"]
             all_mistakes = []
 
             for mtype in mistake_types:
@@ -239,26 +223,28 @@ class LearnCommand:
                 output += "\n💡 Mistakes are automatically tracked as you use Isaac.\n"
             else:
                 for i, mistake in enumerate(all_mistakes, 1):
-                    timestamp = datetime.fromtimestamp(mistake.timestamp).strftime('%Y-%m-%d %H:%M:%S')
+                    timestamp = datetime.fromtimestamp(mistake.timestamp).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
                     learned_status = "✓ Learned" if mistake.learned else "○ Pending"
 
                     output += f"{i}. [{mistake.severity.upper()}] {learned_status}\n"
                     output += f"   Type: {mistake.mistake_type}\n"
                     output += f"   Time: {timestamp}\n"
-                    output += f"   Issue: {mistake.mistake_description[:80]}...\n" if len(mistake.mistake_description) > 80 else f"   Issue: {mistake.mistake_description}\n"
-                    output += f"   Correction: {mistake.user_correction[:60]}...\n\n" if len(mistake.user_correction) > 60 else f"   Correction: {mistake.user_correction}\n\n"
+                    output += (
+                        f"   Issue: {mistake.mistake_description[:80]}...\n"
+                        if len(mistake.mistake_description) > 80
+                        else f"   Issue: {mistake.mistake_description}\n"
+                    )
+                    output += (
+                        f"   Correction: {mistake.user_correction[:60]}...\n\n"
+                        if len(mistake.user_correction) > 60
+                        else f"   Correction: {mistake.user_correction}\n\n"
+                    )
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"Error retrieving mistakes: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Error retrieving mistakes: {e}", "exit_code": 1}
 
     def _show_patterns(self, args: List[str]) -> Dict[str, Any]:
         """Show learned patterns."""
@@ -274,26 +260,26 @@ class LearnCommand:
                 output += "💡 Use '/learn track' to manually record mistakes.\n"
             else:
                 for i, (pattern_id, pattern) in enumerate(patterns.items(), 1):
-                    confidence_bar = "█" * int(pattern.confidence * 10) + "░" * (10 - int(pattern.confidence * 10))
+                    confidence_bar = "█" * int(pattern.confidence * 10) + "░" * (
+                        10 - int(pattern.confidence * 10)
+                    )
 
                     output += f"{i}. {pattern.pattern_description}\n"
                     output += f"   ID: {pattern_id}\n"
                     output += f"   Type: {pattern.mistake_type}\n"
                     output += f"   Confidence: {confidence_bar} {pattern.confidence:.1%}\n"
-                    output += f"   Success: {pattern.success_count} | Failure: {pattern.failure_count}\n"
-                    output += f"   Action: {pattern.correction_action[:70]}...\n\n" if len(pattern.correction_action) > 70 else f"   Action: {pattern.correction_action}\n\n"
+                    output += (
+                        f"   Success: {pattern.success_count} | Failure: {pattern.failure_count}\n"
+                    )
+                    output += (
+                        f"   Action: {pattern.correction_action[:70]}...\n\n"
+                        if len(pattern.correction_action) > 70
+                        else f"   Action: {pattern.correction_action}\n\n"
+                    )
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"Error retrieving patterns: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Error retrieving patterns: {e}", "exit_code": 1}
 
     def _show_behavior(self, args: List[str]) -> Dict[str, Any]:
         """Show behavior profile."""
@@ -325,21 +311,25 @@ class LearnCommand:
             if adjustments:
                 output += "Recent Adjustments:\n"
                 for i, adj in enumerate(adjustments[:5], 1):
-                    timestamp = datetime.fromtimestamp(adj.applied_at).strftime('%Y-%m-%d %H:%M:%S') if adj.applied_at else 'Pending'
+                    timestamp = (
+                        datetime.fromtimestamp(adj.applied_at).strftime("%Y-%m-%d %H:%M:%S")
+                        if adj.applied_at
+                        else "Pending"
+                    )
                     output += f"  {i}. [{adj.behavior_category}] {adj.current_value} → {adj.target_value}\n"
-                    output += f"     Reason: {adj.reason[:60]}...\n" if len(adj.reason) > 60 else f"     Reason: {adj.reason}\n"
+                    output += (
+                        f"     Reason: {adj.reason[:60]}...\n"
+                        if len(adj.reason) > 60
+                        else f"     Reason: {adj.reason}\n"
+                    )
                     output += f"     Applied: {timestamp}\n\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
             return {
-                'success': False,
-                'output': f"Error retrieving behavior profile: {e}",
-                'exit_code': 1
+                "success": False,
+                "output": f"Error retrieving behavior profile: {e}",
+                "exit_code": 1,
             }
 
     def _show_metrics(self, args: List[str]) -> Dict[str, Any]:
@@ -357,7 +347,9 @@ class LearnCommand:
 
             # Health Score
             health_bar = self._get_health_bar(metrics.learning_health_score)
-            output += f"Learning Health Score: {metrics.learning_health_score:.1f}/100 {health_bar}\n\n"
+            output += (
+                f"Learning Health Score: {metrics.learning_health_score:.1f}/100 {health_bar}\n\n"
+            )
 
             # Metrics breakdown
             output += "Metrics Breakdown:\n"
@@ -389,7 +381,11 @@ class LearnCommand:
                     priority_emoji = {"critical": "🚨", "high": "⚠️", "medium": "ℹ️", "low": "💡"}
                     emoji = priority_emoji.get(insight.priority, "ℹ️")
                     output += f"  {i}. {emoji} [{insight.priority.upper()}] {insight.title}\n"
-                    output += f"     {insight.description[:70]}...\n" if len(insight.description) > 70 else f"     {insight.description}\n"
+                    output += (
+                        f"     {insight.description[:70]}...\n"
+                        if len(insight.description) > 70
+                        else f"     {insight.description}\n"
+                    )
                 output += "\n"
 
             # Recommendations
@@ -399,17 +395,9 @@ class LearnCommand:
                     output += f"  {i}. {rec}\n"
                 output += "\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"Error generating metrics: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Error generating metrics: {e}", "exit_code": 1}
 
     def _show_preferences(self, args: List[str]) -> Dict[str, Any]:
         """Show user preferences."""
@@ -428,8 +416,13 @@ class LearnCommand:
                 output += f"High Confidence: {stats['high_confidence_patterns']}\n\n"
 
                 # Show top preferences by category
-                categories = ['naming_conventions', 'code_structure', 'command_patterns',
-                            'communication_style', 'workflow_patterns']
+                categories = [
+                    "naming_conventions",
+                    "code_structure",
+                    "command_patterns",
+                    "communication_style",
+                    "workflow_patterns",
+                ]
 
                 for category in categories:
                     top_prefs = prefs.get_top_preferences(category, limit=3)
@@ -437,21 +430,23 @@ class LearnCommand:
                         output += f"{category.replace('_', ' ').title()}:\n"
                         for key, pattern in top_prefs:
                             if pattern.confidence > 0.5:
-                                conf_bar = "█" * int(pattern.confidence * 10) + "░" * (10 - int(pattern.confidence * 10))
+                                conf_bar = "█" * int(pattern.confidence * 10) + "░" * (
+                                    10 - int(pattern.confidence * 10)
+                                )
                                 output += f"  • {pattern.pattern_key}: {conf_bar} {pattern.confidence:.1%}\n"
-                                output += f"    Value: {str(pattern.preference_value)[:60]}...\n" if len(str(pattern.preference_value)) > 60 else f"    Value: {pattern.preference_value}\n"
+                                output += (
+                                    f"    Value: {str(pattern.preference_value)[:60]}...\n"
+                                    if len(str(pattern.preference_value)) > 60
+                                    else f"    Value: {pattern.preference_value}\n"
+                                )
                         output += "\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
             return {
-                'success': False,
-                'output': f"Error retrieving preferences: {e}",
-                'exit_code': 1
+                "success": False,
+                "output": f"Error retrieving preferences: {e}",
+                "exit_code": 1,
             }
 
     def _track_mistake(self, args: List[str]) -> Dict[str, Any]:
@@ -459,14 +454,14 @@ class LearnCommand:
         try:
             if len(args) < 3:
                 return {
-                    'success': False,
-                    'output': "Usage: /learn track <type> <description> <correction>",
-                    'exit_code': 1
+                    "success": False,
+                    "output": "Usage: /learn track <type> <description> <correction>",
+                    "exit_code": 1,
                 }
 
             mistake_type = args[0]
             description = args[1]
-            correction = ' '.join(args[2:])
+            correction = " ".join(args[2:])
 
             # Create mistake record
             mistake = MistakeRecord(
@@ -476,8 +471,8 @@ class LearnCommand:
                 original_input="manual_entry",
                 mistake_description=description,
                 user_correction=correction,
-                context={'manual': True},
-                severity='medium'
+                context={"manual": True},
+                severity="medium",
             )
 
             # Record it
@@ -489,34 +484,26 @@ class LearnCommand:
             output += f"Correction: {correction}\n\n"
             output += "💡 This will contribute to pattern learning.\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"Error tracking mistake: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Error tracking mistake: {e}", "exit_code": 1}
 
     def _record_feedback(self, args: List[str]) -> Dict[str, Any]:
         """Record user feedback."""
         try:
             if len(args) < 2:
                 return {
-                    'success': False,
-                    'output': "Usage: /learn feedback <category> <feedback_text>",
-                    'exit_code': 1
+                    "success": False,
+                    "output": "Usage: /learn feedback <category> <feedback_text>",
+                    "exit_code": 1,
                 }
 
             category = args[0]
-            feedback_text = ' '.join(args[1:])
+            feedback_text = " ".join(args[1:])
 
             # Determine sentiment (simple heuristic)
-            positive_words = ['good', 'great', 'excellent', 'perfect', 'love', 'like']
-            negative_words = ['bad', 'poor', 'wrong', 'hate', 'dislike', 'terrible']
+            positive_words = ["good", "great", "excellent", "perfect", "love", "like"]
+            negative_words = ["bad", "poor", "wrong", "hate", "dislike", "terrible"]
 
             feedback_lower = feedback_text.lower()
             sentiment = 0.0
@@ -534,11 +521,11 @@ class LearnCommand:
             feedback = UserFeedback(
                 id=f"feedback_{int(time.time())}",
                 timestamp=time.time(),
-                feedback_type='correction' if sentiment < 0 else 'positive',
+                feedback_type="correction" if sentiment < 0 else "positive",
                 context="manual_feedback",
                 user_response=feedback_text,
                 sentiment_score=sentiment,
-                behavior_category=category
+                behavior_category=category,
             )
 
             # Record it
@@ -550,40 +537,33 @@ class LearnCommand:
             output += f"Feedback: {feedback_text}\n\n"
             output += "💡 This will help adjust Isaac's behavior.\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"Error recording feedback: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Error recording feedback: {e}", "exit_code": 1}
 
     def _reset_learning(self, args: List[str]) -> Dict[str, Any]:
         """Reset learning data (with confirmation)."""
         try:
-            if not args or args[0].lower() != 'confirm':
+            if not args or args[0].lower() != "confirm":
                 return {
-                    'success': False,
-                    'output': "⚠️  WARNING: This will reset ALL learning data!\n\n"
-                            "To confirm, run: /learn reset confirm",
-                    'exit_code': 1
+                    "success": False,
+                    "output": "⚠️  WARNING: This will reset ALL learning data!\n\n"
+                    "To confirm, run: /learn reset confirm",
+                    "exit_code": 1,
                 }
 
             # Stop background learning
             self.mistake_learner.stop_learning()
 
             # Delete data directories
-            isaac_dir = Path.home() / '.isaac'
-            directories = ['learning', 'behavior', 'learning_metrics']
+            isaac_dir = Path.home() / ".isaac"
+            directories = ["learning", "behavior", "learning_metrics"]
 
             for dirname in directories:
                 dir_path = isaac_dir / dirname
                 if dir_path.exists():
                     import shutil
+
                     shutil.rmtree(dir_path)
 
             output = "✓ Learning data reset successfully\n\n"
@@ -596,25 +576,17 @@ class LearnCommand:
             output += "  • User preferences\n\n"
             output += "💡 Learning will restart from scratch on next use.\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
         except Exception as e:
             return {
-                'success': False,
-                'output': f"Error resetting learning data: {e}",
-                'exit_code': 1
+                "success": False,
+                "output": f"Error resetting learning data: {e}",
+                "exit_code": 1,
             }
 
     def _show_help(self) -> Dict[str, Any]:
         """Show help information."""
-        return {
-            'success': True,
-            'output': self._get_help_text(),
-            'exit_code': 0
-        }
+        return {"success": True, "output": self._get_help_text(), "exit_code": 0}
 
     def _get_help_text(self) -> str:
         """Get help text."""
@@ -657,5 +629,5 @@ The learning system continuously improves Isaac's assistance based on your inter
 
     def cleanup(self):
         """Cleanup resources."""
-        if hasattr(self, 'mistake_learner'):
+        if hasattr(self, "mistake_learner"):
             self.mistake_learner.stop_learning()

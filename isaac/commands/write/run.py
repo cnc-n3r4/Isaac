@@ -3,9 +3,9 @@ Write Command - Create new files
 Wrapper for WriteTool
 """
 
-import sys
-import json
 import argparse
+import json
+import sys
 from pathlib import Path
 
 # Add isaac to path for imports
@@ -16,11 +16,11 @@ from isaac.tools import WriteTool
 
 def main():
     """Main entry point for /write command"""
-    parser = argparse.ArgumentParser(description='Create new files')
-    parser.add_argument('file_path', help='Path to file to create')
-    parser.add_argument('content', nargs='?', default=None, help='Content to write (or use stdin)')
-    parser.add_argument('--overwrite', action='store_true', help='Allow overwriting existing files')
-    parser.add_argument('--help-cmd', action='store_true', help='Show this help')
+    parser = argparse.ArgumentParser(description="Create new files")
+    parser.add_argument("file_path", help="Path to file to create")
+    parser.add_argument("content", nargs="?", default=None, help="Content to write (or use stdin)")
+    parser.add_argument("--overwrite", action="store_true", help="Allow overwriting existing files")
+    parser.add_argument("--help-cmd", action="store_true", help="Show this help")
 
     try:
         # Parse args
@@ -50,31 +50,21 @@ def main():
 
         # Execute tool
         tool = WriteTool()
-        result = tool.execute(
-            file_path=args.file_path,
-            content=content,
-            overwrite=args.overwrite
-        )
+        result = tool.execute(file_path=args.file_path, content=content, overwrite=args.overwrite)
 
         # Output result
-        if result['success']:
+        if result["success"]:
             print(f"File written: {result['file_path']} ({result['bytes_written']} bytes)")
 
             # Return success envelope
             if not sys.stdout.isatty():
-                envelope = {
-                    "ok": True,
-                    "stdout": f"File written: {result['file_path']}"
-                }
+                envelope = {"ok": True, "stdout": f"File written: {result['file_path']}"}
                 print(json.dumps(envelope))
         else:
             print(f"Error: {result['error']}", file=sys.stderr)
 
             if not sys.stdout.isatty():
-                envelope = {
-                    "ok": False,
-                    "error": {"message": result['error']}
-                }
+                envelope = {"ok": False, "error": {"message": result["error"]}}
                 print(json.dumps(envelope))
 
             sys.exit(1)
@@ -83,10 +73,7 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
 
         if not sys.stdout.isatty():
-            envelope = {
-                "ok": False,
-                "error": {"message": str(e)}
-            }
+            envelope = {"ok": False, "error": {"message": str(e)}}
             print(json.dumps(envelope))
 
         sys.exit(1)

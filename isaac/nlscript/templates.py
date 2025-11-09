@@ -4,9 +4,9 @@ Script Template Manager
 Provides common script patterns and templates.
 """
 
-from typing import Dict, Any, List, Optional
-from pathlib import Path
 import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 class ScriptTemplateManager:
@@ -16,7 +16,7 @@ class ScriptTemplateManager:
         """Initialize template manager."""
         self.templates = self._load_builtin_templates()
         self.custom_templates: Dict[str, Dict[str, Any]] = {}
-        self.storage_path = Path.home() / '.isaac' / 'script_templates.json'
+        self.storage_path = Path.home() / ".isaac" / "script_templates.json"
         self._load_custom_templates()
 
     def get_template(self, name: str) -> Optional[Dict[str, Any]]:
@@ -47,21 +47,25 @@ class ScriptTemplateManager:
 
         # Built-in templates
         for name, template in self.templates.items():
-            result.append({
-                'name': name,
-                'description': template['description'],
-                'category': template['category'],
-                'type': 'built-in'
-            })
+            result.append(
+                {
+                    "name": name,
+                    "description": template["description"],
+                    "category": template["category"],
+                    "type": "built-in",
+                }
+            )
 
         # Custom templates
         for name, template in self.custom_templates.items():
-            result.append({
-                'name': name,
-                'description': template['description'],
-                'category': template.get('category', 'custom'),
-                'type': 'custom'
-            })
+            result.append(
+                {
+                    "name": name,
+                    "description": template["description"],
+                    "category": template.get("category", "custom"),
+                    "type": "custom",
+                }
+            )
 
         return result
 
@@ -80,7 +84,7 @@ class ScriptTemplateManager:
         if not template:
             raise ValueError(f"Template '{name}' not found")
 
-        script = template['script']
+        script = template["script"]
 
         # Substitute variables
         if variables:
@@ -95,8 +99,8 @@ class ScriptTemplateManager:
         name: str,
         script: str,
         description: str,
-        category: str = 'custom',
-        variables: Optional[List[str]] = None
+        category: str = "custom",
+        variables: Optional[List[str]] = None,
     ) -> bool:
         """
         Add a custom template.
@@ -112,10 +116,10 @@ class ScriptTemplateManager:
             True if successful
         """
         self.custom_templates[name] = {
-            'script': script,
-            'description': description,
-            'category': category,
-            'variables': variables or []
+            "script": script,
+            "description": description,
+            "category": category,
+            "variables": variables or [],
         }
 
         return self._save_custom_templates()
@@ -130,10 +134,10 @@ class ScriptTemplateManager:
     def _load_builtin_templates(self) -> Dict[str, Dict[str, Any]]:
         """Load built-in templates."""
         return {
-            'basic': {
-                'description': 'Basic bash script template',
-                'category': 'general',
-                'script': '''#!/bin/bash
+            "basic": {
+                "description": "Basic bash script template",
+                "category": "general",
+                "script": """#!/bin/bash
 # {description}
 
 set -e  # Exit on error
@@ -145,14 +149,13 @@ main() {
 }
 
 main "$@"
-''',
-                'variables': ['description', 'script_name']
+""",
+                "variables": ["description", "script_name"],
             },
-
-            'backup': {
-                'description': 'Backup files to a directory',
-                'category': 'utility',
-                'script': '''#!/bin/bash
+            "backup": {
+                "description": "Backup files to a directory",
+                "category": "utility",
+                "script": """#!/bin/bash
 # Backup script
 
 set -e
@@ -175,14 +178,13 @@ echo "Backup created: $BACKUP_FILE"
 find "$BACKUP_DIR" -name "backup_*.tar.gz" -mtime +7 -delete
 
 echo "Backup complete!"
-''',
-                'variables': ['source_dir', 'backup_dir']
+""",
+                "variables": ["source_dir", "backup_dir"],
             },
-
-            'cleanup': {
-                'description': 'Clean up old files',
-                'category': 'utility',
-                'script': '''#!/bin/bash
+            "cleanup": {
+                "description": "Clean up old files",
+                "category": "utility",
+                "script": """#!/bin/bash
 # Cleanup old files
 
 set -e
@@ -215,14 +217,13 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 else
     echo "Cancelled"
 fi
-''',
-                'variables': ['target_dir', 'days_old', 'file_pattern']
+""",
+                "variables": ["target_dir", "days_old", "file_pattern"],
             },
-
-            'deploy': {
-                'description': 'Simple deployment script',
-                'category': 'deployment',
-                'script': '''#!/bin/bash
+            "deploy": {
+                "description": "Simple deployment script",
+                "category": "deployment",
+                "script": """#!/bin/bash
 # Deployment script for {project_name}
 
 set -e
@@ -264,14 +265,13 @@ echo "Restarting services..."
 # pm2 restart {app_name}
 
 echo "Deployment complete!"
-''',
-                'variables': ['project_name', 'project_dir', 'branch']
+""",
+                "variables": ["project_name", "project_dir", "branch"],
             },
-
-            'monitor': {
-                'description': 'Monitor a service and restart if down',
-                'category': 'monitoring',
-                'script': '''#!/bin/bash
+            "monitor": {
+                "description": "Monitor a service and restart if down",
+                "category": "monitoring",
+                "script": """#!/bin/bash
 # Service monitor for {service_name}
 
 SERVICE_NAME="{service_name}"
@@ -307,14 +307,13 @@ else
         log_message "ERROR: Failed to restart $SERVICE_NAME"
     fi
 fi
-''',
-                'variables': ['service_name', 'check_command', 'restart_command']
+""",
+                "variables": ["service_name", "check_command", "restart_command"],
             },
-
-            'git-sync': {
-                'description': 'Sync multiple git repositories',
-                'category': 'git',
-                'script': '''#!/bin/bash
+            "git-sync": {
+                "description": "Sync multiple git repositories",
+                "category": "git",
+                "script": """#!/bin/bash
 # Sync multiple git repositories
 
 set -e
@@ -361,14 +360,13 @@ done
 
 echo ""
 echo "All repositories synced!"
-''',
-                'variables': ['repo_list']
+""",
+                "variables": ["repo_list"],
             },
-
-            'log-analyzer': {
-                'description': 'Analyze log files for errors',
-                'category': 'monitoring',
-                'script': '''#!/bin/bash
+            "log-analyzer": {
+                "description": "Analyze log files for errors",
+                "category": "monitoring",
+                "script": """#!/bin/bash
 # Log analyzer for {log_file}
 
 LOG_FILE="{log_file}"
@@ -409,16 +407,16 @@ cat "$REPORT_FILE"
 
 echo ""
 echo "Report saved to: $REPORT_FILE"
-''',
-                'variables': ['log_file', 'error_pattern']
-            }
+""",
+                "variables": ["log_file", "error_pattern"],
+            },
         }
 
     def _load_custom_templates(self):
         """Load custom templates from storage."""
         if self.storage_path.exists():
             try:
-                with open(self.storage_path, 'r') as f:
+                with open(self.storage_path, "r") as f:
                     self.custom_templates = json.load(f)
             except Exception as e:
                 print(f"Warning: Failed to load custom templates: {e}")
@@ -428,7 +426,7 @@ echo "Report saved to: $REPORT_FILE"
         """Save custom templates to storage."""
         try:
             self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.storage_path, 'w') as f:
+            with open(self.storage_path, "w") as f:
                 json.dump(self.custom_templates, f, indent=2)
             return True
         except Exception as e:

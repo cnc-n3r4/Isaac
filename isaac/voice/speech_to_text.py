@@ -3,19 +3,20 @@ Voice Integration - Speech-to-text and voice command recognition
 Isaac's voice interface for hands-free development assistance
 """
 
-import os
-import time
-import threading
-import queue
 import json
-from typing import Dict, List, Any, Optional, Callable
-from dataclasses import dataclass, asdict
+import os
+import queue
+import threading
+import time
+from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
 
 @dataclass
 class VoiceCommand:
     """Represents a recognized voice command."""
+
     command_id: str
     text: str
     confidence: float
@@ -28,6 +29,7 @@ class VoiceCommand:
 @dataclass
 class VoiceShortcut:
     """Represents a voice-activated shortcut."""
+
     shortcut_id: str
     trigger_phrase: str
     command: str
@@ -44,7 +46,7 @@ class SpeechToTextEngine:
         """Initialize the speech-to-text engine."""
         self.config = config or {}
         self.is_listening = False
-        self.language = self.config.get('language', 'en-US')
+        self.language = self.config.get("language", "en-US")
 
     def start_listening(self, callback: Callable[[VoiceCommand], None]) -> bool:
         """Start listening for voice input.
@@ -83,16 +85,19 @@ class WhisperSTTEngine(SpeechToTextEngine):
     def __init__(self, config: Dict[str, Any] = None):
         """Initialize Whisper engine."""
         super().__init__(config)
-        self.model_size = self.config.get('model_size', 'base')
-        self.device = self.config.get('device', 'cpu')
+        self.model_size = self.config.get("model_size", "base")
+        self.device = self.config.get("device", "cpu")
 
         # Check if whisper is available
         try:
             import whisper
+
             self.whisper = whisper
             self.model = None
         except ImportError:
-            raise ImportError("whisper package not installed. Install with: pip install openai-whisper")
+            raise ImportError(
+                "whisper package not installed. Install with: pip install openai-whisper"
+            )
 
     def _load_model(self):
         """Load the Whisper model if not already loaded."""
@@ -120,19 +125,19 @@ class WhisperSTTEngine(SpeechToTextEngine):
             self._load_model()
 
             start_time = time.time()
-            result = self.model.transcribe(audio_file, language=self.language.split('-')[0])
+            result = self.model.transcribe(audio_file, language=self.language.split("-")[0])
 
             duration = time.time() - start_time
 
-            if result and result.get('text'):
+            if result and result.get("text"):
                 return VoiceCommand(
                     command_id=f"whisper_{int(time.time() * 1000)}",
-                    text=result['text'].strip(),
-                    confidence=result.get('confidence', 0.8),  # Whisper doesn't provide confidence
+                    text=result["text"].strip(),
+                    confidence=result.get("confidence", 0.8),  # Whisper doesn't provide confidence
                     timestamp=time.time(),
                     language=self.language,
                     duration=duration,
-                    audio_file=audio_file
+                    audio_file=audio_file,
                 )
 
         except Exception as e:
@@ -147,10 +152,11 @@ class GoogleSTTEngine(SpeechToTextEngine):
     def __init__(self, config: Dict[str, Any] = None):
         """Initialize Google STT engine."""
         super().__init__(config)
-        self.api_key = self.config.get('api_key')
+        self.api_key = self.config.get("api_key")
 
         try:
             from google.cloud import speech
+
             self.speech_client = speech.SpeechClient()
         except ImportError:
             raise ImportError("google-cloud-speech package not installed")
@@ -160,7 +166,7 @@ class GoogleSTTEngine(SpeechToTextEngine):
         try:
             from google.cloud import speech
 
-            with open(audio_file, 'rb') as audio_file_obj:
+            with open(audio_file, "rb") as audio_file_obj:
                 content = audio_file_obj.read()
 
             audio = speech.RecognitionAudio(content=content)
@@ -185,7 +191,7 @@ class GoogleSTTEngine(SpeechToTextEngine):
                         timestamp=time.time(),
                         language=self.language,
                         duration=duration,
-                        audio_file=audio_file
+                        audio_file=audio_file,
                     )
 
         except Exception as e:
@@ -200,7 +206,7 @@ class VoskSTTEngine(SpeechToTextEngine):
     def __init__(self, config: Dict[str, Any] = None):
         """Initialize Vosk engine."""
         super().__init__(config)
-        self.model_path = self.config.get('model_path')
+        self.model_path = self.config.get("model_path")
 
         try:
             from vosk import Model
@@ -217,8 +223,9 @@ class VoskSTTEngine(SpeechToTextEngine):
     def recognize_file(self, audio_file: str) -> Optional[VoiceCommand]:
         """Recognize speech using Vosk."""
         try:
-            import wave
             import json
+            import wave
+
             from vosk import KaldiRecognizer
 
             wf = wave.open(audio_file, "rb")
@@ -248,10 +255,10 @@ class VoskSTTEngine(SpeechToTextEngine):
             word_count = 0
 
             for result in results:
-                if 'result' in result:
-                    for word in result['result']:
-                        full_text += word.get('word', '') + ' '
-                        confidence += word.get('conf', 0)
+                if "result" in result:
+                    for word in result["result"]:
+                        full_text += word.get("word", "") + " "
+                        confidence += word.get("conf", 0)
                         word_count += 1
 
             if word_count > 0:
@@ -265,7 +272,7 @@ class VoskSTTEngine(SpeechToTextEngine):
                     timestamp=time.time(),
                     language=self.language,
                     duration=duration,
-                    audio_file=audio_file
+                    audio_file=audio_file,
                 )
 
         except Exception as e:
@@ -294,43 +301,45 @@ class VoiceCommandRecognizer:
 
     def _load_engines(self):
         """Load available speech-to-text engines."""
-        engines_config = self.config.get('engines', {})
+        engines_config = self.config.get("engines", {})
 
         # Try to load Whisper (preferred for offline use)
-        if engines_config.get('whisper', {}).get('enabled', True):
+        if engines_config.get("whisper", {}).get("enabled", True):
             try:
-                self.engines['whisper'] = WhisperSTTEngine(engines_config.get('whisper', {}))
+                self.engines["whisper"] = WhisperSTTEngine(engines_config.get("whisper", {}))
                 if self.active_engine is None:
-                    self.active_engine = 'whisper'
+                    self.active_engine = "whisper"
             except Exception as e:
                 print(f"Failed to load Whisper engine: {e}")
 
         # Try to load Google STT
-        if engines_config.get('google', {}).get('enabled', False):
+        if engines_config.get("google", {}).get("enabled", False):
             try:
-                self.engines['google'] = GoogleSTTEngine(engines_config.get('google', {}))
+                self.engines["google"] = GoogleSTTEngine(engines_config.get("google", {}))
                 if self.active_engine is None:
-                    self.active_engine = 'google'
+                    self.active_engine = "google"
             except Exception as e:
                 print(f"Failed to load Google STT engine: {e}")
 
         # Try to load Vosk (offline)
-        if engines_config.get('vosk', {}).get('enabled', False):
+        if engines_config.get("vosk", {}).get("enabled", False):
             try:
-                self.engines['vosk'] = VoskSTTEngine(engines_config.get('vosk', {}))
+                self.engines["vosk"] = VoskSTTEngine(engines_config.get("vosk", {}))
                 if self.active_engine is None:
-                    self.active_engine = 'vosk'
+                    self.active_engine = "vosk"
             except Exception as e:
                 print(f"Failed to load Vosk engine: {e}")
 
         if not self.engines:
             print("Warning: No speech-to-text engines available. Voice commands will not work.")
-            print("Install optional dependencies: pip install openai-whisper google-cloud-speech vosk")
+            print(
+                "Install optional dependencies: pip install openai-whisper google-cloud-speech vosk"
+            )
             # Don't raise error, just continue with empty engines dict
 
     def _load_shortcuts(self):
         """Load voice shortcuts from configuration."""
-        shortcuts_config = self.config.get('shortcuts', [])
+        shortcuts_config = self.config.get("shortcuts", [])
 
         for shortcut_config in shortcuts_config:
             shortcut = VoiceShortcut(**shortcut_config)
@@ -387,12 +396,12 @@ class VoiceCommandRecognizer:
             Processing result
         """
         result = {
-            'command_id': voice_command.command_id,
-            'original_text': voice_command.text,
-            'processed': False,
-            'action': None,
-            'confidence': voice_command.confidence,
-            'shortcut_used': None
+            "command_id": voice_command.command_id,
+            "original_text": voice_command.text,
+            "processed": False,
+            "action": None,
+            "confidence": voice_command.confidence,
+            "shortcut_used": None,
         }
 
         # Check for voice shortcuts first
@@ -400,10 +409,10 @@ class VoiceCommandRecognizer:
 
         for trigger_phrase, shortcut in self.shortcuts.items():
             if shortcut.enabled and trigger_phrase in text_lower:
-                result['processed'] = True
-                result['action'] = 'shortcut'
-                result['shortcut_used'] = shortcut.shortcut_id
-                result['command'] = shortcut.command
+                result["processed"] = True
+                result["action"] = "shortcut"
+                result["shortcut_used"] = shortcut.shortcut_id
+                result["command"] = shortcut.command
 
                 # Update shortcut usage
                 shortcut.usage_count += 1
@@ -412,9 +421,9 @@ class VoiceCommandRecognizer:
                 break
 
         # If no shortcut matched, treat as natural language command
-        if not result['processed']:
-            result['action'] = 'natural_language'
-            result['command'] = voice_command.text
+        if not result["processed"]:
+            result["action"] = "natural_language"
+            result["command"] = voice_command.text
 
         return result
 
@@ -475,12 +484,12 @@ class VoiceCommandRecognizer:
     def _save_shortcuts(self):
         """Save shortcuts to configuration file."""
         try:
-            config_path = Path.home() / '.isaac' / 'voice_shortcuts.json'
+            config_path = Path.home() / ".isaac" / "voice_shortcuts.json"
             config_path.parent.mkdir(parents=True, exist_ok=True)
 
             shortcuts_data = [asdict(shortcut) for shortcut in self.shortcuts.values()]
 
-            with open(config_path, 'w') as f:
+            with open(config_path, "w") as f:
                 json.dump(shortcuts_data, f, indent=2)
 
         except Exception as e:
@@ -515,13 +524,13 @@ class VoiceCommandRecognizer:
             Engine information
         """
         return {
-            'active_engine': self.active_engine,
-            'available_engines': list(self.engines.keys()),
-            'engine_details': {
+            "active_engine": self.active_engine,
+            "available_engines": list(self.engines.keys()),
+            "engine_details": {
                 name: {
-                    'type': type(engine).__name__,
-                    'language': getattr(engine, 'language', 'unknown')
+                    "type": type(engine).__name__,
+                    "language": getattr(engine, "language", "unknown"),
                 }
                 for name, engine in self.engines.items()
-            }
+            },
         }

@@ -13,6 +13,7 @@ import os
 import shutil
 from pathlib import Path
 from typing import List, Optional, Tuple
+
 from isaac.core.cli_command_router import CommandResult
 
 
@@ -55,8 +56,8 @@ class BackupHandler:
             return CommandResult(
                 success=False,
                 message="Backup failed: No source specified",
-                status_symbol='✗',
-                suggestion="Usage: isaac backup <source> to <destination>"
+                status_symbol="✗",
+                suggestion="Usage: isaac backup <source> to <destination>",
             )
 
         # Resolve source path
@@ -65,8 +66,8 @@ class BackupHandler:
             return CommandResult(
                 success=False,
                 message=f"Backup failed: Source not found: {source}",
-                status_symbol='✗',
-                suggestion=self._suggest_similar_paths(source)
+                status_symbol="✗",
+                suggestion=self._suggest_similar_paths(source),
             )
 
         # Get destination (prompt if not provided)
@@ -76,8 +77,8 @@ class BackupHandler:
                 return CommandResult(
                     success=False,
                     message="Backup cancelled: No destination specified",
-                    status_symbol='⊘',
-                    suggestion=None
+                    status_symbol="⊘",
+                    suggestion=None,
                 )
 
         # Resolve destination path
@@ -86,8 +87,8 @@ class BackupHandler:
             return CommandResult(
                 success=False,
                 message=f"Backup failed: Destination not accessible: {destination}",
-                status_symbol='✗',
-                suggestion="Ensure destination directory exists and is writable"
+                status_symbol="✗",
+                suggestion="Ensure destination directory exists and is writable",
             )
 
         # Confirm operation
@@ -95,8 +96,8 @@ class BackupHandler:
             return CommandResult(
                 success=False,
                 message="Backup cancelled by user",
-                status_symbol='⊘',
-                suggestion=None
+                status_symbol="⊘",
+                suggestion=None,
             )
 
         # Execute backup
@@ -110,8 +111,8 @@ class BackupHandler:
             return CommandResult(
                 success=True,
                 message=f"Backup complete: {resolved_source} → {resolved_dest}",
-                status_symbol='✓',
-                suggestion=None
+                status_symbol="✓",
+                suggestion=None,
             )
 
         except Exception as e:
@@ -122,8 +123,8 @@ class BackupHandler:
             return CommandResult(
                 success=False,
                 message=f"Backup failed: {str(e)}",
-                status_symbol='✗',
-                suggestion="Check permissions and disk space"
+                status_symbol="✗",
+                suggestion="Check permissions and disk space",
             )
 
     def _parse_args(self, args: List[str]) -> Tuple[Optional[str], Optional[str]]:
@@ -147,12 +148,12 @@ class BackupHandler:
         # Check for "to" keyword
         if "to" in args:
             to_index = args.index("to")
-            source = ' '.join(args[:to_index])
-            destination = ' '.join(args[to_index + 1:]) if to_index + 1 < len(args) else None
+            source = " ".join(args[:to_index])
+            destination = " ".join(args[to_index + 1 :]) if to_index + 1 < len(args) else None
             return (source, destination)
         else:
             # No "to" keyword - only source provided
-            source = ' '.join(args)
+            source = " ".join(args)
             return (source, None)
 
     def _resolve_path(self, path_str: str) -> Optional[Path]:
@@ -204,7 +205,7 @@ class BackupHandler:
         suggestions = []
 
         # Try with quotes
-        if ' ' in path_str:
+        if " " in path_str:
             suggestions.append(f'Try quoting: isaac backup "{path_str}" to <dest>')
 
         # Try case variations
@@ -218,9 +219,9 @@ class BackupHandler:
         # Try current directory
         cwd_path = Path.cwd() / path_str
         if cwd_path.exists():
-            suggestions.append(f'Found in current directory: {cwd_path}')
+            suggestions.append(f"Found in current directory: {cwd_path}")
 
-        return ' '.join(suggestions) if suggestions else "Check the path and try again"
+        return " ".join(suggestions) if suggestions else "Check the path and try again"
 
     def _prompt_destination(self) -> Optional[str]:
         """
@@ -230,7 +231,7 @@ class BackupHandler:
             Destination path string or None if cancelled
         """
         try:
-            print("\nDestination path: ", end='', flush=True)
+            print("\nDestination path: ", end="", flush=True)
             dest = input().strip()
             return dest if dest else None
         except (KeyboardInterrupt, EOFError):
@@ -259,16 +260,16 @@ class BackupHandler:
                 print(f"  Size: {size_mb:.2f} MB")
             elif source.is_dir():
                 # Estimate directory size
-                total_size = sum(f.stat().st_size for f in source.rglob('*') if f.is_file())
+                total_size = sum(f.stat().st_size for f in source.rglob("*") if f.is_file())
                 size_mb = total_size / (1024 * 1024)
                 print(f"  Size: ~{size_mb:.2f} MB")
         except Exception:
             pass  # Skip size if can't calculate
 
         try:
-            print("\nExecute backup? (y/n): ", end='', flush=True)
+            print("\nExecute backup? (y/n): ", end="", flush=True)
             response = input().strip().lower()
-            return response in ['y', 'yes']
+            return response in ["y", "yes"]
         except (KeyboardInterrupt, EOFError):
             return False
 

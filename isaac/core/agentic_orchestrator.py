@@ -5,21 +5,22 @@ Main agentic execution loop with AI tool calling and streaming feedback
 
 import asyncio
 import time
-from typing import Dict, Any, List, Optional, AsyncGenerator, Callable
 from dataclasses import dataclass
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 
 from ..adapters.base_adapter import CommandResult
-from ..ui.streaming_display import StreamingDisplay, DisplayMode
-from ..ui.progress_indicator import ProgressIndicator
-from .streaming_executor import StreamingExecutor, ExecutionEvent
-from ..tools.registry import ToolRegistry
 from ..ai import AIRouter
 from ..core.session_manager import SessionManager
+from ..tools.registry import ToolRegistry
+from ..ui.progress_indicator import ProgressIndicator
+from ..ui.streaming_display import DisplayMode, StreamingDisplay
+from .streaming_executor import ExecutionEvent, StreamingExecutor
 
 
 @dataclass
 class AgenticContext:
     """Context for agentic execution"""
+
     user_input: str
     conversation_history: List[Dict[str, Any]]
     working_files: List[str]
@@ -34,12 +35,17 @@ class AgenticOrchestrator:
     Orchestrates the complete agentic loop from user input to tool execution.
     """
 
-    def __init__(self, session_mgr: SessionManager, streaming_display: Optional[StreamingDisplay] = None, progress_indicator: Optional[ProgressIndicator] = None):
+    def __init__(
+        self,
+        session_mgr: SessionManager,
+        streaming_display: Optional[StreamingDisplay] = None,
+        progress_indicator: Optional[ProgressIndicator] = None,
+    ):
         self.session = session_mgr
         self.tool_registry = ToolRegistry()
         self.streaming_executor = StreamingExecutor(self.tool_registry)
         self.ai_router = AIRouter(session_mgr=session_mgr)
-        
+
         # UI components
         self.streaming_display = streaming_display
         self.progress_indicator = progress_indicator
@@ -67,7 +73,7 @@ class AgenticOrchestrator:
             "tool_args": event.tool_args,
             "timestamp": event.timestamp,
             "message": event.message,
-            "data": event.data
+            "data": event.data,
         }
 
         if event.event_type == "start":
@@ -89,11 +95,9 @@ class AgenticOrchestrator:
         context = self._build_context(user_input)
 
         # Emit start event
-        self._emit_event("task_start", {
-            "user_input": user_input,
-            "context": context,
-            "timestamp": time.time()
-        })
+        self._emit_event(
+            "task_start", {"user_input": user_input, "context": context, "timestamp": time.time()}
+        )
         yield {"type": "task_start", "user_input": user_input}
 
         try:
@@ -101,10 +105,9 @@ class AgenticOrchestrator:
             task_analysis = await self._analyze_task(user_input)
             selected_ai = self._select_ai_for_task(task_analysis)
 
-            self._emit_event("ai_selected", {
-                "ai_provider": selected_ai,
-                "task_analysis": task_analysis
-            })
+            self._emit_event(
+                "ai_selected", {"ai_provider": selected_ai, "task_analysis": task_analysis}
+            )
             yield {"type": "ai_selected", "ai_provider": selected_ai}
 
             # Execute agentic loop
@@ -112,73 +115,67 @@ class AgenticOrchestrator:
                 yield event
 
         except Exception as e:
-            error_event = {
-                "type": "task_error",
-                "error": str(e),
-                "timestamp": time.time()
-            }
+            error_event = {"type": "task_error", "error": str(e), "timestamp": time.time()}
             self._emit_event("task_error", error_event)
             yield error_event
 
     def execute_agentic_task_sync(self, user_input: str) -> CommandResult:
         """
         Synchronous wrapper for agentic task execution.
-        
+
         Returns CommandResult for integration with command router.
         """
         # Initialize UI components if available
         if self.streaming_display:
-            self.streaming_display.update_mode(DisplayMode.THINKING, f"Starting agentic task: {user_input}")
-        
+            self.streaming_display.update_mode(
+                DisplayMode.THINKING, f"Starting agentic task: {user_input}"
+            )
+
         if self.progress_indicator:
             self.progress_indicator.start(f"Processing: {user_input}")
 
         # Collect all events from async execution
         events = []
         final_result = None
-        
+
         async def collect_events():
             nonlocal events, final_result
             try:
                 async for event in self.execute_agentic_task(user_input):
                     events.append(event)
-                    
+
                     # Update UI based on event type
                     if self.streaming_display:
                         if event["type"] == "ai_selected":
                             self.streaming_display.update_mode(
-                                DisplayMode.THINKING, 
-                                f"Using {event['ai_provider']}"
+                                DisplayMode.THINKING, f"Using {event['ai_provider']}"
                             )
                         elif event["type"] == "tool_start":
                             self.streaming_display.add_status_message(
-                                f"Executing tool: {event.get('tool_name', 'unknown')}", 
-                                "info"
+                                f"Executing tool: {event.get('tool_name', 'unknown')}", "info"
                             )
                         elif event["type"] == "tool_result":
                             success = event.get("success", False)
                             level = "success" if success else "error"
                             self.streaming_display.add_status_message(
-                                f"Tool completed: {event.get('tool_name', 'unknown')}", 
-                                level
+                                f"Tool completed: {event.get('tool_name', 'unknown')}", level
                             )
                         elif event["type"] == "task_complete":
                             final_result = event
                             self.streaming_display.update_mode(
-                                DisplayMode.IDLE, 
-                                "Task completed successfully"
+                                DisplayMode.IDLE, "Task completed successfully"
                             )
                         elif event["type"] == "task_error":
                             final_result = event
                             self.streaming_display.update_mode(
-                                DisplayMode.ERROR, 
-                                f"Task failed: {event.get('error', 'Unknown error')}"
+                                DisplayMode.ERROR,
+                                f"Task failed: {event.get('error', 'Unknown error')}",
                             )
-                    
+
                     if self.progress_indicator and event["type"] == "task_progress":
                         progress = event.get("progress", 0.0)
                         self.progress_indicator.update(progress, event.get("message", ""))
-                
+
             except Exception as e:
                 final_result = {"type": "task_error", "error": str(e)}
                 if self.streaming_display:
@@ -186,7 +183,7 @@ class AgenticOrchestrator:
 
         # Run the async collection
         asyncio.run(collect_events())
-        
+
         # Complete progress indicator
         if self.progress_indicator:
             if final_result and final_result.get("type") == "task_error":
@@ -199,7 +196,7 @@ class AgenticOrchestrator:
             return CommandResult(
                 success=False,
                 output=f"Agentic task failed: {final_result.get('error', 'Unknown error')}",
-                exit_code=1
+                exit_code=1,
             )
         else:
             # Collect output from all events
@@ -209,18 +206,16 @@ class AgenticOrchestrator:
                     output_lines.append(f"Tool output: {event['output']}")
                 elif event["type"] == "ai_response" and "response" in event:
                     output_lines.append(f"AI: {event['response']}")
-            
+
             # Add success message if no output collected
             if not output_lines:
                 output_lines.append("Agentic task completed successfully")
-            
-            output = "\n".join(output_lines) if output_lines else "Agentic task completed successfully"
-            
-            return CommandResult(
-                success=True,
-                output=output,
-                exit_code=0
+
+            output = (
+                "\n".join(output_lines) if output_lines else "Agentic task completed successfully"
             )
+
+            return CommandResult(success=True, output=output, exit_code=0)
 
     def _build_context(self, user_input: str) -> AgenticContext:
         """Build execution context from user input and session state"""
@@ -232,9 +227,9 @@ class AgenticOrchestrator:
 
         # Get project context
         project_context = {
-            "current_directory": self.session.config.get('current_directory', '.'),
-            "project_root": self.session.config.get('project_root'),
-            "recent_commands": conversation_history[-5:]  # These are strings
+            "current_directory": self.session.config.get("current_directory", "."),
+            "project_root": self.session.config.get("project_root"),
+            "recent_commands": conversation_history[-5:],  # These are strings
         }
 
         return AgenticContext(
@@ -242,7 +237,7 @@ class AgenticOrchestrator:
             conversation_history=conversation_history,
             working_files=working_files,
             project_context=project_context,
-            execution_state={}
+            execution_state={},
         )
 
     async def _analyze_task(self, user_input: str) -> Dict[str, Any]:
@@ -255,16 +250,16 @@ class AgenticOrchestrator:
             "requires_tools": True,
             "task_type": "coding",  # coding, analysis, search, etc.
             "estimated_steps": 2,
-            "risk_level": "low"
+            "risk_level": "low",
         }
 
         # Analyze user input for complexity indicators
         input_lower = user_input.lower()
-        if any(word in input_lower for word in ['fix', 'debug', 'refactor', 'implement']):
+        if any(word in input_lower for word in ["fix", "debug", "refactor", "implement"]):
             analysis["complexity"] = "high"
             analysis["estimated_steps"] = 4
             analysis["risk_level"] = "medium"
-        elif any(word in input_lower for word in ['read', 'show', 'list', 'find']):
+        elif any(word in input_lower for word in ["read", "show", "list", "find"]):
             analysis["complexity"] = "low"
             analysis["estimated_steps"] = 1
             analysis["risk_level"] = "low"
@@ -278,12 +273,13 @@ class AgenticOrchestrator:
         if complexity == "high":
             return "claude"  # Best for complex reasoning
         elif complexity == "low":
-            return "grok"   # Fast and cheap for simple tasks
+            return "grok"  # Fast and cheap for simple tasks
         else:
-            return "claude" # Default to Claude for medium complexity
+            return "claude"  # Default to Claude for medium complexity
 
-    async def _stream_agentic_loop(self, user_input: str, ai_provider: str,
-                                 context: AgenticContext) -> AsyncGenerator[Dict[str, Any], None]:
+    async def _stream_agentic_loop(
+        self, user_input: str, ai_provider: str, context: AgenticContext
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Main agentic execution loop with streaming feedback.
         """
@@ -291,7 +287,9 @@ class AgenticOrchestrator:
         messages = self._build_messages(user_input, context)
 
         # Get available tools for this task
-        available_tools = self.tool_registry.get_tools_for_task(context.project_context.get("task_type", "coding"))
+        available_tools = self.tool_registry.get_tools_for_task(
+            context.project_context.get("task_type", "coding")
+        )
 
         max_iterations = 10  # Prevent infinite loops
         iteration = 0
@@ -300,10 +298,9 @@ class AgenticOrchestrator:
             iteration += 1
 
             # Emit thinking event
-            self._emit_event("ai_thinking", {
-                "iteration": iteration,
-                "messages_count": len(messages)
-            })
+            self._emit_event(
+                "ai_thinking", {"iteration": iteration, "messages_count": len(messages)}
+            )
             yield {"type": "ai_thinking", "iteration": iteration}
 
             # Get AI response with tool calling
@@ -312,7 +309,7 @@ class AgenticOrchestrator:
                     messages=messages,
                     tools=available_tools,
                     prefer_provider=ai_provider,
-                    max_tokens=4096
+                    max_tokens=4096,
                 )
 
                 if not response.success:
@@ -320,17 +317,17 @@ class AgenticOrchestrator:
                     break
 
                 # Add AI response to conversation
-                messages.append({
-                    "role": "assistant",
-                    "content": response.content
-                })
+                messages.append({"role": "assistant", "content": response.content})
 
                 # Emit AI response
-                self._emit_event("ai_response", {
-                    "content": response.content,
-                    "provider": response.provider,
-                    "usage": response.usage
-                })
+                self._emit_event(
+                    "ai_response",
+                    {
+                        "content": response.content,
+                        "provider": response.provider,
+                        "usage": response.usage,
+                    },
+                )
                 yield {"type": "ai_response", "content": response.content}
 
                 # Check for tool calls
@@ -351,30 +348,28 @@ class AgenticOrchestrator:
                                 "type": f"tool_{event.event_type}",
                                 "tool_name": tool_name,
                                 "data": event.data,
-                                "message": event.message
+                                "message": event.message,
                             }
 
                         # Get final result for conversation
                         if last_event and last_event.event_type == "result":
-                            tool_results.append({
-                                "tool_call_id": tool_call.id,
-                                "function_name": tool_name,
-                                "content": last_event.data
-                            })
+                            tool_results.append(
+                                {
+                                    "tool_call_id": tool_call.id,
+                                    "function_name": tool_name,
+                                    "content": last_event.data,
+                                }
+                            )
 
                     # Add tool results to conversation
                     if tool_results:
-                        messages.append({
-                            "role": "tool",
-                            "content": str(tool_results)
-                        })
+                        messages.append({"role": "tool", "content": str(tool_results)})
 
                 else:
                     # No tool calls - this is the final answer
-                    self._emit_event("task_complete", {
-                        "final_answer": response.content,
-                        "iterations": iteration
-                    })
+                    self._emit_event(
+                        "task_complete", {"final_answer": response.content, "iterations": iteration}
+                    )
                     yield {"type": "task_complete", "final_answer": response.content}
                     break
 
@@ -439,5 +434,5 @@ Be helpful, precise, and efficient. If you can complete a task without tools, do
         return {
             "active_executions": self.streaming_executor.get_active_executions(),
             "available_tools": len(self.tool_registry.tools),
-            "ai_providers": self.ai_router.get_available_providers()
+            "ai_providers": self.ai_router.get_available_providers(),
         }

@@ -3,16 +3,17 @@ Smart File Router for Drag-Drop System
 Routes files to appropriate handlers based on user decisions.
 """
 
-import subprocess
 import shlex
+import subprocess
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Callable
-from .interactive_decision import DecisionResult, ActionType
+from typing import Any, Callable, Dict, List, Optional
+
+from ..images import CloudImageStorage
+from .batch_processor import BatchProcessor
+from .interactive_decision import ActionType, DecisionResult
 from .multi_file_detector import BatchAnalysis
 from .progress import BatchProgressManager, ProgressStyle
-from .batch_processor import BatchProcessor
 from .types import RoutingResult
-from ..images import CloudImageStorage
 
 
 class SmartFileRouter:
@@ -33,8 +34,12 @@ class SmartFileRouter:
         self._progress_manager = BatchProgressManager(ProgressStyle.PERCENTAGE)
         self._batch_processor = BatchProcessor()
 
-    def route_files(self, decision: DecisionResult, analysis: BatchAnalysis,
-                   progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def route_files(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """
         Route files based on user decision.
 
@@ -51,7 +56,7 @@ class SmartFileRouter:
                 success=False,
                 message=f"Unknown action: {decision.selected_action}",
                 processed_files=[],
-                failed_files=[analysis.files[i].path for i in decision.selected_files]
+                failed_files=[analysis.files[i].path for i in decision.selected_files],
             )
 
         # Use batch processor for large batches (>20 files)
@@ -61,7 +66,7 @@ class SmartFileRouter:
         # Use progress manager if no callback provided
         use_progress_manager = progress_callback is None
         if use_progress_manager:
-            operation_name = decision.selected_action.value.replace('_', ' ').title()
+            operation_name = decision.selected_action.value.replace("_", " ").title()
             progress_callback = self._progress_manager.start_batch(
                 operation_name, len(decision.selected_files)
             )
@@ -75,8 +80,12 @@ class SmartFileRouter:
 
         return result
 
-    def _handle_upload_images(self, decision: DecisionResult, analysis: BatchAnalysis,
-                            progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def _handle_upload_images(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """Handle image upload to cloud storage."""
         if progress_callback:
             progress_callback("Initializing cloud storage...")
@@ -88,7 +97,7 @@ class SmartFileRouter:
                 success=False,
                 message=f"Failed to initialize cloud storage: {e}",
                 processed_files=[],
-                failed_files=[analysis.files[i].path for i in decision.selected_files]
+                failed_files=[analysis.files[i].path for i in decision.selected_files],
             )
 
         processed_files = []
@@ -99,7 +108,9 @@ class SmartFileRouter:
             file_path = file_analysis.path
 
             if progress_callback:
-                progress_callback(f"Uploading {file_path.name}... ({i+1}/{len(decision.selected_files)})")
+                progress_callback(
+                    f"Uploading {file_path.name}... ({i+1}/{len(decision.selected_files)})"
+                )
 
             try:
                 result = storage.upload_image(file_path)
@@ -125,11 +136,15 @@ class SmartFileRouter:
             success=success,
             message=message,
             processed_files=processed_files,
-            failed_files=failed_files
+            failed_files=failed_files,
         )
 
-    def _handle_analyze_code(self, decision: DecisionResult, analysis: BatchAnalysis,
-                           progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def _handle_analyze_code(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """Handle code file analysis."""
         processed_files = []
         failed_files = []
@@ -140,7 +155,9 @@ class SmartFileRouter:
             file_path = file_analysis.path
 
             if progress_callback:
-                progress_callback(f"Analyzing {file_path.name}... ({i+1}/{len(decision.selected_files)})")
+                progress_callback(
+                    f"Analyzing {file_path.name}... ({i+1}/{len(decision.selected_files)})"
+                )
 
             try:
                 # Basic code analysis - count lines, detect language, etc.
@@ -149,7 +166,9 @@ class SmartFileRouter:
                 processed_files.append(file_path)
 
                 if progress_callback:
-                    progress_callback(f"✅ Analyzed: {file_path.name} ({analysis_result.get('lines', 0)} lines)")
+                    progress_callback(
+                        f"✅ Analyzed: {file_path.name} ({analysis_result.get('lines', 0)} lines)"
+                    )
 
             except Exception as e:
                 failed_files.append(file_path)
@@ -164,11 +183,15 @@ class SmartFileRouter:
             message=message,
             processed_files=processed_files,
             failed_files=failed_files,
-            output={"analysis_results": analysis_results}
+            output={"analysis_results": analysis_results},
         )
 
-    def _handle_process_documents(self, decision: DecisionResult, analysis: BatchAnalysis,
-                                progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def _handle_process_documents(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """Handle document processing."""
         processed_files = []
         failed_files = []
@@ -178,11 +201,13 @@ class SmartFileRouter:
             file_path = file_analysis.path
 
             if progress_callback:
-                progress_callback(f"Processing {file_path.name}... ({i+1}/{len(decision.selected_files)})")
+                progress_callback(
+                    f"Processing {file_path.name}... ({i+1}/{len(decision.selected_files)})"
+                )
 
             try:
                 # For now, just attempt OCR if it's a PDF or image-based document
-                if file_analysis.extension.lower() in ['.pdf']:
+                if file_analysis.extension.lower() in [".pdf"]:
                     # Could integrate PDF text extraction here
                     processed_files.append(file_path)
                     if progress_callback:
@@ -205,11 +230,15 @@ class SmartFileRouter:
             success=success,
             message=message,
             processed_files=processed_files,
-            failed_files=failed_files
+            failed_files=failed_files,
         )
 
-    def _handle_extract_archive(self, decision: DecisionResult, analysis: BatchAnalysis,
-                              progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def _handle_extract_archive(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """Handle archive extraction."""
         processed_files = []
         failed_files = []
@@ -220,7 +249,9 @@ class SmartFileRouter:
             file_path = file_analysis.path
 
             if progress_callback:
-                progress_callback(f"Extracting {file_path.name}... ({i+1}/{len(decision.selected_files)})")
+                progress_callback(
+                    f"Extracting {file_path.name}... ({i+1}/{len(decision.selected_files)})"
+                )
 
             try:
                 extracted = self._extract_archive_file(file_path)
@@ -228,7 +259,9 @@ class SmartFileRouter:
                     processed_files.append(file_path)
                     extracted_files.extend(extracted)
                     if progress_callback:
-                        progress_callback(f"✅ Extracted {len(extracted)} files from {file_path.name}")
+                        progress_callback(
+                            f"✅ Extracted {len(extracted)} files from {file_path.name}"
+                        )
                 else:
                     failed_files.append(file_path)
                     if progress_callback:
@@ -247,11 +280,15 @@ class SmartFileRouter:
             message=message,
             processed_files=processed_files,
             failed_files=failed_files,
-            output={"extracted_files": extracted_files}
+            output={"extracted_files": extracted_files},
         )
 
-    def _handle_view_text(self, decision: DecisionResult, analysis: BatchAnalysis,
-                        progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def _handle_view_text(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """Handle text file viewing."""
         processed_files = []
         failed_files = []
@@ -262,17 +299,19 @@ class SmartFileRouter:
             file_path = file_analysis.path
 
             if progress_callback:
-                progress_callback(f"Reading {file_path.name}... ({i+1}/{len(decision.selected_files)})")
+                progress_callback(
+                    f"Reading {file_path.name}... ({i+1}/{len(decision.selected_files)})"
+                )
 
             try:
-                with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                     content = f.read()
                     text_contents[str(file_path)] = content
                     processed_files.append(file_path)
 
                     # Show preview
-                    lines = content.split('\n')
-                    preview = '\n'.join(lines[:5])  # First 5 lines
+                    lines = content.split("\n")
+                    preview = "\n".join(lines[:5])  # First 5 lines
                     if len(lines) > 5:
                         preview += f"\n... ({len(lines)} total lines)"
 
@@ -292,19 +331,25 @@ class SmartFileRouter:
             message=message,
             processed_files=processed_files,
             failed_files=failed_files,
-            output={"text_contents": text_contents}
+            output={"text_contents": text_contents},
         )
 
-    def _handle_custom_command(self, decision: DecisionResult, analysis: BatchAnalysis,
-                             progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def _handle_custom_command(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """Handle custom command execution."""
-        command_template = decision.custom_params.get("command", "") if decision.custom_params else ""
+        command_template = (
+            decision.custom_params.get("command", "") if decision.custom_params else ""
+        )
         if not command_template:
             return RoutingResult(
                 success=False,
                 message="No command specified",
                 processed_files=[],
-                failed_files=[analysis.files[i].path for i in decision.selected_files]
+                failed_files=[analysis.files[i].path for i in decision.selected_files],
             )
 
         processed_files = []
@@ -329,14 +374,14 @@ class SmartFileRouter:
                     capture_output=True,
                     text=True,
                     timeout=30,  # 30 second timeout
-                    check=False
+                    check=False,
                 )
 
                 command_outputs[str(file_path)] = {
                     "command": command,
                     "return_code": result.returncode,
                     "stdout": result.stdout,
-                    "stderr": result.stderr
+                    "stderr": result.stderr,
                 }
 
                 if result.returncode == 0:
@@ -346,7 +391,9 @@ class SmartFileRouter:
                 else:
                     failed_files.append(file_path)
                     if progress_callback:
-                        progress_callback(f"❌ Command failed for {file_path.name} (exit code {result.returncode})")
+                        progress_callback(
+                            f"❌ Command failed for {file_path.name} (exit code {result.returncode})"
+                        )
 
             except subprocess.TimeoutExpired:
                 failed_files.append(file_path)
@@ -365,11 +412,15 @@ class SmartFileRouter:
             message=message,
             processed_files=processed_files,
             failed_files=failed_files,
-            output={"command_outputs": command_outputs}
+            output={"command_outputs": command_outputs},
         )
 
-    def _handle_skip(self, decision: DecisionResult, analysis: BatchAnalysis,
-                   progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def _handle_skip(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """Handle skipping files."""
         skipped_files = [analysis.files[i].path for i in decision.selected_files]
 
@@ -381,16 +432,16 @@ class SmartFileRouter:
             success=True,
             message=f"Skipped {len(skipped_files)} files",
             processed_files=skipped_files,  # Consider skipped as "processed"
-            failed_files=[]
+            failed_files=[],
         )
 
     def _analyze_code_file(self, file_path: Path) -> Dict[str, Any]:
         """Perform basic code analysis on a file."""
         try:
-            with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()
 
-            lines = content.split('\n')
+            lines = content.split("\n")
             total_lines = len(lines)
 
             # Count non-empty lines
@@ -399,29 +450,29 @@ class SmartFileRouter:
             # Detect language from extension
             extension = file_path.suffix.lower()
             language_map = {
-                '.py': 'Python',
-                '.js': 'JavaScript',
-                '.ts': 'TypeScript',
-                '.java': 'Java',
-                '.cpp': 'C++',
-                '.c': 'C',
-                '.cs': 'C#',
-                '.php': 'PHP',
-                '.rb': 'Ruby',
-                '.go': 'Go',
-                '.rs': 'Rust',
-                '.html': 'HTML',
-                '.css': 'CSS',
-                '.sh': 'Shell',
-                '.md': 'Markdown'
+                ".py": "Python",
+                ".js": "JavaScript",
+                ".ts": "TypeScript",
+                ".java": "Java",
+                ".cpp": "C++",
+                ".c": "C",
+                ".cs": "C#",
+                ".php": "PHP",
+                ".rb": "Ruby",
+                ".go": "Go",
+                ".rs": "Rust",
+                ".html": "HTML",
+                ".css": "CSS",
+                ".sh": "Shell",
+                ".md": "Markdown",
             }
-            language = language_map.get(extension, 'Unknown')
+            language = language_map.get(extension, "Unknown")
 
             return {
                 "lines": total_lines,
                 "non_empty_lines": non_empty_lines,
                 "language": language,
-                "size_bytes": len(content.encode('utf-8'))
+                "size_bytes": len(content.encode("utf-8")),
             }
 
         except Exception as e:
@@ -429,8 +480,8 @@ class SmartFileRouter:
 
     def _extract_archive_file(self, file_path: Path) -> Optional[List[Path]]:
         """Extract an archive file."""
-        import zipfile
         import tarfile
+        import zipfile
 
         extract_dir = file_path.parent / f"{file_path.stem}_extracted"
         extract_dir.mkdir(exist_ok=True)
@@ -438,16 +489,19 @@ class SmartFileRouter:
         extracted_files = []
 
         try:
-            if file_path.suffix.lower() == '.zip':
-                with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            if file_path.suffix.lower() == ".zip":
+                with zipfile.ZipFile(file_path, "r") as zip_ref:
                     zip_ref.extractall(extract_dir)
                     extracted_files = [extract_dir / name for name in zip_ref.namelist()]
 
-            elif file_path.suffix.lower() in ['.tar', '.gz', '.bz2', '.xz']:
-                with tarfile.open(file_path, 'r:*') as tar_ref:
+            elif file_path.suffix.lower() in [".tar", ".gz", ".bz2", ".xz"]:
+                with tarfile.open(file_path, "r:*") as tar_ref:
                     tar_ref.extractall(extract_dir)
-                    extracted_files = [extract_dir / member.name for member in tar_ref.getmembers()
-                                     if member.isfile()]
+                    extracted_files = [
+                        extract_dir / member.name
+                        for member in tar_ref.getmembers()
+                        if member.isfile()
+                    ]
 
             else:
                 return None  # Unsupported archive type
@@ -457,6 +511,7 @@ class SmartFileRouter:
         except Exception:
             # Clean up failed extraction
             import shutil
+
             if extract_dir.exists():
                 shutil.rmtree(extract_dir)
             return None

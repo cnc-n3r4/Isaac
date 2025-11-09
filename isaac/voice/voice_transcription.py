@@ -3,18 +3,19 @@ Voice Transcription - Convert audio recordings to text
 Isaac's system for transcribing meetings, notes, and voice memos
 """
 
-import os
-import time
-import threading
 import json
+import os
 import queue
-from typing import Dict, List, Any, Optional, Callable
-from dataclasses import dataclass, asdict
-import tempfile
 import subprocess
+import tempfile
+import threading
+import time
+from dataclasses import asdict, dataclass
+from typing import Any, Callable, Dict, List, Optional
+
 try:
-    import wave
     import audioop
+    import wave
 except ImportError:
     wave = None
     audioop = None
@@ -23,6 +24,7 @@ except ImportError:
 @dataclass
 class TranscriptionRequest:
     """Represents a transcription request."""
+
     request_id: str
     audio_file: str
     language: str
@@ -35,6 +37,7 @@ class TranscriptionRequest:
 @dataclass
 class TranscriptionSegment:
     """Represents a segment of transcribed text."""
+
     start_time: float
     end_time: float
     text: str
@@ -45,6 +48,7 @@ class TranscriptionSegment:
 @dataclass
 class TranscriptionResult:
     """Complete transcription result."""
+
     request_id: str
     success: bool
     full_text: str
@@ -61,7 +65,7 @@ class AudioPreprocessor:
 
     def __init__(self):
         """Initialize audio preprocessor."""
-        self.supported_formats = ['wav', 'mp3', 'm4a', 'flac', 'ogg']
+        self.supported_formats = ["wav", "mp3", "m4a", "flac", "ogg"]
 
     def preprocess_audio(self, input_file: str, output_file: Optional[str] = None) -> Optional[str]:
         """Preprocess audio file for optimal transcription.
@@ -74,7 +78,7 @@ class AudioPreprocessor:
             Path to processed audio file or None if failed
         """
         if not output_file:
-            temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+            temp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             output_file = temp_file.name
             temp_file.close()
 
@@ -93,12 +97,17 @@ class AudioPreprocessor:
         try:
             # Use ffmpeg for conversion
             cmd = [
-                'ffmpeg', '-i', input_file,
-                '-acodec', 'pcm_s16le',  # 16-bit PCM
-                '-ar', '16000',         # 16kHz sample rate
-                '-ac', '1',             # Mono
-                '-y',                   # Overwrite output
-                output_file
+                "ffmpeg",
+                "-i",
+                input_file,
+                "-acodec",
+                "pcm_s16le",  # 16-bit PCM
+                "-ar",
+                "16000",  # 16kHz sample rate
+                "-ac",
+                "1",  # Mono
+                "-y",  # Overwrite output
+                output_file,
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
@@ -114,7 +123,7 @@ class AudioPreprocessor:
                 audio = AudioSegment.from_file(input_file)
                 audio = audio.set_channels(1)  # Mono
                 audio = audio.set_frame_rate(16000)  # 16kHz
-                audio.export(output_file, format='wav')
+                audio.export(output_file, format="wav")
 
             except ImportError:
                 raise Exception("ffmpeg not found and pydub not available for audio conversion")
@@ -131,8 +140,14 @@ class AudioPreprocessor:
         try:
             # Use ffprobe to get audio info
             cmd = [
-                'ffprobe', '-v', 'quiet', '-print_format', 'json',
-                '-show_format', '-show_streams', audio_file
+                "ffprobe",
+                "-v",
+                "quiet",
+                "-print_format",
+                "json",
+                "-show_format",
+                "-show_streams",
+                audio_file,
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True)
@@ -142,7 +157,7 @@ class AudioPreprocessor:
                 return self._parse_audio_info(data)
             else:
                 # Fallback for WAV files
-                if audio_file.lower().endswith('.wav'):
+                if audio_file.lower().endswith(".wav"):
                     return self._get_wav_info(audio_file)
 
         except Exception as e:
@@ -154,19 +169,19 @@ class AudioPreprocessor:
         """Parse ffprobe output."""
         info = {}
 
-        if 'format' in ffprobe_data:
-            fmt = ffprobe_data['format']
-            info['duration'] = float(fmt.get('duration', 0))
-            info['size'] = int(fmt.get('size', 0))
-            info['bit_rate'] = int(fmt.get('bit_rate', 0))
+        if "format" in ffprobe_data:
+            fmt = ffprobe_data["format"]
+            info["duration"] = float(fmt.get("duration", 0))
+            info["size"] = int(fmt.get("size", 0))
+            info["bit_rate"] = int(fmt.get("bit_rate", 0))
 
-        if 'streams' in ffprobe_data:
-            for stream in ffprobe_data['streams']:
-                if stream.get('codec_type') == 'audio':
-                    info['codec'] = stream.get('codec_name', 'unknown')
-                    info['sample_rate'] = int(stream.get('sample_rate', 0))
-                    info['channels'] = int(stream.get('channels', 0))
-                    info['bit_depth'] = int(stream.get('bits_per_sample', 0))
+        if "streams" in ffprobe_data:
+            for stream in ffprobe_data["streams"]:
+                if stream.get("codec_type") == "audio":
+                    info["codec"] = stream.get("codec_name", "unknown")
+                    info["sample_rate"] = int(stream.get("sample_rate", 0))
+                    info["channels"] = int(stream.get("channels", 0))
+                    info["bit_depth"] = int(stream.get("bits_per_sample", 0))
                     break
 
         return info
@@ -174,14 +189,14 @@ class AudioPreprocessor:
     def _get_wav_info(self, wav_file: str) -> Dict[str, Any]:
         """Get WAV file information."""
         try:
-            with wave.open(wav_file, 'rb') as wf:
+            with wave.open(wav_file, "rb") as wf:
                 return {
-                    'duration': wf.getnframes() / wf.getframerate(),
-                    'size': os.path.getsize(wav_file),
-                    'codec': 'pcm',
-                    'sample_rate': wf.getframerate(),
-                    'channels': wf.getnchannels(),
-                    'bit_depth': wf.getsampwidth() * 8
+                    "duration": wf.getnframes() / wf.getframerate(),
+                    "size": os.path.getsize(wav_file),
+                    "codec": "pcm",
+                    "sample_rate": wf.getframerate(),
+                    "channels": wf.getnchannels(),
+                    "bit_depth": wf.getsampwidth() * 8,
                 }
         except:
             return {}
@@ -193,7 +208,7 @@ class TranscriptionEngine:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize transcription engine."""
         self.config = config or {}
-        self.language = self.config.get('language', 'en-US')
+        self.language = self.config.get("language", "en-US")
 
     def transcribe(self, audio_file: str, **kwargs) -> Optional[TranscriptionResult]:
         """Transcribe audio file to text.
@@ -214,14 +229,17 @@ class WhisperTranscriptionEngine(TranscriptionEngine):
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize Whisper engine."""
         super().__init__(config)
-        self.model_size = self.config.get('model_size', 'base')
+        self.model_size = self.config.get("model_size", "base")
 
         try:
             import whisper
+
             self.whisper = whisper
             self.model = None
         except ImportError:
-            raise ImportError("whisper package not installed. Install with: pip install openai-whisper")
+            raise ImportError(
+                "whisper package not installed. Install with: pip install openai-whisper"
+            )
 
     def _load_model(self):
         """Load Whisper model if not already loaded."""
@@ -239,27 +257,24 @@ class WhisperTranscriptionEngine(TranscriptionEngine):
 
             # Transcribe with segments
             result = self.model.transcribe(
-                audio_file,
-                language=self.language.split('-')[0],
-                verbose=True,
-                **kwargs
+                audio_file, language=self.language.split("-")[0], verbose=True, **kwargs
             )
 
             processing_time = time.time() - start_time
 
             # Extract segments
             segments = []
-            for segment_data in result.get('segments', []):
+            for segment_data in result.get("segments", []):
                 segment = TranscriptionSegment(
-                    start_time=segment_data['start'],
-                    end_time=segment_data['end'],
-                    text=segment_data['text'].strip(),
-                    confidence=segment_data.get('confidence', 0.8)
+                    start_time=segment_data["start"],
+                    end_time=segment_data["end"],
+                    text=segment_data["text"].strip(),
+                    confidence=segment_data.get("confidence", 0.8),
                 )
                 segments.append(segment)
 
             # Create full text
-            full_text = result.get('text', '').strip()
+            full_text = result.get("text", "").strip()
 
             return TranscriptionResult(
                 request_id=f"whisper_{int(time.time() * 1000)}",
@@ -267,12 +282,9 @@ class WhisperTranscriptionEngine(TranscriptionEngine):
                 full_text=full_text,
                 segments=segments,
                 language=self.language,
-                duration=result.get('duration', 0),
+                duration=result.get("duration", 0),
                 processing_time=processing_time,
-                metadata={
-                    'model': self.model_size,
-                    'engine': 'whisper'
-                }
+                metadata={"model": self.model_size, "engine": "whisper"},
             )
 
         except Exception as e:
@@ -285,7 +297,7 @@ class WhisperTranscriptionEngine(TranscriptionEngine):
                 duration=0,
                 processing_time=time.time() - start_time,
                 metadata={},
-                error=str(e)
+                error=str(e),
             )
 
 
@@ -295,10 +307,11 @@ class GoogleTranscriptionEngine(TranscriptionEngine):
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize Google engine."""
         super().__init__(config)
-        self.api_key = self.config.get('api_key')
+        self.api_key = self.config.get("api_key")
 
         try:
             from google.cloud import speech
+
             self.speech_client = speech.SpeechClient()
         except ImportError:
             raise ImportError("google-cloud-speech package not installed")
@@ -308,7 +321,7 @@ class GoogleTranscriptionEngine(TranscriptionEngine):
         try:
             start_time = time.time()
 
-            with open(audio_file, 'rb') as audio_file_obj:
+            with open(audio_file, "rb") as audio_file_obj:
                 content = audio_file_obj.read()
 
             audio = speech.RecognitionAudio(content=content)
@@ -337,16 +350,18 @@ class GoogleTranscriptionEngine(TranscriptionEngine):
                             start_time=word_info.start_time.total_seconds(),
                             end_time=word_info.end_time.total_seconds(),
                             text=word_info.word,
-                            confidence=0.9  # Google doesn't provide word-level confidence easily
+                            confidence=0.9,  # Google doesn't provide word-level confidence easily
                         )
                         segments.append(segment)
                 else:
                     # Create a single segment for the whole result
                     segment = TranscriptionSegment(
                         start_time=0,
-                        end_time=result.result_end_time.total_seconds() if result.result_end_time else 0,
+                        end_time=(
+                            result.result_end_time.total_seconds() if result.result_end_time else 0
+                        ),
                         text=alternative.transcript,
-                        confidence=alternative.confidence
+                        confidence=alternative.confidence,
                     )
                     segments.append(segment)
 
@@ -358,10 +373,7 @@ class GoogleTranscriptionEngine(TranscriptionEngine):
                 language=self.language,
                 duration=max([s.end_time for s in segments]) if segments else 0,
                 processing_time=processing_time,
-                metadata={
-                    'engine': 'google',
-                    'api_used': True
-                }
+                metadata={"engine": "google", "api_used": True},
             )
 
         except Exception as e:
@@ -374,7 +386,7 @@ class GoogleTranscriptionEngine(TranscriptionEngine):
                 duration=0,
                 processing_time=time.time() - start_time,
                 metadata={},
-                error=str(e)
+                error=str(e),
             )
 
 
@@ -394,28 +406,32 @@ class VoiceTranscriptionManager:
         self._load_engines()
 
         # Start transcription processing thread
-        self.processing_thread = threading.Thread(target=self._process_transcription_queue, daemon=True)
+        self.processing_thread = threading.Thread(
+            target=self._process_transcription_queue, daemon=True
+        )
         self.processing_thread.start()
 
     def _load_engines(self):
         """Load available transcription engines."""
-        engines_config = self.config.get('engines', {})
+        engines_config = self.config.get("engines", {})
 
         # Try to load Whisper (preferred for offline use)
-        if engines_config.get('whisper', {}).get('enabled', True):
+        if engines_config.get("whisper", {}).get("enabled", True):
             try:
-                self.engines['whisper'] = WhisperTranscriptionEngine(engines_config.get('whisper', {}))
+                self.engines["whisper"] = WhisperTranscriptionEngine(
+                    engines_config.get("whisper", {})
+                )
                 if self.active_engine is None:
-                    self.active_engine = 'whisper'
+                    self.active_engine = "whisper"
             except Exception as e:
                 print(f"Failed to load Whisper engine: {e}")
 
         # Try to load Google STT
-        if engines_config.get('google', {}).get('enabled', False):
+        if engines_config.get("google", {}).get("enabled", False):
             try:
-                self.engines['google'] = GoogleTranscriptionEngine(engines_config.get('google', {}))
+                self.engines["google"] = GoogleTranscriptionEngine(engines_config.get("google", {}))
                 if self.active_engine is None:
-                    self.active_engine = 'google'
+                    self.active_engine = "google"
             except Exception as e:
                 print(f"Failed to load Google STT engine: {e}")
 
@@ -424,8 +440,14 @@ class VoiceTranscriptionManager:
             print("Install optional dependencies: pip install openai-whisper google-cloud-speech")
             # Don't raise error, just continue with empty engines dict
 
-    def transcribe_audio(self, audio_file: str, language: Optional[str] = None, model: Optional[str] = None,
-                        callback: Optional[Callable] = None, **options) -> str:
+    def transcribe_audio(
+        self,
+        audio_file: str,
+        language: Optional[str] = None,
+        model: Optional[str] = None,
+        callback: Optional[Callable] = None,
+        **options,
+    ) -> str:
         """Queue audio file for transcription.
 
         Args:
@@ -443,18 +465,23 @@ class VoiceTranscriptionManager:
         request = TranscriptionRequest(
             request_id=request_id,
             audio_file=audio_file,
-            language=language or self.config.get('default_language', 'en-US'),
-            model=model or 'default',
+            language=language or self.config.get("default_language", "en-US"),
+            model=model or "default",
             options=options,
             timestamp=time.time(),
-            callback=callback
+            callback=callback,
         )
 
         self.transcription_queue.put(request)
         return request_id
 
-    def transcribe_immediately(self, audio_file: str, language: Optional[str] = None,
-                             model: Optional[str] = None, **options) -> Optional[TranscriptionResult]:
+    def transcribe_immediately(
+        self,
+        audio_file: str,
+        language: Optional[str] = None,
+        model: Optional[str] = None,
+        **options,
+    ) -> Optional[TranscriptionResult]:
         """Transcribe audio file immediately (blocking).
 
         Args:
@@ -483,11 +510,13 @@ class VoiceTranscriptionManager:
             result = engine.transcribe(processed_file, **options)
 
             if result:
-                result.metadata.update({
-                    'original_file': audio_file,
-                    'processed_file': processed_file,
-                    'audio_info': audio_info
-                })
+                result.metadata.update(
+                    {
+                        "original_file": audio_file,
+                        "processed_file": processed_file,
+                        "audio_info": audio_info,
+                    }
+                )
 
             # Clean up processed file if different from original
             if processed_file != audio_file:
@@ -504,11 +533,11 @@ class VoiceTranscriptionManager:
                 success=False,
                 full_text="",
                 segments=[],
-                language=language or 'en-US',
+                language=language or "en-US",
                 duration=0,
                 processing_time=0,
                 metadata={},
-                error=str(e)
+                error=str(e),
             )
 
     def _process_transcription_queue(self):
@@ -520,10 +549,7 @@ class VoiceTranscriptionManager:
 
                 # Process the request
                 result = self.transcribe_immediately(
-                    request.audio_file,
-                    request.language,
-                    request.model,
-                    **request.options
+                    request.audio_file, request.language, request.model, **request.options
                 )
 
                 # Call callback if provided
@@ -558,16 +584,16 @@ class VoiceTranscriptionManager:
     def get_engine_info(self) -> Dict[str, Any]:
         """Get information about transcription engines."""
         return {
-            'active_engine': self.active_engine,
-            'available_engines': list(self.engines.keys()),
-            'supported_formats': self.get_supported_formats(),
-            'engine_details': {
+            "active_engine": self.active_engine,
+            "available_engines": list(self.engines.keys()),
+            "supported_formats": self.get_supported_formats(),
+            "engine_details": {
                 name: {
-                    'type': type(engine).__name__,
-                    'language': getattr(engine, 'language', 'unknown')
+                    "type": type(engine).__name__,
+                    "language": getattr(engine, "language", "unknown"),
                 }
                 for name, engine in self.engines.items()
-            }
+            },
         }
 
     def batch_transcribe(self, audio_files: List[str], **options) -> List[TranscriptionResult]:
@@ -589,8 +615,9 @@ class VoiceTranscriptionManager:
 
         return results
 
-    def save_transcription(self, result: TranscriptionResult, output_file: str,
-                          format: str = 'txt') -> bool:
+    def save_transcription(
+        self, result: TranscriptionResult, output_file: str, format: str = "txt"
+    ) -> bool:
         """Save transcription result to file.
 
         Args:
@@ -602,20 +629,20 @@ class VoiceTranscriptionManager:
             True if successful
         """
         try:
-            if format == 'txt':
-                with open(output_file, 'w') as f:
+            if format == "txt":
+                with open(output_file, "w") as f:
                     f.write(f"Transcription Results\n")
                     f.write(f"Language: {result.language}\n")
                     f.write(f"Duration: {result.duration:.2f}s\n")
                     f.write(f"Processing Time: {result.processing_time:.2f}s\n\n")
                     f.write(result.full_text)
 
-            elif format == 'json':
-                with open(output_file, 'w') as f:
+            elif format == "json":
+                with open(output_file, "w") as f:
                     json.dump(asdict(result), f, indent=2)
 
-            elif format == 'srt':
-                with open(output_file, 'w') as f:
+            elif format == "srt":
+                with open(output_file, "w") as f:
                     for i, segment in enumerate(result.segments, 1):
                         start_time = self._format_srt_time(segment.start_time)
                         end_time = self._format_srt_time(segment.end_time)

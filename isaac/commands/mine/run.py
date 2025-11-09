@@ -6,10 +6,11 @@ Provides /mine commands for searching personal collections using xAI
 import json
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 try:
     from xai_sdk import Client
+
     HAS_XAI_SDK = True
 except ImportError:
     HAS_XAI_SDK = False
@@ -20,27 +21,27 @@ class MineHandler:
 
     def __init__(self, session_manager_or_config):
         """Initialize the Mine handler."""
-        if hasattr(session_manager_or_config, 'get_config'):
+        if hasattr(session_manager_or_config, "get_config"):
             # It's a SessionManager
             self.session_manager = session_manager_or_config
             self.config = self.session_manager.get_config()
-        elif isinstance(session_manager_or_config, dict) and 'config' in session_manager_or_config:
+        elif isinstance(session_manager_or_config, dict) and "config" in session_manager_or_config:
             # It's session data from dispatcher with config
             self.session_manager = None
-            self.config = session_manager_or_config['config']
+            self.config = session_manager_or_config["config"]
         else:
             # It's a config dict (fallback)
             self.session_manager = None
             self.config = session_manager_or_config
-        
+
         self.active_collection_id = None
         self.active_collection_name = None
         self.client = None
         self.warnings = []  # Collect warnings instead of printing them
 
         # Load active collection from config
-        self.active_collection_id = self.config.get('active_collection_id')
-        self.active_collection_name = self.config.get('active_collection_name')
+        self.active_collection_id = self.config.get("active_collection_id")
+        self.active_collection_name = self.config.get("active_collection_name")
 
         # Check for workspace collection if no active collection set
         if not self.active_collection_id:
@@ -48,7 +49,7 @@ class MineHandler:
 
         # Load mine-specific settings from config console
         self._load_mine_settings()
-        
+
         # Load collections data from separate file
         self._load_collections_data()
 
@@ -56,29 +57,29 @@ class MineHandler:
         """Load mine-specific settings from config console."""
         import json
         from pathlib import Path
-        
+
         # Default settings (match config console defaults)
         defaults = {
-            'max_chunk_size': 1000,
-            'match_preview_length': 200,
-            'multi_match_count': 5,
-            'piping_threshold': 0.7,
-            'piping_max_context': 3,
-            'show_scores': True,
-            'file_ids': [],
-            'search_files_only': False
+            "max_chunk_size": 1000,
+            "match_preview_length": 200,
+            "multi_match_count": 5,
+            "piping_threshold": 0.7,
+            "piping_max_context": 3,
+            "show_scores": True,
+            "file_ids": [],
+            "search_files_only": False,
         }
-        
+
         # Load from mine_config.json if it exists
-        config_file = Path.home() / '.isaac' / 'mine_config.json'
+        config_file = Path.home() / ".isaac" / "mine_config.json"
         if config_file.exists():
             try:
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     loaded = json.load(f)
                     defaults.update(loaded)
             except Exception:
                 pass  # Use defaults if file corrupted
-        
+
         # Store settings
         self.mine_settings = defaults
 
@@ -86,65 +87,76 @@ class MineHandler:
         if HAS_XAI_SDK:
             try:
                 # Reload config to get latest API keys and active collection
-                if self.session_manager and hasattr(self.session_manager, 'reload_config'):
+                if self.session_manager and hasattr(self.session_manager, "reload_config"):
                     self.session_manager.reload_config()
                     self.config = self.session_manager.get_config()
                 else:
                     # Reload config from disk directly
                     from pathlib import Path
-                    isaac_dir = Path.home() / '.isaac'
-                    config_file = isaac_dir / 'config.json'
+
+                    isaac_dir = Path.home() / ".isaac"
+                    config_file = isaac_dir / "config.json"
                     if config_file.exists():
                         try:
                             import json
-                            with open(config_file, 'r') as f:
+
+                            with open(config_file, "r") as f:
                                 file_config = json.load(f)
                                 self.config.update(file_config)
                         except Exception:
                             pass  # Keep existing config if reload fails
-                
+
                 # Reload active collection from updated config
-                self.active_collection_id = self.config.get('active_collection_id')
-                self.active_collection_name = self.config.get('active_collection_name')
-                
+                self.active_collection_id = self.config.get("active_collection_id")
+                self.active_collection_name = self.config.get("active_collection_name")
+
                 # Get API keys from config - use nested structure
-                xai_config = self.config.get('xai', {})
-                collections_config = xai_config.get('collections', {})
-                
+                xai_config = self.config.get("xai", {})
+                collections_config = xai_config.get("collections", {})
+
                 # Use chat API key for search operations (query processing)
-                api_key = self.config.get('xai_api_key')  # Chat API key for search
-                management_api_key = collections_config.get('api_key')  # Collections API key for management
-                
+                api_key = self.config.get("xai_api_key")  # Chat API key for search
+                management_api_key = collections_config.get(
+                    "api_key"
+                )  # Collections API key for management
+
                 # Fallback to collections key if chat key not available
                 if not api_key:
-                    api_key = collections_config.get('api_key')
+                    api_key = collections_config.get("api_key")
                 if not management_api_key:
-                    management_api_key = self.config.get('xai_management_api_key')
-                
+                    management_api_key = self.config.get("xai_management_api_key")
+
                 # Strip whitespace from API keys (common config issue)
                 if api_key:
                     api_key = api_key.strip()
                 if management_api_key:
                     management_api_key = management_api_key.strip()
-                
+
                 if api_key:
                     # Initialize xAI Collections client
                     # NOTE: Collections API requires a COLLECTIONS-SPECIFIC API key, NOT the Chat API key
                     # api_key: Collections API key (gRPC) - required for search, upload, document access
                     # management_api_key: Management API key (REST) - required for list, create, delete collections
                     # Get both keys from console.x.ai - they must be Collections API keys, not Chat API keys
-                    api_host = collections_config.get('api_host') or self.config.get('xai_api_host', 'api.x.ai')
-                    management_api_host = collections_config.get('management_api_host') or self.config.get('xai_management_api_host', 'management-api.x.ai')
-                    
+                    api_host = collections_config.get("api_host") or self.config.get(
+                        "xai_api_host", "api.x.ai"
+                    )
+                    management_api_host = collections_config.get(
+                        "management_api_host"
+                    ) or self.config.get("xai_management_api_host", "management-api.x.ai")
+
                     # Get timeout from config, default to 3600 (1 hour)
-                    timeout_seconds = collections_config.get('timeout_seconds') or self.config.get('xai_collections_timeout_seconds', 3600)
-                    
+                    timeout_seconds = collections_config.get("timeout_seconds") or self.config.get(
+                        "xai_collections_timeout_seconds", 3600
+                    )
+
                     self.client = Client(
                         api_key=api_key,
-                        management_api_key=management_api_key or api_key,  # Use same key if management key not specified
+                        management_api_key=management_api_key
+                        or api_key,  # Use same key if management key not specified
                         api_host=api_host,
                         management_api_host=management_api_host,
-                        timeout=timeout_seconds  # Configurable timeout for collections operations
+                        timeout=timeout_seconds,  # Configurable timeout for collections operations
                     )
                 else:
                     self.warnings.append("Warning: No API key configured for x.ai collections")
@@ -157,48 +169,54 @@ class MineHandler:
         """Load collections data from separate collections.json file."""
         import json
         from pathlib import Path
-        
+
         # Initialize empty collections data structure
-        self.collections_data = {
-            'nuggets': {},
-            'arrays': {},
-            'collection_mappings': {}
-        }
-        
+        self.collections_data = {"nuggets": {}, "arrays": {}, "collection_mappings": {}}
+
         # Load from collections.json if it exists
-        collections_file = Path.home() / '.isaac' / 'collections.json'
+        collections_file = Path.home() / ".isaac" / "collections.json"
         if collections_file.exists():
             try:
-                with open(collections_file, 'r') as f:
+                with open(collections_file, "r") as f:
                     loaded_data = json.load(f)
                     self.collections_data.update(loaded_data)
             except Exception:
                 # If file is corrupted, warn but continue with empty data
-                self.warnings.append("Warning: Could not load collections data, starting with empty collections")
-        
+                self.warnings.append(
+                    "Warning: Could not load collections data, starting with empty collections"
+                )
+
         # For backward compatibility, also check if collections data exists in main config
         # and migrate it to the separate file if found
-        xai_config = self.config.get('xai', {})
-        collections_config = xai_config.get('collections', {})
-        
+        xai_config = self.config.get("xai", {})
+        collections_config = xai_config.get("collections", {})
+
         if collections_config:
             migrated = False
             # Check for nuggets
-            if 'nuggets' in collections_config and collections_config['nuggets']:
-                self.collections_data['nuggets'].update(collections_config['nuggets'])
+            if "nuggets" in collections_config and collections_config["nuggets"]:
+                self.collections_data["nuggets"].update(collections_config["nuggets"])
                 migrated = True
             # Check for arrays
-            if 'arrays' in collections_config and collections_config['arrays']:
-                self.collections_data['arrays'].update(collections_config['arrays'])
+            if "arrays" in collections_config and collections_config["arrays"]:
+                self.collections_data["arrays"].update(collections_config["arrays"])
                 migrated = True
             # Check for other collections data
             for key, value in collections_config.items():
-                if key not in ['enabled', 'api_key', 'management_api_key', 'management_api_host', 
-                             'default_collection', 'active_collection_id', 'active_collection_name',
-                             'nuggets', 'arrays']:  # Skip API keys and already migrated data
-                    self.collections_data['collection_mappings'][key] = value
+                if key not in [
+                    "enabled",
+                    "api_key",
+                    "management_api_key",
+                    "management_api_host",
+                    "default_collection",
+                    "active_collection_id",
+                    "active_collection_name",
+                    "nuggets",
+                    "arrays",
+                ]:  # Skip API keys and already migrated data
+                    self.collections_data["collection_mappings"][key] = value
                     migrated = True
-            
+
             # If we migrated data, save it to the new file and warn about migration
             if migrated:
                 self._save_collections_data()
@@ -208,10 +226,10 @@ class MineHandler:
         """Save collections data to separate collections.json file."""
         import json
         from pathlib import Path
-        
-        collections_file = Path.home() / '.isaac' / 'collections.json'
+
+        collections_file = Path.home() / ".isaac" / "collections.json"
         try:
-            with open(collections_file, 'w') as f:
+            with open(collections_file, "w") as f:
                 json.dump(self.collections_data, f, indent=2)
         except Exception as e:
             self.warnings.append(f"Warning: Could not save collections data: {e}")
@@ -219,69 +237,70 @@ class MineHandler:
     def _save_active_collection(self):
         """Save the active collection to config."""
         config = self.config.copy()
-        config['active_collection_id'] = self.active_collection_id
-        config['active_collection_name'] = self.active_collection_name
-        
+        config["active_collection_id"] = self.active_collection_id
+        config["active_collection_name"] = self.active_collection_name
+
         # Update session manager's config too
         if self.session_manager:
             self.session_manager.config.update(config)
-        
+
         # Save to disk
         try:
             import json
             from pathlib import Path
-            config_file = Path.home() / '.isaac' / 'config.json'
+
+            config_file = Path.home() / ".isaac" / "config.json"
             config_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(config_file, 'w') as f:
+            with open(config_file, "w") as f:
                 json.dump(config, f, indent=2)
         except Exception:
             pass  # Silently fail
 
     def parse_command_flags(self, args: List[str]) -> Dict[str, Any]:
         """Parse command arguments using standardized -/-- flag syntax.
-        
+
         Supports:
         - --flag value
-        - --flag=value  
+        - --flag=value
         - -f value
         - -f=value
         - --flag (boolean flags)
-        
+
         Returns dict with parsed flags and remaining positional args.
         """
         parsed = {}
         positional = []
         i = 0
-        
+
         while i < len(args):
             arg = args[i]
-            
+
             # Check if it's a flag (starts with -)
-            if arg.startswith('--'):
+            if arg.startswith("--"):
                 # Long flag like --flag or --flag=value
-                if '=' in arg:
-                    flag, value = arg.split('=', 1)
+                if "=" in arg:
+                    flag, value = arg.split("=", 1)
                     flag = flag[2:]  # Remove --
                     parsed[flag] = value
                 else:
                     flag = arg[2:]  # Remove --
                     # Check if next arg is the value
-                    if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                    if i + 1 < len(args) and not args[i + 1].startswith("-"):
                         parsed[flag] = args[i + 1]
                         i += 1  # Skip the value
                     else:
                         parsed[flag] = True  # Boolean flag
-                        
-            elif arg.startswith('-') and len(arg) > 1:
+
+            elif arg.startswith("-") and len(arg) > 1:
                 # Short flag like -f or -f=value
-                if '=' in arg:
-                    flag, value = arg.split('=', 1)
+                if "=" in arg:
+                    flag, value = arg.split("=", 1)
                     flag = flag[1:]  # Remove -
                     parsed[flag] = value
                 else:
                     flag = arg[1:]  # Remove -
                     # Check if next arg is the value
-                    if i + 1 < len(args) and not args[i + 1].startswith('-'):
+                    if i + 1 < len(args) and not args[i + 1].startswith("-"):
                         parsed[flag] = args[i + 1]
                         i += 1  # Skip the value
                     else:
@@ -289,55 +308,54 @@ class MineHandler:
             else:
                 # Positional argument
                 positional.append(arg)
-                
-            i += 1
-            
-        return {
-            'flags': parsed,
-            'positional': positional
-        }
 
-    def handle_command(self, args: List[str], command: str = '/mine') -> str:
+            i += 1
+
+        return {"flags": parsed, "positional": positional}
+
+    def handle_command(self, args: List[str], command: str = "/mine") -> str:
         """Main command dispatcher for /mine commands."""
         # Format warnings at the beginning
         warning_text = ""
         if self.warnings:
             warning_text = "\n".join(self.warnings) + "\n"
-        
+
         if not args:
             return warning_text + self._show_help()
 
         # Parse command flags
         parsed = self.parse_command_flags(args)
-        flags = parsed['flags']
-        positional = parsed['positional']
+        flags = parsed["flags"]
+        positional = parsed["positional"]
 
         # Check if x.ai client is available
-        if not self.client and not any(flag in ['help', 'status', 'list', 'info'] for flag in flags):
+        if not self.client and not any(
+            flag in ["help", "status", "list", "info"] for flag in flags
+        ):
             return "x.ai client not available. Check that xai_api_key is configured in your Isaac config and xai_sdk is installed.\n\nTo configure:\n  /config --set xai_api_key YOUR_XAI_API_KEY\n  /config --ai  # Check configuration status"
 
         # COLLECTION MANAGEMENT
-        if 'create' in flags:
-            return self._handle_create([flags['create']] + positional)
-        elif 'use' in flags:
-            return self._handle_use([flags['use']] + positional)
-        elif 'delete' in flags:
-            return self._handle_delete([flags['delete']] + positional)
+        if "create" in flags:
+            return self._handle_create([flags["create"]] + positional)
+        elif "use" in flags:
+            return self._handle_use([flags["use"]] + positional)
+        elif "delete" in flags:
+            return self._handle_delete([flags["delete"]] + positional)
 
         # FILE OPERATIONS
-        elif 'upload' in flags:
-            return self._handle_cast([flags['upload']] + positional)
-        elif 'search' in flags:
-            return self._handle_dig([flags['search']] + positional)
+        elif "upload" in flags:
+            return self._handle_cast([flags["upload"]] + positional)
+        elif "search" in flags:
+            return self._handle_dig([flags["search"]] + positional)
 
         # INFORMATION & MANAGEMENT
-        elif 'list' in flags or 'maps' in flags:
+        elif "list" in flags or "maps" in flags:
             return self._handle_list()
-        elif 'info' in flags:
+        elif "info" in flags:
             return self._handle_info()
-        elif 'status' in flags:
+        elif "status" in flags:
             return self._show_status()
-        elif 'help' in flags:
+        elif "help" in flags:
             return self._show_help()
 
         else:
@@ -356,7 +374,7 @@ class MineHandler:
         remaining_args = args[1:]
 
         # Handle combined claim and dig
-        if remaining_args and remaining_args[0] == '--dig' and len(remaining_args) > 1:
+        if remaining_args and remaining_args[0] == "--dig" and len(remaining_args) > 1:
             # Switch collection and dig in one command
             result = self._handle_use([collection_name])
             if "Switched to collection" in result:
@@ -387,28 +405,28 @@ class MineHandler:
         file_array = None
 
         # Check for --to-skip flag
-        if len(args) >= 3 and args[1] == '--to-skip':
+        if len(args) >= 3 and args[1] == "--to-skip":
             file_array = args[2]
             # Validate file array exists
-            arrays = self.config.get('xai', {}).get('collections', {}).get('arrays', {})
+            arrays = self.config.get("xai", {}).get("collections", {}).get("arrays", {})
             if file_array not in arrays:
                 return f"File array '{file_array}' not found. Use '/mine --skip' to list available arrays."
         elif len(args) > 1:
             return "Usage: /mine --haul <file_id> [--to-skip <array>]    # Extract file and optionally associate with file array\n       /mine --haul <nugget_name> [--to-skip <array>]  # Extract by nugget name"
 
         # Check if it's a nugget name first
-        nuggets = self.collections_data.get('nuggets', {})
+        nuggets = self.collections_data.get("nuggets", {})
 
         if target in nuggets:
             # It's a nugget name - get the file_id
             nugget_data = nuggets[target]
-            file_id = nugget_data['file_id']
+            file_id = nugget_data["file_id"]
             result = self._handle_haul_extract(file_id)
             # Associate with file array if specified
             if file_array:
                 result += self._associate_file_with_array(file_id, file_array, target)
             return result
-        elif target.startswith('file_') or (len(target) == 36 and '-' in target):
+        elif target.startswith("file_") or (len(target) == 36 and "-" in target):
             # Extract file by ID
             result = self._handle_haul_extract(target)
             # Associate with file array if specified
@@ -433,14 +451,14 @@ class MineHandler:
             for doc in documents:
                 # Check various possible ID fields
                 doc_file_id = None
-                for id_field in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                for id_field in ["file_id", "id", "document_id", "fileId", "documentId"]:
                     if hasattr(doc, id_field):
                         doc_file_id = getattr(doc, id_field)
                         break
 
                 # Also check nested file_metadata
-                if not doc_file_id and hasattr(doc, 'file_metadata') and doc.file_metadata:
-                    if hasattr(doc.file_metadata, 'file_id'):
+                if not doc_file_id and hasattr(doc, "file_metadata") and doc.file_metadata:
+                    if hasattr(doc.file_metadata, "file_id"):
                         doc_file_id = doc.file_metadata.file_id
 
                 if doc_file_id == file_id:
@@ -455,10 +473,10 @@ class MineHandler:
             content = "No content available"
 
             # Get filename
-            if hasattr(target_doc, 'file_metadata') and getattr(target_doc, 'file_metadata'):
-                file_metadata = getattr(target_doc, 'file_metadata')
-                if hasattr(file_metadata, 'name'):
-                    filename = getattr(file_metadata, 'name')
+            if hasattr(target_doc, "file_metadata") and getattr(target_doc, "file_metadata"):
+                file_metadata = getattr(target_doc, "file_metadata")
+                if hasattr(file_metadata, "name"):
+                    filename = getattr(file_metadata, "name")
 
             # Get content - try searching for the file content since direct content access may not be available
             # Use the file_id to search within this specific file
@@ -470,12 +488,12 @@ class MineHandler:
                 content += f"This file ({filename}) has been indexed for search in the xAI Collections API.\n"
                 content += "Full file content download is not currently supported by the API.\n\n"
                 content += "To search within this file, use:\n"
-                content += "/mine --dig \"your question\" (searches active collection)\n\n"
+                content += '/mine --dig "your question" (searches active collection)\n\n'
                 content += "File details:\n"
                 content += f"• Size: {target_doc.file_metadata.size_bytes} bytes\n"
                 content += f"• Type: {target_doc.file_metadata.content_type}\n"
                 content += f"• Hash: {target_doc.file_metadata.hash}"
-                
+
             except Exception as search_error:
                 content = f"Unable to retrieve content: {search_error}"
 
@@ -491,14 +509,16 @@ class MineHandler:
         except Exception as e:
             return f"Error extracting file: {e}"
 
-    def _associate_file_with_array(self, file_id: str, array_name: str, nugget_name: str = None) -> str:
+    def _associate_file_with_array(
+        self, file_id: str, array_name: str, nugget_name: str = None
+    ) -> str:
         """Associate a hauled file with a file array."""
         try:
             # Ensure arrays structure exists in collections data
-            if 'arrays' not in self.collections_data:
-                self.collections_data['arrays'] = {}
+            if "arrays" not in self.collections_data:
+                self.collections_data["arrays"] = {}
 
-            arrays = self.collections_data['arrays']
+            arrays = self.collections_data["arrays"]
 
             # Initialize array if it doesn't exist
             if array_name not in arrays:
@@ -525,10 +545,10 @@ class MineHandler:
         if not args:
             # List all saved nuggets
             return self._list_nuggets()
-        elif args[0] == 'save' and len(args) > 1:
+        elif args[0] == "save" and len(args) > 1:
             # Save piped file_ids as nuggets
             return self._save_nuggets_from_pipe(args[1:])
-        elif args[0] == 'search' and len(args) > 1:
+        elif args[0] == "search" and len(args) > 1:
             # Search nuggets by name
             return self._search_nuggets(args[1])
         else:
@@ -536,16 +556,16 @@ class MineHandler:
 
     def _list_nuggets(self) -> str:
         """List all saved nuggets."""
-        nuggets = self.config.get('xai', {}).get('collections', {}).get('nuggets', {})
+        nuggets = self.config.get("xai", {}).get("collections", {}).get("nuggets", {})
 
         if not nuggets:
             return "No nuggets saved. Use '/mine --pan <collection> | /mine --nuggets save <collection>' to save file_ids as named nuggets."
 
         result = "💎 Saved Nuggets (named file_ids):\n\n"
         for name, data in nuggets.items():
-            file_id = data.get('file_id', 'unknown')
-            collection = data.get('collection', 'unknown')
-            filename = data.get('filename', 'unknown')
+            file_id = data.get("file_id", "unknown")
+            collection = data.get("collection", "unknown")
+            filename = data.get("filename", "unknown")
             result += f"• {name}: {filename} ({file_id[:20]}...)\n  Collection: {collection}\n\n"
 
         result += f"Total: {len(nuggets)} nuggets\n"
@@ -561,6 +581,7 @@ class MineHandler:
 
         # Read from stdin (piped input)
         import sys
+
         piped_data = sys.stdin.read().strip()
 
         if not piped_data:
@@ -568,20 +589,20 @@ class MineHandler:
 
         # Parse file_ids from piped data
         nuggets = {}
-        lines = piped_data.split('\n')
+        lines = piped_data.split("\n")
 
         for line in lines:
             line = line.strip()
-            if line.startswith('• ') and ': ' in line:
-                parts = line[2:].split(': ', 1)
+            if line.startswith("• ") and ": " in line:
+                parts = line[2:].split(": ", 1)
                 if len(parts) == 2:
                     filename, file_id = parts
                     # Create a readable nugget name from filename
                     nugget_name = self._create_nugget_name(filename, list(nuggets.keys()))
                     nuggets[nugget_name] = {
-                        'file_id': file_id,
-                        'filename': filename,
-                        'collection': collection_name
+                        "file_id": file_id,
+                        "filename": filename,
+                        "collection": collection_name,
                     }
 
         if not nuggets:
@@ -589,18 +610,20 @@ class MineHandler:
 
         # Save nuggets to config
         # Save nuggets to collections data
-        self.collections_data['nuggets'].update(nuggets)
+        self.collections_data["nuggets"].update(nuggets)
         self._save_collections_data()
 
-        return f"Saved {len(nuggets)} nuggets from {collection_name}:\n" + "\n".join(f"  • {name} → {data['filename']}" for name, data in nuggets.items())
+        return f"Saved {len(nuggets)} nuggets from {collection_name}:\n" + "\n".join(
+            f"  • {name} → {data['filename']}" for name, data in nuggets.items()
+        )
 
     def _search_nuggets(self, query: str) -> str:
         """Search nuggets by name."""
-        nuggets = self.collections_data.get('nuggets', {})
+        nuggets = self.collections_data.get("nuggets", {})
 
         matches = {}
         for name, data in nuggets.items():
-            if query.lower() in name.lower() or query.lower() in data.get('filename', '').lower():
+            if query.lower() in name.lower() or query.lower() in data.get("filename", "").lower():
                 matches[name] = data
 
         if not matches:
@@ -608,9 +631,9 @@ class MineHandler:
 
         result = f"🔍 Nuggets matching '{query}':\n\n"
         for name, data in matches.items():
-            file_id = data.get('file_id', 'unknown')
-            filename = data.get('filename', 'unknown')
-            collection = data.get('collection', 'unknown')
+            file_id = data.get("file_id", "unknown")
+            filename = data.get("filename", "unknown")
+            collection = data.get("collection", "unknown")
             result += f"• {name}: {filename}\n  ID: {file_id}\n  Collection: {collection}\n\n"
 
         return result
@@ -618,9 +641,9 @@ class MineHandler:
     def _create_nugget_name(self, filename: str, existing_names: List[str]) -> str:
         """Create a unique, readable nugget name from filename."""
         # Remove extension and clean up
-        name = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        name = filename.rsplit(".", 1)[0] if "." in filename else filename
         # Replace spaces and special chars with underscores
-        name = ''.join(c if c.isalnum() or c in '._-' else '_' for c in name)
+        name = "".join(c if c.isalnum() or c in "._-" else "_" for c in name)
         # Ensure uniqueness
         base_name = name
         counter = 1
@@ -631,7 +654,7 @@ class MineHandler:
 
     def _handle_deed(self, args: List[str]) -> str:
         """Deed the claim: show collection details."""
-        if args and args[0] == '--all':
+        if args and args[0] == "--all":
             return self._handle_list()
         else:
             return self._handle_info()
@@ -682,7 +705,7 @@ EXAMPLES:
             # First try to list collections via API (requires management key)
             collections_response = self.client.collections.list()
             collections = collections_response.collections
-            
+
             if not collections:
                 return "No collections found. Create one with /mine create <name>"
 
@@ -695,40 +718,52 @@ EXAMPLES:
                 except Exception:
                     doc_count = "?"
 
-                active_marker = " [ACTIVE]" if coll.collection_id == self.active_collection_id else ""
+                active_marker = (
+                    " [ACTIVE]" if coll.collection_id == self.active_collection_id else ""
+                )
                 # Handle protobuf Timestamp
                 created_date = "?"
-                if hasattr(coll, 'created_at') and coll.created_at:
+                if hasattr(coll, "created_at") and coll.created_at:
                     # Convert protobuf Timestamp to datetime
                     import datetime
+
                     timestamp_seconds = coll.created_at.seconds
-                    created_date = datetime.datetime.fromtimestamp(timestamp_seconds).strftime("%Y-%m-%d")
+                    created_date = datetime.datetime.fromtimestamp(timestamp_seconds).strftime(
+                        "%Y-%m-%d"
+                    )
                 result += f"• {coll.collection_name} ({doc_count} docs, created: {created_date}){active_marker}\n"
-            
+
             return result
-            
+
         except Exception as e:
             error_msg = str(e).lower()
             if "management" in error_msg and "key" in error_msg:
                 # Fallback: show configured collections from config
                 config = self.session_manager.config
                 configured_collections = []
-                
+
                 # Get collections from xai.collections config (supports any collection names)
-                xai_config = config.get('xai', {})
-                collections_config = xai_config.get('collections', {})
-                
+                xai_config = config.get("xai", {})
+                collections_config = xai_config.get("collections", {})
+
                 # Type check: collections_config must be a dict
                 if collections_config and isinstance(collections_config, dict):
                     # Filter out non-collection keys (enabled, api_key, etc.)
-                    reserved_keys = {'enabled', 'api_key', 'management_api_key', 'management_api_host', 
-                                   'default_collection', 'active_collection_id', 'active_collection_name'}
-                    
+                    reserved_keys = {
+                        "enabled",
+                        "api_key",
+                        "management_api_key",
+                        "management_api_host",
+                        "default_collection",
+                        "active_collection_id",
+                        "active_collection_name",
+                    }
+
                     for coll_name, coll_id in collections_config.items():
                         # Skip reserved config keys, only process collection mappings
                         if coll_name not in reserved_keys and coll_id and isinstance(coll_id, str):
                             configured_collections.append((coll_name, coll_id))
-                
+
                 if configured_collections:
                     result = "Configured Collections (from config):\n"
                     for name, coll_id in configured_collections:
@@ -737,15 +772,17 @@ EXAMPLES:
                     result += "\nNote: Using config-based collections. For full API listing, add 'xai_management_api_key' to config."
                     return result
                 else:
-                    return ("Error: No collections configured.\n"
-                           "Add collections to ~/.isaac/config.json under xai.collections:\n"
-                           '  "xai": {\n'
-                           '    "collections": {\n'
-                           '      "tc-logs": "your-collection-uuid",\n'
-                           '      "cpf-logs": "your-collection-uuid",\n'
-                           '      "cnc-info": "your-collection-uuid"\n'
-                           '    }\n'
-                           '  }')
+                    return (
+                        "Error: No collections configured.\n"
+                        "Add collections to ~/.isaac/config.json under xai.collections:\n"
+                        '  "xai": {\n'
+                        '    "collections": {\n'
+                        '      "tc-logs": "your-collection-uuid",\n'
+                        '      "cpf-logs": "your-collection-uuid",\n'
+                        '      "cnc-info": "your-collection-uuid"\n'
+                        "    }\n"
+                        "  }"
+                    )
             else:
                 return f"Error listing collections: {e}"
 
@@ -762,7 +799,9 @@ EXAMPLES:
             collections_response = self.client.collections.list()
             collections = collections_response.collections
 
-            target_coll = next((c for c in collections if c.collection_name == collection_name), None)
+            target_coll = next(
+                (c for c in collections if c.collection_name == collection_name), None
+            )
 
             if target_coll:
                 self.active_collection_id = target_coll.collection_id
@@ -774,8 +813,8 @@ EXAMPLES:
         except Exception as e:
             # Fallback: use configured collections from config
             if "management" in str(e).lower() or "api key" in str(e).lower():
-                xai_config = self.config.get('xai', {})
-                configured_collections = xai_config.get('collections', {})
+                xai_config = self.config.get("xai", {})
+                configured_collections = xai_config.get("collections", {})
 
                 if collection_name in configured_collections:
                     collection_id = configured_collections[collection_name]
@@ -785,7 +824,9 @@ EXAMPLES:
                         self._save_active_collection()
                         result = f"Switched to configured collection: {collection_name}"
                     else:
-                        return f"Collection '{collection_name}' not configured in ~/.isaac/config.json"
+                        return (
+                            f"Collection '{collection_name}' not configured in ~/.isaac/config.json"
+                        )
                 else:
                     available = [name for name, id_val in configured_collections.items() if id_val]
                     if available:
@@ -796,7 +837,7 @@ EXAMPLES:
                 return f"Error switching collection: {e}"
 
         # Check if there's a follow-up command
-        if len(args) > 1 and args[1].lower() in ['dig', 'query']:
+        if len(args) > 1 and args[1].lower() in ["dig", "query"]:
             dig_args = args[2:]
             if dig_args:
                 dig_result = self._handle_dig(dig_args)
@@ -822,7 +863,9 @@ EXAMPLES:
 
             # Create new collection
             collection = self.client.collections.create(name=collection_name)
-            return f"Created collection: {collection.collection_name} (ID: {collection.collection_id})"
+            return (
+                f"Created collection: {collection.collection_name} (ID: {collection.collection_id})"
+            )
         except Exception as e:
             return f"Error creating collection: {e}"
 
@@ -845,20 +888,21 @@ EXAMPLES:
         try:
             # Remove quotes if present
             file_path = file_path.strip('"').strip("'")
-            
+
             # Expand user path (~) and environment variables
             import os
+
             expanded_path = os.path.expanduser(file_path)
             expanded_path = os.path.expandvars(expanded_path)
-            
+
             # Convert to Path and resolve relative to current working directory
             expanded_path = Path(expanded_path)
             if not expanded_path.is_absolute():
                 expanded_path = Path.cwd() / expanded_path
-            
+
             # Resolve to absolute path (handles .., ., etc.)
             expanded_path = expanded_path.resolve()
-            
+
             if not expanded_path.exists():
                 return f"File not found: {file_path} (resolved to: {expanded_path})"
 
@@ -866,7 +910,7 @@ EXAMPLES:
                 return f"Not a file: {file_path}"
 
             # Upload file
-            with open(expanded_path, 'rb') as f:
+            with open(expanded_path, "rb") as f:
                 file_content = f.read()
 
             # Create document in collection
@@ -874,7 +918,7 @@ EXAMPLES:
                 collection_id=self.active_collection_id,
                 name=expanded_path.name,
                 data=file_content,
-                content_type=self._guess_content_type(expanded_path)
+                content_type=self._guess_content_type(expanded_path),
             )
 
             return f"Cast into mine: {expanded_path.name} -> {self.active_collection_name}"
@@ -889,10 +933,10 @@ EXAMPLES:
         array_name = args[0]
 
         # Ensure arrays structure exists in collections data
-        if 'arrays' not in self.collections_data:
-            self.collections_data['arrays'] = {}
+        if "arrays" not in self.collections_data:
+            self.collections_data["arrays"] = {}
 
-        arrays = self.collections_data['arrays']
+        arrays = self.collections_data["arrays"]
 
         if array_name in arrays:
             return f"File array '{array_name}' already exists."
@@ -929,15 +973,19 @@ EXAMPLES:
                     search_response = self.client.collections.search(
                         collection_id=coll.collection_id,
                         query=query,
-                        limit=self.mine_settings.get('multi_match_count', 5)
+                        limit=self.mine_settings.get("multi_match_count", 5),
                     )
 
                     if search_response.results:
                         collection_results = []
                         for match in search_response.results:
-                            if hasattr(match, 'chunk_content'):
-                                preview = match.chunk_content[:self.mine_settings.get('match_preview_length', 200)]
-                                if len(match.chunk_content) > self.mine_settings.get('match_preview_length', 200):
+                            if hasattr(match, "chunk_content"):
+                                preview = match.chunk_content[
+                                    : self.mine_settings.get("match_preview_length", 200)
+                                ]
+                                if len(match.chunk_content) > self.mine_settings.get(
+                                    "match_preview_length", 200
+                                ):
                                     preview += "..."
                                 collection_results.append(f"  • {preview}")
 
@@ -968,11 +1016,11 @@ EXAMPLES:
             return "Usage: /mine --search <question> [--to-drift <subgroup>]\n       /mine --search -c <question>  # Search all collections\n       /mine --search -h <question>  # Search with detailed output"
 
         # Parse flags from args
-        use_all_collections = '-c' in args
-        verbose_mode = '-h' in args
+        use_all_collections = "-c" in args
+        verbose_mode = "-h" in args
 
         # Remove flags from args to get the question
-        question_args = [arg for arg in args if arg not in ['-c', '-h']]
+        question_args = [arg for arg in args if arg not in ["-c", "-h"]]
 
         if not question_args:
             return "Usage: /mine --search <question> [--to-drift <subgroup>]\n       /mine --search -c <question>  # Search all collections\n       /mine --search -h <question>  # Search with detailed output"
@@ -1001,29 +1049,28 @@ EXAMPLES:
                 config = self.session_manager.get_config()
             else:
                 config = {}
-            xai_config = config.get('xai', {})
-            collections_config = xai_config.get('collections', {})
-            
+            xai_config = config.get("xai", {})
+            collections_config = xai_config.get("collections", {})
+
             # Use mine_settings if available, fallback to main config
-            search_files_only = self.mine_settings.get('search_files_only', collections_config.get('search_files_only', False))
-            file_ids = self.mine_settings.get('file_ids', collections_config.get('file_ids', []))
+            search_files_only = self.mine_settings.get(
+                "search_files_only", collections_config.get("search_files_only", False)
+            )
+            file_ids = self.mine_settings.get("file_ids", collections_config.get("file_ids", []))
 
             # Search the collection(s)
             # Note: xAI SDK has a hardcoded 10-second gRPC timeout for search operations
             # SDK returns multiple matches by default
-            search_params = {
-                'query': question,
-                'collection_ids': collection_ids
-            }
-            
+            search_params = {"query": question, "collection_ids": collection_ids}
+
             # If searching specific files only, add file_ids filter
             if search_files_only and file_ids:
                 # xAI SDK may support file filtering - add if available
-                search_params['file_ids'] = file_ids
-            
+                search_params["file_ids"] = file_ids
+
             response = self.client.collections.search(**search_params)
 
-            if hasattr(response, 'matches') and response.matches:
+            if hasattr(response, "matches") and response.matches:
                 # Return top matches with truncated content for piping-friendly output
                 # Collection chunks can be huge (user-configurable) - keep output manageable
                 if verbose_mode:
@@ -1033,16 +1080,16 @@ EXAMPLES:
                     max_preview = 1000  # for multiple matches
                 else:
                     # Use config console settings
-                    max_matches = self.mine_settings.get('multi_match_count', 5)
-                    max_chars = self.mine_settings.get('max_chunk_size', 1000)
-                    max_preview = self.mine_settings.get('match_preview_length', 200)
-                
+                    max_matches = self.mine_settings.get("multi_match_count", 5)
+                    max_chars = self.mine_settings.get("max_chunk_size", 1000)
+                    max_preview = self.mine_settings.get("match_preview_length", 200)
+
                 matches = response.matches[:max_matches]  # Top matches
-                
+
                 if len(matches) == 1:
                     # Single match - return with moderate truncation
                     match = matches[0]
-                    if hasattr(match, 'chunk_content'):
+                    if hasattr(match, "chunk_content"):
                         content = match.chunk_content
                         # Truncate very large chunks
                         if len(content) > max_chars:
@@ -1056,7 +1103,7 @@ EXAMPLES:
                     if use_all_collections:
                         result += f" across {len(collection_ids)} collections"
                     result += ":\n\n"
-                    
+
                     # Build collection name mapping for display
                     collection_names = {}
                     if use_all_collections:
@@ -1066,28 +1113,32 @@ EXAMPLES:
                                 collection_names[coll.collection_id] = coll.collection_name
                         except Exception:
                             pass  # Fall back to IDs if name lookup fails
-                    
+
                     for i, match in enumerate(matches, 1):
-                        if hasattr(match, 'chunk_content'):
+                        if hasattr(match, "chunk_content"):
                             # Preview content
                             content = match.chunk_content[:max_preview]
                             if len(match.chunk_content) > max_preview:
                                 content += "..."
-                            
+
                             # Include score if available and enabled
                             score_text = ""
-                            if self.mine_settings.get('show_scores', True):
-                                score = getattr(match, 'score', None)
+                            if self.mine_settings.get("show_scores", True):
+                                score = getattr(match, "score", None)
                                 if score is not None:
                                     score_text = f" (score: {score:.3f})"
-                            
+
                             # Include collection info for multi-collection searches
                             collection_info = ""
-                            if use_all_collections and hasattr(match, 'collection_ids') and match.collection_ids:
+                            if (
+                                use_all_collections
+                                and hasattr(match, "collection_ids")
+                                and match.collection_ids
+                            ):
                                 coll_id = match.collection_ids[0]  # Take first collection ID
                                 coll_name = collection_names.get(coll_id, coll_id)
                                 collection_info = f" [{coll_name}]"
-                            
+
                             result += f"Match {i}{score_text}{collection_info}:\n{content}\n\n"
                         else:
                             result += f"Match {i}: {match}\n\n"
@@ -1108,7 +1159,9 @@ EXAMPLES:
         try:
             collections_response = self.client.collections.list()
             collections = collections_response.collections
-            target_coll = next((c for c in collections if c.collection_name == collection_name), None)
+            target_coll = next(
+                (c for c in collections if c.collection_name == collection_name), None
+            )
 
             if not target_coll:
                 return f"Collection not found: {collection_name}"
@@ -1143,41 +1196,50 @@ EXAMPLES:
             result += f"ID: {self.active_collection_id}\n"
             result += f"Documents: {doc_count}\n"
 
-            if hasattr(collection, 'created_at') and collection.created_at:
+            if hasattr(collection, "created_at") and collection.created_at:
                 # Handle protobuf Timestamp
                 import datetime
+
                 timestamp_seconds = collection.created_at.seconds
-                created_date = datetime.datetime.fromtimestamp(timestamp_seconds).strftime('%Y-%m-%d %H:%M:%S')
+                created_date = datetime.datetime.fromtimestamp(timestamp_seconds).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
                 result += f"Created: {created_date}\n"
 
             if doc_count > 0:
                 result += "\nDocuments:\n"
                 for doc in documents[:10]:  # Show first 10
-                    doc_name = doc.file_metadata.name if hasattr(doc, 'file_metadata') and doc.file_metadata else "Unknown"
-                    
+                    doc_name = (
+                        doc.file_metadata.name
+                        if hasattr(doc, "file_metadata") and doc.file_metadata
+                        else "Unknown"
+                    )
+
                     # Get file_id for hauling
                     file_id = "unknown"
                     # Check common ID property names
-                    for id_prop in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                    for id_prop in ["file_id", "id", "document_id", "fileId", "documentId"]:
                         if hasattr(doc, id_prop):
                             file_id = getattr(doc, id_prop)
                             break
-                    
+
                     # Check nested file_metadata.file_id (protobuf structure)
-                    if file_id == "unknown" and hasattr(doc, 'file_metadata') and doc.file_metadata:
-                        if hasattr(doc.file_metadata, 'file_id'):
+                    if file_id == "unknown" and hasattr(doc, "file_metadata") and doc.file_metadata:
+                        if hasattr(doc.file_metadata, "file_id"):
                             file_id = doc.file_metadata.file_id
-                    
+
                     # If still unknown, try to inspect the object
                     if file_id == "unknown":
                         # Look for any property that looks like an ID
                         for attr_name in dir(doc):
-                            if not attr_name.startswith('_'):
+                            if not attr_name.startswith("_"):
                                 attr_value = getattr(doc, attr_name)
-                                if isinstance(attr_value, str) and (attr_value.startswith('file_') or len(attr_value) == 36):
+                                if isinstance(attr_value, str) and (
+                                    attr_value.startswith("file_") or len(attr_value) == 36
+                                ):
                                     file_id = attr_value
                                     break
-                    
+
                     result += f"• {doc_name} (ID: {file_id})\n"
                 if doc_count > 10:
                     result += f"... and {doc_count - 10} more"
@@ -1191,10 +1253,10 @@ EXAMPLES:
         if not args:
             # List all saved nuggets
             return self._list_nuggets()
-        elif args[0] == 'save' and len(args) > 1:
+        elif args[0] == "save" and len(args) > 1:
             # Save piped file_ids as nuggets
             return self._save_nuggets_from_pipe(args[1:])
-        elif args[0] == 'search' and len(args) > 1:
+        elif args[0] == "search" and len(args) > 1:
             # Search nuggets by name
             return self._search_nuggets(args[1])
         else:
@@ -1202,16 +1264,16 @@ EXAMPLES:
 
     def _list_nuggets(self) -> str:
         """List all saved nuggets."""
-        nuggets = self.collections_data.get('nuggets', {})
+        nuggets = self.collections_data.get("nuggets", {})
 
         if not nuggets:
             return "No nuggets saved. Use '/mine --pan <collection> | /mine --nuggets save <collection>' to save file_ids as named nuggets."
 
         result = "💎 Saved Nuggets (named file_ids):\n\n"
         for name, data in nuggets.items():
-            file_id = data.get('file_id', 'unknown')
-            collection = data.get('collection', 'unknown')
-            filename = data.get('filename', 'unknown')
+            file_id = data.get("file_id", "unknown")
+            collection = data.get("collection", "unknown")
+            filename = data.get("filename", "unknown")
             result += f"• {name}: {filename} ({file_id[:20]}...)\n  Collection: {collection}\n\n"
 
         result += f"Total: {len(nuggets)} nuggets\n"
@@ -1229,7 +1291,9 @@ EXAMPLES:
             # Find the collection by name
             collections_response = self.client.collections.list()
             collections = collections_response.collections
-            target_coll = next((c for c in collections if c.collection_name == collection_name), None)
+            target_coll = next(
+                (c for c in collections if c.collection_name == collection_name), None
+            )
 
             if not target_coll:
                 return f"Collection not found: {collection_name}"
@@ -1241,42 +1305,46 @@ EXAMPLES:
             if not documents:
                 return f"No documents found in collection '{collection_name}'"
 
-            result = f"File IDs in collection '{collection_name}' (ID: {target_coll.collection_id}):\n\n"
+            result = (
+                f"File IDs in collection '{collection_name}' (ID: {target_coll.collection_id}):\n\n"
+            )
 
             for doc in documents:
                 # Try to get file_id from various possible properties
                 file_id = "unknown"
                 # Check common ID property names
-                for id_prop in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                for id_prop in ["file_id", "id", "document_id", "fileId", "documentId"]:
                     if hasattr(doc, id_prop):
                         file_id = getattr(doc, id_prop)
                         break
-                
+
                 # Check nested file_metadata.file_id (protobuf structure)
-                if file_id == "unknown" and hasattr(doc, 'file_metadata') and doc.file_metadata:
-                    if hasattr(doc.file_metadata, 'file_id'):
+                if file_id == "unknown" and hasattr(doc, "file_metadata") and doc.file_metadata:
+                    if hasattr(doc.file_metadata, "file_id"):
                         file_id = doc.file_metadata.file_id
-                
+
                 # If still unknown, try to inspect the object
                 if file_id == "unknown":
                     # Look for any property that looks like an ID
                     for attr_name in dir(doc):
-                        if not attr_name.startswith('_'):
+                        if not attr_name.startswith("_"):
                             attr_value = getattr(doc, attr_name)
-                            if isinstance(attr_value, str) and (attr_value.startswith('file_') or len(attr_value) == 36):
+                            if isinstance(attr_value, str) and (
+                                attr_value.startswith("file_") or len(attr_value) == 36
+                            ):
                                 file_id = attr_value
                                 break
 
                 # Get filename
                 filename = "Unknown"
-                if hasattr(doc, 'file_metadata') and getattr(doc, 'file_metadata'):
-                    file_metadata = getattr(doc, 'file_metadata')
-                    if hasattr(file_metadata, 'name'):
-                        filename = getattr(file_metadata, 'name')
-                
+                if hasattr(doc, "file_metadata") and getattr(doc, "file_metadata"):
+                    file_metadata = getattr(doc, "file_metadata")
+                    if hasattr(file_metadata, "name"):
+                        filename = getattr(file_metadata, "name")
+
                 # Fallback: check direct properties on doc
                 if filename == "Unknown":
-                    for name_prop in ['name', 'filename', 'file_name']:
+                    for name_prop in ["name", "filename", "file_name"]:
                         if hasattr(doc, name_prop):
                             filename = getattr(doc, name_prop)
                             break
@@ -1310,7 +1378,7 @@ EXAMPLES:
             for doc in documents:
                 # Check various possible ID fields
                 doc_file_id = None
-                for id_field in ['file_id', 'id', 'document_id', 'fileId', 'documentId']:
+                for id_field in ["file_id", "id", "document_id", "fileId", "documentId"]:
                     if hasattr(doc, id_field):
                         doc_file_id = getattr(doc, id_field)
                         break
@@ -1318,10 +1386,10 @@ EXAMPLES:
                 if doc_file_id == file_id:
                     target_doc = doc
                     # Get filename
-                    if hasattr(doc, 'file_metadata') and getattr(doc, 'file_metadata'):
-                        file_metadata = getattr(doc, 'file_metadata')
-                        if hasattr(file_metadata, 'name'):
-                            filename = getattr(file_metadata, 'name')
+                    if hasattr(doc, "file_metadata") and getattr(doc, "file_metadata"):
+                        file_metadata = getattr(doc, "file_metadata")
+                        if hasattr(file_metadata, "name"):
+                            filename = getattr(file_metadata, "name")
                     break
 
             if not target_doc:
@@ -1336,26 +1404,26 @@ EXAMPLES:
 
     def _load_mine_config(self) -> Dict[str, Any]:
         """Load mine configuration from config file."""
-        config_file = Path.home() / '.isaac' / 'mine_config.json'
+        config_file = Path.home() / ".isaac" / "mine_config.json"
         defaults = {
-            'max_chunk_size': 1000,
-            'match_preview_length': 200,
-            'multi_match_count': 5,
-            'piping_threshold': 0.7,
-            'piping_max_context': 3,
-            'show_scores': True,
-            'file_ids': [],
-            'search_files_only': False
+            "max_chunk_size": 1000,
+            "match_preview_length": 200,
+            "multi_match_count": 5,
+            "piping_threshold": 0.7,
+            "piping_max_context": 3,
+            "show_scores": True,
+            "file_ids": [],
+            "search_files_only": False,
         }
-        
+
         if config_file.exists():
             try:
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     loaded = json.load(f)
                     defaults.update(loaded)
             except Exception:
                 pass  # Use defaults if file corrupted
-        
+
         return defaults
 
     def _handle_grokbug(self, args: List[str]) -> str:
@@ -1446,18 +1514,41 @@ EXAMPLES:
         if purpose == "debug":
             # Include source code, tests, configs, error logs
             patterns = [
-                "**/*.py", "**/*.js", "**/*.java", "**/*.cpp", "**/*.c", "**/*.cs",
-                "**/test_*.py", "**/*test*.py", "**/*test*.js",
-                "**/config*", "**/*.yml", "**/*.yaml", "**/*.json", "**/*.toml",
-                "**/*.log", "**/error.log", "**/debug.log",
-                "**/requirements.txt", "**/package.json", "**/Cargo.toml"
+                "**/*.py",
+                "**/*.js",
+                "**/*.java",
+                "**/*.cpp",
+                "**/*.c",
+                "**/*.cs",
+                "**/test_*.py",
+                "**/*test*.py",
+                "**/*test*.js",
+                "**/config*",
+                "**/*.yml",
+                "**/*.yaml",
+                "**/*.json",
+                "**/*.toml",
+                "**/*.log",
+                "**/error.log",
+                "**/debug.log",
+                "**/requirements.txt",
+                "**/package.json",
+                "**/Cargo.toml",
             ]
         elif purpose == "refactor":
             # Focus on source code and documentation
             patterns = [
-                "**/*.py", "**/*.js", "**/*.java", "**/*.cpp", "**/*.c", "**/*.cs",
-                "**/README*", "**/docs/**", "**/*.md",
-                "**/architecture.*", "**/design.*"
+                "**/*.py",
+                "**/*.js",
+                "**/*.java",
+                "**/*.cpp",
+                "**/*.c",
+                "**/*.cs",
+                "**/README*",
+                "**/docs/**",
+                "**/*.md",
+                "**/architecture.*",
+                "**/design.*",
             ]
         else:
             # Default to source files
@@ -1481,7 +1572,7 @@ EXAMPLES:
         cast = 0
         for file_path in files:
             try:
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     content = f.read()
 
                 # Skip empty files
@@ -1492,7 +1583,7 @@ EXAMPLES:
                     collection_id=collection_id,
                     name=file_path.name,
                     data=content,
-                    content_type=self._guess_content_type(file_path)
+                    content_type=self._guess_content_type(file_path),
                 )
                 cast += 1
             except Exception:
@@ -1510,56 +1601,60 @@ EXAMPLES:
         """Guess content type based on file extension."""
         ext = file_path.suffix.lower()
         content_types = {
-            '.txt': 'text/plain',
-            '.md': 'text/markdown',
-            '.py': 'text/x-python',
-            '.js': 'application/javascript',
-            '.json': 'application/json',
-            '.yml': 'application/x-yaml',
-            '.yaml': 'application/x-yaml',
-            '.xml': 'application/xml',
-            '.html': 'text/html',
-            '.css': 'text/css',
-            '.pdf': 'application/pdf',
+            ".txt": "text/plain",
+            ".md": "text/markdown",
+            ".py": "text/x-python",
+            ".js": "application/javascript",
+            ".json": "application/json",
+            ".yml": "application/x-yaml",
+            ".yaml": "application/x-yaml",
+            ".xml": "application/xml",
+            ".html": "text/html",
+            ".css": "text/css",
+            ".pdf": "application/pdf",
         }
-        return content_types.get(ext, 'text/plain')
+        return content_types.get(ext, "text/plain")
 
     def _load_workspace_collection(self):
         """Load collection associated with current workspace"""
         try:
             # Get current working directory
             import os
+
             cwd = os.getcwd()
-            
+
             # Check if we're in a workspace
             from pathlib import Path
-            workspace_root = Path.home() / '.isaac' / 'workspaces'
-            
+
+            workspace_root = Path.home() / ".isaac" / "workspaces"
+
             # Find which workspace we're in
             for workspace_dir in workspace_root.iterdir():
                 if workspace_dir.is_dir() and Path(cwd).is_relative_to(workspace_dir):
                     # We're in this workspace, check for collection
                     from isaac.core.sandbox_enforcer import SandboxEnforcer
-                    
+
                     # Create a mock session for the enforcer
                     class MockSession:
                         def __init__(self, config):
                             self.config = config
+
                         def get_config(self):
                             return self.config
-                    
+
                     mock_session = MockSession(self.config)
                     enforcer = SandboxEnforcer(mock_session)
-                    
+
                     collection_id = enforcer.get_workspace_collection_id(workspace_dir.name)
                     if collection_id:
                         self.active_collection_id = collection_id
                         self.active_collection_name = f"workspace-{workspace_dir.name}"
                         break
-                        
+
         except Exception:
             # Silently fail, workspace collection loading is optional
             pass
+
 
 def main():
     """Main entry point for mine command"""
@@ -1568,34 +1663,26 @@ def main():
         payload = json.loads(sys.stdin.read())
         command = payload.get("command", "")
         session_data = payload.get("session", {})
-        
+
         # Extract args from command (everything after /mine)
         if command.startswith("/mine "):
             args_raw = command[6:].strip()  # Remove "/mine "
             import shlex
+
             args = shlex.split(args_raw)
         else:
             args = []
-        
+
         # Create handler with session data
         handler = MineHandler(session_data)
-        result = handler.handle_command(args, '/mine')
-        
+        result = handler.handle_command(args, "/mine")
+
         # Return envelope
-        print(json.dumps({
-            "ok": True,
-            "stdout": result
-        }))
-    
+        print(json.dumps({"ok": True, "stdout": result}))
+
     except Exception as e:
         # Return error envelope
-        print(json.dumps({
-            "ok": False,
-            "error": {
-                "code": "EXECUTION_ERROR",
-                "message": str(e)
-            }
-        }))
+        print(json.dumps({"ok": False, "error": {"code": "EXECUTION_ERROR", "message": str(e)}}))
 
 
 if __name__ == "__main__":

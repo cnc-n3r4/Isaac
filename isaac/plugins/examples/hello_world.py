@@ -3,7 +3,7 @@
 This plugin demonstrates the basic structure of an Isaac plugin.
 """
 
-from isaac.plugins.plugin_api import Plugin, PluginMetadata, PluginContext, PluginHook
+from isaac.plugins.plugin_api import Plugin, PluginContext, PluginHook, PluginMetadata
 
 
 class HelloWorldPlugin(Plugin):

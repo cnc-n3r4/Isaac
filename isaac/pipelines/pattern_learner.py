@@ -7,13 +7,13 @@ import re
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
-
+from typing import Any, Dict, List
 
 
 @dataclass
 class CommandPattern:
     """A detected command pattern."""
+
     commands: List[str]
     frequency: int
     avg_interval_seconds: float
@@ -28,6 +28,7 @@ class CommandPattern:
 @dataclass
 class WorkflowPattern:
     """A multi-step workflow pattern."""
+
     steps: List[List[str]]  # List of command sequences
     frequency: int
     avg_duration_seconds: float
@@ -65,19 +66,21 @@ class PatternLearner:
             Analysis results with patterns and suggestions
         """
         if not command_history:
-            return {'patterns': [], 'suggestions': []}
+            return {"patterns": [], "suggestions": []}
 
         # Extract successful commands
         commands = []
         for record in command_history:
-            if record.get('success', True):  # Default to True if not specified
-                command = record.get('command', '').strip()
+            if record.get("success", True):  # Default to True if not specified
+                command = record.get("command", "").strip()
                 if command:
-                    commands.append({
-                        'command': command,
-                        'timestamp': record.get('timestamp', time.time()),
-                        'session_id': record.get('session_id', 'unknown')
-                    })
+                    commands.append(
+                        {
+                            "command": command,
+                            "timestamp": record.get("timestamp", time.time()),
+                            "session_id": record.get("session_id", "unknown"),
+                        }
+                    )
 
         # Find command patterns
         command_patterns = self._find_command_patterns(commands)
@@ -89,10 +92,10 @@ class PatternLearner:
         suggestions = self._generate_suggestions(command_patterns, workflow_patterns)
 
         return {
-            'command_patterns': command_patterns,
-            'workflow_patterns': workflow_patterns,
-            'suggestions': suggestions,
-            'analysis_timestamp': time.time()
+            "command_patterns": command_patterns,
+            "workflow_patterns": workflow_patterns,
+            "suggestions": suggestions,
+            "analysis_timestamp": time.time(),
         }
 
     def _find_command_patterns(self, commands: List[Dict[str, Any]]) -> List[CommandPattern]:
@@ -103,7 +106,7 @@ class PatternLearner:
         # Group by command
         command_groups = defaultdict(list)
         for cmd in commands:
-            command_groups[cmd['command']].append(cmd['timestamp'])
+            command_groups[cmd["command"]].append(cmd["timestamp"])
 
         patterns = []
         for command, timestamps in command_groups.items():
@@ -116,13 +119,15 @@ class PatternLearner:
             # Calculate average interval
             intervals = []
             for i in range(1, len(timestamps)):
-                intervals.append(timestamps[i] - timestamps[i-1])
+                intervals.append(timestamps[i] - timestamps[i - 1])
             avg_interval = sum(intervals) / len(intervals) if intervals else 0
 
             # Calculate confidence based on frequency and regularity
             time_span = timestamps[-1] - timestamps[0]
             expected_occurrences = time_span / avg_interval if avg_interval > 0 else 0
-            regularity_score = min(frequency / expected_occurrences, 1.0) if expected_occurrences > 0 else 0
+            regularity_score = (
+                min(frequency / expected_occurrences, 1.0) if expected_occurrences > 0 else 0
+            )
             confidence = min(frequency / 10.0, 1.0) * regularity_score
 
             if confidence > 0.3:  # Minimum confidence threshold
@@ -134,7 +139,7 @@ class PatternLearner:
                     first_seen=timestamps[0],
                     confidence=confidence,
                     suggested_name=self._suggest_command_name(command),
-                    suggested_description=f"Run '{command}' (executed {frequency} times)"
+                    suggested_description=f"Run '{command}' (executed {frequency} times)",
                 )
                 patterns.append(pattern)
 
@@ -150,14 +155,14 @@ class PatternLearner:
         # Group commands by session to find workflows
         session_commands = defaultdict(list)
         for cmd in commands:
-            session_id = cmd.get('session_id', 'unknown')
+            session_id = cmd.get("session_id", "unknown")
             session_commands[session_id].append(cmd)
 
         # Find patterns within sessions
         all_sequences = []
         for session_cmds in session_commands.values():
             if len(session_cmds) >= self.min_pattern_length:
-                session_cmds.sort(key=lambda x: x['timestamp'])
+                session_cmds.sort(key=lambda x: x["timestamp"])
                 sequences = self._extract_sequences(session_cmds)
                 all_sequences.extend(sequences)
 
@@ -170,8 +175,8 @@ class PatternLearner:
                 continue
 
             # Calculate pattern statistics
-            commands_list = [seq['commands'] for seq in sequence_group]
-            durations = [seq['duration'] for seq in sequence_group]
+            commands_list = [seq["commands"] for seq in sequence_group]
+            durations = [seq["duration"] for seq in sequence_group]
 
             avg_duration = sum(durations) / len(durations)
             frequency = len(sequence_group)
@@ -188,7 +193,7 @@ class PatternLearner:
                     confidence=confidence,
                     suggested_pipeline_name=self._suggest_workflow_name(commands_list[0]),
                     suggested_description=f"Automate {len(commands_list[0])} step workflow (run {frequency} times)",
-                    estimated_savings_seconds=estimated_savings
+                    estimated_savings_seconds=estimated_savings,
                 )
                 patterns.append(pattern)
 
@@ -200,41 +205,48 @@ class PatternLearner:
         """Extract command sequences from a session."""
         sequences = []
 
-        for length in range(self.min_pattern_length, min(self.max_pattern_length + 1, len(session_commands) + 1)):
+        for length in range(
+            self.min_pattern_length, min(self.max_pattern_length + 1, len(session_commands) + 1)
+        ):
             for start_idx in range(len(session_commands) - length + 1):
                 end_idx = start_idx + length
                 sequence_cmds = session_commands[start_idx:end_idx]
 
                 # Check if commands are close together (within reasonable time)
-                start_time = sequence_cmds[0]['timestamp']
-                end_time = sequence_cmds[-1]['timestamp']
+                start_time = sequence_cmds[0]["timestamp"]
+                end_time = sequence_cmds[-1]["timestamp"]
                 duration = end_time - start_time
 
                 # Only consider sequences that take less than 30 minutes
                 if duration <= 1800:  # 30 minutes
-                    sequences.append({
-                        'commands': [cmd['command'] for cmd in sequence_cmds],
-                        'start_time': start_time,
-                        'end_time': end_time,
-                        'duration': duration,
-                        'session_id': sequence_cmds[0].get('session_id', 'unknown')
-                    })
+                    sequences.append(
+                        {
+                            "commands": [cmd["command"] for cmd in sequence_cmds],
+                            "start_time": start_time,
+                            "end_time": end_time,
+                            "duration": duration,
+                            "session_id": sequence_cmds[0].get("session_id", "unknown"),
+                        }
+                    )
 
         return sequences
 
-    def _group_similar_sequences(self, sequences: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    def _group_similar_sequences(
+        self, sequences: List[Dict[str, Any]]
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Group similar command sequences."""
         groups = defaultdict(list)
 
         for seq in sequences:
             # Create a signature for the sequence
-            signature = '|'.join(seq['commands'])
+            signature = "|".join(seq["commands"])
             groups[signature].append(seq)
 
         return dict(groups)
 
-    def _generate_suggestions(self, command_patterns: List[CommandPattern],
-                            workflow_patterns: List[WorkflowPattern]) -> List[Dict[str, Any]]:
+    def _generate_suggestions(
+        self, command_patterns: List[CommandPattern], workflow_patterns: List[WorkflowPattern]
+    ) -> List[Dict[str, Any]]:
         """Generate pipeline suggestions from patterns."""
         suggestions = []
 
@@ -242,11 +254,11 @@ class PatternLearner:
         for pattern in command_patterns[:5]:  # Top 5
             if pattern.confidence > 0.5:
                 suggestion = {
-                    'type': 'single_command',
-                    'pattern': pattern,
-                    'pipeline_template': self._create_single_command_pipeline(pattern),
-                    'priority': 'high' if pattern.confidence > 0.8 else 'medium',
-                    'reason': f"Command executed {pattern.frequency} times with high regularity"
+                    "type": "single_command",
+                    "pattern": pattern,
+                    "pipeline_template": self._create_single_command_pipeline(pattern),
+                    "priority": "high" if pattern.confidence > 0.8 else "medium",
+                    "reason": f"Command executed {pattern.frequency} times with high regularity",
                 }
                 suggestions.append(suggestion)
 
@@ -254,11 +266,11 @@ class PatternLearner:
         for pattern in workflow_patterns[:3]:  # Top 3
             if pattern.confidence > 0.6:
                 suggestion = {
-                    'type': 'workflow',
-                    'pattern': pattern,
-                    'pipeline_template': self._create_workflow_pipeline(pattern),
-                    'priority': 'high',
-                    'reason': f"Workflow saves ~{int(pattern.estimated_savings_seconds/60)} minutes total"
+                    "type": "workflow",
+                    "pattern": pattern,
+                    "pipeline_template": self._create_workflow_pipeline(pattern),
+                    "priority": "high",
+                    "reason": f"Workflow saves ~{int(pattern.estimated_savings_seconds/60)} minutes total",
                 }
                 suggestions.append(suggestion)
 
@@ -269,18 +281,18 @@ class PatternLearner:
         command = pattern.commands[0]
 
         return {
-            'name': pattern.suggested_name,
-            'description': pattern.suggested_description,
-            'steps': [
+            "name": pattern.suggested_name,
+            "description": pattern.suggested_description,
+            "steps": [
                 {
-                    'id': 'run_command',
-                    'name': pattern.suggested_name,
-                    'type': 'command',
-                    'config': {'command': command}
+                    "id": "run_command",
+                    "name": pattern.suggested_name,
+                    "type": "command",
+                    "config": {"command": command},
                 }
             ],
-            'variables': {},
-            'triggers': []
+            "variables": {},
+            "triggers": [],
         }
 
     def _create_workflow_pipeline(self, pattern: WorkflowPattern) -> Dict[str, Any]:
@@ -288,19 +300,19 @@ class PatternLearner:
         steps = []
         for i, command in enumerate(pattern.steps[0]):  # Use first occurrence as template
             step = {
-                'id': f'step_{i+1}',
-                'name': f'Step {i+1}: {self._suggest_command_name(command)}',
-                'type': 'command',
-                'config': {'command': command}
+                "id": f"step_{i+1}",
+                "name": f"Step {i+1}: {self._suggest_command_name(command)}",
+                "type": "command",
+                "config": {"command": command},
             }
             steps.append(step)
 
         return {
-            'name': pattern.suggested_pipeline_name,
-            'description': pattern.suggested_description,
-            'steps': steps,
-            'variables': {},
-            'triggers': []
+            "name": pattern.suggested_pipeline_name,
+            "description": pattern.suggested_description,
+            "steps": steps,
+            "variables": {},
+            "triggers": [],
         }
 
     def _suggest_command_name(self, command: str) -> str:
@@ -309,14 +321,14 @@ class PatternLearner:
 
         # Common command patterns
         patterns = [
-            (r'^git\s+(.*)', lambda m: f"Git {m.group(1).replace('-', ' ')}"),
-            (r'^pip\s+install', 'Install Python packages'),
-            (r'^pytest', 'Run tests'),
-            (r'^python\s+-m\s+build', 'Build package'),
-            (r'^docker\s+build', 'Build Docker image'),
-            (r'^kubectl\s+apply', 'Deploy to Kubernetes'),
-            (r'^npm\s+install', 'Install Node packages'),
-            (r'^npm\s+run\s+(\w+)', lambda m: f"Run npm script: {m.group(1)}"),
+            (r"^git\s+(.*)", lambda m: f"Git {m.group(1).replace('-', ' ')}"),
+            (r"^pip\s+install", "Install Python packages"),
+            (r"^pytest", "Run tests"),
+            (r"^python\s+-m\s+build", "Build package"),
+            (r"^docker\s+build", "Build Docker image"),
+            (r"^kubectl\s+apply", "Deploy to Kubernetes"),
+            (r"^npm\s+install", "Install Node packages"),
+            (r"^npm\s+run\s+(\w+)", lambda m: f"Run npm script: {m.group(1)}"),
         ]
 
         for pattern, name_func in patterns:

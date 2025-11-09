@@ -7,13 +7,12 @@ Provides command-line interface for AR/VR preparation features.
 import json
 from typing import List
 
-from isaac.arvr.spatial_api import SpatialAPI, Vector3D
-from isaac.arvr.gesture_api import GestureAPI, GestureType
-from isaac.arvr.spatial_layouts import LayoutManager, LayoutType
+from isaac.arvr.gesture_api import GestureAPI, GestureType, HandType
 from isaac.arvr.multimodal_input import MultimodalInputHandler
+from isaac.arvr.platform_adapter import Platform, PlatformAdapter
 from isaac.arvr.prototype_mode import PrototypeRenderer
-from isaac.arvr.platform_adapter import PlatformAdapter, Platform
-from isaac.arvr.gesture_api import HandType
+from isaac.arvr.spatial_api import SpatialAPI, Vector3D
+from isaac.arvr.spatial_layouts import LayoutManager, LayoutType
 
 
 class ARVRCommand:
@@ -36,14 +35,14 @@ class ARVRCommand:
         subargs = args[1:]
 
         commands = {
-            'workspace': self._cmd_workspace,
-            'layout': self._cmd_layout,
-            'gesture': self._cmd_gesture,
-            'multimodal': self._cmd_multimodal,
-            'platform': self._cmd_platform,
-            'demo': self._cmd_demo,
-            'status': self._cmd_status,
-            'help': lambda _: self._show_help(),
+            "workspace": self._cmd_workspace,
+            "layout": self._cmd_layout,
+            "gesture": self._cmd_gesture,
+            "multimodal": self._cmd_multimodal,
+            "platform": self._cmd_platform,
+            "demo": self._cmd_demo,
+            "status": self._cmd_status,
+            "help": lambda _: self._show_help(),
         }
 
         handler = commands.get(subcommand)
@@ -62,15 +61,15 @@ class ARVRCommand:
 
         action = args[0]
 
-        if action == 'create':
+        if action == "create":
             name = args[1] if len(args) > 1 else "default"
             workspace = self.spatial_api.create_workspace(name)
             return f"Created workspace: {name}"
 
-        elif action == 'list':
+        elif action == "list":
             return self._workspace_list()
 
-        elif action == 'show':
+        elif action == "show":
             name = args[1] if len(args) > 1 else None
             workspace = self.spatial_api.get_workspace(name)
             if workspace:
@@ -78,7 +77,7 @@ class ARVRCommand:
                 return output
             return "No workspace found"
 
-        elif action == 'add-object':
+        elif action == "add-object":
             name = args[1] if len(args) > 1 else "Object"
             x = float(args[2]) if len(args) > 2 else 0.0
             y = float(args[3]) if len(args) > 3 else 0.0
@@ -89,7 +88,7 @@ class ARVRCommand:
                 return f"Added object '{name}' at ({x}, {y}, {z})"
             return "Failed to add object"
 
-        elif action == 'save':
+        elif action == "save":
             name = args[1] if len(args) > 1 else None
             filepath = args[2] if len(args) > 2 else f"workspace_{name}.json"
             workspace = self.spatial_api.get_workspace(name)
@@ -120,12 +119,12 @@ class ARVRCommand:
 
         action = args[0]
 
-        if action == 'create':
+        if action == "create":
             name = args[1] if len(args) > 1 else "layout"
             layout_type = args[2] if len(args) > 2 else "circular"
             items_str = args[3] if len(args) > 3 else "Item1,Item2,Item3"
 
-            items = [item.strip() for item in items_str.split(',')]
+            items = [item.strip() for item in items_str.split(",")]
 
             try:
                 ltype = LayoutType[layout_type.upper()]
@@ -135,10 +134,10 @@ class ARVRCommand:
             layout = self.layout_manager.create_layout(name, ltype, items)
             return f"Created {layout_type} layout '{name}' with {len(items)} items"
 
-        elif action == 'list':
+        elif action == "list":
             return self._layout_list()
 
-        elif action == 'show':
+        elif action == "show":
             name = args[1] if len(args) > 1 else None
             layout = self.layout_manager.get_layout(name)
             if layout:
@@ -146,7 +145,7 @@ class ARVRCommand:
                 return output
             return "Layout not found"
 
-        elif action == 'optimize':
+        elif action == "optimize":
             name = args[1] if len(args) > 1 else None
             layout = self.layout_manager.get_layout(name)
             if layout:
@@ -154,7 +153,7 @@ class ARVRCommand:
                 return f"Optimized layout '{name}'"
             return "Layout not found"
 
-        elif action == 'recommend':
+        elif action == "recommend":
             count = int(args[1]) if len(args) > 1 else 5
             context = args[2] if len(args) > 2 else "general"
             recommended = self.layout_manager.get_recommended_layout(count, context)
@@ -181,7 +180,7 @@ class ARVRCommand:
 
         action = args[0]
 
-        if action == 'simulate':
+        if action == "simulate":
             gesture_type = args[1] if len(args) > 1 else "swipe"
             try:
                 gtype = GestureType[gesture_type.upper()]
@@ -189,11 +188,7 @@ class ARVRCommand:
                 return f"Invalid gesture type. Use: {', '.join(t.value for t in GestureType)}"
 
             # Create simple trajectory
-            trajectory = [
-                Vector3D(-1, 0, -1),
-                Vector3D(0, 0, -1),
-                Vector3D(1, 0, -1)
-            ]
+            trajectory = [Vector3D(-1, 0, -1), Vector3D(0, 0, -1), Vector3D(1, 0, -1)]
 
             gesture = self.gesture_api.simulate_gesture(
                 gtype, HandType.RIGHT, trajectory, duration=0.5
@@ -204,10 +199,10 @@ class ARVRCommand:
                 return output
             return "Failed to simulate gesture"
 
-        elif action == 'stats':
+        elif action == "stats":
             return self._gesture_stats()
 
-        elif action == 'list':
+        elif action == "list":
             output = ["Available gesture types:"]
             for gtype in GestureType:
                 output.append(f"  - {gtype.value}")
@@ -223,9 +218,9 @@ class ARVRCommand:
         output.append(f"  Average confidence: {stats['average_confidence']:.2f}")
         output.append(f"  Active gestures: {stats['active_gestures']}")
 
-        if stats['type_counts']:
+        if stats["type_counts"]:
             output.append("\n  Gestures by type:")
-            for gtype, count in stats['type_counts'].items():
+            for gtype, count in stats["type_counts"].items():
                 output.append(f"    {gtype}: {count}")
 
         return "\n".join(output)
@@ -237,7 +232,7 @@ class ARVRCommand:
 
         action = args[0]
 
-        if action == 'simulate':
+        if action == "simulate":
             voice = args[1] if len(args) > 1 else "move this"
             gesture = args[2] if len(args) > 2 else "grab"
 
@@ -258,10 +253,10 @@ class ARVRCommand:
 
             return "\n".join(output)
 
-        elif action == 'stats':
+        elif action == "stats":
             return self._multimodal_stats()
 
-        elif action == 'patterns':
+        elif action == "patterns":
             patterns = self.multimodal_handler.patterns
             output = ["Registered multimodal patterns:"]
             for name, pattern in patterns.items():
@@ -283,9 +278,9 @@ class ARVRCommand:
         output.append(f"  Pattern matches: {stats.get('pattern_matches', 0)}")
         output.append(f"  Patterns registered: {stats.get('patterns_registered', 0)}")
 
-        if 'modality_counts' in stats:
+        if "modality_counts" in stats:
             output.append("\n  Inputs by modality:")
-            for modality, count in stats['modality_counts'].items():
+            for modality, count in stats["modality_counts"].items():
                 output.append(f"    {modality}: {count}")
 
         return "\n".join(output)
@@ -297,14 +292,14 @@ class ARVRCommand:
 
         action = args[0]
 
-        if action == 'list':
+        if action == "list":
             platforms = self.platform_adapter.get_available_platforms()
             output = ["Available platforms:"]
             for platform in platforms:
                 output.append(f"  - {platform.value}")
             return "\n".join(output)
 
-        elif action == 'init':
+        elif action == "init":
             platform_name = args[1] if len(args) > 1 else "terminal"
             try:
                 platform = Platform[platform_name.upper()]
@@ -316,10 +311,10 @@ class ARVRCommand:
                 return f"Initialized platform: {platform.value}"
             return f"Failed to initialize platform: {platform.value}"
 
-        elif action == 'status':
+        elif action == "status":
             return self._platform_status()
 
-        elif action == 'report':
+        elif action == "report":
             report = self.platform_adapter.create_platform_report()
             return json.dumps(report, indent=2)
 

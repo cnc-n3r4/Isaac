@@ -2,4 +2,4 @@
 
 from .learn_command import LearnCommand
 
-__all__ = ['LearnCommand']
+__all__ = ["LearnCommand"]

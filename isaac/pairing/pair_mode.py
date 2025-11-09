@@ -5,18 +5,19 @@ Isaac as an active pair programmer, working alongside the developer.
 
 import json
 import sqlite3
-from datetime import datetime
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass
-from pathlib import Path
-from enum import Enum
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from isaac.core.session_manager import SessionManager
 
 
 class PairRole(Enum):
     """Roles in pair programming."""
+
     DRIVER = "driver"  # Writing code
     NAVIGATOR = "navigator"  # Reviewing and guiding
     BOTH = "both"  # Collaborative mode
@@ -24,6 +25,7 @@ class PairRole(Enum):
 
 class PairStyle(Enum):
     """Pairing styles."""
+
     PING_PONG = "ping_pong"  # Switch roles frequently
     DRIVER_NAVIGATOR = "driver_navigator"  # Traditional pairing
     COLLABORATIVE = "collaborative"  # Work together on same task
@@ -33,6 +35,7 @@ class PairStyle(Enum):
 @dataclass
 class PairingSession:
     """A pair programming session."""
+
     id: str
     start_time: float
     end_time: Optional[float]
@@ -60,11 +63,11 @@ class PairProgrammingMode:
             session_manager: Session manager instance
         """
         self.session_manager = session_manager
-        self.data_dir = Path.home() / '.isaac' / 'pairing'
+        self.data_dir = Path.home() / ".isaac" / "pairing"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Database for session storage
-        self.db_path = self.data_dir / 'sessions.db'
+        self.db_path = self.data_dir / "sessions.db"
         self._init_database()
 
         # Current active session
@@ -73,7 +76,8 @@ class PairProgrammingMode:
     def _init_database(self):
         """Initialize SQLite database for session storage."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS pairing_sessions (
                     id TEXT PRIMARY KEY,
                     start_time REAL,
@@ -87,16 +91,19 @@ class PairProgrammingMode:
                     active BOOLEAN,
                     metadata TEXT
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_start_time ON pairing_sessions(start_time)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_active ON pairing_sessions(active)')
+            """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_start_time ON pairing_sessions(start_time)"
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_active ON pairing_sessions(active)")
 
     def start_session(
         self,
         task_description: str,
         pair_style: PairStyle = PairStyle.DRIVER_NAVIGATOR,
         isaac_role: PairRole = PairRole.NAVIGATOR,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> PairingSession:
         """Start a new pairing session.
 
@@ -128,7 +135,7 @@ class PairProgrammingMode:
             task_description=task_description,
             files_touched=[],
             context=context or {},
-            active=True
+            active=True,
         )
 
         self._save_session(session)
@@ -146,11 +153,14 @@ class PairProgrammingMode:
             True if successful
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 UPDATE pairing_sessions
                 SET end_time = ?, active = 0
                 WHERE id = ?
-            ''', (datetime.now().timestamp(), session_id))
+            """,
+                (datetime.now().timestamp(), session_id),
+            )
 
         if self.active_session and self.active_session.id == session_id:
             self.active_session.active = False
@@ -233,13 +243,16 @@ class PairProgrammingMode:
         """
         sessions = []
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT id, start_time, end_time, pair_style, current_role, human_role,
                        task_description, files_touched, context, active, metadata
                 FROM pairing_sessions
                 ORDER BY start_time DESC
                 LIMIT ?
-            ''', (limit,))
+            """,
+                (limit,),
+            )
 
             for row in cursor:
                 session = PairingSession(
@@ -253,7 +266,7 @@ class PairProgrammingMode:
                     files_touched=json.loads(row[7]) if row[7] else [],
                     context=json.loads(row[8]) if row[8] else {},
                     active=bool(row[9]),
-                    metadata=json.loads(row[10]) if row[10] else {}
+                    metadata=json.loads(row[10]) if row[10] else {},
                 )
                 sessions.append(session)
 
@@ -272,27 +285,36 @@ class PairProgrammingMode:
 
         with sqlite3.connect(self.db_path) as conn:
             # Total sessions
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM pairing_sessions
                 WHERE start_time >= ?
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             total_sessions = cursor.fetchone()[0]
 
             # Total time spent pairing
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT SUM(end_time - start_time) FROM pairing_sessions
                 WHERE start_time >= ? AND end_time IS NOT NULL
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             total_time = cursor.fetchone()[0] or 0
 
             # Most used pairing style
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT pair_style, COUNT(*) as count FROM pairing_sessions
                 WHERE start_time >= ?
                 GROUP BY pair_style
                 ORDER BY count DESC
                 LIMIT 1
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             result = cursor.fetchone()
             most_used_style = result[0] if result else None
 
@@ -300,10 +322,13 @@ class PairProgrammingMode:
             avg_duration = total_time / total_sessions if total_sessions > 0 else 0
 
             # Files modified count
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT files_touched FROM pairing_sessions
                 WHERE start_time >= ?
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             all_files = set()
             for row in cursor:
                 if row[0]:
@@ -311,12 +336,12 @@ class PairProgrammingMode:
                     all_files.update(files)
 
         return {
-            'total_sessions': total_sessions,
-            'total_time_seconds': total_time,
-            'average_duration_seconds': avg_duration,
-            'most_used_style': most_used_style,
-            'unique_files_modified': len(all_files),
-            'period_days': days
+            "total_sessions": total_sessions,
+            "total_time_seconds": total_time,
+            "average_duration_seconds": avg_duration,
+            "most_used_style": most_used_style,
+            "unique_files_modified": len(all_files),
+            "period_days": days,
         }
 
     def _save_session(self, session: PairingSession):
@@ -326,24 +351,27 @@ class PairProgrammingMode:
             session: Session to save
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO pairing_sessions
                 (id, start_time, end_time, pair_style, current_role, human_role,
                  task_description, files_touched, context, active, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                session.id,
-                session.start_time,
-                session.end_time,
-                session.pair_style,
-                session.current_role,
-                session.human_role,
-                session.task_description,
-                json.dumps(session.files_touched),
-                json.dumps(session.context),
-                session.active,
-                json.dumps(session.metadata or {})
-            ))
+            """,
+                (
+                    session.id,
+                    session.start_time,
+                    session.end_time,
+                    session.pair_style,
+                    session.current_role,
+                    session.human_role,
+                    session.task_description,
+                    json.dumps(session.files_touched),
+                    json.dumps(session.context),
+                    session.active,
+                    json.dumps(session.metadata or {}),
+                ),
+            )
 
     def cleanup(self):
         """Cleanup resources."""

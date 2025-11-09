@@ -1,9 +1,10 @@
 # isaac/runtime/manifest_loader.py
 
-import yaml
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
 import jsonschema
+import yaml
 
 
 class ManifestLoader:
@@ -26,11 +27,11 @@ class ManifestLoader:
                 "triggers": {
                     "type": "array",
                     "items": {"type": "string", "pattern": "^/[a-z][a-z0-9_-]*$"},
-                    "minItems": 1
+                    "minItems": 1,
                 },
                 "aliases": {
                     "type": "array",
-                    "items": {"type": "string", "pattern": "^/[a-z][a-z0-9_-]*$"}
+                    "items": {"type": "string", "pattern": "^/[a-z][a-z0-9_-]*$"},
                 },
                 "args": {
                     "type": "array",
@@ -43,16 +44,14 @@ class ManifestLoader:
                             "required": {"type": "boolean"},
                             "help": {"type": "string"},
                             "pattern": {"type": "string"},
-                            "enum": {"type": "array", "items": {"type": "string"}}
-                        }
-                    }
+                            "enum": {"type": "array", "items": {"type": "string"}},
+                        },
+                    },
                 },
                 "stdin": {"type": "boolean"},
                 "stdout": {
                     "type": "object",
-                    "properties": {
-                        "type": {"enum": ["text", "json", "binary"]}
-                    }
+                    "properties": {"type": {"enum": ["text", "json", "binary"]}},
                 },
                 "security": {
                     "type": "object",
@@ -63,35 +62,26 @@ class ManifestLoader:
                             "type": "object",
                             "properties": {
                                 "timeout_ms": {"type": "integer", "minimum": 100},
-                                "max_stdout_kib": {"type": "integer", "minimum": 1}
-                            }
-                        }
-                    }
+                                "max_stdout_kib": {"type": "integer", "minimum": 1},
+                            },
+                        },
+                    },
                 },
                 "runtime": {
                     "type": "object",
                     "required": ["entry"],
-                    "properties": {
-                        "entry": {"type": "string"},
-                        "interpreter": {"type": "string"}
-                    }
+                    "properties": {"entry": {"type": "string"}, "interpreter": {"type": "string"}},
                 },
                 "telemetry": {
                     "type": "object",
                     "properties": {
                         "log_invocation": {"type": "boolean"},
                         "log_output": {"type": "boolean"},
-                        "redact_patterns": {
-                            "type": "array",
-                            "items": {"type": "string"}
-                        }
-                    }
+                        "redact_patterns": {"type": "array", "items": {"type": "string"}},
+                    },
                 },
-                "examples": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                }
-            }
+                "examples": {"type": "array", "items": {"type": "string"}},
+            },
         }
         return schema
 
@@ -107,7 +97,7 @@ class ManifestLoader:
                     return cached_manifest
 
             # Load YAML
-            with open(yaml_path, 'r', encoding='utf-8') as f:
+            with open(yaml_path, "r", encoding="utf-8") as f:
                 manifest = yaml.safe_load(f)
 
             # Validate against schema

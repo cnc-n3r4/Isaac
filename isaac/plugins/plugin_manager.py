@@ -5,16 +5,16 @@ import importlib.util
 import json
 import shutil
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.plugins.plugin_api import (
     Plugin,
-    PluginMetadata,
     PluginContext,
     PluginHook,
     PluginLoadError,
+    PluginMetadata,
 )
 from isaac.plugins.plugin_registry import PluginRegistry
 from isaac.plugins.plugin_security import PluginSandbox
@@ -126,11 +126,7 @@ class PluginManager:
         plugin_class = None
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
-            if (
-                isinstance(attr, type)
-                and issubclass(attr, Plugin)
-                and attr is not Plugin
-            ):
+            if isinstance(attr, type) and issubclass(attr, Plugin) and attr is not Plugin:
                 plugin_class = attr
                 break
 
@@ -412,9 +408,7 @@ class PluginManager:
             name: Plugin name
         """
         for hook in list(self._hook_handlers.keys()):
-            self._hook_handlers[hook] = [
-                (n, p) for n, p in self._hook_handlers[hook] if n != name
-            ]
+            self._hook_handlers[hook] = [(n, p) for n, p in self._hook_handlers[hook] if n != name]
             if not self._hook_handlers[hook]:
                 del self._hook_handlers[hook]
 

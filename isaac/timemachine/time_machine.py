@@ -4,18 +4,20 @@ Isaac's temporal workspace management system
 """
 
 import json
-import time
 import threading
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
+
 from isaac.bubbles.manager import BubbleManager, WorkspaceState
 
 
 @dataclass
 class TimelineEntry:
     """Entry in the workspace timeline."""
+
     timestamp: float
     bubble_id: str
     change_type: str  # 'auto', 'manual', 'restore', 'branch_switch', etc.
@@ -26,6 +28,7 @@ class TimelineEntry:
 @dataclass
 class TimelineSnapshot:
     """Snapshot of timeline state."""
+
     entries: List[TimelineEntry] = field(default_factory=list)
     current_index: int = -1
     total_entries: int = 0
@@ -44,15 +47,15 @@ class TimeMachine:
         self.bubble_manager = bubble_manager
 
         if storage_path is None:
-            isaac_dir = Path.home() / '.isaac'
+            isaac_dir = Path.home() / ".isaac"
             isaac_dir.mkdir(exist_ok=True)
-            storage_path = isaac_dir / 'time_machine'
+            storage_path = isaac_dir / "time_machine"
 
         self.storage_path = storage_path
         self.storage_path.mkdir(exist_ok=True)
 
         # Timeline data
-        self.timeline_file = self.storage_path / 'timeline.json'
+        self.timeline_file = self.storage_path / "timeline.json"
         self.timeline = self._load_timeline()
 
         # Auto-snapshot settings
@@ -76,18 +79,18 @@ class TimeMachine:
         """Load timeline from disk."""
         if self.timeline_file.exists():
             try:
-                with open(self.timeline_file, 'r') as f:
+                with open(self.timeline_file, "r") as f:
                     data = json.load(f)
 
                 entries = []
-                for entry_data in data.get('entries', []):
+                for entry_data in data.get("entries", []):
                     entry = TimelineEntry(**entry_data)
                     entries.append(entry)
 
                 return TimelineSnapshot(
                     entries=entries,
-                    current_index=data.get('current_index', -1),
-                    total_entries=len(entries)
+                    current_index=data.get("current_index", -1),
+                    total_entries=len(entries),
                 )
             except Exception:
                 pass
@@ -97,19 +100,20 @@ class TimeMachine:
     def _save_timeline(self) -> None:
         """Save timeline to disk."""
         data = {
-            'entries': [entry.__dict__ for entry in self.timeline.entries],
-            'current_index': self.timeline.current_index,
-            'total_entries': self.timeline.total_entries
+            "entries": [entry.__dict__ for entry in self.timeline.entries],
+            "current_index": self.timeline.current_index,
+            "total_entries": self.timeline.total_entries,
         }
 
         try:
-            with open(self.timeline_file, 'w') as f:
+            with open(self.timeline_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception:
             pass
 
-    def create_snapshot(self, description: str = "", change_type: str = "manual",
-                       force: bool = False) -> Optional[WorkspaceState]:
+    def create_snapshot(
+        self, description: str = "", change_type: str = "manual", force: bool = False
+    ) -> Optional[WorkspaceState]:
         """Create a new timeline snapshot.
 
         Args:
@@ -123,7 +127,10 @@ class TimeMachine:
         current_time = time.time()
 
         # Check minimum interval (unless forced)
-        if not force and (current_time - self.last_snapshot_time) < self.min_snapshot_interval_seconds:
+        if (
+            not force
+            and (current_time - self.last_snapshot_time) < self.min_snapshot_interval_seconds
+        ):
             return None
 
         # Create bubble snapshot
@@ -133,7 +140,7 @@ class TimeMachine:
         bubble = self.bubble_manager.create_bubble(
             name=bubble_name,
             description=description or f"Timeline snapshot: {change_type}",
-            tags=["timeline", change_type]
+            tags=["timeline", change_type],
         )
 
         # Add to timeline
@@ -143,10 +150,10 @@ class TimeMachine:
             change_type=change_type,
             description=description or f"Automatic {change_type} snapshot",
             metadata={
-                'bubble_name': bubble.name,
-                'workspace_path': bubble.cwd,
-                'git_branch': bubble.git_branch
-            }
+                "bubble_name": bubble.name,
+                "workspace_path": bubble.cwd,
+                "git_branch": bubble.git_branch,
+            },
         )
 
         self.timeline.entries.append(entry)
@@ -227,7 +234,7 @@ class TimeMachine:
                 bubble_id=closest_entry.bubble_id,
                 change_type="restore",
                 description=f"Restored to {datetime.fromtimestamp(closest_entry.timestamp).strftime('%Y-%m-%d %H:%M:%S')}",
-                metadata={'restored_from': closest_entry.timestamp}
+                metadata={"restored_from": closest_entry.timestamp},
             )
 
             self.timeline.entries.append(restore_entry)
@@ -261,7 +268,7 @@ class TimeMachine:
                 bubble_id=entry.bubble_id,
                 change_type="restore",
                 description=f"Restored to timeline entry {entry_index}",
-                metadata={'restored_entry_index': entry_index}
+                metadata={"restored_entry_index": entry_index},
             )
 
             self.timeline.entries.append(restore_entry)
@@ -292,10 +299,12 @@ class TimeMachine:
                 break
 
         return {
-            'bubble': bubble,
-            'timeline_entry': timeline_entry,
-            'age_seconds': time.time() - bubble.timestamp if timeline_entry else 0,
-            'age_formatted': self._format_age(time.time() - bubble.timestamp) if timeline_entry else "Unknown"
+            "bubble": bubble,
+            "timeline_entry": timeline_entry,
+            "age_seconds": time.time() - bubble.timestamp if timeline_entry else 0,
+            "age_formatted": (
+                self._format_age(time.time() - bubble.timestamp) if timeline_entry else "Unknown"
+            ),
         }
 
     def search_timeline(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
@@ -318,10 +327,7 @@ class TimeMachine:
             if query_lower in searchable_text:
                 bubble_info = self.get_snapshot_info(entry.bubble_id)
                 if bubble_info:
-                    results.append({
-                        'entry': entry,
-                        'bubble_info': bubble_info
-                    })
+                    results.append({"entry": entry, "bubble_info": bubble_info})
 
                     if len(results) >= limit:
                         break
@@ -331,7 +337,7 @@ class TimeMachine:
     def get_timeline_stats(self) -> Dict[str, Any]:
         """Get timeline statistics."""
         if not self.timeline.entries:
-            return {'total_snapshots': 0, 'oldest': None, 'newest': None, 'span_days': 0}
+            return {"total_snapshots": 0, "oldest": None, "newest": None, "span_days": 0}
 
         oldest = min(entry.timestamp for entry in self.timeline.entries)
         newest = max(entry.timestamp for entry in self.timeline.entries)
@@ -343,17 +349,18 @@ class TimeMachine:
             change_types[entry.change_type] = change_types.get(entry.change_type, 0) + 1
 
         return {
-            'total_snapshots': len(self.timeline.entries),
-            'oldest': datetime.fromtimestamp(oldest).isoformat(),
-            'newest': datetime.fromtimestamp(newest).isoformat(),
-            'span_days': span_seconds / (24 * 3600),
-            'change_types': change_types,
-            'auto_snapshots': change_types.get('auto', 0),
-            'manual_snapshots': change_types.get('manual', 0)
+            "total_snapshots": len(self.timeline.entries),
+            "oldest": datetime.fromtimestamp(oldest).isoformat(),
+            "newest": datetime.fromtimestamp(newest).isoformat(),
+            "span_days": span_seconds / (24 * 3600),
+            "change_types": change_types,
+            "auto_snapshots": change_types.get("auto", 0),
+            "manual_snapshots": change_types.get("manual", 0),
         }
 
     def _start_auto_snapshot(self) -> None:
         """Start automatic snapshot background thread."""
+
         def snapshot_worker():
             """Background worker for automatic snapshots."""
             while not self.stop_event.is_set():
@@ -366,9 +373,7 @@ class TimeMachine:
 
                     # Create automatic snapshot
                     self.create_snapshot(
-                        description="Automatic timeline snapshot",
-                        change_type="auto",
-                        force=True
+                        description="Automatic timeline snapshot", change_type="auto", force=True
                     )
 
                 except Exception as e:

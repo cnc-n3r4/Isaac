@@ -4,12 +4,12 @@ Natural Language Scheduler
 Converts natural language to cron expressions and manages scheduled scripts.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
-from pathlib import Path
-from datetime import datetime
 import re
 import subprocess
 import tempfile
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class NaturalLanguageScheduler:
@@ -50,11 +50,11 @@ class NaturalLanguageScheduler:
         next_run = self._calculate_next_run(cron_expr)
 
         return {
-            'cron_expression': cron_expr,
-            'human_readable': self._cron_to_human(cron_expr),
-            'next_run': next_run,
-            'command': cron_command,
-            'when_description': when
+            "cron_expression": cron_expr,
+            "human_readable": self._cron_to_human(cron_expr),
+            "next_run": next_run,
+            "command": cron_command,
+            "when_description": when,
         }
 
     def add_to_crontab(self, script: str, when: str, comment: Optional[str] = None) -> bool:
@@ -71,10 +71,10 @@ class NaturalLanguageScheduler:
         """
         try:
             schedule_info = self.schedule(script, when)
-            cron_expr = schedule_info['cron_expression']
+            cron_expr = schedule_info["cron_expression"]
 
             # Get current crontab
-            result = subprocess.run(['crontab', '-l'], capture_output=True, text=True)
+            result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
             current_crontab = result.stdout if result.returncode == 0 else ""
 
             # Create new entry
@@ -85,11 +85,11 @@ class NaturalLanguageScheduler:
             new_crontab = current_crontab + new_entry
 
             # Write back to crontab
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.cron') as f:
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".cron") as f:
                 f.write(new_crontab)
                 temp_file = f.name
 
-            subprocess.run(['crontab', temp_file], check=True)
+            subprocess.run(["crontab", temp_file], check=True)
             Path(temp_file).unlink()
 
             return True
@@ -106,12 +106,12 @@ class NaturalLanguageScheduler:
             List of scheduled script information
         """
         try:
-            result = subprocess.run(['crontab', '-l'], capture_output=True, text=True)
+            result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
             if result.returncode != 0:
                 return []
 
             scheduled = []
-            lines = result.stdout.split('\n')
+            lines = result.stdout.split("\n")
             comment = None
 
             for line in lines:
@@ -120,23 +120,25 @@ class NaturalLanguageScheduler:
                     comment = None
                     continue
 
-                if line.startswith('#'):
+                if line.startswith("#"):
                     comment = line[1:].strip()
                     continue
 
                 # Parse cron line
                 parts = line.split(None, 5)
                 if len(parts) >= 6:
-                    cron_expr = ' '.join(parts[:5])
+                    cron_expr = " ".join(parts[:5])
                     command = parts[5]
 
-                    scheduled.append({
-                        'cron_expression': cron_expr,
-                        'command': command,
-                        'comment': comment,
-                        'human_readable': self._cron_to_human(cron_expr),
-                        'next_run': self._calculate_next_run(cron_expr)
-                    })
+                    scheduled.append(
+                        {
+                            "cron_expression": cron_expr,
+                            "command": command,
+                            "comment": comment,
+                            "human_readable": self._cron_to_human(cron_expr),
+                            "next_run": self._calculate_next_run(cron_expr),
+                        }
+                    )
                     comment = None
 
             return scheduled
@@ -181,9 +183,7 @@ Cron expression:"""
 
         try:
             response = self.ai_router.chat(
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=50
+                messages=[{"role": "user", "content": prompt}], temperature=0.1, max_tokens=50
             )
             cron_expr = response.content.strip()
             # Validate it looks like a cron expression
@@ -199,39 +199,38 @@ Cron expression:"""
         """Initialize schedule patterns."""
         patterns = [
             # Every X minutes
-            (r'every (\d+) minutes?', lambda m: f"*/{m.group(1)} * * * *"),
-
+            (r"every (\d+) minutes?", lambda m: f"*/{m.group(1)} * * * *"),
             # Every hour
-            (r'every hour', lambda m: "0 * * * *"),
-            (r'hourly', lambda m: "0 * * * *"),
-
+            (r"every hour", lambda m: "0 * * * *"),
+            (r"hourly", lambda m: "0 * * * *"),
             # Daily at specific time
-            (r'every day at (\d+):?(\d+)?\s*(am|pm)?', self._parse_daily),
-            (r'daily at (\d+):?(\d+)?\s*(am|pm)?', self._parse_daily),
-
+            (r"every day at (\d+):?(\d+)?\s*(am|pm)?", self._parse_daily),
+            (r"daily at (\d+):?(\d+)?\s*(am|pm)?", self._parse_daily),
             # Specific times
-            (r'at (\d+):(\d+)\s*(am|pm)?', self._parse_time),
-
+            (r"at (\d+):(\d+)\s*(am|pm)?", self._parse_time),
             # Weekly
-            (r'every (monday|tuesday|wednesday|thursday|friday|saturday|sunday)', self._parse_weekly),
-            (r'every week on (monday|tuesday|wednesday|thursday|friday|saturday|sunday)', self._parse_weekly),
-
+            (
+                r"every (monday|tuesday|wednesday|thursday|friday|saturday|sunday)",
+                self._parse_weekly,
+            ),
+            (
+                r"every week on (monday|tuesday|wednesday|thursday|friday|saturday|sunday)",
+                self._parse_weekly,
+            ),
             # Monthly
-            (r'first day of (?:the )?month', lambda m: "0 0 1 * *"),
-            (r'last day of (?:the )?month', lambda m: "0 0 28-31 * *"),
-            (r'every month on (?:the )?(\d+)(?:st|nd|rd|th)?', lambda m: f"0 0 {m.group(1)} * *"),
-
+            (r"first day of (?:the )?month", lambda m: "0 0 1 * *"),
+            (r"last day of (?:the )?month", lambda m: "0 0 28-31 * *"),
+            (r"every month on (?:the )?(\d+)(?:st|nd|rd|th)?", lambda m: f"0 0 {m.group(1)} * *"),
             # Special keywords
-            (r'every day', lambda m: "0 0 * * *"),
-            (r'daily', lambda m: "0 0 * * *"),
-            (r'every week', lambda m: "0 0 * * 0"),
-            (r'weekly', lambda m: "0 0 * * 0"),
-            (r'every month', lambda m: "0 0 1 * *"),
-            (r'monthly', lambda m: "0 0 1 * *"),
-
+            (r"every day", lambda m: "0 0 * * *"),
+            (r"daily", lambda m: "0 0 * * *"),
+            (r"every week", lambda m: "0 0 * * 0"),
+            (r"weekly", lambda m: "0 0 * * 0"),
+            (r"every month", lambda m: "0 0 1 * *"),
+            (r"monthly", lambda m: "0 0 1 * *"),
             # Midnight/noon
-            (r'(?:at )?midnight', lambda m: "0 0 * * *"),
-            (r'(?:at )?noon', lambda m: "0 12 * * *"),
+            (r"(?:at )?midnight", lambda m: "0 0 * * *"),
+            (r"(?:at )?noon", lambda m: "0 12 * * *"),
         ]
 
         return patterns
@@ -243,9 +242,9 @@ Cron expression:"""
         period = match.group(3)
 
         if period:
-            if period.lower() == 'pm' and hour != 12:
+            if period.lower() == "pm" and hour != 12:
                 hour += 12
-            elif period.lower() == 'am' and hour == 12:
+            elif period.lower() == "am" and hour == 12:
                 hour = 0
 
         return f"{minute} {hour} * * *"
@@ -257,9 +256,9 @@ Cron expression:"""
         period = match.group(3)
 
         if period:
-            if period.lower() == 'pm' and hour != 12:
+            if period.lower() == "pm" and hour != 12:
                 hour += 12
-            elif period.lower() == 'am' and hour == 12:
+            elif period.lower() == "am" and hour == 12:
                 hour = 0
 
         return f"{minute} {hour} * * *"
@@ -267,11 +266,16 @@ Cron expression:"""
     def _parse_weekly(self, match) -> str:
         """Parse weekly schedule."""
         days = {
-            'monday': '1', 'tuesday': '2', 'wednesday': '3',
-            'thursday': '4', 'friday': '5', 'saturday': '6', 'sunday': '0'
+            "monday": "1",
+            "tuesday": "2",
+            "wednesday": "3",
+            "thursday": "4",
+            "friday": "5",
+            "saturday": "6",
+            "sunday": "0",
         }
         day = match.group(1).lower()
-        day_num = days.get(day, '0')
+        day_num = days.get(day, "0")
         return f"0 0 * * {day_num}"
 
     def _cron_to_human(self, cron_expr: str) -> str:
@@ -286,29 +290,29 @@ Cron expression:"""
         desc_parts = []
 
         # Frequency
-        if minute == '*' and hour == '*':
+        if minute == "*" and hour == "*":
             desc_parts.append("Every minute")
-        elif minute.startswith('*/'):
+        elif minute.startswith("*/"):
             interval = minute[2:]
             desc_parts.append(f"Every {interval} minutes")
-        elif hour == '*':
+        elif hour == "*":
             desc_parts.append("Every hour")
-        elif day == '*' and month == '*' and weekday == '*':
+        elif day == "*" and month == "*" and weekday == "*":
             desc_parts.append("Every day")
 
         # Time
-        if hour != '*' and not hour.startswith('*/'):
+        if hour != "*" and not hour.startswith("*/"):
             hour_int = int(hour)
-            minute_int = int(minute) if minute != '*' else 0
-            period = 'AM' if hour_int < 12 else 'PM'
+            minute_int = int(minute) if minute != "*" else 0
+            period = "AM" if hour_int < 12 else "PM"
             display_hour = hour_int if hour_int <= 12 else hour_int - 12
             if display_hour == 0:
                 display_hour = 12
             desc_parts.append(f"at {display_hour}:{minute_int:02d} {period}")
 
         # Day of week
-        if weekday != '*':
-            days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        if weekday != "*":
+            days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
             try:
                 day_name = days[int(weekday)]
                 desc_parts.append(f"on {day_name}")
@@ -316,10 +320,10 @@ Cron expression:"""
                 pass
 
         # Day of month
-        if day != '*' and weekday == '*':
+        if day != "*" and weekday == "*":
             desc_parts.append(f"on day {day}")
 
-        return ' '.join(desc_parts) if desc_parts else cron_expr
+        return " ".join(desc_parts) if desc_parts else cron_expr
 
     def _calculate_next_run(self, cron_expr: str) -> str:
         """Calculate approximate next run time."""
@@ -333,18 +337,20 @@ Cron expression:"""
         now = datetime.now()
 
         # Simple cases
-        if minute.startswith('*/'):
+        if minute.startswith("*/"):
             interval = int(minute[2:])
             return f"Within {interval} minutes"
 
-        if hour == '*':
+        if hour == "*":
             return "Within the next hour"
 
-        if hour != '*' and minute != '*':
+        if hour != "*" and minute != "*":
             try:
                 target_hour = int(hour)
                 target_minute = int(minute)
-                if target_hour > now.hour or (target_hour == now.hour and target_minute > now.minute):
+                if target_hour > now.hour or (
+                    target_hour == now.hour and target_minute > now.minute
+                ):
                     return f"Today at {target_hour}:{target_minute:02d}"
                 else:
                     return f"Tomorrow at {target_hour}:{target_minute:02d}"
@@ -369,15 +375,15 @@ Cron expression:"""
                 (hour, 0, 23),
                 (day, 1, 31),
                 (month, 1, 12),
-                (weekday, 0, 7)
+                (weekday, 0, 7),
             ]:
-                if field == '*':
+                if field == "*":
                     continue
-                if field.startswith('*/'):
+                if field.startswith("*/"):
                     continue
-                if '-' in field:
+                if "-" in field:
                     continue
-                if ',' in field:
+                if "," in field:
                     continue
 
                 # Try to parse as int

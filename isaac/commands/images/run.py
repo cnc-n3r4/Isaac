@@ -5,8 +5,8 @@ Browse uploaded images with history and thumbnails.
 """
 
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 # Add the project root to Python path
@@ -197,7 +197,7 @@ def show_image_info(storage: CloudImageStorage, checksum: str):
 
     # Check if this image has shareable links
     shares = storage.list_shared_links()
-    active_shares = [s for s in shares if s['filename'] == img.filename]
+    active_shares = [s for s in shares if s["filename"] == img.filename]
 
     if active_shares:
         print(f"\n🔗 Shareable Links ({len(active_shares)}):")

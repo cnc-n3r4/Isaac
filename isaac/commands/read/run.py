@@ -3,9 +3,9 @@ Read Command - Read files with line numbers
 Wrapper for ReadTool
 """
 
-import sys
-import json
 import argparse
+import json
+import sys
 from pathlib import Path
 
 # Add isaac to path for imports
@@ -16,11 +16,13 @@ from isaac.tools import ReadTool
 
 def main():
     """Main entry point for /read command"""
-    parser = argparse.ArgumentParser(description='Read files with line numbers')
-    parser.add_argument('file_path', help='Path to file to read')
-    parser.add_argument('--offset', type=int, default=0, help='Line number to start from (0-indexed)')
-    parser.add_argument('--limit', type=int, default=None, help='Maximum number of lines to read')
-    parser.add_argument('--help-cmd', action='store_true', help='Show this help')
+    parser = argparse.ArgumentParser(description="Read files with line numbers")
+    parser.add_argument("file_path", help="Path to file to read")
+    parser.add_argument(
+        "--offset", type=int, default=0, help="Line number to start from (0-indexed)"
+    )
+    parser.add_argument("--limit", type=int, default=None, help="Maximum number of lines to read")
+    parser.add_argument("--help-cmd", action="store_true", help="Show this help")
 
     try:
         # Parse args
@@ -42,16 +44,12 @@ def main():
 
         # Execute tool
         tool = ReadTool()
-        result = tool.execute(
-            file_path=args.file_path,
-            offset=args.offset,
-            limit=args.limit
-        )
+        result = tool.execute(file_path=args.file_path, offset=args.offset, limit=args.limit)
 
         # Output result
-        if result['success']:
+        if result["success"]:
             # Print content
-            print(result['content'])
+            print(result["content"])
 
             # Print summary to stderr (doesn't interfere with piping)
             if args.limit or args.offset:
@@ -60,10 +58,7 @@ def main():
 
             # Return success envelope for dispatcher
             if not sys.stdout.isatty():
-                envelope = {
-                    "ok": True,
-                    "stdout": result['content']
-                }
+                envelope = {"ok": True, "stdout": result["content"]}
                 print(json.dumps(envelope))
         else:
             # Print error
@@ -71,12 +66,7 @@ def main():
 
             # Return error envelope for dispatcher
             if not sys.stdout.isatty():
-                envelope = {
-                    "ok": False,
-                    "error": {
-                        "message": result['error']
-                    }
-                }
+                envelope = {"ok": False, "error": {"message": result["error"]}}
                 print(json.dumps(envelope))
 
             sys.exit(1)
@@ -85,12 +75,7 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
 
         if not sys.stdout.isatty():
-            envelope = {
-                "ok": False,
-                "error": {
-                    "message": str(e)
-                }
-            }
+            envelope = {"ok": False, "error": {"message": str(e)}}
             print(json.dumps(envelope))
 
         sys.exit(1)

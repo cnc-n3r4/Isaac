@@ -5,7 +5,8 @@ Cross-platform file search tools using pathlib and regex
 
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from .base import BaseTool
 
 
@@ -24,45 +25,46 @@ class GrepTool(BaseTool):
         return {
             "type": "object",
             "properties": {
-                "pattern": {
-                    "type": "string",
-                    "description": "Regex pattern to search for"
-                },
+                "pattern": {"type": "string", "description": "Regex pattern to search for"},
                 "path": {
                     "type": "string",
                     "description": "Directory or file to search (default: current directory)",
-                    "default": "."
+                    "default": ".",
                 },
                 "glob_pattern": {
                     "type": "string",
                     "description": "File pattern to match (e.g., '*.py', '**/*.js')",
-                    "default": None
+                    "default": None,
                 },
                 "ignore_case": {
                     "type": "boolean",
                     "description": "Case-insensitive search",
-                    "default": False
+                    "default": False,
                 },
                 "context_lines": {
                     "type": "integer",
                     "description": "Number of context lines before/after match",
-                    "default": 0
+                    "default": 0,
                 },
                 "output_mode": {
                     "type": "string",
                     "description": "Output mode: 'files_with_matches', 'content', or 'count'",
                     "enum": ["files_with_matches", "content", "count"],
-                    "default": "files_with_matches"
-                }
+                    "default": "files_with_matches",
+                },
             },
-            "required": ["pattern"]
+            "required": ["pattern"],
         }
 
-    def execute(self, pattern: str, path: str = ".",
-                glob_pattern: Optional[str] = None,
-                ignore_case: bool = False,
-                context_lines: int = 0,
-                output_mode: str = "files_with_matches") -> Dict[str, Any]:
+    def execute(
+        self,
+        pattern: str,
+        path: str = ".",
+        glob_pattern: Optional[str] = None,
+        ignore_case: bool = False,
+        context_lines: int = 0,
+        output_mode: str = "files_with_matches",
+    ) -> Dict[str, Any]:
         """
         Search files for regex pattern.
 
@@ -85,26 +87,17 @@ class GrepTool(BaseTool):
         try:
             search_path = Path(path).expanduser().resolve()
         except Exception as e:
-            return {
-                'success': False,
-                'error': f'Invalid path: {e}'
-            }
+            return {"success": False, "error": f"Invalid path: {e}"}
 
         if not search_path.exists():
-            return {
-                'success': False,
-                'error': f'Path not found: {path}'
-            }
+            return {"success": False, "error": f"Path not found: {path}"}
 
         # Compile regex
         flags = re.IGNORECASE if ignore_case else 0
         try:
             regex = re.compile(pattern, flags)
         except re.error as e:
-            return {
-                'success': False,
-                'error': f'Invalid regex pattern: {e}'
-            }
+            return {"success": False, "error": f"Invalid regex pattern: {e}"}
 
         # Determine files to search
         try:
@@ -117,12 +110,9 @@ class GrepTool(BaseTool):
                 files = [search_path]
             else:
                 # Default: search all text files recursively
-                files = [f for f in search_path.rglob('*') if f.is_file()]
+                files = [f for f in search_path.rglob("*") if f.is_file()]
         except Exception as e:
-            return {
-                'success': False,
-                'error': f'Error searching files: {e}'
-            }
+            return {"success": False, "error": f"Error searching files: {e}"}
 
         matches = []
         files_searched = 0
@@ -135,61 +125,118 @@ class GrepTool(BaseTool):
             files_searched += 1
 
             try:
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     lines = f.readlines()
 
                 file_matches = []
                 for line_num, line in enumerate(lines, 1):
                     if regex.search(line):
                         match_info = {
-                            'line_number': line_num,
-                            'content': line.rstrip(),
-                            'file': str(file_path.relative_to(search_path)) if file_path != search_path else str(file_path.name)
+                            "line_number": line_num,
+                            "content": line.rstrip(),
+                            "file": (
+                                str(file_path.relative_to(search_path))
+                                if file_path != search_path
+                                else str(file_path.name)
+                            ),
                         }
 
                         # Add context lines if requested
                         if context_lines > 0:
                             before = max(0, line_num - context_lines - 1)
                             after = min(len(lines), line_num + context_lines)
-                            match_info['context_before'] = [l.rstrip() for l in lines[before:line_num-1]]
-                            match_info['context_after'] = [l.rstrip() for l in lines[line_num:after]]
+                            match_info["context_before"] = [
+                                l.rstrip() for l in lines[before : line_num - 1]
+                            ]
+                            match_info["context_after"] = [
+                                l.rstrip() for l in lines[line_num:after]
+                            ]
 
                         file_matches.append(match_info)
 
                 if file_matches:
                     if output_mode == "files_with_matches":
-                        rel_path = str(file_path.relative_to(search_path)) if file_path != search_path else str(file_path.name)
+                        rel_path = (
+                            str(file_path.relative_to(search_path))
+                            if file_path != search_path
+                            else str(file_path.name)
+                        )
                         matches.append(rel_path)
                     elif output_mode == "content":
                         matches.extend(file_matches)
                     elif output_mode == "count":
-                        rel_path = str(file_path.relative_to(search_path)) if file_path != search_path else str(file_path.name)
-                        matches.append({
-                            'file': rel_path,
-                            'count': len(file_matches)
-                        })
+                        rel_path = (
+                            str(file_path.relative_to(search_path))
+                            if file_path != search_path
+                            else str(file_path.name)
+                        )
+                        matches.append({"file": rel_path, "count": len(file_matches)})
             except Exception:
                 continue  # Skip files we can't read
 
         return {
-            'success': True,
-            'matches': matches,
-            'total_files_searched': files_searched,
-            'pattern': pattern,
-            'output_mode': output_mode
+            "success": True,
+            "matches": matches,
+            "total_files_searched": files_searched,
+            "pattern": pattern,
+            "output_mode": output_mode,
         }
 
     def _is_text_file(self, path: Path) -> bool:
         """Check if file is likely text (cross-platform heuristic)"""
         # Check extension
         text_extensions = {
-            '.py', '.js', '.jsx', '.ts', '.tsx', '.txt', '.md', '.markdown',
-            '.json', '.yaml', '.yml', '.xml', '.html', '.htm', '.css', '.scss',
-            '.sh', '.bash', '.bat', '.ps1', '.c', '.cpp', '.h', '.hpp',
-            '.java', '.go', '.rs', '.toml', '.ini', '.cfg', '.conf',
-            '.sql', '.php', '.rb', '.pl', '.lua', '.r', '.m', '.swift',
-            '.kt', '.scala', '.clj', '.ex', '.exs', '.erl', '.hs',
-            '.vim', '.el', '.lisp', '.rkt', '.scm'
+            ".py",
+            ".js",
+            ".jsx",
+            ".ts",
+            ".tsx",
+            ".txt",
+            ".md",
+            ".markdown",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".xml",
+            ".html",
+            ".htm",
+            ".css",
+            ".scss",
+            ".sh",
+            ".bash",
+            ".bat",
+            ".ps1",
+            ".c",
+            ".cpp",
+            ".h",
+            ".hpp",
+            ".java",
+            ".go",
+            ".rs",
+            ".toml",
+            ".ini",
+            ".cfg",
+            ".conf",
+            ".sql",
+            ".php",
+            ".rb",
+            ".pl",
+            ".lua",
+            ".r",
+            ".m",
+            ".swift",
+            ".kt",
+            ".scala",
+            ".clj",
+            ".ex",
+            ".exs",
+            ".erl",
+            ".hs",
+            ".vim",
+            ".el",
+            ".lisp",
+            ".rkt",
+            ".scm",
         }
 
         if path.suffix.lower() in text_extensions:
@@ -197,10 +244,10 @@ class GrepTool(BaseTool):
 
         # Check first 1KB for binary content
         try:
-            with open(path, 'rb') as f:
+            with open(path, "rb") as f:
                 chunk = f.read(1024)
                 # If contains null bytes, likely binary
-                if b'\x00' in chunk:
+                if b"\x00" in chunk:
                     return False
                 # Check for high ratio of non-printable chars
                 non_printable = sum(1 for b in chunk if b < 32 and b not in (9, 10, 13))
@@ -228,31 +275,31 @@ class GlobTool(BaseTool):
             "properties": {
                 "pattern": {
                     "type": "string",
-                    "description": "Glob pattern (e.g., '*.py', '**/*.js', 'test_*.py')"
+                    "description": "Glob pattern (e.g., '*.py', '**/*.js', 'test_*.py')",
                 },
                 "path": {
                     "type": "string",
                     "description": "Base directory to search (default: current directory)",
-                    "default": "."
+                    "default": ".",
                 },
                 "include_hidden": {
                     "type": "boolean",
                     "description": "Include hidden files (starting with .)",
-                    "default": False
+                    "default": False,
                 },
                 "sort_by": {
                     "type": "string",
                     "description": "Sort by: 'name', 'size', or 'modified'",
                     "enum": ["name", "size", "modified"],
-                    "default": "name"
-                }
+                    "default": "name",
+                },
             },
-            "required": ["pattern"]
+            "required": ["pattern"],
         }
 
-    def execute(self, pattern: str, path: str = ".",
-                include_hidden: bool = False,
-                sort_by: str = "name") -> Dict[str, Any]:
+    def execute(
+        self, pattern: str, path: str = ".", include_hidden: bool = False, sort_by: str = "name"
+    ) -> Dict[str, Any]:
         """
         Find files matching glob pattern.
 
@@ -281,22 +328,13 @@ class GlobTool(BaseTool):
         try:
             search_path = Path(path).expanduser().resolve()
         except Exception as e:
-            return {
-                'success': False,
-                'error': f'Invalid path: {e}'
-            }
+            return {"success": False, "error": f"Invalid path: {e}"}
 
         if not search_path.exists():
-            return {
-                'success': False,
-                'error': f'Path not found: {path}'
-            }
+            return {"success": False, "error": f"Path not found: {path}"}
 
         if not search_path.is_dir():
-            return {
-                'success': False,
-                'error': f'Not a directory: {path}'
-            }
+            return {"success": False, "error": f"Not a directory: {path}"}
 
         try:
             # Use pathlib.glob (cross-platform)
@@ -304,9 +342,7 @@ class GlobTool(BaseTool):
 
             # Filter hidden files if requested
             if not include_hidden:
-                matches = [f for f in matches if not any(
-                    part.startswith('.') for part in f.parts
-                )]
+                matches = [f for f in matches if not any(part.startswith(".") for part in f.parts)]
 
             # Get file info
             file_info = []
@@ -314,32 +350,31 @@ class GlobTool(BaseTool):
                 if file_path.is_file():
                     try:
                         stat = file_path.stat()
-                        file_info.append({
-                            'path': str(file_path.relative_to(search_path)),
-                            'absolute_path': str(file_path),
-                            'size': stat.st_size,
-                            'modified': stat.st_mtime
-                        })
+                        file_info.append(
+                            {
+                                "path": str(file_path.relative_to(search_path)),
+                                "absolute_path": str(file_path),
+                                "size": stat.st_size,
+                                "modified": stat.st_mtime,
+                            }
+                        )
                     except Exception:
                         # Skip files we can't stat
                         continue
 
             # Sort
             if sort_by == "size":
-                file_info.sort(key=lambda x: x['size'], reverse=True)
+                file_info.sort(key=lambda x: x["size"], reverse=True)
             elif sort_by == "modified":
-                file_info.sort(key=lambda x: x['modified'], reverse=True)
+                file_info.sort(key=lambda x: x["modified"], reverse=True)
             else:  # name
-                file_info.sort(key=lambda x: x['path'])
+                file_info.sort(key=lambda x: x["path"])
 
             return {
-                'success': True,
-                'files': file_info,
-                'count': len(file_info),
-                'pattern': pattern
+                "success": True,
+                "files": file_info,
+                "count": len(file_info),
+                "pattern": pattern,
             }
         except Exception as e:
-            return {
-                'success': False,
-                'error': f'Error searching files: {e}'
-            }
+            return {"success": False, "error": f"Error searching files: {e}"}

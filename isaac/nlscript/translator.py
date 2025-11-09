@@ -4,8 +4,8 @@ English to Bash Translator
 Converts natural language descriptions to bash commands and scripts.
 """
 
-from typing import Dict, Any, Optional
 import re
+from typing import Any, Dict, Optional
 
 
 class EnglishToBashTranslator:
@@ -21,7 +21,9 @@ class EnglishToBashTranslator:
         self.ai_router = ai_router
         self.translation_cache: Dict[str, str] = {}
 
-    def translate(self, natural_language: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def translate(
+        self, natural_language: str, context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         Translate natural language to bash.
 
@@ -49,7 +51,7 @@ class EnglishToBashTranslator:
             response = self.ai_router.chat(
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,  # Lower temperature for more deterministic output
-                max_tokens=2000
+                max_tokens=2000,
             )
             result = self._parse_ai_response(response.content)
         else:
@@ -57,7 +59,7 @@ class EnglishToBashTranslator:
             result = self._simple_translation(natural_language, context)
 
         # Cache the result
-        self.translation_cache[cache_key] = result['bash_code']
+        self.translation_cache[cache_key] = result["bash_code"]
 
         return result
 
@@ -72,18 +74,18 @@ class EnglishToBashTranslator:
             Bash code string
         """
         result = self.translate(natural_language)
-        return result['bash_code']
+        return result["bash_code"]
 
     def _build_translation_prompt(self, nl: str, context: Optional[Dict[str, Any]]) -> str:
         """Build the AI prompt for translation."""
         context_str = ""
         if context:
             context_str = f"\n\nContext:\n"
-            if 'cwd' in context:
+            if "cwd" in context:
                 context_str += f"- Current directory: {context['cwd']}\n"
-            if 'env' in context:
+            if "env" in context:
                 context_str += f"- Environment: {context['env']}\n"
-            if 'files' in context:
+            if "files" in context:
                 context_str += f"- Available files: {', '.join(context['files'])}\n"
 
         prompt = f"""You are a bash scripting expert. Convert the following natural language description into a bash script.
@@ -119,35 +121,32 @@ Important guidelines:
 
     def _parse_ai_response(self, content: str) -> Dict[str, Any]:
         """Parse the AI response into structured data."""
-        result = {
-            'bash_code': '',
-            'explanation': '',
-            'warnings': [],
-            'confidence': 0.8
-        }
+        result = {"bash_code": "", "explanation": "", "warnings": [], "confidence": 0.8}
 
         # Extract bash code
-        bash_match = re.search(r'BASH_CODE:\s*```bash\s*(.*?)\s*```', content, re.DOTALL)
+        bash_match = re.search(r"BASH_CODE:\s*```bash\s*(.*?)\s*```", content, re.DOTALL)
         if bash_match:
-            result['bash_code'] = bash_match.group(1).strip()
+            result["bash_code"] = bash_match.group(1).strip()
 
         # Extract explanation
-        expl_match = re.search(r'EXPLANATION:\s*(.*?)(?=WARNINGS:|CONFIDENCE:|$)', content, re.DOTALL)
+        expl_match = re.search(
+            r"EXPLANATION:\s*(.*?)(?=WARNINGS:|CONFIDENCE:|$)", content, re.DOTALL
+        )
         if expl_match:
-            result['explanation'] = expl_match.group(1).strip()
+            result["explanation"] = expl_match.group(1).strip()
 
         # Extract warnings
-        warn_match = re.search(r'WARNINGS:\s*(.*?)(?=CONFIDENCE:|$)', content, re.DOTALL)
+        warn_match = re.search(r"WARNINGS:\s*(.*?)(?=CONFIDENCE:|$)", content, re.DOTALL)
         if warn_match:
             warnings_text = warn_match.group(1).strip()
-            if warnings_text.lower() != 'none':
-                result['warnings'] = [w.strip() for w in warnings_text.split('\n') if w.strip()]
+            if warnings_text.lower() != "none":
+                result["warnings"] = [w.strip() for w in warnings_text.split("\n") if w.strip()]
 
         # Extract confidence
-        conf_match = re.search(r'CONFIDENCE:\s*([0-9.]+)', content)
+        conf_match = re.search(r"CONFIDENCE:\s*([0-9.]+)", content)
         if conf_match:
             try:
-                result['confidence'] = float(conf_match.group(1))
+                result["confidence"] = float(conf_match.group(1))
             except ValueError:
                 pass
 
@@ -160,31 +159,27 @@ Important guidelines:
         # Common patterns
         patterns = [
             # File operations
-            (r'list (?:all )?files', 'ls -la', 'List all files in current directory'),
-            (r'find (?:all )?(.+?) files', r'find . -name "*\1*"', 'Find files matching pattern'),
-            (r'delete (?:all )?(.+?) files', r'rm -f *\1*', 'Delete files (DESTRUCTIVE)'),
-            (r'copy (.+?) to (.+?)', r'cp "\1" "\2"', 'Copy file'),
-            (r'move (.+?) to (.+?)', r'mv "\1" "\2"', 'Move file'),
-
+            (r"list (?:all )?files", "ls -la", "List all files in current directory"),
+            (r"find (?:all )?(.+?) files", r'find . -name "*\1*"', "Find files matching pattern"),
+            (r"delete (?:all )?(.+?) files", r"rm -f *\1*", "Delete files (DESTRUCTIVE)"),
+            (r"copy (.+?) to (.+?)", r'cp "\1" "\2"', "Copy file"),
+            (r"move (.+?) to (.+?)", r'mv "\1" "\2"', "Move file"),
             # Directory operations
-            (r'create (?:a )?directory (?:named )?(.+)', r'mkdir -p "\1"', 'Create directory'),
-            (r'change to (.+?) directory', r'cd "\1"', 'Change directory'),
-            (r'show current directory', 'pwd', 'Print working directory'),
-
+            (r"create (?:a )?directory (?:named )?(.+)", r'mkdir -p "\1"', "Create directory"),
+            (r"change to (.+?) directory", r'cd "\1"', "Change directory"),
+            (r"show current directory", "pwd", "Print working directory"),
             # Process operations
-            (r'show (?:all )?(?:running )?processes', 'ps aux', 'Show all processes'),
-            (r'kill process (?:with pid )?(\d+)', r'kill \1', 'Kill process'),
-            (r'find processes? (?:named )?(.+)', r'ps aux | grep "\1"', 'Find processes by name'),
-
+            (r"show (?:all )?(?:running )?processes", "ps aux", "Show all processes"),
+            (r"kill process (?:with pid )?(\d+)", r"kill \1", "Kill process"),
+            (r"find processes? (?:named )?(.+)", r'ps aux | grep "\1"', "Find processes by name"),
             # System info
-            (r'show disk usage', 'df -h', 'Show disk usage'),
-            (r'show memory usage', 'free -h', 'Show memory usage'),
-            (r'show system info', 'uname -a', 'Show system information'),
-
+            (r"show disk usage", "df -h", "Show disk usage"),
+            (r"show memory usage", "free -h", "Show memory usage"),
+            (r"show system info", "uname -a", "Show system information"),
             # Git operations
-            (r'git status', 'git status', 'Show git status'),
-            (r'commit (?:with message )?(.+)', r'git commit -m "\1"', 'Git commit'),
-            (r'push to (.+)', r'git push origin \1', 'Git push to branch'),
+            (r"git status", "git status", "Show git status"),
+            (r"commit (?:with message )?(.+)", r'git commit -m "\1"', "Git commit"),
+            (r"push to (.+)", r"git push origin \1", "Git push to branch"),
         ]
 
         for pattern, replacement, explanation in patterns:
@@ -193,27 +188,33 @@ Important guidelines:
                 bash_code = replacement
                 # Replace capture groups
                 for i, group in enumerate(match.groups(), 1):
-                    bash_code = bash_code.replace(f'\\{i}', group)
+                    bash_code = bash_code.replace(f"\\{i}", group)
 
                 warnings = []
-                if 'delete' in nl_lower or 'rm ' in bash_code:
-                    warnings.append('⚠️  This is a destructive operation. Files will be permanently deleted.')
-                if 'kill' in nl_lower:
-                    warnings.append('⚠️  Killing processes can cause data loss or system instability.')
+                if "delete" in nl_lower or "rm " in bash_code:
+                    warnings.append(
+                        "⚠️  This is a destructive operation. Files will be permanently deleted."
+                    )
+                if "kill" in nl_lower:
+                    warnings.append(
+                        "⚠️  Killing processes can cause data loss or system instability."
+                    )
 
                 return {
-                    'bash_code': bash_code,
-                    'explanation': explanation,
-                    'warnings': warnings,
-                    'confidence': 0.7
+                    "bash_code": bash_code,
+                    "explanation": explanation,
+                    "warnings": warnings,
+                    "confidence": 0.7,
                 }
 
         # No pattern matched
         return {
-            'bash_code': '# Could not translate to bash\n# Manual implementation required',
-            'explanation': 'No matching pattern found. AI router needed for complex translations.',
-            'warnings': ['⚠️  Translation failed. Please provide more specific instructions or use AI mode.'],
-            'confidence': 0.0
+            "bash_code": "# Could not translate to bash\n# Manual implementation required",
+            "explanation": "No matching pattern found. AI router needed for complex translations.",
+            "warnings": [
+                "⚠️  Translation failed. Please provide more specific instructions or use AI mode."
+            ],
+            "confidence": 0.0,
         }
 
     def _get_cache_key(self, nl: str, context: Optional[Dict[str, Any]]) -> str:
@@ -226,10 +227,10 @@ Important guidelines:
     def _parse_cached_result(self, bash_code: str) -> Dict[str, Any]:
         """Parse cached bash code into result format."""
         return {
-            'bash_code': bash_code,
-            'explanation': 'Cached result',
-            'warnings': [],
-            'confidence': 1.0
+            "bash_code": bash_code,
+            "explanation": "Cached result",
+            "warnings": [],
+            "confidence": 1.0,
         }
 
     def clear_cache(self):

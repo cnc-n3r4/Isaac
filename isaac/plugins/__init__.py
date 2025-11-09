@@ -5,11 +5,11 @@ This module provides the plugin architecture for Isaac.
 
 from isaac.plugins.plugin_api import (
     Plugin,
-    PluginMetadata,
     PluginContext,
-    PluginHook,
     PluginError,
+    PluginHook,
     PluginLoadError,
+    PluginMetadata,
     PluginSecurityError,
 )
 from isaac.plugins.plugin_manager import PluginManager

@@ -21,29 +21,31 @@ def main():
     """Main entry point for msg command"""
     # Read payload from stdin (dispatcher sends args this way)
     import json
-    import select
-    
+
     # Check if stdin has data (running through dispatcher)
     # On Windows, select doesn't work with stdin, so use a different approach
     import os
-    if os.name == 'nt':
+    import select
+
+    if os.name == "nt":
         # Windows: try to read with timeout
         import msvcrt
+
         has_stdin = msvcrt.kbhit() or not sys.stdin.isatty()
     else:
         # Unix: use select
         has_stdin = select.select([sys.stdin], [], [], 0)[0]
-    
+
     parsed_args = {}
     manual_args = []
-    
+
     if has_stdin:
         # Running through dispatcher - read JSON payload
         try:
             payload = json.loads(sys.stdin.read())
             command = payload.get("command", "/msg")
             parsed_args = payload.get("args", {})
-            
+
             # If no parsed args, fall back to extracting from command string
             if not parsed_args:
                 parts = command.split()
@@ -78,51 +80,51 @@ def main():
     # Check if we have parsed args from dispatcher
     if parsed_args:
         # Use parsed args from dispatcher
-        if parsed_args.get('filter') == '--sys':
+        if parsed_args.get("filter") == "--sys":
             show_system = True
-        elif parsed_args.get('filter') == '--code':
+        elif parsed_args.get("filter") == "--code":
             show_code = True
-        elif parsed_args.get('filter') == '--all':
+        elif parsed_args.get("filter") == "--all":
             show_all = True
-        
-        if parsed_args.get('ack'):
+
+        if parsed_args.get("ack"):
             try:
-                ack_id = int(parsed_args['ack'])
+                ack_id = int(parsed_args["ack"])
             except ValueError:
                 print("Error: --ack requires a valid message ID", file=sys.stderr)
                 sys.exit(1)
-        
-        if parsed_args.get('ack_all'):
+
+        if parsed_args.get("ack_all"):
             ack_all = True
-            if parsed_args['ack_all'] == '--sys':
+            if parsed_args["ack_all"] == "--sys":
                 ack_type = MessageType.SYSTEM
-            elif parsed_args['ack_all'] == '--code':
+            elif parsed_args["ack_all"] == "--code":
                 ack_type = MessageType.CODE
-        
-        if parsed_args.get('read'):
+
+        if parsed_args.get("read"):
             try:
-                read_id = int(parsed_args['read'])
+                read_id = int(parsed_args["read"])
             except ValueError:
                 print("Error: --read requires a valid message ID", file=sys.stderr)
                 sys.exit(1)
-        
-        if parsed_args.get('delete'):
+
+        if parsed_args.get("delete"):
             try:
-                delete_id = int(parsed_args['delete'])
+                delete_id = int(parsed_args["delete"])
             except ValueError:
                 print("Error: --delete requires a valid message ID", file=sys.stderr)
                 sys.exit(1)
-        
-        if parsed_args.get('clear'):
+
+        if parsed_args.get("clear"):
             clear_all = True
-            if parsed_args['clear'] == '--sys':
-                clear_type = ('type', MessageType.SYSTEM)
-            elif parsed_args['clear'] == '--code':
-                clear_type = ('type', MessageType.CODE)
-            elif parsed_args['clear'] == '--ack':
-                clear_type = ('status', 'acknowledged')
-        
-        if parsed_args.get('auto_run'):
+            if parsed_args["clear"] == "--sys":
+                clear_type = ("type", MessageType.SYSTEM)
+            elif parsed_args["clear"] == "--code":
+                clear_type = ("type", MessageType.CODE)
+            elif parsed_args["clear"] == "--ack":
+                clear_type = ("status", "acknowledged")
+
+        if parsed_args.get("auto_run"):
             auto_run = True
     else:
         # Manual argument parsing for direct execution
@@ -130,49 +132,49 @@ def main():
         i = 0
         while i < len(args):
             arg = args[i]
-            if arg in ['--sys', '-s']:
+            if arg in ["--sys", "-s"]:
                 show_system = True
-            elif arg in ['--code', '-c']:
+            elif arg in ["--code", "-c"]:
                 show_code = True
-            elif arg in ['--all', '-a']:
+            elif arg in ["--all", "-a"]:
                 show_all = True
-            elif arg == '--ack' and i + 1 < len(args):
+            elif arg == "--ack" and i + 1 < len(args):
                 try:
                     ack_id = int(args[i + 1])
                     i += 1
                 except ValueError:
                     print("Error: --ack requires a valid message ID", file=sys.stderr)
                     sys.exit(1)
-            elif arg == '--ack-all':
+            elif arg == "--ack-all":
                 ack_all = True
-                if i + 1 < len(args) and args[i + 1] in ['--sys', '--code']:
-                    ack_type = MessageType.SYSTEM if args[i + 1] == '--sys' else MessageType.CODE
+                if i + 1 < len(args) and args[i + 1] in ["--sys", "--code"]:
+                    ack_type = MessageType.SYSTEM if args[i + 1] == "--sys" else MessageType.CODE
                     i += 1
-            elif arg == '--read' and i + 1 < len(args):
+            elif arg == "--read" and i + 1 < len(args):
                 try:
                     read_id = int(args[i + 1])
                     i += 1
                 except ValueError:
                     print("Error: --read requires a valid message ID", file=sys.stderr)
                     sys.exit(1)
-            elif arg == '--delete' and i + 1 < len(args):
+            elif arg == "--delete" and i + 1 < len(args):
                 try:
                     delete_id = int(args[i + 1])
                     i += 1
                 except ValueError:
                     print("Error: --delete requires a valid message ID", file=sys.stderr)
                     sys.exit(1)
-            elif arg == '--clear':
+            elif arg == "--clear":
                 clear_all = True
-                if i + 1 < len(args) and args[i + 1] in ['--sys', '--code', '--ack']:
-                    if args[i + 1] == '--sys':
-                        clear_type = ('type', MessageType.SYSTEM)
-                    elif args[i + 1] == '--code':
-                        clear_type = ('type', MessageType.CODE)
-                    elif args[i + 1] == '--ack':
-                        clear_type = ('status', 'acknowledged')
+                if i + 1 < len(args) and args[i + 1] in ["--sys", "--code", "--ack"]:
+                    if args[i + 1] == "--sys":
+                        clear_type = ("type", MessageType.SYSTEM)
+                    elif args[i + 1] == "--code":
+                        clear_type = ("type", MessageType.CODE)
+                    elif args[i + 1] == "--ack":
+                        clear_type = ("status", "acknowledged")
                     i += 1
-            elif arg in ['--auto-run', '-ar']:
+            elif arg in ["--auto-run", "-ar"]:
                 auto_run = True
             else:
                 print(f"Unknown argument: {arg}", file=sys.stderr)
@@ -214,10 +216,10 @@ def main():
     if clear_all:
         if clear_type:
             filter_type, filter_value = clear_type
-            if filter_type == 'type':
+            if filter_type == "type":
                 count = message_queue.clear_messages(message_type=filter_value)
                 print(f"✓ Cleared {count} {filter_value.value} message(s)")
-            elif filter_type == 'status':
+            elif filter_type == "status":
                 count = message_queue.clear_messages(status=filter_value)
                 print(f"✓ Cleared {count} {filter_value} message(s)")
         else:
@@ -246,20 +248,18 @@ def main():
     # 5. Display messages (default behavior)
     if show_all or (not show_system and not show_code):
         # Show all messages (default behavior)
-        messages = message_queue.get_messages(status='pending')
+        messages = message_queue.get_messages(status="pending")
         _display_messages(messages, "All Messages")
     else:
         # Show specific types
         if show_system:
             system_msgs = message_queue.get_messages(
-                message_type=MessageType.SYSTEM, status='pending'
+                message_type=MessageType.SYSTEM, status="pending"
             )
             _display_messages(system_msgs, "System Messages")
 
         if show_code:
-            code_msgs = message_queue.get_messages(
-                message_type=MessageType.CODE, status='pending'
-            )
+            code_msgs = message_queue.get_messages(message_type=MessageType.CODE, status="pending")
             _display_messages(code_msgs, "Code Messages")
 
     # Auto-run safe recommendations if requested
@@ -270,11 +270,11 @@ def main():
 
 def _auto_run_safe_recommendations(message_queue):
     """Auto-run safe recommendations from pending messages."""
-    from isaac.core.tier_validator import TierValidator
     from isaac.core.session_manager import SessionManager
+    from isaac.core.tier_validator import TierValidator
 
     # Get pending messages
-    messages = message_queue.get_messages(status='pending')
+    messages = message_queue.get_messages(status="pending")
     if not messages:
         print("No pending messages to auto-run")
         return
@@ -298,8 +298,8 @@ def _auto_run_safe_recommendations(message_queue):
                 print(f"✓ Auto-executing safe command (tier {tier}): {command}")
                 try:
                     # Import and execute through command router
-                    from isaac.core.command_router import CommandRouter
                     from isaac.adapters.shell_detector import detect_shell
+                    from isaac.core.command_router import CommandRouter
 
                     shell_adapter = detect_shell()
                     router = CommandRouter(session_mgr, shell_adapter)
@@ -310,7 +310,7 @@ def _auto_run_safe_recommendations(message_queue):
                         print(f"  ✓ Success: {result.output.strip()[:100]}...")
                         executed_count += 1
                         # Acknowledge the message
-                        message_queue.acknowledge_message(msg['id'])
+                        message_queue.acknowledge_message(msg["id"])
                     else:
                         print(f"  ✗ Failed: {result.output.strip()[:100]}...")
                         skipped_count += 1
@@ -331,14 +331,14 @@ def _auto_run_safe_recommendations(message_queue):
 def _extract_executable_command(message):
     """Extract executable command from message content or metadata."""
     # First check metadata for explicitly marked safe commands
-    metadata = message.get('metadata', {})
-    if metadata and 'safe_commands' in metadata:
-        safe_commands = metadata['safe_commands']
+    metadata = message.get("metadata", {})
+    if metadata and "safe_commands" in metadata:
+        safe_commands = metadata["safe_commands"]
         if isinstance(safe_commands, list) and safe_commands:
             # Return the first safe command
             return safe_commands[0]
 
-    content = message.get('content', '').strip()
+    content = message.get("content", "").strip()
 
     # Look for common command patterns in messages
     import re
@@ -350,14 +350,16 @@ def _extract_executable_command(message):
         return match.group(1)
 
     # Pattern 2: Commands at the end of lines starting with common indicators
-    lines = content.split('\n')
+    lines = content.split("\n")
     for line in reversed(lines):  # Check from bottom up
         line = line.strip()
-        if line and not line.startswith(('Found', 'There are', 'Metadata:', '-')):
+        if line and not line.startswith(("Found", "There are", "Metadata:", "-")):
             # Check if it looks like a command (contains spaces or common command chars)
-            if ' ' in line or any(char in line for char in ['/', '\\', '-', '.']):
+            if " " in line or any(char in line for char in ["/", "\\", "-", "."]):
                 # Filter out obvious non-commands
-                if not any(word in line.lower() for word in ['found', 'available', 'run', 'see', 'details']):
+                if not any(
+                    word in line.lower() for word in ["found", "available", "run", "see", "details"]
+                ):
                     return line
 
     return None
@@ -368,23 +370,23 @@ def _extract_executable_command(message):
     print(f"Priority: {message['priority']}")
     print(f"Status: {message['status']}")
     print(f"Created: {message['created_at']}")
-    if message['acknowledged_at']:
+    if message["acknowledged_at"]:
         print(f"Acknowledged: {message['acknowledged_at']}")
     print("=" * 70)
     print(f"\nTitle: {message['title']}")
     print()
 
-    if message['content']:
+    if message["content"]:
         print("Content:")
         print("-" * 70)
-        print(message['content'])
+        print(message["content"])
         print("-" * 70)
         print()
 
-    if message['metadata']:
+    if message["metadata"]:
         print("Metadata:")
         print("-" * 70)
-        for key, value in message['metadata'].items():
+        for key, value in message["metadata"].items():
             print(f"  {key}: {value}")
         print("-" * 70)
         print()
@@ -398,8 +400,8 @@ def _display_messages(messages, title):
         return
 
     # Calculate breakdown by type
-    system_count = sum(1 for msg in messages if msg['message_type'] == 'system')
-    code_count = sum(1 for msg in messages if msg['message_type'] == 'code')
+    system_count = sum(1 for msg in messages if msg["message_type"] == "system")
+    code_count = sum(1 for msg in messages if msg["message_type"] == "code")
 
     breakdown = ""
     if system_count > 0:
@@ -415,35 +417,35 @@ def _display_messages(messages, title):
 
     for msg in messages:
         # Priority indicator (text-based for Windows compatibility)
-        priority = msg['priority']
-        if priority == 'urgent':
+        priority = msg["priority"]
+        if priority == "urgent":
             pri_indicator = "[URGENT]"
-        elif priority == 'high':
+        elif priority == "high":
             pri_indicator = "[HIGH]"
-        elif priority == 'normal':
+        elif priority == "normal":
             pri_indicator = "[NORMAL]"
         else:
             pri_indicator = "[LOW]"
 
         # Type indicator
-        msg_type = msg['message_type']
-        type_indicator = "!" if msg_type == 'system' else "¢"
+        msg_type = msg["message_type"]
+        type_indicator = "!" if msg_type == "system" else "¢"
 
         # Format message
         print(f"{pri_indicator} {type_indicator} [{msg['id']}] {msg['title']}")
 
         # Show content if present
-        if msg['content']:
+        if msg["content"]:
             # Truncate long content
-            content = msg['content']
+            content = msg["content"]
             if len(content) > 100:
                 content = content[:97] + "..."
             print(f"    {content}")
 
         # Show metadata if present
-        if msg['metadata']:
+        if msg["metadata"]:
             metadata_items = []
-            for key, value in msg['metadata'].items():
+            for key, value in msg["metadata"].items():
                 if isinstance(value, (str, int, float, bool)):
                     metadata_items.append(f"{key}={value}")
             if metadata_items:

@@ -3,8 +3,8 @@ Notification Service - Push notifications for mobile devices
 """
 
 import asyncio
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 class NotificationService:
@@ -22,7 +22,7 @@ class NotificationService:
         device_token: str,
         platform: str,
         user_id: str,
-        preferences: Optional[Dict[str, Any]] = None
+        preferences: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Register a mobile device for notifications
@@ -39,13 +39,13 @@ class NotificationService:
         device_id = f"{platform}_{device_token[:16]}"
 
         self.devices[device_id] = {
-            'id': device_id,
-            'token': device_token,
-            'platform': platform,
-            'user_id': user_id,
-            'preferences': preferences or {},
-            'registered_at': datetime.utcnow().isoformat(),
-            'active': True
+            "id": device_id,
+            "token": device_token,
+            "platform": platform,
+            "user_id": user_id,
+            "preferences": preferences or {},
+            "registered_at": datetime.utcnow().isoformat(),
+            "active": True,
         }
 
         return device_id
@@ -64,7 +64,7 @@ class NotificationService:
         notification_type: str,
         title: str,
         message: str,
-        data: Optional[Dict[str, Any]] = None
+        data: Optional[Dict[str, Any]] = None,
     ):
         """
         Send notification to user's devices
@@ -78,28 +78,26 @@ class NotificationService:
         """
         # Find user's devices
         user_devices = [
-            device for device in self.devices.values()
-            if device['user_id'] == user_id and device['active']
+            device
+            for device in self.devices.values()
+            if device["user_id"] == user_id and device["active"]
         ]
 
         notification = {
-            'id': f"notif_{len(self.notifications)}",
-            'type': notification_type,
-            'title': title,
-            'message': message,
-            'data': data or {},
-            'timestamp': datetime.utcnow().isoformat(),
-            'delivered_to': []
+            "id": f"notif_{len(self.notifications)}",
+            "type": notification_type,
+            "title": title,
+            "message": message,
+            "data": data or {},
+            "timestamp": datetime.utcnow().isoformat(),
+            "delivered_to": [],
         }
 
         # Queue notifications for each device
         for device in user_devices:
             # Check if user wants this notification type
             if self._should_send(device, notification_type):
-                await self.notification_queue.put({
-                    'device': device,
-                    'notification': notification
-                })
+                await self.notification_queue.put({"device": device, "notification": notification})
 
         self.notifications.append(notification)
 
@@ -108,7 +106,7 @@ class NotificationService:
 
     def _should_send(self, device: Dict[str, Any], notification_type: str) -> bool:
         """Check if notification should be sent based on preferences"""
-        preferences = device.get('preferences', {})
+        preferences = device.get("preferences", {})
 
         # Check if this notification type is enabled
         if notification_type in preferences:
@@ -122,18 +120,11 @@ class NotificationService:
         while not self.notification_queue.empty():
             try:
                 item = await self.notification_queue.get()
-                await self._send_to_device(
-                    item['device'],
-                    item['notification']
-                )
+                await self._send_to_device(item["device"], item["notification"])
             except Exception as e:
                 print(f"Error sending notification: {e}")
 
-    async def _send_to_device(
-        self,
-        device: Dict[str, Any],
-        notification: Dict[str, Any]
-    ):
+    async def _send_to_device(self, device: Dict[str, Any], notification: Dict[str, Any]):
         """
         Send notification to specific device
 
@@ -141,21 +132,17 @@ class NotificationService:
             device: Device information
             notification: Notification data
         """
-        platform = device['platform']
+        platform = device["platform"]
 
-        if platform == 'ios':
+        if platform == "ios":
             await self._send_apns(device, notification)
-        elif platform == 'android':
+        elif platform == "android":
             await self._send_fcm(device, notification)
 
         # Track delivery
-        notification['delivered_to'].append(device['id'])
+        notification["delivered_to"].append(device["id"])
 
-    async def _send_apns(
-        self,
-        device: Dict[str, Any],
-        notification: Dict[str, Any]
-    ):
+    async def _send_apns(self, device: Dict[str, Any], notification: Dict[str, Any]):
         """
         Send notification via Apple Push Notification Service
 
@@ -169,11 +156,7 @@ class NotificationService:
 
         print(f"[APNS] Sent to {device['id']}: {notification['title']}")
 
-    async def _send_fcm(
-        self,
-        device: Dict[str, Any],
-        notification: Dict[str, Any]
-    ):
+    async def _send_fcm(self, device: Dict[str, Any], notification: Dict[str, Any]):
         """
         Send notification via Firebase Cloud Messaging
 
@@ -188,10 +171,7 @@ class NotificationService:
         print(f"[FCM] Sent to {device['id']}: {notification['title']}")
 
     def get_notifications(
-        self,
-        user_id: str,
-        limit: int = 50,
-        unread_only: bool = False
+        self, user_id: str, limit: int = 50, unread_only: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Get notifications for user
@@ -210,22 +190,18 @@ class NotificationService:
     def mark_as_read(self, notification_id: str) -> bool:
         """Mark notification as read"""
         for notif in self.notifications:
-            if notif['id'] == notification_id:
-                notif['read'] = True
+            if notif["id"] == notification_id:
+                notif["read"] = True
                 return True
 
         return False
 
-    def update_preferences(
-        self,
-        device_id: str,
-        preferences: Dict[str, Any]
-    ) -> bool:
+    def update_preferences(self, device_id: str, preferences: Dict[str, Any]) -> bool:
         """Update notification preferences for device"""
         device = self.devices.get(device_id)
 
         if device:
-            device['preferences'].update(preferences)
+            device["preferences"].update(preferences)
             return True
 
         return False
@@ -238,21 +214,21 @@ class NotificationService:
         """List devices for user"""
         return [
             {
-                'id': device['id'],
-                'platform': device['platform'],
-                'registered_at': device['registered_at'],
-                'active': device['active']
+                "id": device["id"],
+                "platform": device["platform"],
+                "registered_at": device["registered_at"],
+                "active": device["active"],
             }
             for device in self.devices.values()
-            if device['user_id'] == user_id
+            if device["user_id"] == user_id
         ]
 
     def get_stats(self) -> Dict[str, Any]:
         """Get notification statistics"""
         return {
-            'total_devices': len(self.devices),
-            'active_devices': sum(1 for d in self.devices.values() if d['active']),
-            'total_notifications': len(self.notifications),
-            'ios_devices': sum(1 for d in self.devices.values() if d['platform'] == 'ios'),
-            'android_devices': sum(1 for d in self.devices.values() if d['platform'] == 'android')
+            "total_devices": len(self.devices),
+            "active_devices": sum(1 for d in self.devices.values() if d["active"]),
+            "total_notifications": len(self.notifications),
+            "ios_devices": sum(1 for d in self.devices.values() if d["platform"] == "ios"),
+            "android_devices": sum(1 for d in self.devices.values() if d["platform"] == "android"),
         }

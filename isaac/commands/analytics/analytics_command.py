@@ -19,38 +19,38 @@ class AnalyticsCommand:
 
     def execute(self, args: list) -> str:
         """Execute analytics command"""
-        if not args or args[0] in ['help', '--help', '-h']:
+        if not args or args[0] in ["help", "--help", "-h"]:
             return self._help()
 
         subcommand = args[0]
 
-        if subcommand == 'summary':
+        if subcommand == "summary":
             return self._summary()
-        elif subcommand == 'dashboard':
-            dashboard_id = args[1] if len(args) > 1 else 'overview'
+        elif subcommand == "dashboard":
+            dashboard_id = args[1] if len(args) > 1 else "overview"
             return self._dashboard(dashboard_id)
-        elif subcommand == 'productivity':
+        elif subcommand == "productivity":
             return self._productivity_report(args[1:])
-        elif subcommand == 'quality':
+        elif subcommand == "quality":
             return self._quality_report(args[1:])
-        elif subcommand == 'learning':
+        elif subcommand == "learning":
             return self._learning_report(args[1:])
-        elif subcommand == 'team':
+        elif subcommand == "team":
             return self._team_report(args[1:])
-        elif subcommand == 'export':
+        elif subcommand == "export":
             return self._export(args[1:])
-        elif subcommand == 'insights':
+        elif subcommand == "insights":
             return self._insights()
-        elif subcommand == 'dashboards':
+        elif subcommand == "dashboards":
             return self._list_dashboards()
-        elif subcommand == 'enable':
+        elif subcommand == "enable":
             return self._enable()
-        elif subcommand == 'disable':
+        elif subcommand == "disable":
             return self._disable()
-        elif subcommand == 'clear':
+        elif subcommand == "clear":
             days = int(args[1]) if len(args) > 1 else 90
             return self._clear_old_data(days)
-        elif subcommand == 'analyze':
+        elif subcommand == "analyze":
             if len(args) < 2:
                 return "❌ Usage: /analytics analyze <file_path>"
             return self._analyze_file(args[1])
@@ -130,7 +130,7 @@ For more information, see the Analytics documentation.
         output.append("")
 
         # Productivity
-        prod = summary['productivity']
+        prod = summary["productivity"]
         output.append("⚡ PRODUCTIVITY")
         output.append(f"  Efficiency Score:    {prod['efficiency_score']:.1f}%")
         output.append(f"  Time Saved:          {prod['time_saved_hours']:.2f} hours")
@@ -139,7 +139,7 @@ For more information, see the Analytics documentation.
         output.append("")
 
         # Code Quality
-        quality = summary['code_quality']
+        quality = summary["code_quality"]
         output.append("✨ CODE QUALITY")
         output.append(f"  Quality Score:       {quality['quality_score']:.1f}%")
         output.append(f"  Files Analyzed:      {quality['files_analyzed']}")
@@ -148,7 +148,7 @@ For more information, see the Analytics documentation.
         output.append("")
 
         # Learning
-        learning = summary['learning']
+        learning = summary["learning"]
         output.append("🧠 LEARNING")
         output.append(f"  Learning Rate:       {learning['learning_rate']:.1f}%")
         output.append(f"  Adaptation Score:    {learning['adaptation_score']:.1f}%")
@@ -157,7 +157,7 @@ For more information, see the Analytics documentation.
         output.append("")
 
         # Team
-        team = summary['team']
+        team = summary["team"]
         output.append("👥 TEAM")
         output.append(f"  Active Members:      {team['active_members']}")
         output.append(f"  Collaboration Score: {team['collaboration_score']:.1f}%")
@@ -182,9 +182,7 @@ For more information, see the Analytics documentation.
         days = int(args[0]) if args else 7
         start_date = (datetime.now() - timedelta(days=days)).isoformat()
 
-        report = self.manager.productivity.get_productivity_report(
-            start_date=start_date
-        )
+        report = self.manager.productivity.get_productivity_report(start_date=start_date)
 
         output = []
         output.append("=" * 80)
@@ -192,7 +190,7 @@ For more information, see the Analytics documentation.
         output.append("=" * 80)
         output.append("")
 
-        summary = report['summary']
+        summary = report["summary"]
         output.append("📈 Summary:")
         output.append(f"  Commands Executed:      {summary['total_commands_executed']}")
         output.append(f"  Time Saved:             {summary['total_time_saved_hours']:.2f} hours")
@@ -202,9 +200,9 @@ For more information, see the Analytics documentation.
         output.append(f"  Productivity Gain:      {summary['productivity_gain_percentage']:.1f}%")
         output.append("")
 
-        if report['insights']:
+        if report["insights"]:
             output.append("💡 Insights:")
-            for insight in report['insights']:
+            for insight in report["insights"]:
                 output.append(f"  {insight}")
             output.append("")
 
@@ -217,9 +215,7 @@ For more information, see the Analytics documentation.
         days = int(args[0]) if args else 7
         start_date = (datetime.now() - timedelta(days=days)).isoformat()
 
-        report = self.manager.code_quality.get_quality_report(
-            start_date=start_date
-        )
+        report = self.manager.code_quality.get_quality_report(start_date=start_date)
 
         output = []
         output.append("=" * 80)
@@ -227,7 +223,7 @@ For more information, see the Analytics documentation.
         output.append("=" * 80)
         output.append("")
 
-        summary = report['summary']
+        summary = report["summary"]
         output.append("📊 Summary:")
         output.append(f"  Files Analyzed:         {summary['files_analyzed']}")
         output.append(f"  Average Quality Score:  {summary['average_quality_score']:.1f}%")
@@ -237,9 +233,9 @@ For more information, see the Analytics documentation.
         output.append(f"  Trend:                  {summary['quality_trend'].upper()}")
         output.append("")
 
-        if report['insights']:
+        if report["insights"]:
             output.append("💡 Insights:")
-            for insight in report['insights']:
+            for insight in report["insights"]:
                 output.append(f"  {insight}")
             output.append("")
 
@@ -252,9 +248,7 @@ For more information, see the Analytics documentation.
         days = int(args[0]) if args else 30
         start_date = (datetime.now() - timedelta(days=days)).isoformat()
 
-        report = self.manager.learning.get_learning_report(
-            start_date=start_date
-        )
+        report = self.manager.learning.get_learning_report(start_date=start_date)
 
         output = []
         output.append("=" * 80)
@@ -262,7 +256,7 @@ For more information, see the Analytics documentation.
         output.append("=" * 80)
         output.append("")
 
-        summary = report['summary']
+        summary = report["summary"]
         output.append("📚 Summary:")
         output.append(f"  Patterns Learned:       {summary['total_patterns_learned']}")
         output.append(f"  Preferences Adapted:    {summary['total_preferences_adapted']}")
@@ -273,16 +267,18 @@ For more information, see the Analytics documentation.
         output.append(f"  Adaptation Score:       {summary['adaptation_score']:.1f}%")
         output.append("")
 
-        if report['insights']:
+        if report["insights"]:
             output.append("💡 Insights:")
-            for insight in report['insights']:
+            for insight in report["insights"]:
                 output.append(f"  {insight}")
             output.append("")
 
-        if report['top_learnings']:
+        if report["top_learnings"]:
             output.append("🏆 Top Learnings:")
-            for learning in report['top_learnings'][:5]:
-                output.append(f"  • {learning['type']}: {learning['item']} (confidence: {learning['confidence']:.1f})")
+            for learning in report["top_learnings"][:5]:
+                output.append(
+                    f"  • {learning['type']}: {learning['item']} (confidence: {learning['confidence']:.1f})"
+                )
             output.append("")
 
         output.append("=" * 80)
@@ -294,9 +290,7 @@ For more information, see the Analytics documentation.
         days = int(args[0]) if args else 7
         start_date = (datetime.now() - timedelta(days=days)).isoformat()
 
-        report = self.manager.team.get_team_report(
-            start_date=start_date
-        )
+        report = self.manager.team.get_team_report(start_date=start_date)
 
         output = []
         output.append("=" * 80)
@@ -304,7 +298,7 @@ For more information, see the Analytics documentation.
         output.append("=" * 80)
         output.append("")
 
-        summary = report['summary']
+        summary = report["summary"]
         output.append("📊 Summary:")
         output.append(f"  Active Members:         {summary['active_members']}")
         output.append(f"  Total Contributions:    {summary['total_contributions']}")
@@ -315,16 +309,18 @@ For more information, see the Analytics documentation.
         output.append(f"  Collaboration Score:    {summary['collaboration_score']:.1f}%")
         output.append("")
 
-        if report['insights']:
+        if report["insights"]:
             output.append("💡 Insights:")
-            for insight in report['insights']:
+            for insight in report["insights"]:
                 output.append(f"  {insight}")
             output.append("")
 
-        if report['top_contributors']:
+        if report["top_contributors"]:
             output.append("🏆 Top Contributors:")
-            for i, contributor in enumerate(report['top_contributors'][:5], 1):
-                output.append(f"  {i}. {contributor['user_id']} (score: {contributor['score']:.1f})")
+            for i, contributor in enumerate(report["top_contributors"][:5], 1):
+                output.append(
+                    f"  {i}. {contributor['user_id']} (score: {contributor['score']:.1f})"
+                )
             output.append("")
 
         output.append("=" * 80)
@@ -334,9 +330,11 @@ For more information, see the Analytics documentation.
     def _export(self, args: list) -> str:
         """Export report"""
         if len(args) < 2:
-            return "❌ Usage: /analytics export <type> <format> [output_path]\n\n" \
-                   "Types: productivity, quality, learning, team, full\n" \
-                   "Formats: json, csv, html, markdown"
+            return (
+                "❌ Usage: /analytics export <type> <format> [output_path]\n\n"
+                "Types: productivity, quality, learning, team, full\n"
+                "Formats: json, csv, html, markdown"
+            )
 
         report_type = args[0]
         format = args[1]
@@ -344,9 +342,7 @@ For more information, see the Analytics documentation.
 
         try:
             result = self.manager.export_report(
-                report_type=report_type,
-                format=format,
-                output_path=output_path
+                report_type=report_type, format=format, output_path=output_path
             )
 
             if output_path:
@@ -424,7 +420,7 @@ For more information, see the Analytics documentation.
         try:
             analysis = self.manager.code_quality.analyze_file(file_path)
 
-            if 'error' in analysis:
+            if "error" in analysis:
                 return f"❌ Error analyzing file: {analysis['error']}"
 
             output = []
@@ -435,25 +431,25 @@ For more information, see the Analytics documentation.
             output.append(f"File: {file_path}")
             output.append("")
 
-            if 'quality_score' in analysis:
+            if "quality_score" in analysis:
                 output.append(f"Quality Score:        {analysis['quality_score']:.1f}%")
 
-            if 'lines' in analysis:
+            if "lines" in analysis:
                 output.append(f"Lines of Code:        {analysis['lines']}")
 
-            if 'functions' in analysis:
+            if "functions" in analysis:
                 output.append(f"Functions:            {analysis['functions']}")
 
-            if 'classes' in analysis:
+            if "classes" in analysis:
                 output.append(f"Classes:              {analysis['classes']}")
 
-            if 'docstrings' in analysis:
+            if "docstrings" in analysis:
                 output.append(f"Docstrings:           {analysis['docstrings']}")
 
-            if 'complexity_score' in analysis:
+            if "complexity_score" in analysis:
                 output.append(f"Complexity Score:     {analysis['complexity_score']:.1f}%")
 
-            if 'maintainability_score' in analysis:
+            if "maintainability_score" in analysis:
                 output.append(f"Maintainability:      {analysis['maintainability_score']:.1f}%")
 
             output.append("")

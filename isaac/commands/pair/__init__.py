@@ -2,4 +2,4 @@
 Pair Programming Command
 """
 
-__all__ = ['PairCommand']
+__all__ = ["PairCommand"]

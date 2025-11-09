@@ -4,9 +4,11 @@ Backup AI provider - reliable fallback option
 """
 
 import json
+from typing import Any, Dict, List, Optional
+
 import requests
-from typing import Dict, Any, List, Optional
-from .base import BaseAIClient, AIResponse, ToolCall
+
+from .base import AIResponse, BaseAIClient, ToolCall
 
 
 class OpenAIClient(BaseAIClient):
@@ -16,18 +18,18 @@ class OpenAIClient(BaseAIClient):
 
     # Pricing per million tokens (as of 2024)
     PRICING = {
-        'gpt-4o': {
-            'input': 2.50,   # $2.50 per 1M input tokens
-            'output': 10.00  # $10 per 1M output tokens
+        "gpt-4o": {
+            "input": 2.50,  # $2.50 per 1M input tokens
+            "output": 10.00,  # $10 per 1M output tokens
         },
-        'gpt-4o-mini': {
-            'input': 0.15,   # $0.15 per 1M input tokens
-            'output': 0.60   # $0.60 per 1M output tokens
+        "gpt-4o-mini": {
+            "input": 0.15,  # $0.15 per 1M input tokens
+            "output": 0.60,  # $0.60 per 1M output tokens
         },
-        'gpt-4-turbo': {
-            'input': 10.00,  # $10 per 1M input tokens
-            'output': 30.00  # $30 per 1M output tokens
-        }
+        "gpt-4-turbo": {
+            "input": 10.00,  # $10 per 1M input tokens
+            "output": 30.00,  # $30 per 1M output tokens
+        },
     }
 
     @property
@@ -48,7 +50,7 @@ class OpenAIClient(BaseAIClient):
         tools: Optional[List[Dict[str, Any]]] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> AIResponse:
         """Send chat completion request to OpenAI"""
         model = model or self.default_model
@@ -78,63 +80,59 @@ class OpenAIClient(BaseAIClient):
                 f"{self.API_BASE}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
                 json=payload,
-                timeout=self.config.get('timeout', 60)
+                timeout=self.config.get("timeout", 60),
             )
 
             response.raise_for_status()
             data = response.json()
 
             # Parse response
-            choice = data['choices'][0]
-            message = choice['message']
+            choice = data["choices"][0]
+            message = choice["message"]
 
             # Extract tool calls if present
             tool_calls = []
-            if message.get('tool_calls'):
-                for tc in message['tool_calls']:
-                    tool_calls.append(ToolCall(
-                        id=tc['id'],
-                        name=tc['function']['name'],
-                        arguments=json.loads(tc['function']['arguments'])
-                    ))
+            if message.get("tool_calls"):
+                for tc in message["tool_calls"]:
+                    tool_calls.append(
+                        ToolCall(
+                            id=tc["id"],
+                            name=tc["function"]["name"],
+                            arguments=json.loads(tc["function"]["arguments"]),
+                        )
+                    )
 
             # Build response
             return AIResponse(
-                content=message.get('content', ''),
+                content=message.get("content", ""),
                 tool_calls=tool_calls,
-                model=data['model'],
+                model=data["model"],
                 provider=self.provider_name,
-                usage=data.get('usage', {}),
-                finish_reason=choice.get('finish_reason', '')
+                usage=data.get("usage", {}),
+                finish_reason=choice.get("finish_reason", ""),
             )
 
         except requests.exceptions.Timeout:
             return AIResponse(
-                content='',
+                content="",
                 error=f"OpenAI API timeout after {self.config.get('timeout', 60)}s",
-                provider=self.provider_name
+                provider=self.provider_name,
             )
         except requests.exceptions.HTTPError as e:
             error_msg = f"OpenAI API error: {e.response.status_code}"
             try:
                 error_data = e.response.json()
-                if 'error' in error_data:
+                if "error" in error_data:
                     error_msg += f" - {error_data['error'].get('message', '')}"
             except:
                 pass
-            return AIResponse(
-                content='',
-                error=error_msg,
-                provider=self.provider_name
-            )
+            return AIResponse(content="", error=error_msg, provider=self.provider_name)
         except Exception as e:
             return AIResponse(
-                content='',
-                error=f"OpenAI client error: {str(e)}",
-                provider=self.provider_name
+                content="", error=f"OpenAI client error: {str(e)}", provider=self.provider_name
             )
 
     def get_cost_estimate(self, usage: Dict[str, int]) -> float:
@@ -144,7 +142,7 @@ class OpenAIClient(BaseAIClient):
             return 0.0
 
         pricing = self.PRICING[model]
-        input_cost = (usage.get('prompt_tokens', 0) / 1_000_000) * pricing['input']
-        output_cost = (usage.get('completion_tokens', 0) / 1_000_000) * pricing['output']
+        input_cost = (usage.get("prompt_tokens", 0) / 1_000_000) * pricing["input"]
+        output_cost = (usage.get("completion_tokens", 0) / 1_000_000) * pricing["output"]
 
         return input_cost + output_cost

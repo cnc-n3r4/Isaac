@@ -2,12 +2,12 @@
 Sync Queue - Queue operations for later synchronization
 """
 
+import json
 import sqlite3
-from typing import Dict, Any, List, Optional
+import uuid
 from datetime import datetime
 from pathlib import Path
-import json
-import uuid
+from typing import Any, Dict, List, Optional
 
 
 class SyncQueue:
@@ -17,12 +17,12 @@ class SyncQueue:
 
     def __init__(self, storage_path: Optional[str] = None):
         if storage_path is None:
-            storage_path = Path.home() / '.isaac' / 'offline'
+            storage_path = Path.home() / ".isaac" / "offline"
 
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
-        self.db_path = self.storage_path / 'sync_queue.db'
+        self.db_path = self.storage_path / "sync_queue.db"
         self._init_database()
 
     def _init_database(self):
@@ -30,7 +30,8 @@ class SyncQueue:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS sync_queue (
                 id TEXT PRIMARY KEY,
                 operation_type TEXT NOT NULL,
@@ -41,17 +42,13 @@ class SyncQueue:
                 last_retry TEXT,
                 status TEXT DEFAULT 'pending'
             )
-        ''')
+        """
+        )
 
         conn.commit()
         conn.close()
 
-    async def add(
-        self,
-        operation_type: str,
-        data: Dict[str, Any],
-        priority: int = 5
-    ) -> str:
+    async def add(self, operation_type: str, data: Dict[str, Any], priority: int = 5) -> str:
         """
         Add operation to queue
 
@@ -68,16 +65,19 @@ class SyncQueue:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT INTO sync_queue (id, operation_type, data, priority, created_at)
             VALUES (?, ?, ?, ?, ?)
-        ''', (
-            operation_id,
-            operation_type,
-            json.dumps(data),
-            priority,
-            datetime.utcnow().isoformat()
-        ))
+        """,
+            (
+                operation_id,
+                operation_type,
+                json.dumps(data),
+                priority,
+                datetime.utcnow().isoformat(),
+            ),
+        )
 
         conn.commit()
         conn.close()
@@ -89,13 +89,15 @@ class SyncQueue:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT id, operation_type, data, priority, created_at, retry_count
             FROM sync_queue
             WHERE status = 'pending'
             ORDER BY priority DESC, created_at ASC
             LIMIT 1
-        ''')
+        """
+        )
 
         result = cursor.fetchone()
         conn.close()
@@ -104,12 +106,12 @@ class SyncQueue:
             return None
 
         return {
-            'id': result[0],
-            'operation_type': result[1],
-            'data': json.loads(result[2]),
-            'priority': result[3],
-            'created_at': result[4],
-            'retry_count': result[5]
+            "id": result[0],
+            "operation_type": result[1],
+            "data": json.loads(result[2]),
+            "priority": result[3],
+            "created_at": result[4],
+            "retry_count": result[5],
         }
 
     async def mark_completed(self, operation_id: str):
@@ -117,11 +119,14 @@ class SyncQueue:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             UPDATE sync_queue
             SET status = 'completed'
             WHERE id = ?
-        ''', (operation_id,))
+        """,
+            (operation_id,),
+        )
 
         conn.commit()
         conn.close()
@@ -131,7 +136,8 @@ class SyncQueue:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             UPDATE sync_queue
             SET retry_count = retry_count + 1,
                 last_retry = ?,
@@ -140,7 +146,9 @@ class SyncQueue:
                     ELSE 'pending'
                 END
             WHERE id = ?
-        ''', (datetime.utcnow().isoformat(), operation_id))
+        """,
+            (datetime.utcnow().isoformat(), operation_id),
+        )
 
         conn.commit()
         conn.close()
@@ -164,18 +172,15 @@ class SyncQueue:
             try:
                 # TODO: Actually execute the operation
                 # For now, just mark as completed
-                await self.mark_completed(operation['id'])
+                await self.mark_completed(operation["id"])
                 processed += 1
 
             except Exception as e:
                 print(f"Error processing operation {operation['id']}: {e}")
-                await self.mark_failed(operation['id'])
+                await self.mark_failed(operation["id"])
                 failed += 1
 
-        return {
-            'processed': processed,
-            'failed': failed
-        }
+        return {"processed": processed, "failed": failed}
 
     def get_queue_size(self) -> int:
         """Get number of pending operations"""
@@ -194,24 +199,26 @@ class SyncQueue:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT id, operation_type, data, priority, created_at, retry_count
             FROM sync_queue
             WHERE status = 'pending'
             ORDER BY priority DESC, created_at ASC
-        ''')
+        """
+        )
 
         results = cursor.fetchall()
         conn.close()
 
         return [
             {
-                'id': row[0],
-                'operation_type': row[1],
-                'data': json.loads(row[2]),
-                'priority': row[3],
-                'created_at': row[4],
-                'retry_count': row[5]
+                "id": row[0],
+                "operation_type": row[1],
+                "data": json.loads(row[2]),
+                "priority": row[3],
+                "created_at": row[4],
+                "retry_count": row[5],
             }
             for row in results
         ]
@@ -234,11 +241,13 @@ class SyncQueue:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT status, COUNT(*) as count
             FROM sync_queue
             GROUP BY status
-        ''')
+        """
+        )
 
         results = cursor.fetchall()
         conn.close()
@@ -246,8 +255,8 @@ class SyncQueue:
         stats = {row[0]: row[1] for row in results}
 
         return {
-            'pending': stats.get('pending', 0),
-            'completed': stats.get('completed', 0),
-            'failed': stats.get('failed', 0),
-            'total': sum(stats.values())
+            "pending": stats.get("pending", 0),
+            "completed": stats.get("completed", 0),
+            "failed": stats.get("failed", 0),
+            "total": sum(stats.values()),
         }

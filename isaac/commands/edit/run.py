@@ -3,9 +3,9 @@ Edit Command - Edit files with exact string replacement
 Wrapper for EditTool
 """
 
-import sys
-import json
 import argparse
+import json
+import sys
 from pathlib import Path
 
 # Add isaac to path for imports
@@ -16,12 +16,12 @@ from isaac.tools import EditTool
 
 def main():
     """Main entry point for /edit command"""
-    parser = argparse.ArgumentParser(description='Edit files with exact string replacement')
-    parser.add_argument('file_path', help='Path to file to edit')
-    parser.add_argument('old_string', help='Exact string to find')
-    parser.add_argument('new_string', help='Replacement string')
-    parser.add_argument('--replace-all', action='store_true', help='Replace all occurrences')
-    parser.add_argument('--help-cmd', action='store_true', help='Show this help')
+    parser = argparse.ArgumentParser(description="Edit files with exact string replacement")
+    parser.add_argument("file_path", help="Path to file to edit")
+    parser.add_argument("old_string", help="Exact string to find")
+    parser.add_argument("new_string", help="Replacement string")
+    parser.add_argument("--replace-all", action="store_true", help="Replace all occurrences")
+    parser.add_argument("--help-cmd", action="store_true", help="Show this help")
 
     try:
         if len(sys.argv) == 1:
@@ -44,11 +44,11 @@ def main():
             file_path=args.file_path,
             old_string=args.old_string,
             new_string=args.new_string,
-            replace_all=args.replace_all
+            replace_all=args.replace_all,
         )
 
         # Output result
-        if result['success']:
+        if result["success"]:
             print(f"Edited: {result['file_path']}")
             print(f"Replacements: {result['replacements']}")
             print(f"  Old: {result['old_string']}")
@@ -57,17 +57,14 @@ def main():
             if not sys.stdout.isatty():
                 envelope = {
                     "ok": True,
-                    "stdout": f"Edited {result['file_path']}: {result['replacements']} replacements"
+                    "stdout": f"Edited {result['file_path']}: {result['replacements']} replacements",
                 }
                 print(json.dumps(envelope))
         else:
             print(f"Error: {result['error']}", file=sys.stderr)
 
             if not sys.stdout.isatty():
-                envelope = {
-                    "ok": False,
-                    "error": {"message": result['error']}
-                }
+                envelope = {"ok": False, "error": {"message": result["error"]}}
                 print(json.dumps(envelope))
 
             sys.exit(1)
@@ -76,10 +73,7 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
 
         if not sys.stdout.isatty():
-            envelope = {
-                "ok": False,
-                "error": {"message": str(e)}
-            }
+            envelope = {"ok": False, "error": {"message": str(e)}}
             print(json.dumps(envelope))
 
         sys.exit(1)

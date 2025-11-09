@@ -4,9 +4,9 @@ State Manager - Manages workspace state persistence and restoration
 
 import json
 import sqlite3
-from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 class StateManager:
@@ -16,12 +16,12 @@ class StateManager:
 
     def __init__(self, storage_path: str = None):
         if storage_path is None:
-            storage_path = Path.home() / '.isaac' / 'bubbles'
+            storage_path = Path.home() / ".isaac" / "bubbles"
 
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
-        self.db_path = self.storage_path / 'bubbles.db'
+        self.db_path = self.storage_path / "bubbles.db"
         self._init_database()
 
     def _init_database(self):
@@ -29,7 +29,8 @@ class StateManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS bubbles (
                 id TEXT PRIMARY KEY,
                 name TEXT,
@@ -40,51 +41,57 @@ class StateManager:
                 size INTEGER,
                 metadata TEXT
             )
-        ''')
+        """
+        )
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS bubble_tags (
                 bubble_id TEXT,
                 tag TEXT,
                 FOREIGN KEY (bubble_id) REFERENCES bubbles(id)
             )
-        ''')
+        """
+        )
 
         conn.commit()
         conn.close()
 
     def save_bubble(self, bubble_state: Dict[str, Any], name: Optional[str] = None) -> str:
         """Save bubble state and register in database"""
-        bubble_id = bubble_state['metadata']['bubble_id']
+        bubble_id = bubble_state["metadata"]["bubble_id"]
 
         if name is None:
-            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
             name = f"bubble_{timestamp}"
 
         # Save bubble file
         file_path = self.storage_path / f"{bubble_id}.json"
 
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(bubble_state, f, indent=2)
 
         # Register in database
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO bubbles
             (id, name, workspace_path, created_at, created_on_platform, file_path, size, metadata)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            bubble_id,
-            name,
-            bubble_state['workspace']['path'],
-            bubble_state['created_at'],
-            bubble_state['created_on']['system'],
-            str(file_path),
-            file_path.stat().st_size,
-            json.dumps(bubble_state['metadata'])
-        ))
+        """,
+            (
+                bubble_id,
+                name,
+                bubble_state["workspace"]["path"],
+                bubble_state["created_at"],
+                bubble_state["created_on"]["system"],
+                str(file_path),
+                file_path.stat().st_size,
+                json.dumps(bubble_state["metadata"]),
+            ),
+        )
 
         conn.commit()
         conn.close()
@@ -96,7 +103,7 @@ class StateManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT file_path FROM bubbles WHERE id = ?', (bubble_id,))
+        cursor.execute("SELECT file_path FROM bubbles WHERE id = ?", (bubble_id,))
         result = cursor.fetchone()
 
         conn.close()
@@ -109,7 +116,7 @@ class StateManager:
         if not file_path.exists():
             return None
 
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             return json.load(f)
 
     def list_bubbles(self, workspace_path: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -118,32 +125,39 @@ class StateManager:
         cursor = conn.cursor()
 
         if workspace_path:
-            cursor.execute('''
+            cursor.execute(
+                """
                 SELECT id, name, workspace_path, created_at, created_on_platform, size
                 FROM bubbles
                 WHERE workspace_path = ?
                 ORDER BY created_at DESC
-            ''', (workspace_path,))
+            """,
+                (workspace_path,),
+            )
         else:
-            cursor.execute('''
+            cursor.execute(
+                """
                 SELECT id, name, workspace_path, created_at, created_on_platform, size
                 FROM bubbles
                 ORDER BY created_at DESC
-            ''')
+            """
+            )
 
         results = cursor.fetchall()
         conn.close()
 
         bubbles = []
         for row in results:
-            bubbles.append({
-                'id': row[0],
-                'name': row[1],
-                'workspace_path': row[2],
-                'created_at': row[3],
-                'platform': row[4],
-                'size': row[5]
-            })
+            bubbles.append(
+                {
+                    "id": row[0],
+                    "name": row[1],
+                    "workspace_path": row[2],
+                    "created_at": row[3],
+                    "platform": row[4],
+                    "size": row[5],
+                }
+            )
 
         return bubbles
 
@@ -153,7 +167,7 @@ class StateManager:
         cursor = conn.cursor()
 
         # Get file path
-        cursor.execute('SELECT file_path FROM bubbles WHERE id = ?', (bubble_id,))
+        cursor.execute("SELECT file_path FROM bubbles WHERE id = ?", (bubble_id,))
         result = cursor.fetchone()
 
         if not result:
@@ -163,8 +177,8 @@ class StateManager:
         file_path = Path(result[0])
 
         # Delete from database
-        cursor.execute('DELETE FROM bubbles WHERE id = ?', (bubble_id,))
-        cursor.execute('DELETE FROM bubble_tags WHERE bubble_id = ?', (bubble_id,))
+        cursor.execute("DELETE FROM bubbles WHERE id = ?", (bubble_id,))
+        cursor.execute("DELETE FROM bubble_tags WHERE bubble_id = ?", (bubble_id,))
 
         conn.commit()
         conn.close()
@@ -180,10 +194,13 @@ class StateManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT INTO bubble_tags (bubble_id, tag)
             VALUES (?, ?)
-        ''', (bubble_id, tag))
+        """,
+            (bubble_id, tag),
+        )
 
         conn.commit()
         conn.close()
@@ -193,7 +210,7 @@ class StateManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT tag FROM bubble_tags WHERE bubble_id = ?', (bubble_id,))
+        cursor.execute("SELECT tag FROM bubble_tags WHERE bubble_id = ?", (bubble_id,))
         results = cursor.fetchall()
 
         conn.close()
@@ -205,27 +222,32 @@ class StateManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT DISTINCT b.id, b.name, b.workspace_path, b.created_at, b.created_on_platform, b.size
             FROM bubbles b
             LEFT JOIN bubble_tags t ON b.id = t.bubble_id
             WHERE b.name LIKE ? OR t.tag LIKE ?
             ORDER BY b.created_at DESC
-        ''', (f'%{query}%', f'%{query}%'))
+        """,
+            (f"%{query}%", f"%{query}%"),
+        )
 
         results = cursor.fetchall()
         conn.close()
 
         bubbles = []
         for row in results:
-            bubbles.append({
-                'id': row[0],
-                'name': row[1],
-                'workspace_path': row[2],
-                'created_at': row[3],
-                'platform': row[4],
-                'size': row[5]
-            })
+            bubbles.append(
+                {
+                    "id": row[0],
+                    "name": row[1],
+                    "workspace_path": row[2],
+                    "created_at": row[3],
+                    "platform": row[4],
+                    "size": row[5],
+                }
+            )
 
         return bubbles
 
@@ -234,13 +256,13 @@ class StateManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT COUNT(*), SUM(size) FROM bubbles')
+        cursor.execute("SELECT COUNT(*), SUM(size) FROM bubbles")
         count, total_size = cursor.fetchone()
 
         conn.close()
 
         return {
-            'total_bubbles': count or 0,
-            'total_size': total_size or 0,
-            'storage_path': str(self.storage_path)
+            "total_bubbles": count or 0,
+            "total_size": total_size or 0,
+            "storage_path": str(self.storage_path),
         }

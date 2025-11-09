@@ -7,8 +7,8 @@ via pipe operator. Don't reinvent Unix/PowerShell - leverage existing tools.
 
 import json
 import sys
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
 
 # Add isaac package to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -24,7 +24,7 @@ class PipeEngine:
 
     def _is_isaac_command(self, cmd: str) -> bool:
         """Check if command is Isaac plugin or shell command."""
-        return cmd.strip().startswith('/')
+        return cmd.strip().startswith("/")
 
     def _parse_pipe_segments(self, cmd: str) -> List[str]:
         """Split on | respecting quoted strings."""
@@ -42,14 +42,14 @@ class PipeEngine:
                 in_quotes = False
                 quote_char = None
                 current.append(char)
-            elif char == '|' and not in_quotes:
-                segments.append(''.join(current).strip())
+            elif char == "|" and not in_quotes:
+                segments.append("".join(current).strip())
                 current = []
             else:
                 current.append(char)
 
         if current:
-            segments.append(''.join(current).strip())
+            segments.append("".join(current).strip())
 
         return segments
 
@@ -58,12 +58,12 @@ class PipeEngine:
         # Extract text content from blob for shell stdin
         stdin_text = None
         if stdin_blob:
-            if stdin_blob['kind'] == 'text':
-                stdin_text = stdin_blob['content']
-            elif stdin_blob['kind'] == 'json':
+            if stdin_blob["kind"] == "text":
+                stdin_text = stdin_blob["content"]
+            elif stdin_blob["kind"] == "json":
                 # Convert JSON to pretty-printed text
-                stdin_text = json.dumps(stdin_blob['content'], indent=2)
-            elif stdin_blob['kind'] == 'error':
+                stdin_text = json.dumps(stdin_blob["content"], indent=2)
+            elif stdin_blob["kind"] == "error":
                 # Propagate error, don't execute
                 return stdin_blob
 
@@ -78,17 +78,14 @@ class PipeEngine:
                 "meta": {
                     "source_command": cmd,
                     "exit_code": result.exit_code,
-                    "shell": self.shell_adapter.name
-                }
+                    "shell": self.shell_adapter.name,
+                },
             }
         else:
             return {
                 "kind": "error",
                 "content": result.output or f"Command failed: {cmd}",
-                "meta": {
-                    "exit_code": result.exit_code,
-                    "failed_command": cmd
-                }
+                "meta": {"exit_code": result.exit_code, "failed_command": cmd},
             }
 
     def _execute_isaac_command(self, cmd: str, stdin_blob: Optional[dict] = None) -> dict:
@@ -96,15 +93,15 @@ class PipeEngine:
         import subprocess
 
         # Find the command script
-        cmd_name = cmd.strip('/').split()[0]
-        cmd_dir = Path(__file__).parent.parent / 'commands' / cmd_name
-        run_script = cmd_dir / 'run.py'
+        cmd_name = cmd.strip("/").split()[0]
+        cmd_dir = Path(__file__).parent.parent / "commands" / cmd_name
+        run_script = cmd_dir / "run.py"
 
         if not run_script.exists():
             return {
                 "kind": "error",
                 "content": f"Command not found: {cmd_name}",
-                "meta": {"command": cmd}
+                "meta": {"command": cmd},
             }
 
         # Prepare stdin data
@@ -112,8 +109,8 @@ class PipeEngine:
         if stdin_blob:
             # Include the command in the blob meta for piped commands
             enhanced_blob = dict(stdin_blob)
-            enhanced_blob['meta'] = enhanced_blob.get('meta', {})
-            enhanced_blob['meta']['command'] = cmd
+            enhanced_blob["meta"] = enhanced_blob.get("meta", {})
+            enhanced_blob["meta"]["command"] = cmd
             stdin_data = json.dumps(enhanced_blob)
         else:
             # For commands without input, send empty dispatcher envelope
@@ -126,7 +123,7 @@ class PipeEngine:
                 input=stdin_data,
                 text=True,
                 capture_output=True,
-                cwd=Path(__file__).parent.parent.parent
+                cwd=Path(__file__).parent.parent.parent,
             )
 
             # Parse JSON output
@@ -138,17 +135,14 @@ class PipeEngine:
                 return {
                     "kind": "text",
                     "content": result.stdout or result.stderr,
-                    "meta": {
-                        "source_command": cmd,
-                        "exit_code": result.returncode
-                    }
+                    "meta": {"source_command": cmd, "exit_code": result.returncode},
                 }
 
         except Exception as e:
             return {
                 "kind": "error",
                 "content": f"Failed to execute Isaac command: {e}",
-                "meta": {"command": cmd}
+                "meta": {"command": cmd},
             }
 
     def _execute_command(self, cmd: str, stdin_blob: Optional[dict] = None) -> dict:
@@ -170,7 +164,7 @@ class PipeEngine:
 
         # 3. Chain through transformers
         for segment in segments[1:]:
-            if blob['kind'] == 'error':
+            if blob["kind"] == "error":
                 break  # Stop on error
             blob = self._execute_command(segment, stdin_blob=blob)
 

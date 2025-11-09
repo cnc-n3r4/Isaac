@@ -20,13 +20,13 @@ def main():
         command = LearnCommand()
         result = command.execute(sys.argv[1:])
 
-        print(result['output'])
+        print(result["output"])
 
         # Cleanup
         command.cleanup()
 
-        if not result['success']:
-            sys.exit(result['exit_code'])
+        if not result["success"]:
+            sys.exit(result["exit_code"])
 
     except KeyboardInterrupt:
         print("\nOperation cancelled")
@@ -34,6 +34,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

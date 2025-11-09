@@ -3,19 +3,20 @@ Progress Indicator System
 Visual progress tracking for agentic tasks and tool execution
 """
 
-import time
 import threading
-from typing import Dict, Any, List, Optional
+import time
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class ProgressStyle(Enum):
     """Progress bar styles"""
-    BAR = "bar"           # [████████████░░░░] 60%
-    DOTS = "dots"         # ●●●●●●○○○○○○○○ 6/14
-    SPINNER = "spinner"   # ⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏
-    PERCENT = "percent"   # 60.0%
-    TEXT = "text"         # Processing...
+
+    BAR = "bar"  # [████████████░░░░] 60%
+    DOTS = "dots"  # ●●●●●●○○○○○○○○ 6/14
+    SPINNER = "spinner"  # ⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏
+    PERCENT = "percent"  # 60.0%
+    TEXT = "text"  # Processing...
 
 
 class ProgressIndicator:
@@ -25,7 +26,7 @@ class ProgressIndicator:
     Provides multiple progress display styles and integrates with streaming display.
     """
 
-    SPINNER_CHARS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    SPINNER_CHARS = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
     def __init__(self, style: ProgressStyle = ProgressStyle.BAR, width: int = 20):
         self.style = style
@@ -156,7 +157,7 @@ class ProgressIndicator:
             "is_active": self.is_active,
             "elapsed_seconds": elapsed,
             "eta_seconds": eta,
-            "style": self.style.value
+            "style": self.style.value,
         }
 
 
@@ -171,7 +172,9 @@ class MultiProgressTracker:
         self.indicators: Dict[str, ProgressIndicator] = {}
         self.lock = threading.Lock()
 
-    def create_indicator(self, id: str, style: ProgressStyle = ProgressStyle.BAR) -> ProgressIndicator:
+    def create_indicator(
+        self, id: str, style: ProgressStyle = ProgressStyle.BAR
+    ) -> ProgressIndicator:
         """Create a new progress indicator"""
         with self.lock:
             indicator = ProgressIndicator(style)
@@ -206,7 +209,8 @@ class MultiProgressTracker:
                 return 0.0
 
             active_indicators = [
-                ind for ind in self.indicators.values()
+                ind
+                for ind in self.indicators.values()
                 if ind.is_active or ind.current_progress < 1.0
             ]
 

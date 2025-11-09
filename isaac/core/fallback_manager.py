@@ -6,11 +6,11 @@ Handles API failures, network issues, and provides fallback strategies
 for critical ISAAC functionality.
 """
 
+import json
 import logging
-from typing import Optional, Dict, Any, Callable
 from datetime import datetime, timedelta
 from pathlib import Path
-import json
+from typing import Any, Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +41,14 @@ class ServiceStatus:
 
         if self.consecutive_failures >= self.failure_threshold:
             if self.available:
-                logger.warning(f"Service {self.name}: Marked unavailable after {self.consecutive_failures} failures")
+                logger.warning(
+                    f"Service {self.name}: Marked unavailable after {self.consecutive_failures} failures"
+                )
                 self.available = False
         else:
-            logger.debug(f"Service {self.name}: Failure ({self.consecutive_failures}/{self.failure_threshold}): {error}")
+            logger.debug(
+                f"Service {self.name}: Failure ({self.consecutive_failures}/{self.failure_threshold}): {error}"
+            )
 
     def should_retry(self) -> bool:
         """Check if service should be retried"""
@@ -63,11 +67,11 @@ class ServiceStatus:
     def get_status(self) -> Dict[str, Any]:
         """Get service status info"""
         return {
-            'name': self.name,
-            'available': self.available,
-            'last_success': self.last_success.isoformat() if self.last_success else None,
-            'last_failure': self.last_failure.isoformat() if self.last_failure else None,
-            'consecutive_failures': self.consecutive_failures
+            "name": self.name,
+            "available": self.available,
+            "last_success": self.last_success.isoformat() if self.last_success else None,
+            "last_failure": self.last_failure.isoformat() if self.last_failure else None,
+            "consecutive_failures": self.consecutive_failures,
         }
 
 
@@ -90,7 +94,7 @@ class FallbackManager:
             config_path: Path to fallback configuration
         """
         if config_path is None:
-            config_path = Path.home() / '.isaac' / 'fallback.json'
+            config_path = Path.home() / ".isaac" / "fallback.json"
 
         self.config_path = config_path
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,11 +116,11 @@ class FallbackManager:
             return
 
         try:
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path, "r") as f:
                 data = json.load(f)
 
             # Load offline queue
-            self.offline_queue = data.get('offline_queue', [])
+            self.offline_queue = data.get("offline_queue", [])
 
             logger.info(f"Loaded fallback state: {len(self.offline_queue)} queued operations")
 
@@ -126,12 +130,9 @@ class FallbackManager:
     def _save_state(self):
         """Persist service state"""
         try:
-            data = {
-                'offline_queue': self.offline_queue,
-                'last_updated': datetime.now().isoformat()
-            }
+            data = {"offline_queue": self.offline_queue, "last_updated": datetime.now().isoformat()}
 
-            with open(self.config_path, 'w') as f:
+            with open(self.config_path, "w") as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -143,11 +144,13 @@ class FallbackManager:
             self.services[name] = ServiceStatus(name)
         return self.services[name]
 
-    def call_with_fallback(self,
-                          service_name: str,
-                          primary_fn: Callable,
-                          fallback_fn: Optional[Callable] = None,
-                          queue_on_failure: bool = False) -> Dict[str, Any]:
+    def call_with_fallback(
+        self,
+        service_name: str,
+        primary_fn: Callable,
+        fallback_fn: Optional[Callable] = None,
+        queue_on_failure: bool = False,
+    ) -> Dict[str, Any]:
         """
         Call service with automatic fallback
 
@@ -172,12 +175,7 @@ class FallbackManager:
             result = primary_fn()
             service.record_success()
 
-            return {
-                'success': True,
-                'result': result,
-                'source': 'primary',
-                'service': service_name
-            }
+            return {"success": True, "result": result, "source": "primary", "service": service_name}
 
         except Exception as e:
             error_msg = str(e)
@@ -187,11 +185,13 @@ class FallbackManager:
 
             return self._execute_fallback(service_name, fallback_fn, queue_on_failure, error_msg)
 
-    def _execute_fallback(self,
-                         service_name: str,
-                         fallback_fn: Optional[Callable],
-                         queue_on_failure: bool,
-                         error: Optional[str] = None) -> Dict[str, Any]:
+    def _execute_fallback(
+        self,
+        service_name: str,
+        fallback_fn: Optional[Callable],
+        queue_on_failure: bool,
+        error: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Execute fallback strategy"""
 
         # Try fallback function
@@ -199,38 +199,33 @@ class FallbackManager:
             try:
                 result = fallback_fn()
                 return {
-                    'success': True,
-                    'result': result,
-                    'source': 'fallback',
-                    'service': service_name,
-                    'fallback_used': True
+                    "success": True,
+                    "result": result,
+                    "source": "fallback",
+                    "service": service_name,
+                    "fallback_used": True,
                 }
             except Exception as fb_error:
                 logger.error(f"Fallback also failed for {service_name}: {fb_error}")
 
         # Queue for later if requested
         if queue_on_failure:
-            self.queue_operation(service_name, {
-                'timestamp': datetime.now().isoformat(),
-                'error': error
-            })
+            self.queue_operation(
+                service_name, {"timestamp": datetime.now().isoformat(), "error": error}
+            )
 
         # Return failure
         return {
-            'success': False,
-            'service': service_name,
-            'error': error or 'Service unavailable',
-            'fallback_used': fallback_fn is not None,
-            'queued': queue_on_failure
+            "success": False,
+            "service": service_name,
+            "error": error or "Service unavailable",
+            "fallback_used": fallback_fn is not None,
+            "queued": queue_on_failure,
         }
 
     def queue_operation(self, operation_type: str, data: Dict[str, Any]):
         """Queue operation for later execution"""
-        operation = {
-            'type': operation_type,
-            'data': data,
-            'queued_at': datetime.now().isoformat()
-        }
+        operation = {"type": operation_type, "data": data, "queued_at": datetime.now().isoformat()}
 
         self.offline_queue.append(operation)
         self._save_state()
@@ -245,12 +240,7 @@ class FallbackManager:
             Processing statistics
         """
         if not self.offline_queue:
-            return {
-                'processed': 0,
-                'succeeded': 0,
-                'failed': 0,
-                'remaining': 0
-            }
+            return {"processed": 0, "succeeded": 0, "failed": 0, "remaining": 0}
 
         processed = 0
         succeeded = 0
@@ -260,7 +250,7 @@ class FallbackManager:
         logger.info(f"Processing {len(self.offline_queue)} queued operations")
 
         for operation in self.offline_queue:
-            op_type = operation['type']
+            op_type = operation["type"]
             service = self.get_service(op_type)
 
             # Only retry if service appears available
@@ -278,17 +268,17 @@ class FallbackManager:
         self._save_state()
 
         return {
-            'processed': processed,
-            'succeeded': succeeded,
-            'failed': failed,
-            'remaining': len(remaining_queue)
+            "processed": processed,
+            "succeeded": succeeded,
+            "failed": failed,
+            "remaining": len(remaining_queue),
         }
 
     def get_all_status(self) -> Dict[str, Any]:
         """Get status of all services"""
         return {
-            'services': {name: svc.get_status() for name, svc in self.services.items()},
-            'offline_queue': len(self.offline_queue)
+            "services": {name: svc.get_status() for name, svc in self.services.items()},
+            "offline_queue": len(self.offline_queue),
         }
 
     def reset_service(self, service_name: str):
@@ -314,7 +304,7 @@ def get_fallback_manager() -> FallbackManager:
     return _fallback_manager
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test fallback manager
     logging.basicConfig(level=logging.DEBUG)
 
@@ -326,7 +316,7 @@ if __name__ == '__main__':
     def success_fn():
         return "Success!"
 
-    result = manager.call_with_fallback('test_service', success_fn)
+    result = manager.call_with_fallback("test_service", success_fn)
     print(f"Successful call: {result}")
 
     # Test failing service with fallback
@@ -336,19 +326,21 @@ if __name__ == '__main__':
     def fallback_fn():
         return "Fallback result"
 
-    result = manager.call_with_fallback('failing_service', failing_fn, fallback_fn)
+    result = manager.call_with_fallback("failing_service", failing_fn, fallback_fn)
     print(f"\nFailing call with fallback: {result}")
 
     # Test multiple failures to trigger unavailable
     for i in range(3):
-        result = manager.call_with_fallback('unreliable_service', failing_fn, queue_on_failure=True)
+        result = manager.call_with_fallback("unreliable_service", failing_fn, queue_on_failure=True)
         print(f"\nAttempt {i+1}: {result}")
 
     # Check status
     status = manager.get_all_status()
     print(f"\nService status:")
-    for svc_name, svc_status in status['services'].items():
-        print(f"  {svc_name}: available={svc_status['available']}, failures={svc_status['consecutive_failures']}")
+    for svc_name, svc_status in status["services"].items():
+        print(
+            f"  {svc_name}: available={svc_status['available']}, failures={svc_status['consecutive_failures']}"
+        )
 
     print(f"\nQueued operations: {status['offline_queue']}")
 

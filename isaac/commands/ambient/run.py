@@ -20,10 +20,10 @@ def main():
         command = AmbientCommand()
         result = command.execute(sys.argv[1:])
 
-        print(result['output'])
+        print(result["output"])
 
-        if not result['success']:
-            sys.exit(result['exit_code'])
+        if not result["success"]:
+            sys.exit(result["exit_code"])
 
     except KeyboardInterrupt:
         print("\nOperation cancelled")

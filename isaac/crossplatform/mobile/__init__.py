@@ -6,7 +6,7 @@ and searching workspace context from mobile devices.
 """
 
 from .mobile_api import MobileAPI
-from .notification_service import NotificationService
 from .mobile_auth import MobileAuth
+from .notification_service import NotificationService
 
-__all__ = ['MobileAPI', 'NotificationService', 'MobileAuth']
+__all__ = ["MobileAPI", "NotificationService", "MobileAuth"]

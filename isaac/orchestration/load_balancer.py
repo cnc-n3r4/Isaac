@@ -5,15 +5,16 @@ Provides intelligent task distribution across registered machines
 """
 
 import random
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from isaac.orchestration.registry import MachineRegistry, Machine
+from isaac.orchestration.registry import Machine, MachineRegistry
 
 
 class LoadBalancingStrategy(Enum):
     """Load balancing strategies"""
+
     ROUND_ROBIN = "round_robin"
     LEAST_LOAD = "least_load"
     WEIGHTED_LEAST_LOAD = "weighted_least_load"
@@ -25,6 +26,7 @@ class LoadBalancingStrategy(Enum):
 @dataclass
 class LoadScore:
     """Load score for a machine"""
+
     machine: Machine
     score: float
     factors: Dict[str, float]  # Breakdown of scoring factors
@@ -38,12 +40,15 @@ class LoadBalancer:
         self.round_robin_index: Dict[str, int] = {}  # group_name -> index
         self.performance_history: Dict[str, List[float]] = {}  # machine_id -> execution times
 
-    def select_machine(self, strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
-                      group_name: Optional[str] = None,
-                      required_tags: Optional[List[str]] = None,
-                      min_cpu_cores: int = 0,
-                      min_memory_gb: float = 0.0,
-                      command_complexity: str = "normal") -> Optional[Machine]:
+    def select_machine(
+        self,
+        strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
+        group_name: Optional[str] = None,
+        required_tags: Optional[List[str]] = None,
+        min_cpu_cores: int = 0,
+        min_memory_gb: float = 0.0,
+        command_complexity: str = "normal",
+    ) -> Optional[Machine]:
         """
         Select the best machine using the specified load balancing strategy
 
@@ -81,10 +86,13 @@ class LoadBalancer:
         else:
             return self._least_load_selection(candidates)  # Default fallback
 
-    def distribute_tasks(self, tasks: List[Dict[str, Any]],
-                        strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
-                        group_name: Optional[str] = None,
-                        required_tags: Optional[List[str]] = None) -> Dict[str, List[Dict[str, Any]]]:
+    def distribute_tasks(
+        self,
+        tasks: List[Dict[str, Any]],
+        strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
+        group_name: Optional[str] = None,
+        required_tags: Optional[List[str]] = None,
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Distribute tasks across available machines
 
@@ -109,7 +117,7 @@ class LoadBalancer:
                 strategy=strategy,
                 group_name=group_name,
                 required_tags=required_tags,
-                command_complexity=task.get('complexity', 'normal')
+                command_complexity=task.get("complexity", "normal"),
             )
 
             if machine:
@@ -117,8 +125,9 @@ class LoadBalancer:
 
         return distribution
 
-    def get_load_scores(self, machines: List[Machine],
-                       command_complexity: str = "normal") -> List[LoadScore]:
+    def get_load_scores(
+        self, machines: List[Machine], command_complexity: str = "normal"
+    ) -> List[LoadScore]:
         """
         Calculate load scores for machines
 
@@ -141,34 +150,36 @@ class LoadBalancer:
 
             # CPU utilization (0-100, lower is better)
             cpu_factor = machine.status.current_load / 100.0
-            factors['cpu'] = cpu_factor
+            factors["cpu"] = cpu_factor
             total_score += cpu_factor * 0.3
 
             # Memory utilization (0-100, lower is better)
             memory_factor = machine.status.memory_usage / 100.0
-            factors['memory'] = memory_factor
+            factors["memory"] = memory_factor
             total_score += memory_factor * 0.3
 
             # Current load (0-100, lower is better)
             load_factor = machine.status.current_load / 100.0
-            factors['load'] = load_factor
+            factors["load"] = load_factor
             total_score += load_factor * 0.2
 
             # Performance history (recent execution times, lower is better)
             perf_factor = self._get_performance_factor(machine.machine_id)
-            factors['performance'] = perf_factor
+            factors["performance"] = perf_factor
             total_score += perf_factor * 0.1
 
             # Resource availability bonus (higher capacity gives slight preference)
             capacity_factor = self._calculate_capacity_factor(machine, command_complexity)
-            factors['capacity'] = capacity_factor
+            factors["capacity"] = capacity_factor
             total_score -= capacity_factor * 0.1  # Subtract because higher capacity is better
 
-            scores.append(LoadScore(
-                machine=machine,
-                score=max(0.0, total_score),  # Ensure non-negative
-                factors=factors
-            ))
+            scores.append(
+                LoadScore(
+                    machine=machine,
+                    score=max(0.0, total_score),  # Ensure non-negative
+                    factors=factors,
+                )
+            )
 
         return sorted(scores, key=lambda x: x.score)
 
@@ -183,10 +194,13 @@ class LoadBalancer:
         if len(self.performance_history[machine_id]) > 10:
             self.performance_history[machine_id] = self.performance_history[machine_id][-10:]
 
-    def _get_candidates(self, group_name: Optional[str] = None,
-                       required_tags: Optional[List[str]] = None,
-                       min_cpu_cores: int = 0,
-                       min_memory_gb: float = 0.0) -> List[Machine]:
+    def _get_candidates(
+        self,
+        group_name: Optional[str] = None,
+        required_tags: Optional[List[str]] = None,
+        min_cpu_cores: int = 0,
+        min_memory_gb: float = 0.0,
+    ) -> List[Machine]:
         """Get candidate machines based on filters"""
 
         if group_name:
@@ -196,15 +210,22 @@ class LoadBalancer:
 
         # Apply filters
         if required_tags:
-            candidates = [m for m in candidates if m.tags and all(tag in m.tags for tag in required_tags)]
+            candidates = [
+                m for m in candidates if m.tags and all(tag in m.tags for tag in required_tags)
+            ]
 
-        candidates = [m for m in candidates
-                     if m.capabilities.cpu_cores >= min_cpu_cores
-                     and m.capabilities.memory_gb >= min_memory_gb]
+        candidates = [
+            m
+            for m in candidates
+            if m.capabilities.cpu_cores >= min_cpu_cores
+            and m.capabilities.memory_gb >= min_memory_gb
+        ]
 
         return candidates
 
-    def _round_robin_selection(self, candidates: List[Machine], group_key: str) -> Optional[Machine]:
+    def _round_robin_selection(
+        self, candidates: List[Machine], group_key: str
+    ) -> Optional[Machine]:
         """Round-robin selection"""
         if not candidates:
             return None
@@ -225,25 +246,28 @@ class LoadBalancer:
 
         return min(candidates, key=lambda m: m.status.current_load)
 
-    def _weighted_least_load_selection(self, candidates: List[Machine],
-                                     command_complexity: str) -> Optional[Machine]:
+    def _weighted_least_load_selection(
+        self, candidates: List[Machine], command_complexity: str
+    ) -> Optional[Machine]:
         """Weighted least load considering command complexity"""
         if not candidates:
             return None
 
         # Adjust weights based on command complexity
         weights = {
-            'low': {'cpu': 0.2, 'memory': 0.2, 'load': 0.6},
-            'normal': {'cpu': 0.3, 'memory': 0.3, 'load': 0.4},
-            'high': {'cpu': 0.4, 'memory': 0.4, 'load': 0.2}
+            "low": {"cpu": 0.2, "memory": 0.2, "load": 0.6},
+            "normal": {"cpu": 0.3, "memory": 0.3, "load": 0.4},
+            "high": {"cpu": 0.4, "memory": 0.4, "load": 0.2},
         }
 
-        weight = weights.get(command_complexity, weights['normal'])
+        weight = weights.get(command_complexity, weights["normal"])
 
         def calculate_weighted_load(machine: Machine) -> float:
-            return (machine.status.current_load * weight['cpu'] +
-                   machine.status.memory_usage * weight['memory'] +
-                   machine.status.current_load * weight['load'])
+            return (
+                machine.status.current_load * weight["cpu"]
+                + machine.status.memory_usage * weight["memory"]
+                + machine.status.current_load * weight["load"]
+            )
 
         return min(candidates, key=calculate_weighted_load)
 
@@ -251,34 +275,40 @@ class LoadBalancer:
         """Random selection"""
         return random.choice(candidates) if candidates else None
 
-    def _resource_aware_selection(self, candidates: List[Machine],
-                                command_complexity: str) -> Optional[Machine]:
+    def _resource_aware_selection(
+        self, candidates: List[Machine], command_complexity: str
+    ) -> Optional[Machine]:
         """Resource-aware selection considering machine capabilities"""
         if not candidates:
             return None
 
         # Score based on resource availability relative to requirements
         complexity_requirements = {
-            'low': {'cpu_weight': 0.3, 'memory_weight': 0.3, 'gpu_weight': 0.0},
-            'normal': {'cpu_weight': 0.4, 'memory_weight': 0.4, 'gpu_weight': 0.1},
-            'high': {'cpu_weight': 0.5, 'memory_weight': 0.4, 'gpu_weight': 0.2}
+            "low": {"cpu_weight": 0.3, "memory_weight": 0.3, "gpu_weight": 0.0},
+            "normal": {"cpu_weight": 0.4, "memory_weight": 0.4, "gpu_weight": 0.1},
+            "high": {"cpu_weight": 0.5, "memory_weight": 0.4, "gpu_weight": 0.2},
         }
 
-        req = complexity_requirements.get(command_complexity, complexity_requirements['normal'])
+        req = complexity_requirements.get(command_complexity, complexity_requirements["normal"])
 
         def resource_score(machine: Machine) -> float:
             cpu_score = machine.capabilities.cpu_cores / max(1, machine.status.current_load)
-            memory_score = machine.capabilities.memory_gb / max(0.1, machine.status.memory_usage / 100.0)
-            gpu_score = machine.capabilities.gpu_count if req['gpu_weight'] > 0 else 1.0
+            memory_score = machine.capabilities.memory_gb / max(
+                0.1, machine.status.memory_usage / 100.0
+            )
+            gpu_score = machine.capabilities.gpu_count if req["gpu_weight"] > 0 else 1.0
 
-            return (cpu_score * req['cpu_weight'] +
-                   memory_score * req['memory_weight'] +
-                   gpu_score * req['gpu_weight'])
+            return (
+                cpu_score * req["cpu_weight"]
+                + memory_score * req["memory_weight"]
+                + gpu_score * req["gpu_weight"]
+            )
 
         return max(candidates, key=resource_score)
 
-    def _performance_based_selection(self, candidates: List[Machine],
-                                   command_complexity: str) -> Optional[Machine]:
+    def _performance_based_selection(
+        self, candidates: List[Machine], command_complexity: str
+    ) -> Optional[Machine]:
         """Performance-based selection using historical execution times"""
         if not candidates:
             return None
@@ -313,7 +343,7 @@ class LoadBalancer:
         memory_factor = min(1.0, machine.capabilities.memory_gb / 16.0)  # Normalize to 16GB
 
         # Adjust based on command complexity
-        complexity_multiplier = {'low': 0.7, 'normal': 1.0, 'high': 1.3}
+        complexity_multiplier = {"low": 0.7, "normal": 1.0, "high": 1.3}
         multiplier = complexity_multiplier.get(command_complexity, 1.0)
 
         return (cpu_factor + memory_factor) / 2.0 * multiplier

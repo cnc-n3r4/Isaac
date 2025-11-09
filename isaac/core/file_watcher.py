@@ -3,10 +3,11 @@
 This is a lightweight, dependency-free watcher intended as a scaffold.
 It polls file modification times and calls a callback when files change.
 """
-from pathlib import Path
+
 import threading
 import time
-from typing import Callable, Iterable, Dict, Optional
+from pathlib import Path
+from typing import Callable, Dict, Iterable, Optional
 
 from .change_queue import ChangeQueue
 
@@ -20,8 +21,14 @@ class FileWatcher:
         fw.stop()
     """
 
-    def __init__(self, paths: Iterable[Path], callback: Optional[Callable[[Path], None]] = None, 
-                 queue: Optional[ChangeQueue] = None, poll_interval: float = 1.0, debounce: float = 1.0):
+    def __init__(
+        self,
+        paths: Iterable[Path],
+        callback: Optional[Callable[[Path], None]] = None,
+        queue: Optional[ChangeQueue] = None,
+        poll_interval: float = 1.0,
+        debounce: float = 1.0,
+    ):
         self.paths = [Path(p) for p in paths]
         self.callback = callback
         self.queue = queue
@@ -65,7 +72,7 @@ class FileWatcher:
                             if self.callback:
                                 self.callback(p)
                             if self.queue:
-                                self.queue.enqueue(str(p), 'modified')
+                                self.queue.enqueue(str(p), "modified")
                         except Exception:
                             # callback should handle its own errors; ignore here
                             pass
@@ -76,6 +83,8 @@ class FileWatcher:
 
 def watch(paths, callback=None, queue=None, poll_interval=1.0, debounce=1.0):
     """Convenience helper that returns a running watcher."""
-    fw = FileWatcher(paths, callback=callback, queue=queue, poll_interval=poll_interval, debounce=debounce)
+    fw = FileWatcher(
+        paths, callback=callback, queue=queue, poll_interval=poll_interval, debounce=debounce
+    )
     fw.start()
     return fw

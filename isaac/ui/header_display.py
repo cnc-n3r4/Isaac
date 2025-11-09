@@ -5,8 +5,9 @@ Shows session info, tier status, and system indicators
 
 from datetime import datetime
 from typing import Optional
-from isaac.ui.terminal_control import TerminalControl
+
 from isaac.models.preferences import Preferences
+from isaac.ui.terminal_control import TerminalControl
 
 
 class HeaderDisplay:
@@ -21,8 +22,12 @@ class HeaderDisplay:
         self.cloud_status = "offline"  # offline, syncing, synced
         self.shell_type = "unknown"
 
-    def update_header(self, tier: Optional[int] = None, cloud_status: Optional[str] = None,
-                     shell_type: Optional[str] = None) -> None:
+    def update_header(
+        self,
+        tier: Optional[int] = None,
+        cloud_status: Optional[str] = None,
+        shell_type: Optional[str] = None,
+    ) -> None:
         """Update and display the header information.
 
         Args:
@@ -95,19 +100,9 @@ class HeaderDisplay:
 
     def _get_tier_indicator(self) -> str:
         """Get tier safety indicator."""
-        tier_names = {
-            1: "SAFE",
-            2: "CAUTION",
-            3: "DANGER",
-            4: "LOCKDOWN"
-        }
+        tier_names = {1: "SAFE", 2: "CAUTION", 3: "DANGER", 4: "LOCKDOWN"}
 
-        tier_colors = {
-            1: "[GREEN]",
-            2: "[YELLOW]",
-            3: "[RED]",
-            4: "[RED]"
-        }
+        tier_colors = {1: "[GREEN]", 2: "[YELLOW]", 3: "[RED]", 4: "[RED]"}
 
         name = tier_names.get(self.current_tier, "UNKNOWN")
         color = tier_colors.get(self.current_tier, "[WHITE]")
@@ -119,7 +114,7 @@ class HeaderDisplay:
         status_indicators = {
             "offline": "[RED]● Offline[RESET]",
             "syncing": "[YELLOW]● Syncing[RESET]",
-            "synced": "[GREEN]● Synced[RESET]"
+            "synced": "[GREEN]● Synced[RESET]",
         }
 
         return status_indicators.get(self.cloud_status, "[GRAY]● Unknown[RESET]")

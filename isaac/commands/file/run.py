@@ -16,28 +16,24 @@ Smart defaults:
   /file myfile.txt "content"           Writes content to file
 """
 
-import sys
-import json
 import argparse
+import json
+import sys
 from pathlib import Path
 
 # Add isaac to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from isaac.tools import ReadTool, WriteTool, EditTool
+from isaac.tools import EditTool, ReadTool, WriteTool
 
 
 def cmd_read(args):
     """Read file operation"""
     tool = ReadTool()
-    result = tool.execute(
-        file_path=args.path,
-        offset=args.offset or 0,
-        limit=args.limit
-    )
+    result = tool.execute(file_path=args.path, offset=args.offset or 0, limit=args.limit)
 
-    if result['success']:
-        print(result['content'])
+    if result["success"]:
+        print(result["content"])
 
         if args.limit or args.offset:
             summary = f"\n[Read {result['lines_read']} of {result['total_lines']} lines from {result['file_path']}]"
@@ -58,16 +54,12 @@ def cmd_write(args):
             content = sys.stdin.read()
         else:
             print("Error: No content provided. Use argument or pipe content.", file=sys.stderr)
-            return {'success': False, 'error': 'No content provided'}
+            return {"success": False, "error": "No content provided"}
 
     tool = WriteTool()
-    result = tool.execute(
-        file_path=args.path,
-        content=content,
-        overwrite=args.overwrite
-    )
+    result = tool.execute(file_path=args.path, content=content, overwrite=args.overwrite)
 
-    if result['success']:
+    if result["success"]:
         print(f"File written: {result['file_path']} ({result['bytes_written']} bytes)")
         return result
     else:
@@ -82,10 +74,10 @@ def cmd_edit(args):
         file_path=args.path,
         old_string=args.old_string,
         new_string=args.new_string,
-        replace_all=args.replace_all
+        replace_all=args.replace_all,
     )
 
-    if result['success']:
+    if result["success"]:
         print(f"Edited: {result['file_path']}")
         print(f"Replacements: {result['replacements']}")
         print(f"  Old: {result['old_string']}")
@@ -105,7 +97,7 @@ def cmd_append(args):
             content = sys.stdin.read()
         else:
             print("Error: No content provided. Use argument or pipe content.", file=sys.stderr)
-            return {'success': False, 'error': 'No content provided'}
+            return {"success": False, "error": "No content provided"}
 
     # Read existing content if file exists
     file_path = Path(args.path)
@@ -115,21 +107,17 @@ def cmd_append(args):
             existing_content = file_path.read_text()
         except Exception as e:
             print(f"Error reading file: {e}", file=sys.stderr)
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     # Append content
     new_content = existing_content + content
-    if not new_content.endswith('\n'):
-        new_content += '\n'
+    if not new_content.endswith("\n"):
+        new_content += "\n"
 
     tool = WriteTool()
-    result = tool.execute(
-        file_path=args.path,
-        content=new_content,
-        overwrite=True
-    )
+    result = tool.execute(file_path=args.path, content=new_content, overwrite=True)
 
-    if result['success']:
+    if result["success"]:
         print(f"Appended to: {result['file_path']} (+{len(content)} bytes)")
         return result
     else:
@@ -158,13 +146,13 @@ def cmd_smart(args):
     else:
         error_msg = f"File does not exist: {args.path}. Provide content to create it."
         print(f"Error: {error_msg}", file=sys.stderr)
-        return {'success': False, 'error': error_msg}
+        return {"success": False, "error": error_msg}
 
 
 def main():
     """Main entry point for unified /file command"""
     parser = argparse.ArgumentParser(
-        description='Unified file operations - read, write, edit, append',
+        description="Unified file operations - read, write, edit, append",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -196,39 +184,39 @@ Subcommands:
   edit      Edit file with exact string replacement
   append    Append content to file
   (none)    Smart mode - auto-detect operation
-        """
+        """,
     )
 
     # Subcommands
-    subparsers = parser.add_subparsers(dest='operation', help='File operation')
+    subparsers = parser.add_subparsers(dest="operation", help="File operation")
 
     # Read subcommand
-    read_parser = subparsers.add_parser('read', help='Read file')
-    read_parser.add_argument('path', help='File path')
-    read_parser.add_argument('--offset', type=int, help='Line offset to start from')
-    read_parser.add_argument('--limit', type=int, help='Maximum lines to read')
+    read_parser = subparsers.add_parser("read", help="Read file")
+    read_parser.add_argument("path", help="File path")
+    read_parser.add_argument("--offset", type=int, help="Line offset to start from")
+    read_parser.add_argument("--limit", type=int, help="Maximum lines to read")
 
     # Write subcommand
-    write_parser = subparsers.add_parser('write', help='Write file')
-    write_parser.add_argument('path', help='File path')
-    write_parser.add_argument('content', nargs='?', help='Content to write')
-    write_parser.add_argument('--overwrite', action='store_true', help='Overwrite existing file')
+    write_parser = subparsers.add_parser("write", help="Write file")
+    write_parser.add_argument("path", help="File path")
+    write_parser.add_argument("content", nargs="?", help="Content to write")
+    write_parser.add_argument("--overwrite", action="store_true", help="Overwrite existing file")
 
     # Edit subcommand
-    edit_parser = subparsers.add_parser('edit', help='Edit file')
-    edit_parser.add_argument('path', help='File path')
-    edit_parser.add_argument('old_string', help='String to find')
-    edit_parser.add_argument('new_string', help='Replacement string')
-    edit_parser.add_argument('--replace-all', action='store_true', help='Replace all occurrences')
+    edit_parser = subparsers.add_parser("edit", help="Edit file")
+    edit_parser.add_argument("path", help="File path")
+    edit_parser.add_argument("old_string", help="String to find")
+    edit_parser.add_argument("new_string", help="Replacement string")
+    edit_parser.add_argument("--replace-all", action="store_true", help="Replace all occurrences")
 
     # Append subcommand
-    append_parser = subparsers.add_parser('append', help='Append to file')
-    append_parser.add_argument('path', help='File path')
-    append_parser.add_argument('content', nargs='?', help='Content to append')
+    append_parser = subparsers.add_parser("append", help="Append to file")
+    append_parser.add_argument("path", help="File path")
+    append_parser.add_argument("content", nargs="?", help="Content to append")
 
     # Smart mode (no subcommand)
-    parser.add_argument('path', nargs='?', help='File path (smart mode)')
-    parser.add_argument('content', nargs='?', help='Content (smart mode)')
+    parser.add_argument("path", nargs="?", help="File path (smart mode)")
+    parser.add_argument("content", nargs="?", help="Content (smart mode)")
 
     try:
         if len(sys.argv) == 1:
@@ -238,13 +226,13 @@ Subcommands:
         args = parser.parse_args()
 
         # Route to appropriate handler
-        if args.operation == 'read':
+        if args.operation == "read":
             result = cmd_read(args)
-        elif args.operation == 'write':
+        elif args.operation == "write":
             result = cmd_write(args)
-        elif args.operation == 'edit':
+        elif args.operation == "edit":
             result = cmd_edit(args)
-        elif args.operation == 'append':
+        elif args.operation == "append":
             result = cmd_append(args)
         elif args.path:  # Smart mode
             result = cmd_smart(args)
@@ -254,22 +242,16 @@ Subcommands:
 
         # Output JSON envelope for non-TTY
         if not sys.stdout.isatty():
-            envelope = {
-                "ok": result['success'],
-                "result": result
-            }
+            envelope = {"ok": result["success"], "result": result}
             print(json.dumps(envelope))
 
-        sys.exit(0 if result['success'] else 1)
+        sys.exit(0 if result["success"] else 1)
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
 
         if not sys.stdout.isatty():
-            envelope = {
-                "ok": False,
-                "error": {"message": str(e)}
-            }
+            envelope = {"ok": False, "error": {"message": str(e)}}
             print(json.dumps(envelope))
 
         sys.exit(1)

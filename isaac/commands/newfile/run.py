@@ -4,11 +4,11 @@ Newfile Command Handler - Create and manage files with templates
 Provides /newfile command for creating files with templates and proper path handling
 """
 
+import argparse
 import json
 import sys
-import argparse
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 # Add isaac package to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -27,61 +27,79 @@ def main():
             payload = json.loads(stdin_content)
 
             # Check if this is a piped command or normal command payload
-            if 'piped_blob' in payload:
+            if "piped_blob" in payload:
                 # Piped command - extract blob and args
-                piped_blob = payload['piped_blob']
-                if piped_blob['kind'] == 'text':
-                    piped_content = piped_blob['content']
+                piped_blob = payload["piped_blob"]
+                if piped_blob["kind"] == "text":
+                    piped_content = piped_blob["content"]
                     args_list = payload.get("args", [])
                     args_raw = " ".join(args_list) if args_list else ""
-                elif piped_blob['kind'] == 'error':
+                elif piped_blob["kind"] == "error":
                     # Propagate error from previous command
-                    print(json.dumps({
-                        "ok": False,
-                        "error": {
-                            "code": "PIPE_ERROR",
-                            "message": f"Previous command failed: {piped_blob.get('content', 'Unknown error')}"
-                        }
-                    }))
+                    print(
+                        json.dumps(
+                            {
+                                "ok": False,
+                                "error": {
+                                    "code": "PIPE_ERROR",
+                                    "message": f"Previous command failed: {piped_blob.get('content', 'Unknown error')}",
+                                },
+                            }
+                        )
+                    )
                     return
                 else:
                     # Unknown blob type
-                    print(json.dumps({
-                        "ok": False,
-                        "error": {
-                            "code": "UNSUPPORTED_BLOB",
-                            "message": f"Unsupported blob type: {piped_blob['kind']}"
-                        }
-                    }))
+                    print(
+                        json.dumps(
+                            {
+                                "ok": False,
+                                "error": {
+                                    "code": "UNSUPPORTED_BLOB",
+                                    "message": f"Unsupported blob type: {piped_blob['kind']}",
+                                },
+                            }
+                        )
+                    )
                     return
-            elif 'stdin' in payload and payload.get('stdin'):
+            elif "stdin" in payload and payload.get("stdin"):
                 # PipeEngine format - piped content in stdin field
-                piped_content = payload['stdin']
+                piped_content = payload["stdin"]
                 args_list = payload.get("args", [])
                 args_raw = " ".join(args_list) if args_list else ""
-            elif 'kind' in payload:
+            elif "kind" in payload:
                 # Legacy pipe blob format (fallback)
-                if payload['kind'] == 'text':
-                    piped_content = payload['content']
-                    args_raw = payload.get('meta', {}).get('command', '').replace('/newfile', '').strip()
+                if payload["kind"] == "text":
+                    piped_content = payload["content"]
+                    args_raw = (
+                        payload.get("meta", {}).get("command", "").replace("/newfile", "").strip()
+                    )
                     payload = None
-                elif payload['kind'] == 'error':
-                    print(json.dumps({
-                        "ok": False,
-                        "error": {
-                            "code": "PIPE_ERROR",
-                            "message": f"Previous command failed: {payload.get('content', 'Unknown error')}"
-                        }
-                    }))
+                elif payload["kind"] == "error":
+                    print(
+                        json.dumps(
+                            {
+                                "ok": False,
+                                "error": {
+                                    "code": "PIPE_ERROR",
+                                    "message": f"Previous command failed: {payload.get('content', 'Unknown error')}",
+                                },
+                            }
+                        )
+                    )
                     return
                 else:
-                    print(json.dumps({
-                        "ok": False,
-                        "error": {
-                            "code": "UNSUPPORTED_BLOB",
-                            "message": f"Unsupported blob type: {payload['kind']}"
-                        }
-                    }))
+                    print(
+                        json.dumps(
+                            {
+                                "ok": False,
+                                "error": {
+                                    "code": "UNSUPPORTED_BLOB",
+                                    "message": f"Unsupported blob type: {payload['kind']}",
+                                },
+                            }
+                        )
+                    )
                     return
             else:
                 # Normal command payload
@@ -97,27 +115,38 @@ def main():
 
         # Parse arguments using argparse
         parser = argparse.ArgumentParser(
-            prog="/newfile",
-            description="Create files with templates",
-            add_help=False
+            prog="/newfile", description="Create files with templates", add_help=False
         )
 
         if piped_content is not None:
             # When piped content is provided, require a filename
             parser.add_argument("file", help="File to create")
-            parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing files")
+            parser.add_argument(
+                "--force", "-f", action="store_true", help="Overwrite existing files"
+            )
         else:
             # Normal mode with all options
             parser.add_argument("file", nargs="?", help="File to create")
             parser.add_argument("--template", "-t", help="Template extension to use")
             parser.add_argument("--content", "-c", help="Inline content for the file")
-            parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing files")
-            parser.add_argument("--list-templates", "-l", action="store_true", help="List available templates")
-            parser.add_argument("--set-template", "-s", nargs=2, metavar=("EXT", "CONTENT"), help="Set template for extension")
+            parser.add_argument(
+                "--force", "-f", action="store_true", help="Overwrite existing files"
+            )
+            parser.add_argument(
+                "--list-templates", "-l", action="store_true", help="List available templates"
+            )
+            parser.add_argument(
+                "--set-template",
+                "-s",
+                nargs=2,
+                metavar=("EXT", "CONTENT"),
+                help="Set template for extension",
+            )
             parser.add_argument("--help", "-h", action="store_true", help="Show help")
 
         # Parse the arguments
         import io
+
         old_stderr = sys.stderr
         try:
             # Temporarily redirect stderr to suppress argparse error messages
@@ -139,10 +168,13 @@ def main():
         if piped_content is not None:
             # Piped content mode - create file with piped content
             if not parsed_args.file:
-                result = "File name required for piped content. Usage: command | /newfile <filename>"
+                result = (
+                    "File name required for piped content. Usage: command | /newfile <filename>"
+                )
             else:
-                result = handle_create_file(session_manager, parsed_args.file,
-                                          None, piped_content, parsed_args.force)
+                result = handle_create_file(
+                    session_manager, parsed_args.file, None, piped_content, parsed_args.force
+                )
         elif parsed_args.help:
             result = handle_help()
         elif parsed_args.list_templates:
@@ -150,33 +182,31 @@ def main():
         elif parsed_args.set_template:
             ext, content = parsed_args.set_template
             result = handle_set_template(session_manager, ext, content)
-        elif not parsed_args.file and not parsed_args.template and not parsed_args.content and not parsed_args.force:
+        elif (
+            not parsed_args.file
+            and not parsed_args.template
+            and not parsed_args.content
+            and not parsed_args.force
+        ):
             # No arguments provided at all - show help
             result = handle_help()
         elif not parsed_args.file:
             result = "File name required. Usage: /newfile <filename> [options]"
         else:
             # Create file operation
-            result = handle_create_file(session_manager, parsed_args.file,
-                                      parsed_args.template,
-                                      parsed_args.content,
-                                      parsed_args.force)
+            result = handle_create_file(
+                session_manager,
+                parsed_args.file,
+                parsed_args.template,
+                parsed_args.content,
+                parsed_args.force,
+            )
 
         # Return Isaac envelope
-        print(json.dumps({
-            "ok": True,
-            "stdout": result,
-            "meta": {"command": "/newfile"}
-        }))
+        print(json.dumps({"ok": True, "stdout": result, "meta": {"command": "/newfile"}}))
 
     except Exception as e:
-        print(json.dumps({
-            "ok": False,
-            "error": {
-                "code": "NEWFILE_ERROR",
-                "message": str(e)
-            }
-        }))
+        print(json.dumps({"ok": False, "error": {"code": "NEWFILE_ERROR", "message": str(e)}}))
 
 
 def handle_list_templates(session_manager: SessionManager) -> str:
@@ -216,9 +246,13 @@ def handle_set_template(session_manager: SessionManager, ext: str, content: str)
     return f"Template set for {ext}"
 
 
-def handle_create_file(session_manager: SessionManager, filename: str,
-                      template: Optional[str], content: Optional[str],
-                      force: bool) -> str:
+def handle_create_file(
+    session_manager: SessionManager,
+    filename: str,
+    template: Optional[str],
+    content: Optional[str],
+    force: bool,
+) -> str:
     """Create a new file"""
     try:
         # Strip surrounding quotes if present (PowerShell/Windows may include them)
@@ -285,15 +319,27 @@ def get_templates(session_manager: SessionManager) -> Dict[str, Any]:
 def get_default_templates() -> Dict[str, Any]:
     """Get default templates"""
     return {
-        ".py": [{"desc": "Python starter", "body": "#!/usr/bin/env python\nif __name__=='__main__':\n    print('hello')\n"}],
+        ".py": [
+            {
+                "desc": "Python starter",
+                "body": "#!/usr/bin/env python\nif __name__=='__main__':\n    print('hello')\n",
+            }
+        ],
         ".txt": [{"desc": "Plain notes", "body": "# Notes\n"}],
         ".md": [{"desc": "Markdown doc", "body": "# Markdown Document\n"}],
-        ".json": [{"desc": "Basic JSON", "body": "{\n  \"name\": \"new_project\"\n}\n"}],
-        ".html": [{"desc": "HTML skeleton", "body": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\" />\n  <title>New File</title>\n</head>\n<body>\n</body>\n</html>\n"}]
+        ".json": [{"desc": "Basic JSON", "body": '{\n  "name": "new_project"\n}\n'}],
+        ".html": [
+            {
+                "desc": "HTML skeleton",
+                "body": '<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8" />\n  <title>New File</title>\n</head>\n<body>\n</body>\n</html>\n',
+            }
+        ],
     }
 
 
-def get_template_content(templates: Dict[str, Any], template_spec: str, file_ext: str) -> Optional[str]:
+def get_template_content(
+    templates: Dict[str, Any], template_spec: str, file_ext: str
+) -> Optional[str]:
     """Get template content for given spec"""
     # Try exact extension match first
     ext_key = template_spec.lower()

@@ -14,13 +14,28 @@ class SandboxEnforcer:
     # System paths that should be blocked
     BLOCKED_SYSTEM_PATHS = {
         # Unix-like systems
-        '/etc', '/sys', '/proc', '/dev', '/boot', '/root', '/usr/sbin',
+        "/etc",
+        "/sys",
+        "/proc",
+        "/dev",
+        "/boot",
+        "/root",
+        "/usr/sbin",
         # Windows systems
-        'C:\\Windows', 'C:\\System32', 'C:\\Program Files', 'C:\\Program Files (x86)',
-        'C:\\Users\\Administrator', 'C:\\Users\\Default', 'C:\\Users\\Public',
+        "C:\\Windows",
+        "C:\\System32",
+        "C:\\Program Files",
+        "C:\\Program Files (x86)",
+        "C:\\Users\\Administrator",
+        "C:\\Users\\Default",
+        "C:\\Users\\Public",
         # Common sensitive directories
-        '/var/log', '/var/run', '/var/spool', '/var/lock',
-        'C:\\ProgramData', 'C:\\$Recycle.Bin'
+        "/var/log",
+        "/var/run",
+        "/var/spool",
+        "/var/lock",
+        "C:\\ProgramData",
+        "C:\\$Recycle.Bin",
     }
 
     def __init__(self, session_manager):
@@ -33,17 +48,34 @@ class SandboxEnforcer:
         config = self.session.get_config()
 
         # Sandbox settings - handle both flat and nested config
-        self.enabled = config.get('sandbox.enabled', config.get('sandbox', {}).get('enabled', False))
-        sandbox_root = config.get('sandbox.root_dir', config.get('sandbox', {}).get('root_dir', '~/.isaac/sandboxes'))
+        self.enabled = config.get(
+            "sandbox.enabled", config.get("sandbox", {}).get("enabled", False)
+        )
+        sandbox_root = config.get(
+            "sandbox.root_dir", config.get("sandbox", {}).get("root_dir", "~/.isaac/sandboxes")
+        )
         self.root_dir = Path(sandbox_root).expanduser()
-        self.block_system_paths = config.get('sandbox.block_system_paths', config.get('sandbox', {}).get('block_system_paths', True))
-        self.max_file_size_mb = config.get('sandbox.max_file_size_mb', config.get('sandbox', {}).get('max_file_size_mb', 100))
-        allowed_cmds = config.get('sandbox.allowed_commands', config.get('sandbox', {}).get('allowed_commands', ['pip', 'npm', 'git', 'python', 'node']))
+        self.block_system_paths = config.get(
+            "sandbox.block_system_paths", config.get("sandbox", {}).get("block_system_paths", True)
+        )
+        self.max_file_size_mb = config.get(
+            "sandbox.max_file_size_mb", config.get("sandbox", {}).get("max_file_size_mb", 100)
+        )
+        allowed_cmds = config.get(
+            "sandbox.allowed_commands",
+            config.get("sandbox", {}).get(
+                "allowed_commands", ["pip", "npm", "git", "python", "node"]
+            ),
+        )
         self.allowed_commands = set(allowed_cmds)
 
         # Workspace settings - handle both flat and nested config
-        self.workspace_enabled = config.get('workspace.enabled', config.get('workspace', {}).get('enabled', False))
-        workspace_root = config.get('workspace.root_dir', config.get('workspace', {}).get('root_dir', '~/.isaac/workspaces'))
+        self.workspace_enabled = config.get(
+            "workspace.enabled", config.get("workspace", {}).get("enabled", False)
+        )
+        workspace_root = config.get(
+            "workspace.root_dir", config.get("workspace", {}).get("root_dir", "~/.isaac/workspaces")
+        )
         self.workspace_root = Path(workspace_root).expanduser()
 
     def is_sandbox_enabled(self) -> bool:
@@ -70,14 +102,18 @@ class SandboxEnforcer:
                 return True
 
             # Allow access within workspace root if workspaces enabled
-            if self.workspace_enabled and self.workspace_root.exists() and resolved_path.is_relative_to(self.workspace_root):
+            if (
+                self.workspace_enabled
+                and self.workspace_root.exists()
+                and resolved_path.is_relative_to(self.workspace_root)
+            ):
                 return True
 
             # Allow access to user's home directory (but not system areas)
             home = Path.home()
             if resolved_path.is_relative_to(home):
                 # Block sensitive home subdirectories
-                sensitive_dirs = ['.ssh', '.gnupg', '.config/systemd', '.local/share/systemd']
+                sensitive_dirs = [".ssh", ".gnupg", ".config/systemd", ".local/share/systemd"]
                 for sensitive in sensitive_dirs:
                     if resolved_path.is_relative_to(home / sensitive):
                         return False
@@ -156,7 +192,9 @@ class SandboxEnforcer:
         except Exception:
             return None
 
-    def create_user_workspace(self, name: str, create_venv: bool = False, create_collection: bool = False) -> Optional[Path]:
+    def create_user_workspace(
+        self, name: str, create_venv: bool = False, create_collection: bool = False
+    ) -> Optional[Path]:
         """Create a new user workspace with optional venv and collection"""
         if not self.workspace_enabled:
             return None
@@ -176,11 +214,12 @@ class SandboxEnforcer:
 
             # Create workspace metadata
             from datetime import datetime
+
             metadata = {
-                'name': name,
-                'created_at': datetime.now().isoformat(),
-                'collection_id': collection_id,
-                'has_venv': create_venv
+                "name": name,
+                "created_at": datetime.now().isoformat(),
+                "collection_id": collection_id,
+                "has_venv": create_venv,
             }
             self._save_workspace_metadata(name, metadata)
 
@@ -194,14 +233,17 @@ class SandboxEnforcer:
             import subprocess
             import sys
 
-            venv_path = workspace_path / '.venv'
+            venv_path = workspace_path / ".venv"
             if venv_path.exists():
                 return True  # Already exists
 
             # Create virtual environment
-            result = subprocess.run([
-                sys.executable, '-m', 'venv', str(venv_path)
-            ], capture_output=True, text=True, cwd=str(workspace_path))
+            result = subprocess.run(
+                [sys.executable, "-m", "venv", str(venv_path)],
+                capture_output=True,
+                text=True,
+                cwd=str(workspace_path),
+            )
 
             if result.returncode == 0:
                 # Create activation script for convenience
@@ -217,11 +259,11 @@ class SandboxEnforcer:
     def _create_venv_activation_script(self, workspace_path: Path, venv_path: Path):
         """Create a convenience activation script"""
         try:
-            script_path = workspace_path / 'activate_venv.bat'  # Windows
-            with open(script_path, 'w') as f:
-                f.write('@echo off\n')
+            script_path = workspace_path / "activate_venv.bat"  # Windows
+            with open(script_path, "w") as f:
+                f.write("@echo off\n")
                 f.write(f'call "{venv_path}\\Scripts\\activate.bat"\n')
-                f.write('echo Virtual environment activated\n')
+                f.write("echo Virtual environment activated\n")
                 f.write('echo Run "deactivate" to exit\n')
         except Exception:
             pass  # Non-critical, ignore errors
@@ -234,27 +276,29 @@ class SandboxEnforcer:
 
             # Get xAI config from session
             config = self.session.get_config()
-            xai_config = config.get('xai', {})
-            collections_config = xai_config.get('collections', {})
+            xai_config = config.get("xai", {})
+            collections_config = xai_config.get("collections", {})
 
-            api_key = collections_config.get('api_key')
-            management_api_key = collections_config.get('management_api_key', api_key)
+            api_key = collections_config.get("api_key")
+            management_api_key = collections_config.get("management_api_key", api_key)
 
             if not api_key:
                 print("Warning: No xAI API key configured, skipping collection creation")
                 return None
 
             # Initialize client
-            api_host = collections_config.get('api_host', 'api.x.ai')
-            management_api_host = collections_config.get('management_api_host', 'management-api.x.ai')
-            timeout = collections_config.get('timeout_seconds', 3600)
+            api_host = collections_config.get("api_host", "api.x.ai")
+            management_api_host = collections_config.get(
+                "management_api_host", "management-api.x.ai"
+            )
+            timeout = collections_config.get("timeout_seconds", 3600)
 
             client = Client(
                 api_key=api_key,
                 management_api_key=management_api_key,
                 api_host=api_host,
                 management_api_host=management_api_host,
-                timeout=timeout
+                timeout=timeout,
             )
 
             # Create collection with workspace name
@@ -284,10 +328,11 @@ class SandboxEnforcer:
         """Save workspace metadata to JSON file"""
         try:
             workspace_path = self.workspace_root / workspace_name
-            metadata_file = workspace_path / '.workspace.json'
+            metadata_file = workspace_path / ".workspace.json"
 
-            with open(metadata_file, 'w') as f:
+            with open(metadata_file, "w") as f:
                 import json
+
                 json.dump(metadata, f, indent=2)
         except Exception as e:
             print(f"Warning: Failed to save workspace metadata: {e}")
@@ -296,11 +341,12 @@ class SandboxEnforcer:
         """Get workspace metadata"""
         try:
             workspace_path = self.workspace_root / workspace_name
-            metadata_file = workspace_path / '.workspace.json'
+            metadata_file = workspace_path / ".workspace.json"
 
             if metadata_file.exists():
-                with open(metadata_file, 'r') as f:
+                with open(metadata_file, "r") as f:
                     import json
+
                     return json.load(f)
         except Exception:
             pass
@@ -309,7 +355,7 @@ class SandboxEnforcer:
     def get_workspace_collection_id(self, workspace_name: str) -> Optional[str]:
         """Get the collection ID associated with a workspace"""
         metadata = self.get_workspace_metadata(workspace_name)
-        return metadata.get('collection_id') if metadata else None
+        return metadata.get("collection_id") if metadata else None
 
     def list_sandboxes(self) -> List[str]:
         """List available sandboxes"""
@@ -342,6 +388,7 @@ class SandboxEnforcer:
 
         try:
             import os
+
             os.chdir(str(workspace_path))
             # Update session with current workspace if session provided
             if session:
@@ -365,11 +412,12 @@ class SandboxEnforcer:
 
             # If preserving collection, just remove collection association
             if preserve_collection and metadata:
-                metadata['collection_id'] = None
+                metadata["collection_id"] = None
                 self._save_workspace_metadata(name, metadata)
 
             # Delete the workspace directory
             import shutil
+
             shutil.rmtree(str(workspace_path))
 
             # Note: Collection is preserved in xAI (not deleted)
@@ -377,7 +425,9 @@ class SandboxEnforcer:
         except Exception:
             return False
 
-    def create_workspace(self, name: str, create_venv: bool = False, create_collection: bool = False) -> bool:
+    def create_workspace(
+        self, name: str, create_venv: bool = False, create_collection: bool = False
+    ) -> bool:
         """Create a new workspace (alias for create_user_workspace)"""
         return self.create_user_workspace(name, create_venv, create_collection) is not None
 
@@ -393,7 +443,7 @@ class SandboxEnforcer:
         try:
             # Check if workspace already has a collection
             metadata = self.get_workspace_metadata(workspace_name) or {}
-            if metadata.get('collection_id'):
+            if metadata.get("collection_id"):
                 print(f"Workspace '{workspace_name}' already has a collection")
                 return True  # Already has one, consider this success
 
@@ -401,10 +451,10 @@ class SandboxEnforcer:
             collection_id = self._create_workspace_collection(workspace_name)
             if collection_id:
                 # Update metadata
-                metadata['collection_id'] = collection_id
+                metadata["collection_id"] = collection_id
                 self._save_workspace_metadata(workspace_name, metadata)
                 return True
-            
+
             return False
         except Exception as e:
             print(f"Error adding collection to workspace: {e}")
@@ -426,7 +476,7 @@ class SandboxEnforcer:
         # Command is allowed
         return command
 
-    def enforce_file_access(self, path: str, operation: str = 'read') -> bool:
+    def enforce_file_access(self, path: str, operation: str = "read") -> bool:
         """Enforce sandbox rules on file access"""
         if not self.enabled:
             return True
@@ -436,7 +486,7 @@ class SandboxEnforcer:
             return False
 
         # Validate file size for read operations
-        if operation in ('read', 'copy', 'move'):
+        if operation in ("read", "copy", "move"):
             if not self.validate_file_size(path):
                 return False
 

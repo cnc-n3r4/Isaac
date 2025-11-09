@@ -6,7 +6,7 @@ This plugin demonstrates file system access and external process execution.
 import subprocess
 from pathlib import Path
 
-from isaac.plugins.plugin_api import Plugin, PluginMetadata, PluginContext, PluginHook
+from isaac.plugins.plugin_api import Plugin, PluginContext, PluginHook, PluginMetadata
 
 
 class GitStatusPlugin(Plugin):

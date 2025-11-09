@@ -3,22 +3,23 @@ Inline Suggestion System - Phase 4.2
 Provide inline improvement suggestions as code is written.
 """
 
-import json
-import sqlite3
-import re
 import ast
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from pathlib import Path
-from enum import Enum
+import json
+import re
+import sqlite3
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 
 
 class SuggestionType(Enum):
     """Type of suggestion."""
+
     AUTOCOMPLETE = "autocomplete"
     REFACTOR = "refactor"
     OPTIMIZATION = "optimization"
@@ -30,6 +31,7 @@ class SuggestionType(Enum):
 @dataclass
 class InlineSuggestion:
     """An inline code suggestion."""
+
     id: str
     file_path: str
     line_number: int
@@ -55,11 +57,11 @@ class SuggestionSystem:
             session_manager: Session manager instance
         """
         self.session_manager = session_manager
-        self.data_dir = Path.home() / '.isaac' / 'pairing'
+        self.data_dir = Path.home() / ".isaac" / "pairing"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Database for suggestion history
-        self.db_path = self.data_dir / 'suggestions.db'
+        self.db_path = self.data_dir / "suggestions.db"
         self._init_database()
 
         # Common patterns for suggestions
@@ -68,7 +70,8 @@ class SuggestionSystem:
     def _init_database(self):
         """Initialize SQLite database for suggestion storage."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS inline_suggestions (
                     id TEXT PRIMARY KEY,
                     file_path TEXT,
@@ -84,46 +87,47 @@ class SuggestionSystem:
                     accepted BOOLEAN,
                     feedback TEXT
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_file ON inline_suggestions(file_path)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_accepted ON inline_suggestions(accepted)')
+            """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_file ON inline_suggestions(file_path)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_accepted ON inline_suggestions(accepted)")
 
     def _load_suggestion_patterns(self):
         """Load suggestion patterns."""
         # Common refactoring patterns
         self.refactor_patterns = [
             {
-                'pattern': r'if\s+(\w+)\s*==\s*True:',
-                'replacement': r'if \1:',
-                'explanation': 'Simplify boolean comparison',
-                'type': SuggestionType.STYLE
+                "pattern": r"if\s+(\w+)\s*==\s*True:",
+                "replacement": r"if \1:",
+                "explanation": "Simplify boolean comparison",
+                "type": SuggestionType.STYLE,
             },
             {
-                'pattern': r'if\s+(\w+)\s*==\s*False:',
-                'replacement': r'if not \1:',
-                'explanation': 'Simplify boolean comparison',
-                'type': SuggestionType.STYLE
+                "pattern": r"if\s+(\w+)\s*==\s*False:",
+                "replacement": r"if not \1:",
+                "explanation": "Simplify boolean comparison",
+                "type": SuggestionType.STYLE,
             },
             {
-                'pattern': r'if\s+len\((\w+)\)\s*>\s*0:',
-                'replacement': r'if \1:',
-                'explanation': 'Pythonic emptiness check',
-                'type': SuggestionType.STYLE
+                "pattern": r"if\s+len\((\w+)\)\s*>\s*0:",
+                "replacement": r"if \1:",
+                "explanation": "Pythonic emptiness check",
+                "type": SuggestionType.STYLE,
             },
             {
-                'pattern': r'(\w+)\s*=\s*(\w+)\s*\+\s*\[([^\]]+)\]',
-                'replacement': r'\1 = \2.copy()\n\1.append(\3)',
-                'explanation': 'More efficient list append',
-                'type': SuggestionType.OPTIMIZATION
+                "pattern": r"(\w+)\s*=\s*(\w+)\s*\+\s*\[([^\]]+)\]",
+                "replacement": r"\1 = \2.copy()\n\1.append(\3)",
+                "explanation": "More efficient list append",
+                "type": SuggestionType.OPTIMIZATION,
             },
         ]
 
         # Autocomplete patterns based on common Python idioms
         self.autocomplete_patterns = {
-            'with open(': 'with open(file_path, "r") as f:\n    content = f.read()',
-            'for i in range(': 'for i in range(len(items)):\n    ',
-            'try:': 'try:\n    pass\nexcept Exception as e:\n    pass',
-            'class ': 'class ClassName:\n    def __init__(self):\n        pass',
+            "with open(": 'with open(file_path, "r") as f:\n    content = f.read()',
+            "for i in range(": "for i in range(len(items)):\n    ",
+            "try:": "try:\n    pass\nexcept Exception as e:\n    pass",
+            "class ": "class ClassName:\n    def __init__(self):\n        pass",
         }
 
     def suggest_for_line(
@@ -131,7 +135,7 @@ class SuggestionSystem:
         file_path: str,
         line_number: int,
         line_content: str,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> List[InlineSuggestion]:
         """Generate suggestions for a line of code.
 
@@ -148,12 +152,10 @@ class SuggestionSystem:
 
         # Pattern-based refactoring suggestions
         for pattern_info in self.refactor_patterns:
-            match = re.search(pattern_info['pattern'], line_content)
+            match = re.search(pattern_info["pattern"], line_content)
             if match:
                 suggested_code = re.sub(
-                    pattern_info['pattern'],
-                    pattern_info['replacement'],
-                    line_content
+                    pattern_info["pattern"], pattern_info["replacement"], line_content
                 )
 
                 suggestion = InlineSuggestion(
@@ -161,13 +163,13 @@ class SuggestionSystem:
                     file_path=file_path,
                     line_number=line_number,
                     column=match.start(),
-                    suggestion_type=pattern_info['type'].value,
+                    suggestion_type=pattern_info["type"].value,
                     original_code=line_content,
                     suggested_code=suggested_code,
-                    explanation=pattern_info['explanation'],
+                    explanation=pattern_info["explanation"],
                     confidence=0.9,
                     context=context or {},
-                    created_at=datetime.now().timestamp()
+                    created_at=datetime.now().timestamp(),
                 )
                 suggestions.append(suggestion)
 
@@ -182,7 +184,7 @@ class SuggestionSystem:
         file_path: str,
         line_number: int,
         partial_line: str,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> List[InlineSuggestion]:
         """Generate autocomplete suggestions.
 
@@ -198,11 +200,11 @@ class SuggestionSystem:
         suggestions = []
 
         for trigger, completion in self.autocomplete_patterns.items():
-            if trigger in partial_line and not partial_line.strip().endswith(':'):
+            if trigger in partial_line and not partial_line.strip().endswith(":"):
                 # Don't suggest if the pattern is already complete
                 continue
 
-            if partial_line.strip().startswith(trigger.split('(')[0]):
+            if partial_line.strip().startswith(trigger.split("(")[0]):
                 suggestion = InlineSuggestion(
                     id=str(uuid.uuid4()),
                     file_path=file_path,
@@ -211,20 +213,17 @@ class SuggestionSystem:
                     suggestion_type=SuggestionType.AUTOCOMPLETE.value,
                     original_code=partial_line,
                     suggested_code=completion,
-                    explanation=f'Complete common pattern: {trigger}',
+                    explanation=f"Complete common pattern: {trigger}",
                     confidence=0.8,
                     context=context or {},
-                    created_at=datetime.now().timestamp()
+                    created_at=datetime.now().timestamp(),
                 )
                 suggestions.append(suggestion)
 
         return suggestions
 
     def suggest_optimization(
-        self,
-        file_path: str,
-        code_block: str,
-        context: Optional[Dict[str, Any]] = None
+        self, file_path: str, code_block: str, context: Optional[Dict[str, Any]] = None
     ) -> List[InlineSuggestion]:
         """Suggest optimizations for a code block.
 
@@ -240,18 +239,16 @@ class SuggestionSystem:
 
         try:
             tree = ast.parse(code_block)
-            suggestions.extend(self._analyze_for_optimizations(file_path, tree, code_block, context))
+            suggestions.extend(
+                self._analyze_for_optimizations(file_path, tree, code_block, context)
+            )
         except SyntaxError:
             pass
 
         return suggestions
 
     def _analyze_for_optimizations(
-        self,
-        file_path: str,
-        tree: ast.AST,
-        code: str,
-        context: Optional[Dict[str, Any]]
+        self, file_path: str, tree: ast.AST, code: str, context: Optional[Dict[str, Any]]
     ) -> List[InlineSuggestion]:
         """Analyze AST for optimization opportunities.
 
@@ -276,12 +273,12 @@ class SuggestionSystem:
                         line_number=node.lineno,
                         column=node.col_offset,
                         suggestion_type=SuggestionType.OPTIMIZATION.value,
-                        original_code=ast.unparse(node) if hasattr(ast, 'unparse') else code,
-                        suggested_code='# Use list comprehension instead',
-                        explanation='List comprehension is more efficient and Pythonic',
+                        original_code=ast.unparse(node) if hasattr(ast, "unparse") else code,
+                        suggested_code="# Use list comprehension instead",
+                        explanation="List comprehension is more efficient and Pythonic",
                         confidence=0.85,
                         context=context or {},
-                        created_at=datetime.now().timestamp()
+                        created_at=datetime.now().timestamp(),
                     )
                     suggestions.append(suggestion)
 
@@ -294,12 +291,12 @@ class SuggestionSystem:
                         line_number=node.lineno,
                         column=node.col_offset,
                         suggestion_type=SuggestionType.OPTIMIZATION.value,
-                        original_code=ast.unparse(node) if hasattr(ast, 'unparse') else code,
-                        suggested_code='# Use any() or all() built-in',
-                        explanation='Built-in any/all is more efficient for boolean searches',
+                        original_code=ast.unparse(node) if hasattr(ast, "unparse") else code,
+                        suggested_code="# Use any() or all() built-in",
+                        explanation="Built-in any/all is more efficient for boolean searches",
                         confidence=0.8,
                         context=context or {},
-                        created_at=datetime.now().timestamp()
+                        created_at=datetime.now().timestamp(),
                     )
                     suggestions.append(suggestion)
 
@@ -320,7 +317,7 @@ class SuggestionSystem:
         stmt = node.body[0]
         if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
             call = stmt.value
-            if isinstance(call.func, ast.Attribute) and call.func.attr == 'append':
+            if isinstance(call.func, ast.Attribute) and call.func.attr == "append":
                 return True
 
         return False
@@ -356,11 +353,14 @@ class SuggestionSystem:
             True if successful
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 UPDATE inline_suggestions
                 SET accepted = 1, feedback = ?
                 WHERE id = ?
-            ''', (feedback, suggestion_id))
+            """,
+                (feedback, suggestion_id),
+            )
 
         return True
 
@@ -375,11 +375,14 @@ class SuggestionSystem:
             True if successful
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 UPDATE inline_suggestions
                 SET accepted = 0, feedback = ?
                 WHERE id = ?
-            ''', (feedback, suggestion_id))
+            """,
+                (feedback, suggestion_id),
+            )
 
         return True
 
@@ -396,52 +399,67 @@ class SuggestionSystem:
 
         with sqlite3.connect(self.db_path) as conn:
             # Total suggestions
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM inline_suggestions
                 WHERE created_at >= ?
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             total_suggestions = cursor.fetchone()[0]
 
             # Accepted suggestions
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM inline_suggestions
                 WHERE created_at >= ? AND accepted = 1
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             accepted_suggestions = cursor.fetchone()[0]
 
             # Rejected suggestions
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM inline_suggestions
                 WHERE created_at >= ? AND accepted = 0
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             rejected_suggestions = cursor.fetchone()[0]
 
             # By type
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT suggestion_type, COUNT(*) FROM inline_suggestions
                 WHERE created_at >= ?
                 GROUP BY suggestion_type
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             by_type = dict(cursor.fetchall())
 
             # Average confidence
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT AVG(confidence) FROM inline_suggestions
                 WHERE created_at >= ?
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             avg_confidence = cursor.fetchone()[0] or 0
 
         acceptance_rate = accepted_suggestions / total_suggestions if total_suggestions > 0 else 0
 
         return {
-            'total_suggestions': total_suggestions,
-            'accepted_suggestions': accepted_suggestions,
-            'rejected_suggestions': rejected_suggestions,
-            'pending_suggestions': total_suggestions - accepted_suggestions - rejected_suggestions,
-            'acceptance_rate': acceptance_rate,
-            'by_type': by_type,
-            'average_confidence': avg_confidence,
-            'period_days': days
+            "total_suggestions": total_suggestions,
+            "accepted_suggestions": accepted_suggestions,
+            "rejected_suggestions": rejected_suggestions,
+            "pending_suggestions": total_suggestions - accepted_suggestions - rejected_suggestions,
+            "acceptance_rate": acceptance_rate,
+            "by_type": by_type,
+            "average_confidence": avg_confidence,
+            "period_days": days,
         }
 
     def _save_suggestion(self, suggestion: InlineSuggestion):
@@ -451,24 +469,27 @@ class SuggestionSystem:
             suggestion: Suggestion to save
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO inline_suggestions
                 (id, file_path, line_number, column_number, suggestion_type,
                  original_code, suggested_code, explanation, confidence, context,
                  created_at, accepted, feedback)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                suggestion.id,
-                suggestion.file_path,
-                suggestion.line_number,
-                suggestion.column,
-                suggestion.suggestion_type,
-                suggestion.original_code,
-                suggestion.suggested_code,
-                suggestion.explanation,
-                suggestion.confidence,
-                json.dumps(suggestion.context),
-                suggestion.created_at,
-                suggestion.accepted,
-                suggestion.feedback
-            ))
+            """,
+                (
+                    suggestion.id,
+                    suggestion.file_path,
+                    suggestion.line_number,
+                    suggestion.column,
+                    suggestion.suggestion_type,
+                    suggestion.original_code,
+                    suggestion.suggested_code,
+                    suggestion.explanation,
+                    suggestion.confidence,
+                    json.dumps(suggestion.context),
+                    suggestion.created_at,
+                    suggestion.accepted,
+                    suggestion.feedback,
+                ),
+            )

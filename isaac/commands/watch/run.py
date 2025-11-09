@@ -12,8 +12,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+from isaac.core.change_queue import BackgroundWorker, ChangeQueue
 from isaac.core.file_watcher import FileWatcher
-from isaac.core.change_queue import ChangeQueue, BackgroundWorker
 
 
 def process_changes(events):
@@ -26,12 +26,13 @@ def main():
     """Main entry point for watch command"""
     # Read payload from stdin (dispatcher sends args this way)
     import json
-    import select
     import os
+    import select
 
     # Check if stdin has data (running through dispatcher)
-    if os.name == 'nt':
+    if os.name == "nt":
         import msvcrt
+
         has_stdin = msvcrt.kbhit() or not sys.stdin.isatty()
     else:
         has_stdin = select.select([sys.stdin], [], [], 0)[0]
@@ -45,15 +46,15 @@ def main():
             pass
 
     # Get paths to watch
-    paths_str = args.get('paths', '')
+    paths_str = args.get("paths", "")
     if paths_str:
-        paths = [Path(p.strip()) for p in paths_str.split(',') if p.strip()]
+        paths = [Path(p.strip()) for p in paths_str.split(",") if p.strip()]
     else:
         # Default: watch some files in current directory
-        cwd = Path('.')
-        paths = list(cwd.glob('*.py'))[:3]  # Watch up to 3 Python files
+        cwd = Path(".")
+        paths = list(cwd.glob("*.py"))[:3]  # Watch up to 3 Python files
         if not paths:
-            paths = [cwd / 'README.md'] if (cwd / 'README.md').exists() else []
+            paths = [cwd / "README.md"] if (cwd / "README.md").exists() else []
 
     if not paths:
         print("No files to watch. Specify --paths or ensure .py files exist.")
