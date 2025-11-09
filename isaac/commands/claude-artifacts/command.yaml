@@ -1,0 +1,55 @@
+name: claude-artifacts
+version: 0.1.0
+status: stub
+summary: "Claude Artifacts - Interactive content generation"
+stub_reason: "API integration pending"
+description: |
+  Generate interactive artifacts using Claude's extended capabilities.
+
+  Planned features:
+  - Generate React components
+  - Create interactive diagrams
+  - Build SVG visualizations
+  - Generate complete mini-apps
+
+triggers: ["/artifact", "/claude-artifact"]
+aliases: ["/art"]
+
+dependencies:
+  packages: []
+  api_keys: ["ANTHROPIC_API_KEY"]
+
+args:
+  - name: type
+    type: string
+    required: true
+    enum: ["react", "html", "svg", "diagram"]
+    help: "Type of artifact to generate"
+  - name: prompt
+    type: string
+    required: true
+    help: "Description of what to create"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 60000
+    max_stdout_kib: 512
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/artifact react 'A todo list component with dark mode'"
+  - "/artifact svg 'System architecture diagram for microservices'"
+  - "/art diagram 'Database schema for e-commerce site'"
