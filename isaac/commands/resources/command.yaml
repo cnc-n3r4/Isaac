@@ -1,0 +1,25 @@
+name: resources
+version: 1.0.0
+summary: Resource optimization and monitoring system
+description: Monitor CPU/memory/disk usage, get optimization suggestions, manage cleanup, predict resource needs, track costs, and handle alerts
+triggers:
+  - "/resources"
+  - "/resource"
+aliases:
+  - "/optimize"
+  - "/cleanup"
+args:
+  - name: action
+    type: enum
+    enum: [monitor, optimize, cleanup, predict, costs, alerts, start, stop, stats, export]
+    required: false
+    default: monitor
+    description: "Resource action to perform"
+  - name: args
+    type: string
+    required: false
+    variadic: true
+security:
+  resources:
+    timeout_ms: 60000
+    max_stdout_kib: 200
