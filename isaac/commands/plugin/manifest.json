@@ -1,0 +1,85 @@
+{
+  "name": "plugin",
+  "description": "Manage Isaac plugins: install, remove, enable, disable, and develop plugins",
+  "version": "1.0.0",
+  "aliases": ["plugins"],
+  "category": "system",
+  "usage": "plugin <subcommand> [options]",
+  "subcommands": [
+    {
+      "name": "install",
+      "description": "Install a plugin from the registry",
+      "usage": "plugin install <name> [--force]"
+    },
+    {
+      "name": "uninstall",
+      "description": "Uninstall a plugin",
+      "usage": "plugin uninstall <name>",
+      "aliases": ["remove"]
+    },
+    {
+      "name": "enable",
+      "description": "Enable a disabled plugin",
+      "usage": "plugin enable <name>"
+    },
+    {
+      "name": "disable",
+      "description": "Disable a plugin",
+      "usage": "plugin disable <name>"
+    },
+    {
+      "name": "list",
+      "description": "List installed plugins",
+      "usage": "plugin list",
+      "aliases": ["ls"]
+    },
+    {
+      "name": "search",
+      "description": "Search for plugins in the registry",
+      "usage": "plugin search <query>"
+    },
+    {
+      "name": "info",
+      "description": "Show detailed information about a plugin",
+      "usage": "plugin info <name>"
+    },
+    {
+      "name": "update",
+      "description": "Update a plugin or all plugins",
+      "usage": "plugin update [name] [--all]"
+    },
+    {
+      "name": "featured",
+      "description": "Show featured plugins",
+      "usage": "plugin featured"
+    },
+    {
+      "name": "create",
+      "description": "Create a new plugin from template",
+      "usage": "plugin create <name>"
+    },
+    {
+      "name": "validate",
+      "description": "Validate a plugin directory",
+      "usage": "plugin validate <path>"
+    },
+    {
+      "name": "test",
+      "description": "Run tests for a plugin",
+      "usage": "plugin test <path>"
+    },
+    {
+      "name": "package",
+      "description": "Package a plugin for distribution",
+      "usage": "plugin package <path>"
+    }
+  ],
+  "examples": [
+    "plugin list                  # List installed plugins",
+    "plugin search git            # Search for git-related plugins",
+    "plugin install command-logger # Install a plugin",
+    "plugin enable git-status    # Enable a plugin",
+    "plugin create my-plugin     # Create a new plugin",
+    "plugin update --all          # Update all plugins"
+  ]
+}
