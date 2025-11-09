@@ -1,0 +1,25 @@
+triggers:
+  - "/ambient"
+
+aliases:
+  - "/ai"
+  - "/learn"
+
+args:
+  - name: subcommand
+    type: enum
+    enum: [analyze, suggestions, patterns, stats, learn, help]
+    required: false
+    default: help
+
+  - name: pattern_id
+    type: string
+    required: false
+
+security:
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 100
+
+execution:
+  python_module: isaac.commands.ambient.run

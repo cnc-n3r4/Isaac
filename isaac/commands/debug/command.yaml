@@ -1,0 +1,33 @@
+triggers:
+  - "/debug"
+  - "/analyze"
+  - "/fix"
+aliases:
+  - "debug"
+  - "analyze"
+  - "fix"
+args:
+  - name: command
+    type: string
+    required: false
+    description: "The command that failed (optional)"
+  - name: error
+    type: string
+    required: false
+    description: "The error message to analyze"
+  - name: mode
+    type: enum
+    enum: ["full", "quick", "performance", "tests", "history"]
+    default: "full"
+    description: "Debug analysis mode"
+  - name: output
+    type: string
+    required: false
+    description: "Output file path for detailed report"
+security:
+  resources:
+    timeout_ms: 60000
+    max_stdout_kib: 1024
+execution:
+  python_module: "isaac.debugging.debug_command"
+  function: "execute_debug"
