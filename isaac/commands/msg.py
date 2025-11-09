@@ -8,6 +8,7 @@ Provides interface for viewing and managing AI assistant notifications.
 """
 
 import sys
+import shlex
 from typing import List, Dict, Any
 from isaac.core.message_queue import MessageQueue, MessageType
 from isaac.commands.base import BaseCommand
@@ -145,11 +146,13 @@ class MsgCommand(BaseCommand):
 
             import subprocess
             try:
+                # Use shlex.split() to safely parse the command and disable shell=True
                 result = subprocess.run(
-                    suggested_command,
-                    shell=True,
+                    shlex.split(suggested_command),
+                    shell=False,
                     capture_output=False,
-                    text=True
+                    text=True,
+                    check=False
                 )
 
                 print("=" * 60)
@@ -294,5 +297,4 @@ SHORTCUTS:
 
 The prompt shows total message count: [7$]> (7 messages pending)
 Type /msg to see breakdown by type (! system, ¢ code, @ email)
-"""</content>
-<parameter name="filePath">c:\Projects\Isaac2\isaac\commands\msg.py
+"""

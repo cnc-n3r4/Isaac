@@ -5,6 +5,7 @@ Routes files to appropriate handlers based on user decisions.
 
 import os
 import subprocess
+import shlex
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Callable
 from dataclasses import dataclass
@@ -323,12 +324,14 @@ class SmartFileRouter:
                 progress_callback(f"Running: {command}")
 
             try:
+                # Use shlex.split() to safely parse the command and disable shell=True
                 result = subprocess.run(
-                    command,
-                    shell=True,
+                    shlex.split(command),
+                    shell=False,
                     capture_output=True,
                     text=True,
-                    timeout=30  # 30 second timeout
+                    timeout=30,  # 30 second timeout
+                    check=False
                 )
 
                 command_outputs[str(file_path)] = {
