@@ -1,0 +1,74 @@
+name: file
+version: 1.0.0
+status: stable
+summary: Unified file operations - read, write, edit, append
+description: |
+  Single command for all file operations. Consolidates /read, /write, /edit,
+  and /newfile into one intuitive interface.
+
+  Operations:
+  - read: Read file contents with line numbers
+  - write: Create or overwrite files
+  - edit: Edit with exact string replacement
+  - append: Append content to files
+
+  Smart mode: Auto-detects operation based on arguments.
+
+triggers:
+  - /file
+
+aliases:
+  - /file
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: operation
+    type: string
+    required: false
+    help: "Operation: read|write|edit|append (or omit for smart mode)"
+
+stdin: true
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 10240
+  capabilities:
+    - filesystem_read
+    - filesystem_write
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/file read myfile.py - Read a file"
+  - "/file write newfile.txt 'Hello' - Create file"
+  - "/file edit app.py 'old' 'new' - Edit file"
+  - "/file append log.txt 'Entry' - Append to file"
+  - "/file myfile.txt - Smart mode (reads if exists)"
+  - "/file myfile.txt 'content' - Smart mode (writes)"
+
+tags:
+  - file-operations
+  - read
+  - write
+  - edit
+  - unified
+
+metadata:
+  category: "file-operations"
+  replaces: ["/read", "/write", "/edit", "/newfile"]
+  phase: "9"
+  phase_name: "Command Consolidation"
