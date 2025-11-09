@@ -1,0 +1,80 @@
+{
+  "featured_plugins": [
+    {
+      "name": "hello-world",
+      "version": "1.0.0",
+      "author": "Isaac Team",
+      "description": "A simple hello world plugin that demonstrates basic plugin functionality",
+      "category": "Example",
+      "tags": ["example", "demo", "tutorial"],
+      "featured": true,
+      "verified": true,
+      "downloads": 1000,
+      "rating": 5.0,
+      "reviews": 42
+    },
+    {
+      "name": "command-logger",
+      "version": "1.0.0",
+      "author": "Isaac Team",
+      "description": "Logs all commands executed with timestamps and results",
+      "category": "Productivity",
+      "tags": ["logging", "commands", "analytics"],
+      "featured": true,
+      "verified": true,
+      "downloads": 750,
+      "rating": 4.8,
+      "reviews": 31
+    },
+    {
+      "name": "git-status",
+      "version": "1.0.0",
+      "author": "Isaac Team",
+      "description": "Displays git repository information and status",
+      "category": "Development",
+      "tags": ["git", "vcs", "status"],
+      "featured": true,
+      "verified": true,
+      "downloads": 890,
+      "rating": 4.9,
+      "reviews": 38
+    }
+  ],
+  "categories": {
+    "Development": [
+      "git-status",
+      "code-formatter",
+      "test-runner"
+    ],
+    "Productivity": [
+      "command-logger",
+      "task-tracker",
+      "pomodoro-timer"
+    ],
+    "AI": [
+      "smart-suggestions",
+      "code-generator",
+      "documentation-helper"
+    ],
+    "Collaboration": [
+      "team-sync",
+      "code-review-helper",
+      "pair-programming"
+    ],
+    "Example": [
+      "hello-world",
+      "basic-hooks",
+      "state-management"
+    ]
+  },
+  "popular_tags": [
+    "git",
+    "logging",
+    "productivity",
+    "ai",
+    "testing",
+    "formatting",
+    "collaboration",
+    "example"
+  ]
+}
