@@ -8,11 +8,16 @@ Analyzes user requests to determine:
 4. Estimated token usage for cost prediction
 
 Part of Phase 3: Enhanced AI Routing
+
+Configuration:
+User-configurable via /config --ai-routing commands.
+Settings stored in ~/.isaac/ai_routing_config.json
 """
 
 import re
 from typing import Dict, Any, List, Optional, Tuple
 from enum import Enum
+from pathlib import Path
 
 
 class TaskComplexity(Enum):
@@ -117,8 +122,21 @@ class TaskAnalyzer:
         }
     }
 
-    def __init__(self):
-        """Initialize the task analyzer"""
+    def __init__(self, config_manager=None):
+        """
+        Initialize the task analyzer.
+
+        Args:
+            config_manager: Optional RoutingConfigManager instance.
+                          If None, will create default instance.
+        """
+        # Load user configuration
+        if config_manager is None:
+            from isaac.ai.routing_config import RoutingConfigManager
+            self.config_manager = RoutingConfigManager()
+        else:
+            self.config_manager = config_manager
+
         # Compile regex patterns for efficiency
         self.simple_patterns = [re.compile(p, re.IGNORECASE) for p in self.SIMPLE_INDICATORS]
         self.complex_patterns = [re.compile(p, re.IGNORECASE) for p in self.COMPLEX_INDICATORS]
@@ -127,6 +145,38 @@ class TaskAnalyzer:
         self.code_write_patterns = [re.compile(p, re.IGNORECASE) for p in self.CODE_WRITE_PATTERNS]
         self.code_read_patterns = [re.compile(p, re.IGNORECASE) for p in self.CODE_READ_PATTERNS]
         self.analysis_patterns = [re.compile(p, re.IGNORECASE) for p in self.ANALYSIS_PATTERNS]
+
+        # Load provider capabilities from config
+        self._load_provider_capabilities()
+
+    def _load_provider_capabilities(self):
+        """Load provider capabilities from user configuration"""
+        config = self.config_manager.get_all_settings()
+        providers_config = config.get('providers', {})
+
+        # Update PROVIDER_CAPABILITIES with user config
+        for provider_name, provider_config in providers_config.items():
+            if provider_name in self.PROVIDER_CAPABILITIES:
+                # Update with user settings
+                self.PROVIDER_CAPABILITIES[provider_name]['max_complexity'] = TaskComplexity(
+                    provider_config.get('max_complexity', 'medium')
+                )
+                self.PROVIDER_CAPABILITIES[provider_name]['cost_per_1m_tokens'] = {
+                    'input': provider_config['pricing']['input_per_1m'],
+                    'output': provider_config['pricing']['output_per_1m']
+                }
+                self.PROVIDER_CAPABILITIES[provider_name]['speed'] = provider_config.get('speed', 'medium')
+                self.PROVIDER_CAPABILITIES[provider_name]['context_window'] = provider_config.get('context_window', 128000)
+
+                # Convert strength strings to TaskType enums
+                strength_strs = provider_config.get('strengths', [])
+                strengths = []
+                for s in strength_strs:
+                    try:
+                        strengths.append(TaskType(s))
+                    except ValueError:
+                        pass  # Skip invalid task types
+                self.PROVIDER_CAPABILITIES[provider_name]['strengths'] = strengths
 
     def analyze_task(
         self,
@@ -309,41 +359,36 @@ class TaskAnalyzer:
         token_estimate: Dict[str, int],
         context: Optional[Dict[str, Any]]
     ) -> str:
-        """Select the optimal AI provider based on task analysis"""
+        """Select the optimal AI provider based on task analysis and user configuration"""
 
-        # Check context for user preferences
+        # Check context for user preferences (highest priority)
         if context and 'prefer_provider' in context:
             preferred = context['prefer_provider']
             # Validate if preferred provider can handle the complexity
             if self._can_handle_complexity(preferred, complexity):
                 return preferred
 
-        # For expert-level tasks, always use Claude
-        if complexity == TaskComplexity.EXPERT:
-            return 'claude'
+        # Check for task-type specific overrides in config
+        task_type_provider = self.config_manager.get_provider_for_task_type(task_type.value)
+        if task_type_provider and self._can_handle_complexity(task_type_provider, complexity):
+            return task_type_provider
 
-        # For complex tasks or code-heavy work, prefer Claude
-        if complexity == TaskComplexity.COMPLEX:
-            if task_type in [TaskType.CODE_WRITE, TaskType.CODE_DEBUG, TaskType.PLANNING]:
-                return 'claude'
+        # Use complexity-based routing from config
+        complexity_provider = self.config_manager.get_provider_for_complexity(complexity.value)
+        if self._can_handle_complexity(complexity_provider, complexity):
+            return complexity_provider
 
-        # For code generation/debugging, prefer Claude even at medium complexity
-        if task_type in [TaskType.CODE_WRITE, TaskType.CODE_DEBUG]:
-            return 'claude'
+        # Fallback: use enabled providers in order of capability
+        enabled_providers = self.config_manager.get_enabled_providers()
+        for provider in ['claude', 'grok', 'openai']:
+            if provider in enabled_providers and self._can_handle_complexity(provider, complexity):
+                return provider
 
-        # For tool use, prefer Claude (best tool calling support)
-        if task_type == TaskType.TOOL_USE:
-            return 'claude'
+        # Last resort: return first enabled provider
+        if enabled_providers:
+            return enabled_providers[0]
 
-        # For simple tasks, use cost-effective provider
-        if complexity == TaskComplexity.SIMPLE:
-            return 'openai'  # GPT-4o-mini is cheapest
-
-        # For medium complexity, use Grok (good balance)
-        if complexity == TaskComplexity.MEDIUM:
-            return 'grok'
-
-        # Default to Grok
+        # Absolute fallback (should never happen)
         return 'grok'
 
     def _can_handle_complexity(self, provider: str, complexity: TaskComplexity) -> bool:

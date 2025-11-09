@@ -8,7 +8,7 @@ args:
   - name: subcommand
     type: string
     required: false
-    help: "Configuration subcommand (status, ai, cloud, plugins, collections, console, set, apikey)"
+    help: "Configuration subcommand (status, ai, cloud, plugins, collections, ai-routing, console, set, apikey)"
   - name: arg1
     type: string
     required: false
@@ -17,6 +17,10 @@ args:
     type: string
     required: false
     help: "Second argument for subcommands that need it"
+  - name: arg3
+    type: string
+    required: false
+    help: "Third argument for subcommands that need it"
 
 stdin: false
 stdout:
@@ -41,6 +45,11 @@ telemetry:
 
 examples:
   - "/config"
-  - "/config status"
-  - "/config ai"
-  - "/config set default_tier 3"
+  - "/config --status"
+  - "/config --ai"
+  - "/config --ai-routing"
+  - "/config --ai-routing-set simple grok"
+  - "/config --ai-routing-set code_write claude"
+  - "/config --ai-routing-model claude claude-3-5-sonnet-20241022"
+  - "/config --ai-routing-limits daily 10.0"
+  - "/config --set default_tier 3"
