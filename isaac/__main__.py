@@ -10,6 +10,7 @@ from isaac.ui.permanent_shell import PermanentShell
 from isaac.core.session_manager import SessionManager
 from isaac.core.command_router import CommandRouter
 from isaac.core.key_manager import KeyManager
+from isaac.core.boot_loader import boot
 from isaac.adapters.powershell_adapter import PowerShellAdapter
 from isaac.adapters.bash_adapter import BashAdapter
 
@@ -28,6 +29,8 @@ def main():
         parser.add_argument('-daemon', '--daemon', action='store_true', help='Run in daemon mode for webhooks')
         parser.add_argument('-oneshot', '--oneshot', action='store_true', help='Execute command and exit (no session persistence)')
         parser.add_argument('-start', '--start', action='store_true', help='Launch interactive shell (default behavior)')
+        parser.add_argument('-q', '--quiet', action='store_true', help='Suppress boot sequence display')
+        parser.add_argument('--no-boot', action='store_true', help='Skip boot loader (for testing)')
 
         # Parse known args first, leave the rest as command
         args, unknown = parser.parse_known_args()
@@ -47,6 +50,11 @@ def main():
             # print("Create a key with: isaac /config keys create")
             # sys.exit(1)
             pass  # Allow unauthenticated for backward compatibility
+
+        # Run boot sequence (unless disabled or in oneshot mode)
+        boot_loader = None
+        if not args.no_boot and not args.oneshot and not command:
+            boot_loader = boot(quiet=args.quiet)
 
         # Check if we have a direct command to execute
         if command:
