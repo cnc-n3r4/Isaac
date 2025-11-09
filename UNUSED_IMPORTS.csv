@@ -1,0 +1,348 @@
+file,line,import,type,confidence,auto_fix
+/home/user/Isaac/isaac/ai/claude_client.py,6,import json,module,High,Y
+/home/user/Isaac/isaac/ai/cost_optimizer.py,20,import time,module,High,Y
+/home/user/Isaac/isaac/ai/rag_engine.py,9,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/ai/routing_config.py,17,from enum import Enum,function/class,High,Y
+/home/user/Isaac/isaac/ai/session_manager.py,344,import sys,module,High,Y
+/home/user/Isaac/isaac/ai/task_analyzer.py,18,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/ai/task_analyzer.py,20,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/ai/task_planner.py,7,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/ai/task_planner.py,10,from isaac.models.task_history import TaskHistory,function/class,High,Y
+/home/user/Isaac/isaac/ai/task_runner.py,6,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/ai/task_runner.py,7,from isaac.adapters.base_adapter import CommandResult,function/class,High,Y
+/home/user/Isaac/isaac/ai/validator.py,9,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/ai/xai_client.py,8,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/ai/xai_collections_client.py,10,import json,module,High,Y
+/home/user/Isaac/isaac/ambient/proactive_suggester.py,8,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/ambient/workflow_learner.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/ambient/workflow_learner.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/ambient/workflow_learner.py,12,import re,module,High,Y
+/home/user/Isaac/isaac/analytics/dashboard_builder.py,7,import json,module,High,Y
+/home/user/Isaac/isaac/analytics/dashboard_builder.py,8,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/analytics/dashboard_builder.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/analytics/report_exporter.py,11,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/arvr/multimodal_input.py,350,from isaac.arvr.spatial_api import Vector3D,function/class,High,Y
+/home/user/Isaac/isaac/arvr/platform_adapter.py,14,from isaac.arvr.spatial_api import Quaternion,function/class,High,Y
+/home/user/Isaac/isaac/arvr/platform_adapter.py,15,from isaac.arvr.gesture_api import Gesture,function/class,High,Y
+/home/user/Isaac/isaac/arvr/platform_adapter.py,15,from isaac.arvr.gesture_api import GestureType,function/class,High,Y
+/home/user/Isaac/isaac/arvr/platform_adapter.py,15,from isaac.arvr.gesture_api import HandType,function/class,High,Y
+/home/user/Isaac/isaac/arvr/prototype_mode.py,10,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/arvr/prototype_mode.py,10,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/arvr/prototype_mode.py,10,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/bubbles/manager.py,9,from typing import NamedTuple,function/class,High,Y
+/home/user/Isaac/isaac/commands/ambient/ambient_command.py,6,import argparse,module,High,Y
+/home/user/Isaac/isaac/commands/ambient/ambient_command.py,8,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/ambient/ambient_command.py,9,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/commands/ambient/run.py,8,import os,module,High,Y
+/home/user/Isaac/isaac/commands/analytics/analytics_command.py,8,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/analyze/run.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/commands/analyze/run.py,9,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/arvr/arvr_command.py,8,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/commands/arvr/arvr_command.py,8,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/commands/arvr/arvr_command.py,10,from isaac.arvr.spatial_api import SpatialWorkspace,function/class,High,Y
+/home/user/Isaac/isaac/commands/arvr/arvr_command.py,12,from isaac.arvr.spatial_layouts import LayoutConstraints,function/class,High,Y
+/home/user/Isaac/isaac/commands/config.py,4,from isaac.api.cloud_client import CloudClient,function/class,High,Y
+/home/user/Isaac/isaac/commands/config/run.py,481,import os,module,High,Y
+/home/user/Isaac/isaac/commands/help_unified/run.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/commands/learn/learn_command.py,6,import argparse,module,High,Y
+/home/user/Isaac/isaac/commands/learn/run.py,8,import os,module,High,Y
+/home/user/Isaac/isaac/commands/machine/run.py,299,import json,module,High,Y
+/home/user/Isaac/isaac/commands/machines/run.py,9,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/commands/mine/run.py,7,import glob,module,High,Y
+/home/user/Isaac/isaac/commands/mine/run.py,11,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/newfile/run.py,7,import os,module,High,Y
+/home/user/Isaac/isaac/commands/pair/pair_command.py,6,import argparse,module,High,Y
+/home/user/Isaac/isaac/commands/pair/pair_command.py,12,from isaac.pairing import TaskPriority,function/class,High,Y
+/home/user/Isaac/isaac/commands/pair/pair_command.py,12,from isaac.pairing import TaskAssignee,function/class,High,Y
+/home/user/Isaac/isaac/commands/pair/pair_command.py,12,from isaac.pairing import ReviewSeverity,function/class,High,Y
+/home/user/Isaac/isaac/commands/pair/run.py,8,import os,module,High,Y
+/home/user/Isaac/isaac/commands/pipeline/pipeline_command.py,7,import json,module,High,Y
+/home/user/Isaac/isaac/commands/pipeline/pipeline_command.py,9,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/pipeline/pipeline_command.py,15,from isaac.pipelines.models import PipelineStep,function/class,High,Y
+/home/user/Isaac/isaac/commands/pipeline/pipeline_command.py,15,from isaac.pipelines.models import StepType,function/class,High,Y
+/home/user/Isaac/isaac/commands/plugin/plugin_command.py,4,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/plugin/plugin_command.py,5,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/commands/resources/resources_command.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/resources/resources_command.py,8,import json,module,High,Y
+/home/user/Isaac/isaac/commands/restore/run.py,8,import os,module,High,Y
+/home/user/Isaac/isaac/commands/restore/run.py,9,import shutil,module,High,Y
+/home/user/Isaac/isaac/commands/save/run.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/commands/save/run.py,10,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/summarize/run.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/commands/summarize/run.py,9,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/team/team_command.py,3,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/timemachine/timemachine_command.py,9,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/commands/timemachine/timemachine_command.py,10,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/commands/update/run.py,11,import re,module,High,Y
+/home/user/Isaac/isaac/commands/workspace/run.py,8,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/core/boot_loader.py,8,import sys,module,High,Y
+/home/user/Isaac/isaac/core/boot_loader.py,14,import time,module,High,Y
+/home/user/Isaac/isaac/core/change_queue.py,7,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/core/change_queue.py,8,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/core/change_queue.py,12,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/core/command_history.py,10,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/core/command_history.py,10,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/core/context_manager.py,11,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/core/fallback_manager.py,319,import sys,module,High,Y
+/home/user/Isaac/isaac/core/flag_parser.py,6,import re,module,High,Y
+/home/user/Isaac/isaac/core/man_pages.py,10,import re,module,High,Y
+/home/user/Isaac/isaac/core/message_queue.py,14,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/core/multifile_ops.py,9,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/core/multifile_ops.py,9,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/core/multifile_ops.py,296,import sys,module,High,Y
+/home/user/Isaac/isaac/core/performance.py,14,import json,module,High,Y
+/home/user/Isaac/isaac/core/performance.py,338,import sys,module,High,Y
+/home/user/Isaac/isaac/core/pipe_engine.py,10,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/core/pipe_engine.py,10,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/core/pipe_engine.py,97,import tempfile,module,High,Y
+/home/user/Isaac/isaac/core/pipe_engine.py,98,import os,module,High,Y
+/home/user/Isaac/isaac/core/session_manager.py,4,import os,module,High,Y
+/home/user/Isaac/isaac/core/session_manager.py,208,import platform,module,High,Y
+/home/user/Isaac/isaac/core/task_manager.py,9,import os,module,High,Y
+/home/user/Isaac/isaac/core/tier_validator.py,8,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/core/unified_fs.py,8,import os,module,High,Y
+/home/user/Isaac/isaac/core/unix_aliases.py,7,import re,module,High,Y
+/home/user/Isaac/isaac/core/workspace_integration.py,10,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/core/workspace_sessions.py,419,import sys,module,High,Y
+/home/user/Isaac/isaac/crossplatform/api/rest_api.py,7,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/api/rest_api.py,7,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/api/rest_api.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/api/rest_api.py,8,import asyncio,module,High,Y
+/home/user/Isaac/isaac/crossplatform/api/rest_api.py,9,from functools import wraps,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/api/websocket_api.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/cloud/cloud_executor.py,6,import json,module,High,Y
+/home/user/Isaac/isaac/crossplatform/cloud/cloud_executor.py,7,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/cloud/cloud_storage.py,6,import hashlib,module,High,Y
+/home/user/Isaac/isaac/crossplatform/cloud/cloud_storage.py,7,from typing import BinaryIO,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/mobile/mobile_api.py,7,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/mobile/mobile_api.py,7,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/mobile/mobile_api.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/mobile/mobile_api.py,7,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/mobile/mobile_auth.py,6,import hashlib,module,High,Y
+/home/user/Isaac/isaac/crossplatform/mobile/notification_service.py,8,import json,module,High,Y
+/home/user/Isaac/isaac/crossplatform/offline/cache_manager.py,10,import hashlib,module,High,Y
+/home/user/Isaac/isaac/crossplatform/offline/offline_manager.py,6,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/offline/sync_queue.py,5,import asyncio,module,High,Y
+/home/user/Isaac/isaac/crossplatform/web/terminal_emulator.py,6,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/web/web_server.py,5,from flask import send_from_directory,function/class,High,Y
+/home/user/Isaac/isaac/crossplatform/web/web_server.py,7,import os,module,High,Y
+/home/user/Isaac/isaac/crossplatform/web/web_server.py,8,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/debugging/auto_investigator.py,9,import subprocess,module,High,Y
+/home/user/Isaac/isaac/debugging/auto_investigator.py,11,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/debugging/auto_investigator.py,12,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/debugging/auto_investigator.py,13,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/debugging/auto_investigator.py,14,import json,module,High,Y
+/home/user/Isaac/isaac/debugging/auto_investigator.py,16,import threading,module,High,Y
+/home/user/Isaac/isaac/debugging/debug_command.py,7,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/debugging/debug_command.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/debugging/debug_history.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/debugging/debug_history.py,12,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/debugging/debug_history.py,12,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/debugging/fix_suggester.py,8,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/debugging/fix_suggester.py,9,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/debugging/fix_suggester.py,10,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/debugging/performance_profiler.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/debugging/performance_profiler.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/debugging/performance_profiler.py,12,import os,module,High,Y
+/home/user/Isaac/isaac/debugging/performance_profiler.py,13,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/debugging/root_cause_analyzer.py,6,import re,module,High,Y
+/home/user/Isaac/isaac/debugging/root_cause_analyzer.py,8,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/debugging/root_cause_analyzer.py,9,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/debugging/root_cause_analyzer.py,11,import json,module,High,Y
+/home/user/Isaac/isaac/debugging/test_generator.py,8,import ast,module,High,Y
+/home/user/Isaac/isaac/debugging/test_generator.py,9,import inspect,module,High,Y
+/home/user/Isaac/isaac/debugging/test_generator.py,10,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/debugging/test_generator.py,10,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/debugging/test_generator.py,11,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/batch_processor.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/dragdrop/batch_processor.py,10,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/batch_processor.py,10,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/batch_processor.py,10,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/batch_processor.py,11,from dataclasses import dataclass,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/batch_processor.py,12,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/batch_processor.py,15,from multi_file_detector import FileAnalysis,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/multi_file_detector.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/dragdrop/multi_file_detector.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/multi_file_detector.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/progress.py,6,import sys,module,High,Y
+/home/user/Isaac/isaac/dragdrop/progress.py,9,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/smart_router.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/dragdrop/smart_router.py,10,from dataclasses import dataclass,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/smart_router.py,12,from multi_file_detector import FileAnalysis,function/class,High,Y
+/home/user/Isaac/isaac/dragdrop/smart_router.py,14,from batch_processor import BatchConfig,function/class,High,Y
+/home/user/Isaac/isaac/images/cloud_storage.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/images/cloud_storage.py,14,import base64,module,High,Y
+/home/user/Isaac/isaac/learning/behavior_adjustment.py,8,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/learning/behavior_adjustment.py,8,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/learning/behavior_adjustment.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/learning/continuous_learning_coordinator.py,8,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/learning/continuous_learning_coordinator.py,8,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/learning/continuous_learning_coordinator.py,9,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/learning/continuous_learning_coordinator.py,13,from isaac.learning.mistake_learner import MistakeLearner,function/class,High,Y
+/home/user/Isaac/isaac/learning/continuous_learning_coordinator.py,14,from isaac.learning.behavior_adjustment import BehaviorAdjustmentEngine,function/class,High,Y
+/home/user/Isaac/isaac/learning/continuous_learning_coordinator.py,15,from isaac.learning.learning_metrics import LearningMetricsDashboard,function/class,High,Y
+/home/user/Isaac/isaac/learning/continuous_learning_coordinator.py,16,from isaac.learning.user_preference_learner import UserPreferenceLearner,function/class,High,Y
+/home/user/Isaac/isaac/learning/learning_metrics.py,8,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/learning/learning_metrics.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/learning/mistake_learner.py,8,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/learning/mistake_learner.py,8,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/learning/mistake_learner.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/learning/performance_analytics.py,8,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/learning/user_preference_learner.py,8,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/learning/user_preference_learner.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/learning/user_preference_learner.py,12,import statistics,module,High,Y
+/home/user/Isaac/isaac/learning/user_preference_learner.py,13,from collections import defaultdict,function/class,High,Y
+/home/user/Isaac/isaac/learning/user_preference_learner.py,13,from collections import Counter,function/class,High,Y
+/home/user/Isaac/isaac/memory/database.py,10,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/memory/database.py,12,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/memory/database.py,12,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/models/aiquery_history.py,8,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/models/preferences.py,8,import json,module,High,Y
+/home/user/Isaac/isaac/monitoring/code_monitor.py,10,import os,module,High,Y
+/home/user/Isaac/isaac/monitoring/code_monitor.py,14,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/monitoring/code_monitor.py,15,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/monitoring/code_monitor.py,15,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/monitoring/code_monitor.py,15,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/monitoring/system_monitor.py,15,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/monitoring/system_monitor.py,15,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/nlscript/explainer.py,7,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/nlscript/explainer.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/nlscript/translator.py,7,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/nlscript/translator.py,8,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/orchestration/load_balancer.py,7,import time,module,High,Y
+/home/user/Isaac/isaac/orchestration/load_balancer.py,9,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/orchestration/remote.py,6,import json,module,High,Y
+/home/user/Isaac/isaac/orchestration/remote.py,8,import socket,module,High,Y
+/home/user/Isaac/isaac/orchestration/remote.py,12,from typing import Any,function/class,High,Y
+/home/user/Isaac/isaac/orchestration/remote.py,12,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/orchestration/remote.py,14,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/pairing/code_review.py,6,import json,module,High,Y
+/home/user/Isaac/isaac/pairing/code_review.py,11,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/pairing/code_review.py,12,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/pairing/pair_metrics.py,8,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/pairing/pair_metrics.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/pairing/pair_metrics.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/pairing/pair_mode.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/pairing/pairing_learner.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/pairing/suggestion_system.py,11,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/pairing/suggestion_system.py,12,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/pairing/task_division.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,7,import re,module,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,8,import json,module,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,11,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,13,from collections import defaultdict,function/class,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,13,from collections import Counter,function/class,High,Y
+/home/user/Isaac/isaac/patterns/enhanced_anti_patterns.py,14,import inspect,module,High,Y
+/home/user/Isaac/isaac/patterns/pattern_applier.py,8,import difflib,module,High,Y
+/home/user/Isaac/isaac/patterns/pattern_applier.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_applier.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_applier.py,12,import time,module,High,Y
+/home/user/Isaac/isaac/patterns/pattern_applier.py,13,from pattern_learner import PatternMatch,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_documentation.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_documentation.py,9,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_documentation.py,12,import re,module,High,Y
+/home/user/Isaac/isaac/patterns/pattern_evolution.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_evolution.py,13,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,10,import hashlib,module,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,11,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,11,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,15,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,16,import threading,module,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,17,from collections import defaultdict,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,17,from collections import Counter,function/class,High,Y
+/home/user/Isaac/isaac/patterns/pattern_learner.py,18,import difflib,module,High,Y
+/home/user/Isaac/isaac/patterns/team_sharing.py,8,import hashlib,module,High,Y
+/home/user/Isaac/isaac/patterns/team_sharing.py,13,import requests,module,High,Y
+/home/user/Isaac/isaac/patterns/team_sharing.py,14,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,7,import threading,module,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,9,from concurrent.futures import ThreadPoolExecutor,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,9,from concurrent.futures import Future,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,10,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,10,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,13,from isaac.pipelines.models import Pipeline,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,13,from isaac.pipelines.models import PipelineExecution,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/executor.py,13,from isaac.pipelines.models import PipelineStatus,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/manager.py,10,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,6,import json,module,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,8,import threading,module,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,10,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,12,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,13,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,13,from typing import Union,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,14,from abc import ABC,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/models.py,14,from abc import abstractmethod,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,8,from collections import Counter,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,10,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,10,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,10,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,11,from datetime import datetime,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,11,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,13,from isaac.pipelines.models import Pipeline,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,13,from isaac.pipelines.models import PipelineStep,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/pattern_learner.py,13,from isaac.pipelines.models import StepType,function/class,High,Y
+/home/user/Isaac/isaac/pipelines/runner.py,9,from concurrent.futures import as_completed,function/class,High,Y
+/home/user/Isaac/isaac/plugins/plugin_devkit.py,4,import shutil,module,High,Y
+/home/user/Isaac/isaac/plugins/plugin_manager.py,9,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/plugins/plugin_manager.py,12,from isaac.plugins.plugin_api import PluginError,function/class,High,Y
+/home/user/Isaac/isaac/plugins/plugin_manager.py,20,from isaac.plugins.plugin_registry import RegistryEntry,function/class,High,Y
+/home/user/Isaac/isaac/plugins/plugin_registry.py,4,import os,module,High,Y
+/home/user/Isaac/isaac/plugins/plugin_registry.py,6,import requests,module,High,Y
+/home/user/Isaac/isaac/plugins/plugin_registry.py,7,from dataclasses import field,function/class,High,Y
+/home/user/Isaac/isaac/plugins/plugin_security.py,3,import sys,module,High,Y
+/home/user/Isaac/isaac/plugins/plugin_security.py,4,import os,module,High,Y
+/home/user/Isaac/isaac/plugins/plugin_security.py,7,import time,module,High,Y
+/home/user/Isaac/isaac/resources/cost_tracker.py,11,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/resources/optimizer.py,9,import json,module,High,Y
+/home/user/Isaac/isaac/resources/optimizer.py,13,import glob,module,High,Y
+/home/user/Isaac/isaac/resources/predictor.py,10,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/resources/predictor.py,12,import json,module,High,Y
+/home/user/Isaac/isaac/resources/predictor.py,13,import os,module,High,Y
+/home/user/Isaac/isaac/team/manager.py,9,from typing import Dict,function/class,High,Y
+/home/user/Isaac/isaac/team/models.py,7,import uuid,module,High,Y
+/home/user/Isaac/isaac/timemachine/time_machine.py,10,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/tools/code_analysis.py,8,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/tools/code_analysis.py,8,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/tools/code_search.py,8,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/tools/file_ops.py,8,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/tools/file_ops.py,8,from typing import List,function/class,High,Y
+/home/user/Isaac/isaac/tools/file_ops.py,8,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/tools/shell_exec.py,6,import re,module,High,Y
+/home/user/Isaac/isaac/tools/shell_exec.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/tools/shell_exec.py,8,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/ui/_archived/advanced_input.py,8,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/ui/_archived/terminal_control.py,12,import xml.etree.ElementTree,module,High,Y
+/home/user/Isaac/isaac/ui/_archived/terminal_control.py,13,from typing import Tuple,function/class,High,Y
+/home/user/Isaac/isaac/ui/config_console.py,13,from prompt_toolkit.widgets import Frame,function/class,High,Y
+/home/user/Isaac/isaac/ui/config_console.py,15,from prompt_toolkit.layout.containers import WindowAlign,function/class,High,Y
+/home/user/Isaac/isaac/ui/header_display.py,6,import time,module,High,Y
+/home/user/Isaac/isaac/ui/predictive_completer.py,7,import os,module,High,Y
+/home/user/Isaac/isaac/ui/predictive_completer.py,8,import re,module,High,Y
+/home/user/Isaac/isaac/ui/predictive_completer.py,12,from typing import Set,function/class,High,Y
+/home/user/Isaac/isaac/ui/predictive_completer.py,13,from datetime import timedelta,function/class,High,Y
+/home/user/Isaac/isaac/ui/progress_indicator.py,8,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/ui/progress_indicator.py,9,from dataclasses import dataclass,function/class,High,Y
+/home/user/Isaac/isaac/ui/progress_indicator.py,9,from dataclasses import field,function/class,High,Y
+/home/user/Isaac/isaac/ui/prompt_handler.py,6,import sys,module,High,Y
+/home/user/Isaac/isaac/ui/prompt_handler.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/ui/splash_screen.py,7,import os,module,High,Y
+/home/user/Isaac/isaac/ui/visual_enhancer.py,7,from typing import Optional,function/class,High,Y
+/home/user/Isaac/isaac/voice/multi_language.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/voice/multi_language.py,9,from typing import Callable,function/class,High,Y
+/home/user/Isaac/isaac/voice/multi_language.py,9,from typing import Union,function/class,High,Y
+/home/user/Isaac/isaac/voice/multi_language.py,12,import threading,module,High,Y
+/home/user/Isaac/isaac/voice/multi_language.py,13,import re,module,High,Y
+/home/user/Isaac/isaac/voice/speech_to_text.py,11,from typing import Union,function/class,High,Y
+/home/user/Isaac/isaac/voice/speech_to_text.py,14,import tempfile,module,High,Y
+/home/user/Isaac/isaac/voice/speech_to_text.py,15,import subprocess,module,High,Y
+/home/user/Isaac/isaac/voice/text_to_speech.py,11,from dataclasses import asdict,function/class,High,Y
+/home/user/Isaac/isaac/voice/text_to_speech.py,12,from pathlib import Path,function/class,High,Y
+/home/user/Isaac/isaac/voice/voice_shortcuts.py,6,import os,module,High,Y
+/home/user/Isaac/isaac/voice/voice_shortcuts.py,9,import threading,module,High,Y
+/home/user/Isaac/isaac/voice/voice_shortcuts.py,10,from typing import Union,function/class,High,Y
+/home/user/Isaac/isaac/voice/voice_shortcuts.py,11,from dataclasses import field,function/class,High,Y
+/home/user/Isaac/isaac/voice/voice_shortcuts.py,13,import re,module,High,Y
+/home/user/Isaac/isaac/voice/voice_transcription.py,11,from typing import Union,function/class,High,Y
+/home/user/Isaac/isaac/voice/voice_transcription.py,13,from pathlib import Path,function/class,High,Y
