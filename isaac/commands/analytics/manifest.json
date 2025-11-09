@@ -1,0 +1,39 @@
+{
+  "name": "analytics",
+  "version": "1.0.0",
+  "description": "Comprehensive analytics system for tracking productivity, code quality, learning, and team metrics",
+  "entry_point": "analytics_command.py",
+  "function": "run",
+  "category": "analytics",
+  "tags": ["analytics", "metrics", "productivity", "quality", "learning", "team"],
+  "examples": [
+    {
+      "command": "/analytics summary",
+      "description": "Show summary of all analytics"
+    },
+    {
+      "command": "/analytics dashboard overview",
+      "description": "Display overview dashboard"
+    },
+    {
+      "command": "/analytics productivity 14",
+      "description": "Show productivity report for last 14 days"
+    },
+    {
+      "command": "/analytics export full html report.html",
+      "description": "Export full analytics report as HTML"
+    },
+    {
+      "command": "/analytics insights",
+      "description": "Show top insights from analytics data"
+    },
+    {
+      "command": "/analytics analyze src/main.py",
+      "description": "Analyze code quality of a file"
+    }
+  ],
+  "dependencies": [],
+  "permissions": ["read", "write"],
+  "author": "Isaac Team",
+  "phase": "5.3"
+}
