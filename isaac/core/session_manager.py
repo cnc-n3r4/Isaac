@@ -13,7 +13,7 @@ from isaac.models.task_history import TaskHistory
 class Preferences:
     """User preferences storage."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.data: Dict[str, Any] = {}
 
     def to_dict(self) -> Dict[str, Any]:
@@ -29,7 +29,7 @@ class Preferences:
 class CommandHistory:
     """Command execution history."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.commands: list = []
 
     def to_dict(self) -> Dict[str, Any]:
@@ -127,7 +127,7 @@ class SessionManager:
         self.preference_learner = None
         self._init_learning_system()
 
-    def _load_session_data(self):
+    def _load_session_data(self) -> None:
         """Load session data from local files."""
         # Load preferences
         prefs_file = self.isaac_dir / "preferences.json"
@@ -169,7 +169,7 @@ class SessionManager:
             except Exception:
                 pass  # Use empty history if file corrupted
 
-    def _load_config(self):
+    def _load_config(self) -> None:
         """Load config from config.json file."""
         config_file = self.isaac_dir / "config.json"
         if config_file.exists():
@@ -181,7 +181,7 @@ class SessionManager:
             except Exception:
                 pass  # Use defaults if file corrupted
 
-    def _save_config(self):
+    def _save_config(self) -> None:
         """Save config to config.json file."""
         config_file = self.isaac_dir / "config.json"
         try:
@@ -190,16 +190,16 @@ class SessionManager:
         except Exception:
             pass  # Don't fail if save fails
 
-    def set_config(self, key: str, value: Any):
+    def set_config(self, key: str, value: Any) -> None:
         """Set a configuration value and save to disk."""
         self.config[key] = value
         self._save_config()
 
-    def reload_config(self):
+    def reload_config(self) -> None:
         """Reload config from disk."""
         self._load_config()
 
-    def log_command(self, command: str, exit_code: int = 0, shell_name: str = "unknown"):
+    def log_command(self, command: str, exit_code: int = 0, shell_name: str = "unknown") -> None:
         """Log executed command to history."""
         import time
 
@@ -227,19 +227,19 @@ class SessionManager:
             except Exception:
                 pass  # Don't block command execution if cloud fails
 
-    def _save_command_history(self):
+    def _save_command_history(self) -> None:
         """Save command history to local file."""
         history_file = self.isaac_dir / "command_history.json"
         with open(history_file, "w") as f:
             json.dump(self.command_history.to_dict(), f, indent=2)
 
-    def _save_ai_query_history(self):
+    def _save_ai_query_history(self) -> None:
         """Save AI query history to local file."""
         ai_history_file = self.isaac_dir / "aiquery_history.json"
         with open(ai_history_file, "w") as f:
             json.dump(self.ai_query_history.to_dict(), f, indent=2)
 
-    def _save_preferences(self):
+    def _save_preferences(self) -> None:
         """Save user preferences to disk."""
         prefs_file = self.isaac_dir / "preferences.json"
         with open(prefs_file, "w") as f:
@@ -259,7 +259,7 @@ class SessionManager:
         explanation: str = "",
         executed: bool = False,
         shell_name: str = "unknown",
-    ):
+    ) -> None:
         """Log AI query for privacy-focused history."""
         self.ai_query_history.add(
             query=query,
@@ -281,7 +281,7 @@ class SessionManager:
             except Exception:
                 pass  # Don't block query logging if cloud fails
 
-    def add_ai_query(self, query: str, translated_command: str, shell_name: str = "unknown"):
+    def add_ai_query(self, query: str, translated_command: str, shell_name: str = "unknown") -> None:
         """Alias for log_ai_query for backward compatibility."""
         self.log_ai_query(query, translated_command, shell_name=shell_name)
 
@@ -293,12 +293,12 @@ class SessionManager:
         """Get the loaded configuration."""
         return self.config
 
-    def get_recent_commands(self, limit: int = 10) -> list:
+    def get_recent_commands(self, limit: int = 10) -> list[str]:
         """Get recent commands from history."""
         recent = self.command_history.commands[-limit:] if self.command_history.commands else []
         return [cmd["command"] for cmd in recent]
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Graceful shutdown of session manager."""
         # Stop sync worker
         if hasattr(self, "sync_worker"):
@@ -312,7 +312,7 @@ class SessionManager:
         if hasattr(self, "mistake_learner") and self.mistake_learner:
             self.mistake_learner.stop_learning()
 
-    def get_queue_status(self) -> dict:
+    def get_queue_status(self) -> Dict[str, Any]:
         """Expose queue status for UI."""
         return self.queue.get_queue_status()
 
@@ -328,7 +328,7 @@ class SessionManager:
         except Exception:
             return False
 
-    def _init_file_history(self):
+    def _init_file_history(self) -> None:
         """Initialize Total Commander log integration."""
         import logging
 
@@ -390,7 +390,7 @@ class SessionManager:
 
             logger.info(f"File history sync enabled (every {upload_interval}m)")
 
-    def _upload_file_history(self):
+    def _upload_file_history(self) -> None:
         """Background task: Parse and upload new file operations."""
         import logging
 
@@ -411,7 +411,7 @@ class SessionManager:
         except Exception as e:
             logger.error(f"File history upload failed: {e}")
 
-    def _init_learning_system(self):
+    def _init_learning_system(self) -> None:
         """Initialize self-improving learning system (Phase 3.5)."""
         import logging
 
@@ -465,7 +465,7 @@ class SessionManager:
         original_input: str = "",
         context: Optional[Dict[str, Any]] = None,
         severity: str = "medium",
-    ):
+    ) -> None:
         """Track a mistake for the learning system.
 
         Args:
@@ -510,7 +510,7 @@ class SessionManager:
         response: str,
         category: str = "response_style",
         sentiment: float = 0.0,
-    ):
+    ) -> None:
         """Record user feedback for behavior adjustment.
 
         Args:
@@ -552,7 +552,7 @@ class SessionManager:
         pattern_key: str,
         observed_value: Any,
         context: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         """Observe a coding pattern for user preference learning.
 
         Args:
