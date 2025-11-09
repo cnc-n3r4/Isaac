@@ -1,4 +1,4 @@
-# Isaac 2.0 🚀
+# Isaac 1.0 🚀
 
 **An Intelligent Shell Assistant with AI Superpowers**
 
@@ -18,7 +18,7 @@ Isaac transforms your command-line experience by combining multi-tier safety val
 - ⚡ **Auto-Correct Typos** - `gti status` → `git status` automatically
 - 🔄 **Cross-Platform** - Use Unix commands on Windows PowerShell
 - 📁 **Workspace Management** - Isolated environments for each project
-- 🔍 **Advanced File Operations** - Claude Code-style file manipulation
+- 🔍 **Advanced File Operations** - Isaac assisted file manipulation
 - 🧠 **Knowledge Management** - xAI Collections for context-aware AI (RAG)
 - 📈 **Self-Improving AI** - Learns from mistakes and adapts to your preferences
 - 🎯 **Personalized Assistance** - Gets better at helping you specifically
