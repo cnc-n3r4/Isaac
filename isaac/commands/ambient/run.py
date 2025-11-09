@@ -1,36 +1,23 @@
-#!/usr/bin/env python3
 """
-Ambient Command Runner
-Executes the ambient intelligence command
+Ambient Command - Entry Point
+
+Standardized entry point using BaseCommand interface.
 """
 
 import sys
 from pathlib import Path
 
-# Add the project root to the Python path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+# Add isaac to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from isaac.commands.ambient.ambient_command import AmbientCommand
+from isaac.commands.base import run_command
+from isaac.commands.ambient.command_impl import AmbientCommand
 
 
 def main():
-    """Main entry point."""
-    try:
-        command = AmbientCommand()
-        result = command.execute(sys.argv[1:])
-
-        print(result["output"])
-
-        if not result["success"]:
-            sys.exit(result["exit_code"])
-
-    except KeyboardInterrupt:
-        print("\nOperation cancelled")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    """Main entry point for /ambient command"""
+    command = AmbientCommand()
+    run_command(command)
 
 
 if __name__ == "__main__":

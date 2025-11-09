@@ -1658,31 +1658,14 @@ EXAMPLES:
 
 def main():
     """Main entry point for mine command"""
-    try:
-        # Read payload from stdin (dispatcher protocol)
-        payload = json.loads(sys.stdin.read())
-        command = payload.get("command", "")
-        session_data = payload.get("session", {})
+    # Import here to avoid circular imports
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-        # Extract args from command (everything after /mine)
-        if command.startswith("/mine "):
-            args_raw = command[6:].strip()  # Remove "/mine "
-            import shlex
+    from isaac.commands.base import run_command
+    from isaac.commands.mine.command_impl import MineCommand
 
-            args = shlex.split(args_raw)
-        else:
-            args = []
-
-        # Create handler with session data
-        handler = MineHandler(session_data)
-        result = handler.handle_command(args, "/mine")
-
-        # Return envelope
-        print(json.dumps({"ok": True, "stdout": result}))
-
-    except Exception as e:
-        # Return error envelope
-        print(json.dumps({"ok": False, "error": {"code": "EXECUTION_ERROR", "message": str(e)}}))
+    command = MineCommand()
+    run_command(command)
 
 
 if __name__ == "__main__":

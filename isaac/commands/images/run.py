@@ -34,6 +34,16 @@ def format_datetime(dt: Optional[datetime]) -> str:
 
 def main():
     """Main entry point for images command"""
+    # Check if we should use standardized interface
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] in ["--help", "-h"]):
+        # Use new standardized interface
+        from isaac.commands.base import run_command
+        from isaac.commands.images.command_impl import ImagesCommand
+
+        command = ImagesCommand()
+        run_command(command)
+        return 0
+
     # Parse arguments (simple positional parsing for now)
     action = "history"
     query = None

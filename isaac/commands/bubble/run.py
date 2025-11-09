@@ -324,45 +324,41 @@ class BubbleCommand:
 
 
 def main():
-    """Main entry point"""
+    """Main entry point (legacy support)"""
     import sys
 
-    # Parse command line arguments
-    if len(sys.argv) < 2:
-        print("Usage: python run.py <action> [options]")
-        print(
-            "Actions: create, list, show, restore, delete, export, import, suspend, resume, version, versions"
-        )
-        print("Options:")
-        print("  --name <name>           Name for new bubble")
-        print("  --description <desc>    Description for new bubble")
-        print("  --bubble-id <id>        Bubble ID for operations")
-        print("  --tags <tags>           Comma-separated tags")
-        print("  --file <path>           File path for export/import")
-        return
+    # If run directly with old-style arguments, use legacy mode
+    if len(sys.argv) > 1:
+        # Parse command line arguments
+        action = sys.argv[1]
+        args = {"action": action}
 
-    action = sys.argv[1]
-    args = {"action": action}
-
-    # Parse additional arguments
-    i = 2
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg.startswith("--"):
-            key = arg[2:]  # Remove --
-            if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith("--"):
-                value = sys.argv[i + 1]
-                args[key] = value
-                i += 2
+        # Parse additional arguments
+        i = 2
+        while i < len(sys.argv):
+            arg = sys.argv[i]
+            if arg.startswith("--"):
+                key = arg[2:]  # Remove --
+                if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith("--"):
+                    value = sys.argv[i + 1]
+                    args[key] = value
+                    i += 2
+                else:
+                    args[key] = True
+                    i += 1
             else:
-                args[key] = True
                 i += 1
-        else:
-            i += 1
 
-    command = BubbleCommand()
-    result = command.execute(args)
-    print(result)
+        command = BubbleCommand()
+        result = command.execute(args)
+        print(result)
+    else:
+        # Use new standardized interface
+        from isaac.commands.base import run_command
+        from isaac.commands.bubble.command_impl import BubbleCommand as StandardizedBubbleCommand
+
+        command = StandardizedBubbleCommand()
+        run_command(command)
 
 
 if __name__ == "__main__":
