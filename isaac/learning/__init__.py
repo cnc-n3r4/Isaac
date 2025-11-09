@@ -7,6 +7,8 @@ from .mistake_learner import MistakeLearner, MistakeRecord, LearningPattern
 from .behavior_adjustment import BehaviorAdjustmentEngine, UserFeedback, BehaviorAdjustment, BehaviorProfile
 from .learning_metrics import LearningMetricsDashboard, LearningMetrics, LearningInsight
 from .user_preference_learner import UserPreferenceLearner, UserPreferences, CodingPattern
+from .continuous_learning_coordinator import ContinuousLearningCoordinator
+from .performance_analytics import PerformanceAnalytics, PerformanceMetric, PerformanceAlert
 
 __all__ = [
     'MistakeLearner',
@@ -21,5 +23,9 @@ __all__ = [
     'LearningInsight',
     'UserPreferenceLearner',
     'UserPreferences',
-    'CodingPattern'
+    'CodingPattern',
+    'ContinuousLearningCoordinator',
+    'PerformanceAnalytics',
+    'PerformanceMetric',
+    'PerformanceAlert'
 ]

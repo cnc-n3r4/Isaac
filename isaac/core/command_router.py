@@ -469,24 +469,41 @@ class CommandRouter:
         
         # Regular command processing
         tier = self.validator.get_tier(input_text)
-        
+
         if tier == 1:
             # Tier 1: Instant execution
-            return self.shell.execute(input_text)
+            result = self.shell.execute(input_text)
+
+            # Track command execution for learning
+            self._track_command_execution(input_text, result, tier=1)
+
+            return result
         elif tier == 2:
             # Tier 2: Auto-correct typos and execute
             from isaac.ai.corrector import correct_command
-            
+
             # Try auto-correction
             correction = correct_command(input_text, self.shell.name, self.session.config)
-            
+
             if correction['corrected'] and correction['confidence'] > 0.8:
                 # High confidence typo detected - auto-correct
                 print(f"Isaac > Auto-correcting: {correction['original']} → {correction['corrected']}")
-                return self.shell.execute(correction['corrected'])
+
+                # Track the correction for learning
+                self._track_auto_correction(
+                    original=correction['original'],
+                    corrected=correction['corrected'],
+                    confidence=correction['confidence']
+                )
+
+                result = self.shell.execute(correction['corrected'])
+                self._track_command_execution(correction['corrected'], result, tier=2, was_corrected=True)
+                return result
             else:
                 # No typo or low confidence - execute as-is
-                return self.shell.execute(input_text)
+                result = self.shell.execute(input_text)
+                self._track_command_execution(input_text, result, tier=2)
+                return result
         elif tier == 2.5:
             # Tier 2.5: Correct + confirm
             from isaac.ai.corrector import correct_command
@@ -504,12 +521,22 @@ class CommandRouter:
                 
                 confirmed = self._confirm("Execute corrected version?")
                 if confirmed:
-                    return self.shell.execute(correction['corrected'])
+                    # Track user accepting correction
+                    self._track_user_correction_acceptance(
+                        original=correction['original'],
+                        corrected=correction['corrected'],
+                        accepted=True
+                    )
+                    result = self.shell.execute(correction['corrected'])
+                    self._track_command_execution(correction['corrected'], result, tier=2.5)
+                    return result
             else:
                 # No correction needed or low confidence - just confirm original
                 confirmed = self._confirm(f"Execute: {input_text}?")
                 if confirmed:
-                    return self.shell.execute(input_text)
+                    result = self.shell.execute(input_text)
+                    self._track_command_execution(input_text, result, tier=2.5)
+                    return result
             
             # User aborted
             return CommandResult(
@@ -663,3 +690,118 @@ Current user query follows below:
 """
         
         return preprompt
+
+    def _track_command_execution(self, command: str, result: CommandResult, tier: float,
+                                was_corrected: bool = False):
+        """Track command execution for learning system.
+
+        Args:
+            command: The executed command
+            result: Command execution result
+            tier: Safety tier level
+            was_corrected: Whether command was auto-corrected
+        """
+        if not hasattr(self.session, 'mistake_learner') or not self.session.mistake_learner:
+            return
+
+        try:
+            # Track failed commands as mistakes
+            if not result.success and result.exit_code != 0:
+                context = {
+                    'tier': tier,
+                    'was_corrected': was_corrected,
+                    'exit_code': result.exit_code,
+                    'shell': self.shell.name
+                }
+
+                # Determine severity based on exit code and tier
+                if tier >= 3:
+                    severity = 'high'
+                elif result.exit_code > 100:
+                    severity = 'medium'
+                else:
+                    severity = 'low'
+
+                self.session.track_mistake(
+                    mistake_type='command_error',
+                    description=f"Command failed with exit code {result.exit_code}",
+                    correction='',  # Will be filled if user retries with different command
+                    original_input=command,
+                    context=context,
+                    severity=severity
+                )
+
+            # Track successful executions for pattern learning
+            if result.success and hasattr(self.session, 'preference_learner'):
+                self.session.observe_coding_pattern(
+                    pattern_type='command_patterns',
+                    pattern_key=f"successful_command_{tier}",
+                    observed_value={'command': command, 'tier': tier},
+                    context={'timestamp': __import__('time').time(), 'success': True}
+                )
+
+        except Exception as e:
+            # Don't fail command execution if tracking fails
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Failed to track command execution: {e}")
+
+    def _track_auto_correction(self, original: str, corrected: str, confidence: float):
+        """Track automatic command corrections for learning.
+
+        Args:
+            original: Original command with typo
+            corrected: Corrected command
+            confidence: Confidence score of correction
+        """
+        if not hasattr(self.session, 'mistake_learner') or not self.session.mistake_learner:
+            return
+
+        try:
+            context = {
+                'confidence': confidence,
+                'auto_corrected': True,
+                'shell': self.shell.name
+            }
+
+            self.session.track_mistake(
+                mistake_type='command_typo',
+                description=f"Typo detected and auto-corrected (confidence: {confidence:.1%})",
+                correction=corrected,
+                original_input=original,
+                context=context,
+                severity='low'
+            )
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Failed to track auto-correction: {e}")
+
+    def _track_user_correction_acceptance(self, original: str, corrected: str, accepted: bool):
+        """Track whether user accepted a suggested correction.
+
+        Args:
+            original: Original command
+            corrected: Suggested correction
+            accepted: Whether user accepted the correction
+        """
+        if not hasattr(self.session, 'behavior_engine') or not self.session.behavior_engine:
+            return
+
+        try:
+            sentiment = 0.5 if accepted else -0.3
+            feedback_text = f"User {'accepted' if accepted else 'rejected'} correction: {original} → {corrected}"
+
+            self.session.record_user_feedback(
+                feedback_type='correction' if accepted else 'negative',
+                context=f"Correction suggestion: {corrected}",
+                response=feedback_text,
+                category='suggestion_frequency',
+                sentiment=sentiment
+            )
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Failed to track correction acceptance: {e}")
