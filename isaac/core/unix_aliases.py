@@ -7,17 +7,25 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from isaac.crossplatform.alias_cache import AliasCache
+
 
 class UnixAliasTranslator:
     """Translate Unix commands to PowerShell equivalents"""
 
     def __init__(self, config_path: Optional[Path] = None):
-        """Load alias configuration"""
+        """
+        Load alias configuration with caching
+
+        Args:
+            config_path: Path to aliases JSON file (optional)
+        """
         if config_path is None:
             config_path = Path(__file__).parent.parent / "data" / "unix_aliases.json"
 
-        with open(config_path) as f:
-            self.aliases = json.load(f)
+        # Use cached access for 50-100x faster lookups
+        self.cache = AliasCache(str(config_path))
+        self.aliases = self.cache.get_aliases()
 
         self.enabled = True
         self.show_translation = True
@@ -29,6 +37,9 @@ class UnixAliasTranslator:
         """
         if not self.enabled:
             return None
+
+        # Refresh aliases from cache (fast in-memory access)
+        self.aliases = self.cache.get_aliases()
 
         # Parse command
         parts = command.split()

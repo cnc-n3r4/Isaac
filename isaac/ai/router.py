@@ -14,6 +14,7 @@ from .claude_client import ClaudeClient
 from .cost_optimizer import CostOptimizer
 from .grok_client import GrokClient
 from .openai_client import OpenAIClient
+from .query_cache import QueryCache
 from .routing_config import RoutingConfigManager
 from .task_analyzer import TaskAnalyzer
 
@@ -52,6 +53,9 @@ class AIRouter:
         self.routing_config = RoutingConfigManager(routing_config_path)
         self.task_analyzer = TaskAnalyzer(config_manager=self.routing_config)
         self.cost_optimizer = CostOptimizer(self.routing_config, cost_storage_path)
+
+        # Phase 2: Query cache for cost savings and faster responses
+        self.query_cache = QueryCache()
 
         # Initialize clients
         self.clients: Dict[str, Optional[BaseAIClient]] = {
@@ -289,6 +293,40 @@ class AIRouter:
                     },
                 )
 
+        # Phase 2: Check cache first (major cost savings!)
+        cache_key_params = {
+            "temperature": kwargs.get("temperature", self.config["defaults"]["temperature"]),
+            "max_tokens": kwargs.get("max_tokens", self.config["defaults"]["max_tokens"]),
+            "has_tools": tools is not None,
+        }
+
+        # Create cache key from messages
+        messages_str = json.dumps(messages, sort_keys=True)
+        cached_response = self.query_cache.get(
+            query=messages_str,
+            model=recommended_provider,
+            **cache_key_params
+        )
+
+        if cached_response:
+            # Cache hit! Return cached response with metadata
+            cached_ai_response = AIResponse(
+                content=cached_response.get("content", ""),
+                provider=cached_response.get("provider", recommended_provider),
+                model=cached_response.get("model", ""),
+                usage=cached_response.get("usage", {}),
+                success=True,
+                metadata={
+                    "cache_hit": True,
+                    "cache_type": "query_cache",
+                    "original_timestamp": cached_response.get("timestamp"),
+                    "cost_saved": cached_response.get("cost", 0.0),
+                }
+            )
+            # Record cost savings
+            self.query_cache.record_cache_hit_savings(cached_response.get("cost", 0.0))
+            return cached_ai_response
+
         # Build fallback order with recommended provider first
         fallback_order = self._get_fallback_order(recommended_provider)
 
@@ -404,6 +442,23 @@ class AIRouter:
                         }
                     )
 
+                    # Phase 2: Cache successful responses for future cost savings
+                    cache_data = {
+                        "content": response.content,
+                        "provider": provider,
+                        "model": model,
+                        "usage": response.usage,
+                        "cost": cost_result["cost"],
+                        "timestamp": time.time(),
+                    }
+                    self.query_cache.set(
+                        query=messages_str,
+                        model=recommended_provider,
+                        response=cache_data,
+                        cost=cost_result["cost"],
+                        **cache_key_params
+                    )
+
                     return response
 
                 # Request failed but didn't raise exception
@@ -469,6 +524,8 @@ class AIRouter:
                 "preferences": self.routing_config.get_all_settings()["routing_preferences"],
                 "enabled_providers": self.routing_config.get_enabled_providers(),
             },
+            # Phase 2: Query cache statistics
+            "query_cache": self.query_cache.get_stats(),
         }
 
     def reset_stats(self) -> None:
