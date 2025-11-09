@@ -299,48 +299,41 @@ class MachineCommand:
 
 
 def main():
-    """Main entry point"""
+    """Main entry point (legacy support)"""
     import sys
 
-    # Parse command line arguments
-    if len(sys.argv) < 2:
-        print("Usage: python run.py <action> [options]")
-        print("Actions: register, unregister, list, show, status, group, groups, discover, find")
-        print("Options:")
-        print("  --machine-id <id>        Machine ID for operations")
-        print("  --hostname <host>        Hostname for registration")
-        print("  --ip-address <ip>        IP address for registration")
-        print("  --port <port>            Port for registration (default: 8080)")
-        print("  --tags <tags>            Comma-separated tags")
-        print("  --group-name <name>      Group name")
-        print("  --group-members <ids>    Comma-separated machine IDs")
-        print("  --filter-tags <tags>     Tags to filter by")
-        print("  --min-cpu <cores>        Minimum CPU cores")
-        print("  --min-memory <gb>        Minimum memory GB")
-        return
+    # If run directly with old-style arguments, use legacy mode
+    if len(sys.argv) > 1:
+        # Parse command line arguments
+        action = sys.argv[1]
+        args = {"action": action}
 
-    action = sys.argv[1]
-    args = {"action": action}
-
-    # Parse additional arguments
-    i = 2
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg.startswith("--"):
-            key = arg[2:]  # Remove --
-            if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith("--"):
-                value = sys.argv[i + 1]
-                args[key] = value
-                i += 2
+        # Parse additional arguments
+        i = 2
+        while i < len(sys.argv):
+            arg = sys.argv[i]
+            if arg.startswith("--"):
+                key = arg[2:]  # Remove --
+                if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith("--"):
+                    value = sys.argv[i + 1]
+                    args[key] = value
+                    i += 2
+                else:
+                    args[key] = True
+                    i += 1
             else:
-                args[key] = True
                 i += 1
-        else:
-            i += 1
 
-    command = MachineCommand()
-    result = command.execute(args)
-    print(result)
+        command = MachineCommand()
+        result = command.execute(args)
+        print(result)
+    else:
+        # Use new standardized interface
+        from isaac.commands.base import run_command
+        from isaac.commands.machine.command_impl import MachineCommand as StandardizedMachineCommand
+
+        command = StandardizedMachineCommand()
+        run_command(command)
 
 
 if __name__ == "__main__":

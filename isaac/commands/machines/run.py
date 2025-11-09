@@ -14,7 +14,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 def main():
     """Main entry point for machines command"""
-    # Read payload from stdin
+    # Check if we should use standardized interface
+    if sys.stdin.isatty():
+        # Use new standardized interface
+        from isaac.commands.base import run_command
+        from isaac.commands.machines.command_impl import MachinesCommand
+
+        command = MachinesCommand()
+        run_command(command)
+        return
+
+    # Read payload from stdin (legacy dispatcher mode)
     payload = json.loads(sys.stdin.read())
     args = payload.get("args", {})
     payload.get("session", {})

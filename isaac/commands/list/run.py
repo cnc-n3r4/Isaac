@@ -1,31 +1,24 @@
 #!/usr/bin/env python3
 """
-List Command Handler - Plugin format
+List Command - Entry Point
+
+Standardized entry point using BaseCommand interface.
 """
 
-import json
 import sys
+from pathlib import Path
+
+# Add isaac to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+from isaac.commands.base import run_command
+from isaac.commands.list.command_impl import ListCommand
 
 
 def main():
-    """Main entry point for list command"""
-    # Read payload from stdin
-    payload = json.loads(sys.stdin.read())
-    args = payload.get("args", {})
-
-    list_name = args.get("list_name", "default")
-
-    # For now, just show a placeholder list
-    output = f"=== List: {list_name} ===\n\n"
-    output += "This is a placeholder implementation.\n"
-    output += "The list command would show items from the named list.\n\n"
-    output += "Example items:\n"
-    output += "• Item 1\n"
-    output += "• Item 2\n"
-    output += "• Item 3\n"
-
-    # Return envelope
-    print(json.dumps({"ok": True, "kind": "text", "stdout": output, "meta": {}}))
+    """Main entry point for /list command"""
+    command = ListCommand()
+    run_command(command)
 
 
 if __name__ == "__main__":

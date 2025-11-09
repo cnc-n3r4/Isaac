@@ -1,32 +1,22 @@
 #!/usr/bin/env python3
 """
-Pipeline Command - Intelligent workflow automation
+Pipeline Command Handler - Intelligent workflow automation
 """
 
 import sys
 from pathlib import Path
 
-# Add the isaac package to the path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add isaac package to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from isaac.commands.pipeline.pipeline_command import PipelineCommand
+from isaac.commands.base import run_command
+from isaac.commands.pipeline.command_impl import PipelineCommand
 
 
 def main():
-    """Main entry point for pipeline command."""
+    """Main entry point for pipeline command"""
     command = PipelineCommand()
-
-    # Get arguments from command line
-    args = sys.argv[1:] if len(sys.argv) > 1 else []
-
-    # Execute command
-    result = command.execute(args)
-
-    # Print output
-    print(result["output"])
-
-    # Exit with appropriate code
-    sys.exit(result["exit_code"])
+    run_command(command)
 
 
 if __name__ == "__main__":

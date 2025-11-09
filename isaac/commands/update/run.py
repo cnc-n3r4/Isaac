@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Update Command - Intelligent package dependency updates
 Handles pip, npm, yarn package updates with safety checks
@@ -322,3 +323,19 @@ def run(session_manager, args: Dict[str, Any]) -> Dict[str, Any]:
     """Entry point for the update command"""
     cmd = UpdateCommand(session_manager)
     return cmd.execute(args)
+
+
+def main():
+    """Main entry point for update command"""
+    # Import here to avoid moving entire file
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+    from isaac.commands.base import run_command
+    from isaac.commands.update.command_impl import UpdateCommand as UpdateCommandStd
+
+    command = UpdateCommandStd()
+    run_command(command)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
 """
-Backup Command Handler - Plugin format
+Backup Command - Entry Point
+
+Standardized entry point using BaseCommand interface.
 """
 
-import json
 import sys
+from pathlib import Path
+
+# Add isaac to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+
+from isaac.commands.base import run_command
+from isaac.commands.backup.command_impl import BackupCommand
 
 
 def main():
-    """Main entry point for backup command"""
-    # Read payload from stdin
-    payload = json.loads(sys.stdin.read())
-    args = payload.get("args", {})
-
-    target = args.get("target", "all")
-
-    # Simulate backup operation
-    output = f"=== Backup Operation ===\n\n"
-    output += f"Target: {target}\n"
-    output += "Status: ✓ Backup completed successfully\n"
-    output += "Files backed up: 5\n"
-    output += "Total size: 2.3 MB\n"
-    output += "Destination: ~/.isaac/backups/\n"
-
-    # Return envelope
-    print(json.dumps({"ok": True, "kind": "text", "stdout": output, "meta": {}}))
+    """Main entry point for /backup command"""
+    command = BackupCommand()
+    run_command(command)
 
 
 if __name__ == "__main__":

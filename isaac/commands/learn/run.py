@@ -11,32 +11,14 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from isaac.commands.learn.learn_command import LearnCommand
+from isaac.commands.base import run_command
+from isaac.commands.learn.command_impl import LearnCommand
 
 
 def main():
     """Main entry point."""
-    try:
-        command = LearnCommand()
-        result = command.execute(sys.argv[1:])
-
-        print(result["output"])
-
-        # Cleanup
-        command.cleanup()
-
-        if not result["success"]:
-            sys.exit(result["exit_code"])
-
-    except KeyboardInterrupt:
-        print("\nOperation cancelled")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
+    command = LearnCommand()
+    run_command(command)
 
 
 if __name__ == "__main__":
