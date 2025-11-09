@@ -1,8 +1,13 @@
 name: backup
 version: 1.0.0
+status: stable
 summary: "Backup configuration and session data"
 
 triggers: ["/backup"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: target

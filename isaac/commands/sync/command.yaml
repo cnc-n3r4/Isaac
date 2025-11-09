@@ -1,5 +1,6 @@
 name: sync
 version: 1.0.0
+status: stable
 summary: Force synchronization of queued commands to cloud
 description: Force synchronization of queued commands to cloud
 triggers:
@@ -8,6 +9,10 @@ triggers:
 aliases:
   - /sync
   - /s
+
+dependencies:
+  packages: []
+  api_keys: []
 security:
   resources:
     timeout_ms: 30000

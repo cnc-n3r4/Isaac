@@ -1,5 +1,6 @@
 name: ask
 version: 1.0.0
+status: stable
 summary: Query AI for information (conversational, no command execution)
 description: |
   Chat with AI directly without command execution.
@@ -13,6 +14,10 @@ triggers:
 aliases:
   - /ask
   - /a
+
+dependencies:
+  packages: []
+  api_keys: ["XAI_API_KEY"]
 
 args: []
 

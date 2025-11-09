@@ -1,8 +1,13 @@
 name: newfile
 version: 1.0.0
+status: stable
 summary: "Create files with templates"
 
 triggers: ["/newfile"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: filename

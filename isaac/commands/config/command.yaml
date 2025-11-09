@@ -1,8 +1,13 @@
 name: config
 version: 1.0.0
+status: stable
 summary: "View or modify configuration settings"
 
 triggers: ["/config"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: subcommand

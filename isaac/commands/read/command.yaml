@@ -1,5 +1,6 @@
 name: read
 version: 1.0.0
+status: stable
 summary: Read files with line numbers
 description: |
   Read file contents with line numbers. Supports offset and limit for large files.
@@ -10,6 +11,10 @@ triggers:
 
 aliases:
   - /read
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args: []
 

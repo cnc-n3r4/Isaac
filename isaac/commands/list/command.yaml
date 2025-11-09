@@ -1,9 +1,14 @@
 name: list
 version: 1.0.0
+status: stable
 summary: "Manage named lists (shopping, todos, etc.)"
 
 triggers: ["/list"]
 aliases: ["/ls"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: list_name

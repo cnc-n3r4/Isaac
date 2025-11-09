@@ -1,5 +1,6 @@
 name: glob
 version: 1.0.0
+status: stable
 summary: Find files by pattern matching
 description: |
   Find files using glob patterns (e.g., "**/*.py", "src/**/*.js").
@@ -11,6 +12,10 @@ triggers:
 aliases:
   - /glob
   - /find
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: pattern

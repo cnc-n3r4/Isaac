@@ -1,5 +1,6 @@
 name: edit
 version: 1.0.0
+status: stable
 summary: Edit files with exact string replacement
 description: |
   Edit file by replacing exact string. SAFETY: old_string must match exactly.
@@ -10,6 +11,10 @@ triggers:
 
 aliases:
   - /edit
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args: []
 
