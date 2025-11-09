@@ -1,0 +1,1892 @@
+isaac/__init__.py:1:45: W292 no newline at end of file
+isaac/__main__.py:57:13: F841 local variable 'boot_loader' is assigned to but never used
+isaac/__main__.py:171:11: W292 no newline at end of file
+isaac/adapters/__init__.py:1:45: W292 no newline at end of file
+isaac/adapters/base_adapter.py:20:1: W293 blank line contains whitespace
+isaac/adapters/base_adapter.py:26:1: W293 blank line contains whitespace
+isaac/adapters/base_adapter.py:31:1: W293 blank line contains whitespace
+isaac/adapters/base_adapter.py:36:1: W293 blank line contains whitespace
+isaac/adapters/base_adapter.py:39:1: W293 blank line contains whitespace
+isaac/adapters/base_adapter.py:44:1: W293 blank line contains whitespace
+isaac/adapters/base_adapter.py:49:1: W293 blank line contains whitespace
+isaac/adapters/base_adapter.py:53:13: W292 no newline at end of file
+isaac/adapters/bash_adapter.py:12:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:17:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:21:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:25:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:37:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:43:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:50:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:57:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:61:1: W293 blank line contains whitespace
+isaac/adapters/bash_adapter.py:72:9: E722 do not use bare 'except'
+isaac/adapters/bash_adapter.py:73:25: W292 no newline at end of file
+isaac/adapters/powershell_adapter.py:14:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:18:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:23:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:27:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:31:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:43:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:49:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:56:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:63:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:67:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:78:9: E722 do not use bare 'except'
+isaac/adapters/powershell_adapter.py:80:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:85:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:92:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:96:1: W293 blank line contains whitespace
+isaac/adapters/powershell_adapter.py:98:32: W292 no newline at end of file
+isaac/adapters/shell_detector.py:14:1: W293 blank line contains whitespace
+isaac/adapters/shell_detector.py:17:1: W293 blank line contains whitespace
+isaac/adapters/shell_detector.py:20:1: W293 blank line contains whitespace
+isaac/adapters/shell_detector.py:25:1: W293 blank line contains whitespace
+isaac/adapters/shell_detector.py:31:1: W293 blank line contains whitespace
+isaac/adapters/shell_detector.py:37:1: W293 blank line contains whitespace
+isaac/adapters/shell_detector.py:43:1: W293 blank line contains whitespace
+isaac/adapters/shell_detector.py:47:10: W292 no newline at end of file
+isaac/ai/agent.py:15:1: W293 blank line contains whitespace
+isaac/ai/agent.py:22:1: W293 blank line contains whitespace
+isaac/ai/agent.py:27:1: W293 blank line contains whitespace
+isaac/ai/agent.py:37:1: W293 blank line contains whitespace
+isaac/ai/agent.py:43:1: W293 blank line contains whitespace
+isaac/ai/agent.py:46:1: W293 blank line contains whitespace
+isaac/ai/agent.py:73:1: W293 blank line contains whitespace
+isaac/ai/agent.py:82:1: W293 blank line contains whitespace
+isaac/ai/agent.py:90:1: W293 blank line contains whitespace
+isaac/ai/agent.py:93:1: W293 blank line contains whitespace
+isaac/ai/agent.py:103:1: W293 blank line contains whitespace
+isaac/ai/agent.py:107:1: W293 blank line contains whitespace
+isaac/ai/agent.py:117:1: W293 blank line contains whitespace
+isaac/ai/agent.py:135:1: W293 blank line contains whitespace
+isaac/ai/agent.py:140:1: W293 blank line contains whitespace
+isaac/ai/agent.py:149:1: W293 blank line contains whitespace
+isaac/ai/agent.py:153:1: W293 blank line contains whitespace
+isaac/ai/agent.py:156:1: W293 blank line contains whitespace
+isaac/ai/agent.py:160:1: W293 blank line contains whitespace
+isaac/ai/agent.py:167:1: W293 blank line contains whitespace
+isaac/ai/agent.py:175:1: W293 blank line contains whitespace
+isaac/ai/agent.py:183:1: W293 blank line contains whitespace
+isaac/ai/agent.py:193:1: W293 blank line contains whitespace
+isaac/ai/agent.py:201:1: W293 blank line contains whitespace
+isaac/ai/agent.py:208:1: W293 blank line contains whitespace
+isaac/ai/agent.py:228:1: W293 blank line contains whitespace
+isaac/ai/claude_client.py:6:1: F401 'json' imported but unused
+isaac/ai/claude_client.py:186:13: E722 do not use bare 'except'
+isaac/ai/collections_core.py:511:29: F841 local variable 'chunks' is assigned to but never used
+isaac/ai/collections_core.py:649:35: E127 continuation line over-indented for visual indent
+isaac/ai/config_manager.py:17:1: W293 blank line contains whitespace
+isaac/ai/config_manager.py:90:1: W293 blank line contains whitespace
+isaac/ai/config_manager.py:97:1: W293 blank line contains whitespace
+isaac/ai/config_manager.py:102:1: W293 blank line contains whitespace
+isaac/ai/config_manager.py:108:1: W293 blank line contains whitespace
+isaac/ai/config_manager.py:114:1: W293 blank line contains whitespace
+isaac/ai/config_manager.py:119:1: W293 blank line contains whitespace
+isaac/ai/config_manager.py:125:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:13:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:16:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:23:24: W291 trailing whitespace
+isaac/ai/corrector.py:27:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:29:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:38:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:43:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:54:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:62:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:71:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:78:29: W291 trailing whitespace
+isaac/ai/corrector.py:89:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:93:1: W293 blank line contains whitespace
+isaac/ai/corrector.py:114:10: W292 no newline at end of file
+isaac/ai/cost_optimizer.py:20:1: F401 'time' imported but unused
+isaac/ai/cost_optimizer.py:361:13: F841 local variable 'complexity_enum' is assigned to but never used
+isaac/ai/grok_client.py:118:13: E722 do not use bare 'except'
+isaac/ai/openai_client.py:126:13: E722 do not use bare 'except'
+isaac/ai/query_classifier.py:14:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:17:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:24:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:31:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:38:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:42:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:45:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:50:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:54:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:58:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:64:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:70:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:74:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:77:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:83:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:87:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:91:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:93:1: W293 blank line contains whitespace
+isaac/ai/query_classifier.py:97:1: W293 blank line contains whitespace
+isaac/ai/rag_engine.py:9:1: F401 'typing.Optional' imported but unused
+isaac/ai/rag_engine.py:44:14: E128 continuation line under-indented for visual indent
+isaac/ai/rag_engine.py:45:14: E128 continuation line under-indented for visual indent
+isaac/ai/rag_engine.py:46:14: E128 continuation line under-indented for visual indent
+isaac/ai/rag_engine.py:120:13: F841 local variable 'score' is assigned to but never used
+isaac/ai/rag_engine.py:264:20: E128 continuation line under-indented for visual indent
+isaac/ai/rag_engine.py:340:5: F811 redefinition of unused 'Path' from line 10
+isaac/ai/router.py:140:1: W293 blank line contains whitespace
+isaac/ai/router.py:155:1: W293 blank line contains whitespace
+isaac/ai/router.py:159:1: W293 blank line contains whitespace
+isaac/ai/router.py:165:1: W293 blank line contains whitespace
+isaac/ai/router.py:179:1: W293 blank line contains whitespace
+isaac/ai/router.py:182:1: W293 blank line contains whitespace
+isaac/ai/router.py:188:1: W293 blank line contains whitespace
+isaac/ai/router.py:218:1: W293 blank line contains whitespace
+isaac/ai/router.py:221:1: W293 blank line contains whitespace
+isaac/ai/routing_config.py:17:1: F401 'enum.Enum' imported but unused
+isaac/ai/session_manager.py:344:5: F401 'sys' imported but unused
+isaac/ai/task_analyzer.py:18:1: F401 'typing.Tuple' imported but unused
+isaac/ai/task_analyzer.py:20:1: F401 'pathlib.Path' imported but unused
+isaac/ai/task_analyzer.py:111:26: E128 continuation line under-indented for visual indent
+isaac/ai/task_analyzer.py:403:28: E128 continuation line under-indented for visual indent
+isaac/ai/task_analyzer.py:548:24: E128 continuation line under-indented for visual indent
+isaac/ai/task_planner.py:7:1: F401 'typing.List' imported but unused
+isaac/ai/task_planner.py:10:1: F401 'isaac.models.task_history.TaskHistory' imported but unused
+isaac/ai/task_planner.py:16:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:20:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:41:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:46:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:57:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:65:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:74:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:81:29: W291 trailing whitespace
+isaac/ai/task_planner.py:92:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:96:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:98:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:105:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:113:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:121:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:123:15: F541 f-string is missing placeholders
+isaac/ai/task_planner.py:126:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:127:11: F541 f-string is missing placeholders
+isaac/ai/task_planner.py:134:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:136:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:143:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:145:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:152:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:158:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:168:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:175:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:178:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:181:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:186:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:189:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:206:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:209:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:219:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:229:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:240:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:244:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:252:66: W291 trailing whitespace
+isaac/ai/task_planner.py:253:63: W291 trailing whitespace
+isaac/ai/task_planner.py:257:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:266:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:277:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:284:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:286:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:294:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:299:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:302:72: W291 trailing whitespace
+isaac/ai/task_planner.py:306:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:312:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:319:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:325:70: W291 trailing whitespace
+isaac/ai/task_planner.py:329:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:335:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:354:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:360:1: W293 blank line contains whitespace
+isaac/ai/task_planner.py:371:10: W292 no newline at end of file
+isaac/ai/task_runner.py:6:1: F401 'typing.List' imported but unused
+isaac/ai/task_runner.py:7:1: F401 'isaac.adapters.base_adapter.CommandResult' imported but unused
+isaac/ai/task_runner.py:10:98: E251 unexpected spaces around keyword / parameter equals
+isaac/ai/task_runner.py:10:100: E251 unexpected spaces around keyword / parameter equals
+isaac/ai/task_runner.py:10:118: E251 unexpected spaces around keyword / parameter equals
+isaac/ai/task_runner.py:10:120: E251 unexpected spaces around keyword / parameter equals
+isaac/ai/task_runner.py:13:1: W293 blank line contains whitespace
+isaac/ai/task_runner.py:20:1: W293 blank line contains whitespace
+isaac/ai/task_runner.py:41:10: W292 no newline at end of file
+isaac/ai/translator.py:8:1: F401 'json' imported but unused
+isaac/ai/translator.py:14:1: W293 blank line contains whitespace
+isaac/ai/translator.py:19:1: W293 blank line contains whitespace
+isaac/ai/translator.py:28:1: W293 blank line contains whitespace
+isaac/ai/translator.py:41:1: W293 blank line contains whitespace
+isaac/ai/translator.py:49:1: W293 blank line contains whitespace
+isaac/ai/translator.py:58:1: W293 blank line contains whitespace
+isaac/ai/translator.py:72:1: W293 blank line contains whitespace
+isaac/ai/translator.py:77:1: W293 blank line contains whitespace
+isaac/ai/translator.py:80:1: W293 blank line contains whitespace
+isaac/ai/translator.py:86:1: W293 blank line contains whitespace
+isaac/ai/translator.py:89:9: F811 redefinition of unused 'json' from line 8
+isaac/ai/translator.py:102:1: W293 blank line contains whitespace
+isaac/ai/translator.py:105:1: W293 blank line contains whitespace
+isaac/ai/translator.py:113:1: W293 blank line contains whitespace
+isaac/ai/translator.py:117:1: W293 blank line contains whitespace
+isaac/ai/translator.py:123:1: W293 blank line contains whitespace
+isaac/ai/translator.py:130:1: W293 blank line contains whitespace
+isaac/ai/translator.py:133:1: W293 blank line contains whitespace
+isaac/ai/translator.py:145:1: W293 blank line contains whitespace
+isaac/ai/translator.py:153:1: W293 blank line contains whitespace
+isaac/ai/translator.py:157:1: W293 blank line contains whitespace
+isaac/ai/translator.py:169:1: W293 blank line contains whitespace
+isaac/ai/translator.py:171:1: W293 blank line contains whitespace
+isaac/ai/translator.py:178:1: W293 blank line contains whitespace
+isaac/ai/translator.py:179:78: W292 no newline at end of file
+isaac/ai/unified_chat.py:170:28: E131 continuation line unaligned for hanging indent
+isaac/ai/unified_chat.py:286:5: F811 redefinition of unused 'Path' from line 11
+isaac/ai/validator.py:9:1: F401 'typing.List' imported but unused
+isaac/ai/validator.py:14:1: E302 expected 2 blank lines, found 1
+isaac/ai/validator.py:17:1: W293 blank line contains whitespace
+isaac/ai/validator.py:21:1: W293 blank line contains whitespace
+isaac/ai/validator.py:37:1: W293 blank line contains whitespace
+isaac/ai/validator.py:41:1: W293 blank line contains whitespace
+isaac/ai/validator.py:85:29: W291 trailing whitespace
+isaac/ai/validator.py:119:10: W292 no newline at end of file
+isaac/ai/xai_client.py:8:1: F401 'typing.List' imported but unused
+isaac/ai/xai_client.py:13:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:63:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:68:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:77:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:83:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:96:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:101:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:111:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:123:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:130:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:133:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:139:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:141:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:144:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:153:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:157:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:161:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:164:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:181:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:184:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:186:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:190:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:194:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:217:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:220:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:235:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:239:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:243:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:270:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:278:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:292:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:296:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:300:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:328:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:336:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:340:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:359:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:363:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:367:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:404:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:410:1: W293 blank line contains whitespace
+isaac/ai/xai_client.py:423:14: W292 no newline at end of file
+isaac/ai/xai_collections_client.py:10:1: F401 'json' imported but unused
+isaac/ai/xai_collections_client.py:24:79: W291 trailing whitespace
+isaac/ai/xai_collections_client.py:25:56: W291 trailing whitespace
+isaac/ai/xai_collections_client.py:43:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:63:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:70:17: F841 local variable 'collections' is assigned to but never used
+isaac/ai/xai_collections_client.py:85:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:91:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:93:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:114:103: W291 trailing whitespace
+isaac/ai/xai_collections_client.py:115:28: E128 continuation line under-indented for visual indent
+isaac/ai/xai_collections_client.py:148:26: E128 continuation line under-indented for visual indent
+isaac/ai/xai_collections_client.py:177:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:191:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:209:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:214:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:313:77: W291 trailing whitespace
+isaac/ai/xai_collections_client.py:314:26: E128 continuation line under-indented for visual indent
+isaac/ai/xai_collections_client.py:334:1: W293 blank line contains whitespace
+isaac/ai/xai_collections_client.py:375:71: W292 no newline at end of file
+isaac/ambient/proactive_suggester.py:8:1: F401 'typing.Callable' imported but unused
+isaac/ambient/proactive_suggester.py:342:10: W292 no newline at end of file
+isaac/ambient/workflow_learner.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/ambient/workflow_learner.py:9:1: F401 'typing.Set' imported but unused
+isaac/ambient/workflow_learner.py:12:1: F401 're' imported but unused
+isaac/ambient/workflow_learner.py:203:9: F841 local variable 'frequent_commands' is assigned to but never used
+isaac/ambient/workflow_learner.py:316:25: E128 continuation line under-indented for visual indent
+isaac/ambient/workflow_learner.py:351:36: F541 f-string is missing placeholders
+isaac/ambient/workflow_learner.py:433:10: W292 no newline at end of file
+isaac/analytics/analytics_manager.py:79:9: F841 local variable 'analysis' is assigned to but never used
+isaac/analytics/code_quality_tracker.py:123:38: E741 ambiguous variable name 'l'
+isaac/analytics/dashboard_builder.py:7:1: F401 'json' imported but unused
+isaac/analytics/dashboard_builder.py:8:1: F401 'datetime.timedelta' imported but unused
+isaac/analytics/dashboard_builder.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/analytics/report_exporter.py:11:1: F401 'typing.List' imported but unused
+isaac/analytics/report_exporter.py:224:21: F541 f-string is missing placeholders
+isaac/analytics/report_exporter.py:285:19: F541 f-string is missing placeholders
+isaac/api/__init__.py:1:45: W292 no newline at end of file
+isaac/api/cloud_client.py:14:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:18:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:21:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:31:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:34:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:43:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:45:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:51:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:55:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:58:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:62:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:72:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:78:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:80:21: W291 trailing whitespace
+isaac/api/cloud_client.py:81:30: W291 trailing whitespace
+isaac/api/cloud_client.py:82:33: W291 trailing whitespace
+isaac/api/cloud_client.py:85:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:91:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:95:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:98:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:101:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:114:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:116:21: W291 trailing whitespace
+isaac/api/cloud_client.py:117:33: W291 trailing whitespace
+isaac/api/cloud_client.py:118:31: W291 trailing whitespace
+isaac/api/cloud_client.py:121:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:126:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:129:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:133:1: W293 blank line contains whitespace
+isaac/api/cloud_client.py:256:25: W292 no newline at end of file
+isaac/arvr/multimodal_input.py:124:27: E128 continuation line under-indented for visual indent
+isaac/arvr/multimodal_input.py:135:29: E128 continuation line under-indented for visual indent
+isaac/arvr/multimodal_input.py:350:9: F401 'isaac.arvr.spatial_api.Vector3D' imported but unused
+isaac/arvr/platform_adapter.py:14:1: F401 'isaac.arvr.spatial_api.Quaternion' imported but unused
+isaac/arvr/platform_adapter.py:15:1: F401 'isaac.arvr.gesture_api.Gesture' imported but unused
+isaac/arvr/platform_adapter.py:15:1: F401 'isaac.arvr.gesture_api.GestureType' imported but unused
+isaac/arvr/platform_adapter.py:15:1: F401 'isaac.arvr.gesture_api.HandType' imported but unused
+isaac/arvr/prototype_mode.py:10:1: F401 'typing.Dict' imported but unused
+isaac/arvr/prototype_mode.py:10:1: F401 'typing.Any' imported but unused
+isaac/arvr/prototype_mode.py:10:1: F401 'typing.Optional' imported but unused
+isaac/arvr/prototype_mode.py:15:1: F401 'isaac.arvr.gesture_api.GestureType' imported but unused
+isaac/arvr/prototype_mode.py:32:9: F841 local variable 'dz' is assigned to but never used
+isaac/arvr/prototype_mode.py:304:9: F841 local variable 'cx' is assigned to but never used
+isaac/arvr/prototype_mode.py:412:9: F811 redefinition of unused 'GestureType' from line 15
+isaac/arvr/spatial_api.py:266:28: E128 continuation line under-indented for visual indent
+isaac/bubbles/__init__.py:7:46: W292 no newline at end of file
+isaac/bubbles/bubble_manager.py:296:35: E128 continuation line under-indented for visual indent
+isaac/bubbles/bubble_manager.py:301:35: E128 continuation line under-indented for visual indent
+isaac/bubbles/bubble_manager.py:306:35: E128 continuation line under-indented for visual indent
+isaac/bubbles/bubble_manager.py:458:24: W292 no newline at end of file
+isaac/bubbles/manager.py:9:1: F401 'typing.NamedTuple' imported but unused
+isaac/bubbles/manager.py:68:22: E128 continuation line under-indented for visual indent
+isaac/bubbles/manager.py:171:9: E722 do not use bare 'except'
+isaac/bubbles/manager.py:202:9: E722 do not use bare 'except'
+isaac/bubbles/manager.py:241:9: E722 do not use bare 'except'
+isaac/bubbles/manager.py:249:9: F841 local variable 'workspace_root' is assigned to but never used
+isaac/bubbles/manager.py:282:9: F841 local variable 'e' is assigned to but never used
+isaac/bubbles/manager.py:309:21: E722 do not use bare 'except'
+isaac/bubbles/manager.py:312:9: E722 do not use bare 'except'
+isaac/bubbles/manager.py:338:9: E722 do not use bare 'except'
+isaac/bubbles/manager.py:360:13: E722 do not use bare 'except'
+isaac/bubbles/manager.py:367:13: E722 do not use bare 'except'
+isaac/bubbles/manager.py:370:9: E722 do not use bare 'except'
+isaac/bubbles/manager.py:487:30: E128 continuation line under-indented for visual indent
+isaac/bubbles/manager.py:552:89: W292 no newline at end of file
+isaac/commands/__init__.py:12:22: W292 no newline at end of file
+isaac/commands/alias/run.py:13:1: E402 module level import not at top of file
+isaac/commands/ambient/ambient_command.py:6:1: F401 'argparse' imported but unused
+isaac/commands/ambient/ambient_command.py:8:1: F401 'typing.Optional' imported but unused
+isaac/commands/ambient/ambient_command.py:9:1: F401 'pathlib.Path' imported but unused
+isaac/commands/ambient/ambient_command.py:237:23: F541 f-string is missing placeholders
+isaac/commands/ambient/ambient_command.py:247:23: F541 f-string is missing placeholders
+isaac/commands/ambient/ambient_command.py:291:13: F841 local variable 'learner_stats' is assigned to but never used
+isaac/commands/ambient/ambient_command.py:343:23: F541 f-string is missing placeholders
+isaac/commands/ambient/ambient_command.py:362:14: W292 no newline at end of file
+isaac/commands/ambient/run.py:8:1: F401 'os' imported but unused
+isaac/commands/ambient/run.py:15:1: E402 module level import not at top of file
+isaac/commands/ambient/run.py:38:11: W292 no newline at end of file
+isaac/commands/analytics/analytics_command.py:8:1: F401 'typing.Optional' imported but unused
+isaac/commands/analyze/run.py:6:1: F401 'os' imported but unused
+isaac/commands/analyze/run.py:9:1: F401 'typing.Optional' imported but unused
+isaac/commands/analyze/run.py:25:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:34:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:37:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:42:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:45:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:56:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:61:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:64:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:74:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:76:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:85:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:94:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:97:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:115:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:121:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:126:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:130:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:133:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:140:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:154:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:160:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:169:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:171:1: W293 blank line contains whitespace
+isaac/commands/analyze/run.py:177:11: W292 no newline at end of file
+isaac/commands/apropos/run.py:13:1: E402 module level import not at top of file
+isaac/commands/apropos/run.py:57:11: F541 f-string is missing placeholders
+isaac/commands/arvr/arvr_command.py:8:1: F401 'typing.Dict' imported but unused
+isaac/commands/arvr/arvr_command.py:8:1: F401 'typing.Any' imported but unused
+isaac/commands/arvr/arvr_command.py:10:1: F401 'isaac.arvr.spatial_api.SpatialWorkspace' imported but unused
+isaac/commands/arvr/arvr_command.py:12:1: F401 'isaac.arvr.spatial_layouts.LayoutConstraints' imported but unused
+isaac/commands/arvr/arvr_command.py:153:17: F841 local variable 'optimized' is assigned to but never used
+isaac/commands/arvr/arvr_command.py:247:24: F541 f-string is missing placeholders
+isaac/commands/arvr/arvr_command.py:343:23: F541 f-string is missing placeholders
+isaac/commands/ask/run.py:15:1: E402 module level import not at top of file
+isaac/commands/ask/run.py:16:1: E402 module level import not at top of file
+isaac/commands/ask/run.py:25:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:29:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:32:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:41:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:47:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:49:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:56:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:59:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:76:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:83:21: F841 local variable 'input_kind' is assigned to but never used
+isaac/commands/ask/run.py:84:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:87:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:97:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:105:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:112:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:119:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:141:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:154:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:157:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:163:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:167:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:190:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:192:9: F841 local variable 'client' is assigned to but never used
+isaac/commands/ask/run.py:197:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:200:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:209:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:228:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:255:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:266:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:268:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:271:21: F541 f-string is missing placeholders
+isaac/commands/ask/run.py:296:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:312:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:317:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:320:42: W291 trailing whitespace
+isaac/commands/ask/run.py:323:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:327:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:331:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:336:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:338:5: F841 local variable 'e' is assigned to but never used
+isaac/commands/ask/run.py:341:1: W293 blank line contains whitespace
+isaac/commands/ask/run.py:343:1: W293 blank line contains whitespace
+isaac/commands/backup.py:250:15: F541 f-string is missing placeholders
+isaac/commands/backup.py:298:80: W292 no newline at end of file
+isaac/commands/backup/run.py:19:14: F541 f-string is missing placeholders
+isaac/commands/backup/run.py:36:11: W292 no newline at end of file
+isaac/commands/bubble/bubble_command.py:215:9: F841 local variable 'confirm_msg' is assigned to but never used
+isaac/commands/bubble/bubble_command.py:413:82: W292 no newline at end of file
+isaac/commands/bubble/run.py:14:1: E402 module level import not at top of file
+isaac/commands/bubble/run.py:165:23: F541 f-string is missing placeholders
+isaac/commands/bubble/run.py:321:5: F401 'json' imported but unused
+isaac/commands/bubble/run.py:360:11: W292 no newline at end of file
+isaac/commands/config.py:4:1: F401 'isaac.api.cloud_client.CloudClient' imported but unused
+isaac/commands/config.py:7:1: E302 expected 2 blank lines, found 1
+isaac/commands/config.py:83:9: E722 do not use bare 'except'
+isaac/commands/config.py:111:17: F841 local variable 'client' is assigned to but never used
+isaac/commands/config.py:226:9: E722 do not use bare 'except'
+isaac/commands/config.py:239:9: E722 do not use bare 'except'
+isaac/commands/config.py:240:40: W292 no newline at end of file
+isaac/commands/config/__init__.py:1:25: W292 no newline at end of file
+isaac/commands/config/run.py:46:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:196:5: E722 do not use bare 'except'
+isaac/commands/config/run.py:309:9: F401 'os' imported but unused
+isaac/commands/config/run.py:314:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:319:13: E722 do not use bare 'except'
+isaac/commands/config/run.py:323:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:326:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:444:5: F841 local variable 'e' is assigned to but never used
+isaac/commands/config/run.py:474:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:477:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:479:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:481:9: F401 'os' imported but unused
+isaac/commands/config/run.py:486:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:491:13: E722 do not use bare 'except'
+isaac/commands/config/run.py:495:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:508:1: W293 blank line contains whitespace
+isaac/commands/config/run.py:631:11: W292 no newline at end of file
+isaac/commands/debug/run.py:13:1: E402 module level import not at top of file
+isaac/commands/debug/run.py:151:35: E128 continuation line under-indented for visual indent
+isaac/commands/debug/run.py:230:31: E128 continuation line under-indented for visual indent
+isaac/commands/debug/run.py:377:18: W292 no newline at end of file
+isaac/commands/edit/run.py:14:1: E402 module level import not at top of file
+isaac/commands/file/run.py:27:1: E402 module level import not at top of file
+isaac/commands/file/run.py:146:15: F541 f-string is missing placeholders
+isaac/commands/file/run.py:153:15: F541 f-string is missing placeholders
+isaac/commands/glob/run.py:16:1: E402 module level import not at top of file
+isaac/commands/glob/run.py:36:24: E128 continuation line under-indented for visual indent
+isaac/commands/glob/run.py:38:24: E128 continuation line under-indented for visual indent
+isaac/commands/glob/run.py:39:24: E128 continuation line under-indented for visual indent
+isaac/commands/grep/run.py:14:1: E402 module level import not at top of file
+isaac/commands/grep/run.py:96:27: F541 f-string is missing placeholders
+isaac/commands/help.py:451:27: F541 f-string is missing placeholders
+isaac/commands/help.py:512:14: W292 no newline at end of file
+isaac/commands/help/__init__.py:1:23: W292 no newline at end of file
+isaac/commands/help/run.py:719:11: W292 no newline at end of file
+isaac/commands/help_unified/run.py:6:1: F401 'os' imported but unused
+isaac/commands/help_unified/run.py:7:1: F401 'sys' imported but unused
+isaac/commands/help_unified/run.py:389:5: F811 redefinition of unused 'sys' from line 7
+isaac/commands/help_unified/run.py:396:11: W292 no newline at end of file
+isaac/commands/images/run.py:15:1: E402 module level import not at top of file
+isaac/commands/images/run.py:184:11: F541 f-string is missing placeholders
+isaac/commands/images/run.py:209:21: W292 no newline at end of file
+isaac/commands/learn/learn_command.py:6:1: F401 'argparse' imported but unused
+isaac/commands/learn/learn_command.py:89:13: F841 local variable 'metrics' is assigned to but never used
+isaac/commands/learn/learn_command.py:433:29: E128 continuation line under-indented for visual indent
+isaac/commands/learn/learn_command.py:573:29: E131 continuation line unaligned for hanging indent
+isaac/commands/learn/run.py:8:1: F401 'os' imported but unused
+isaac/commands/learn/run.py:15:1: E402 module level import not at top of file
+isaac/commands/list.py:112:10: W292 no newline at end of file
+isaac/commands/list/run.py:37:11: W292 no newline at end of file
+isaac/commands/machine/run.py:14:1: F401 'isaac.orchestration.MachineCapabilities' imported but unused
+isaac/commands/machine/run.py:14:1: E402 module level import not at top of file
+isaac/commands/machine/run.py:70:9: F811 redefinition of unused 'MachineCapabilities' from line 14
+isaac/commands/machine/run.py:258:20: E128 continuation line under-indented for visual indent
+isaac/commands/machine/run.py:259:20: E128 continuation line under-indented for visual indent
+isaac/commands/machine/run.py:299:5: F401 'json' imported but unused
+isaac/commands/machine/run.py:343:11: W292 no newline at end of file
+isaac/commands/machines/run.py:9:1: F401 'typing.List' imported but unused
+isaac/commands/machines/run.py:20:5: F841 local variable 'session' is assigned to but never used
+isaac/commands/machines/run.py:80:22: F541 f-string is missing placeholders
+isaac/commands/machines/run.py:103:26: F541 f-string is missing placeholders
+isaac/commands/machines/run.py:118:26: F541 f-string is missing placeholders
+isaac/commands/machines/run.py:128:30: F541 f-string is missing placeholders
+isaac/commands/machines/run.py:307:11: W292 no newline at end of file
+isaac/commands/man/run.py:13:1: E402 module level import not at top of file
+isaac/commands/man/run.py:168:15: F541 f-string is missing placeholders
+isaac/commands/man/run.py:169:15: F541 f-string is missing placeholders
+isaac/commands/mine/run.py:6:1: F401 'os' imported but unused
+isaac/commands/mine/run.py:7:1: F401 'glob' imported but unused
+isaac/commands/mine/run.py:11:1: F401 'typing.Optional' imported but unused
+isaac/commands/mine/run.py:12:1: F401 'datetime.datetime' imported but unused
+isaac/commands/mine/run.py:38:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:54:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:62:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:74:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:84:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:108:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:112:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:116:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:120:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:126:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:132:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:141:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:144:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:163:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:170:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:181:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:186:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:199:98: W291 trailing whitespace
+isaac/commands/mine/run.py:200:30: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:201:30: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:204:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:214:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:227:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:231:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:245:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:248:23: W291 trailing whitespace
+isaac/commands/mine/run.py:252:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:258:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:261:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:277:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:295:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:297:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:309:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:481:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:688:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:706:21: F811 redefinition of unused 'datetime' from line 12
+isaac/commands/mine/run.py:710:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:712:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:719:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:723:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:727:104: W291 trailing whitespace
+isaac/commands/mine/run.py:728:36: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:729:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:734:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:744:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:745:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:746:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:747:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:748:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:749:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:750:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:751:28: E128 continuation line under-indented for visual indent
+isaac/commands/mine/run.py:851:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:853:13: F811 redefinition of unused 'os' from line 6
+isaac/commands/mine/run.py:856:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:861:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:864:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1009:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1021:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1026:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1042:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1044:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1062:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1072:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1079:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1086:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1093:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1151:17: F811 redefinition of unused 'datetime' from line 12
+isaac/commands/mine/run.py:1160:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1168:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1173:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1183:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1192:5: F811 redefinition of unused '_handle_nuggets' from line 526
+isaac/commands/mine/run.py:1206:5: F811 redefinition of unused '_list_nuggets' from line 540
+isaac/commands/mine/run.py:1257:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1262:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1279:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1353:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1361:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1534:13: F811 redefinition of unused 'os' from line 6
+isaac/commands/mine/run.py:1536:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1540:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1546:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1551:25: E306 expected 1 blank line before a nested definition, found 0
+isaac/commands/mine/run.py:1553:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1556:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1562:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1567:1: E302 expected 2 blank lines, found 1
+isaac/commands/mine/run.py:1574:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1582:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1586:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1592:1: W293 blank line contains whitespace
+isaac/commands/mine/run.py:1605:11: W292 no newline at end of file
+isaac/commands/msg.py:10:1: F401 'sys' imported but unused
+isaac/commands/msg.py:122:17: E722 do not use bare 'except'
+isaac/commands/msg.py:160:27: F541 f-string is missing placeholders
+isaac/commands/msg.py:239:21: E722 do not use bare 'except'
+isaac/commands/msg.py:300:4: W292 no newline at end of file
+isaac/commands/msg/__init__.py:1:43: W292 no newline at end of file
+isaac/commands/msg/run.py:17:1: E402 module level import not at top of file
+isaac/commands/msg/run.py:25:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:36:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:39:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:46:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:87:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:94:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:101:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:108:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:115:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:124:1: W293 blank line contains whitespace
+isaac/commands/msg/run.py:198:13: F821 undefined name '_display_full_message'
+isaac/commands/msg/run.py:456:11: W292 no newline at end of file
+isaac/commands/newfile/run.py:7:1: F401 'os' imported but unused
+isaac/commands/newfile/run.py:17:1: E402 module level import not at top of file
+isaac/commands/newfile/run.py:146:43: E128 continuation line under-indented for visual indent
+isaac/commands/newfile/run.py:162:39: E128 continuation line under-indented for visual indent
+isaac/commands/newfile/run.py:163:39: E128 continuation line under-indented for visual indent
+isaac/commands/newfile/run.py:164:39: E128 continuation line under-indented for visual indent
+isaac/commands/newfile/run.py:221:23: E128 continuation line under-indented for visual indent
+isaac/commands/newfile/run.py:222:23: E128 continuation line under-indented for visual indent
+isaac/commands/pair/pair_command.py:6:1: F401 'argparse' imported but unused
+isaac/commands/pair/pair_command.py:12:1: F401 'isaac.pairing.TaskPriority' imported but unused
+isaac/commands/pair/pair_command.py:12:1: F401 'isaac.pairing.TaskAssignee' imported but unused
+isaac/commands/pair/pair_command.py:12:1: F401 'isaac.pairing.ReviewSeverity' imported but unused
+isaac/commands/pair/run.py:8:1: F401 'os' imported but unused
+isaac/commands/pair/run.py:15:1: E402 module level import not at top of file
+isaac/commands/pipeline/pipeline_command.py:7:1: F401 'json' imported but unused
+isaac/commands/pipeline/pipeline_command.py:9:1: F401 'typing.Optional' imported but unused
+isaac/commands/pipeline/pipeline_command.py:15:1: F401 'isaac.pipelines.models.PipelineStep' imported but unused
+isaac/commands/pipeline/pipeline_command.py:15:1: F401 'isaac.pipelines.models.StepType' imported but unused
+isaac/commands/pipeline/pipeline_command.py:341:22: E131 continuation line unaligned for hanging indent
+isaac/commands/pipeline/pipeline_command.py:486:4: W292 no newline at end of file
+isaac/commands/pipeline/run.py:12:1: E402 module level import not at top of file
+isaac/commands/pipeline/run.py:33:11: W292 no newline at end of file
+isaac/commands/plugin/plugin_command.py:4:1: F401 'typing.Optional' imported but unused
+isaac/commands/plugin/plugin_command.py:5:1: F401 'datetime.datetime' imported but unused
+isaac/commands/plugin/plugin_command.py:321:15: F541 f-string is missing placeholders
+isaac/commands/plugin/plugin_command.py:328:19: F541 f-string is missing placeholders
+isaac/commands/plugin/plugin_command.py:333:19: F541 f-string is missing placeholders
+isaac/commands/plugin/plugin_command.py:338:19: F541 f-string is missing placeholders
+isaac/commands/plugin/plugin_command.py:363:15: F541 f-string is missing placeholders
+isaac/commands/plugin/plugin_command.py:372:15: F541 f-string is missing placeholders
+isaac/commands/plugin/plugin_command.py:383:19: F541 f-string is missing placeholders
+isaac/commands/plugin/plugin_command.py:509:15: F541 f-string is missing placeholders
+isaac/commands/queue/run.py:13:1: E402 module level import not at top of file
+isaac/commands/queue/run.py:15:1: E302 expected 2 blank lines, found 1
+isaac/commands/queue/run.py:18:5: F841 local variable 'payload' is assigned to but never used
+isaac/commands/queue/run.py:52:11: W292 no newline at end of file
+isaac/commands/read/run.py:14:1: E402 module level import not at top of file
+isaac/commands/resources/resources_command.py:7:1: F401 'typing.Optional' imported but unused
+isaac/commands/resources/resources_command.py:8:1: F401 'json' imported but unused
+isaac/commands/resources/resources_command.py:267:31: F541 f-string is missing placeholders
+isaac/commands/resources/resources_command.py:554:1: E402 module level import not at top of file
+isaac/commands/resources/run.py:12:1: E402 module level import not at top of file
+isaac/commands/restore.py:193:15: F541 f-string is missing placeholders
+isaac/commands/restore.py:199:19: F541 f-string is missing placeholders
+isaac/commands/restore.py:246:80: W292 no newline at end of file
+isaac/commands/restore/run.py:8:1: F401 'os' imported but unused
+isaac/commands/restore/run.py:9:1: F401 'shutil' imported but unused
+isaac/commands/restore/run.py:75:14: F541 f-string is missing placeholders
+isaac/commands/save/run.py:6:1: F401 'os' imported but unused
+isaac/commands/save/run.py:10:1: F401 'typing.Optional' imported but unused
+isaac/commands/save/run.py:20:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:29:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:32:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:37:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:41:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:44:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:55:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:60:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:68:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:71:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:81:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:83:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:95:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:97:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:105:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:108:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:127:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:130:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:138:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:142:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:144:1: W293 blank line contains whitespace
+isaac/commands/save/run.py:150:11: W292 no newline at end of file
+isaac/commands/script/run.py:13:1: E402 module level import not at top of file
+isaac/commands/script/run.py:293:19: F541 f-string is missing placeholders
+isaac/commands/search/run.py:18:1: F401 're' imported but unused
+isaac/commands/search/run.py:24:1: E402 module level import not at top of file
+isaac/commands/search/run.py:115:24: E128 continuation line under-indented for visual indent
+isaac/commands/search/run.py:226:24: E128 continuation line under-indented for visual indent
+isaac/commands/search/run.py:230:24: E128 continuation line under-indented for visual indent
+isaac/commands/search/run.py:234:24: E128 continuation line under-indented for visual indent
+isaac/commands/search/run.py:236:24: E128 continuation line under-indented for visual indent
+isaac/commands/search/run.py:238:24: E128 continuation line under-indented for visual indent
+isaac/commands/share/run.py:13:1: E402 module level import not at top of file
+isaac/commands/share/run.py:98:21: W292 no newline at end of file
+isaac/commands/status.py:5:1: E302 expected 2 blank lines, found 1
+isaac/commands/status.py:38:138: W292 no newline at end of file
+isaac/commands/status/run.py:73:18: F541 f-string is missing placeholders
+isaac/commands/status/run.py:77:18: F541 f-string is missing placeholders
+isaac/commands/status/run.py:91:30: F541 f-string is missing placeholders
+isaac/commands/status/run.py:102:30: F541 f-string is missing placeholders
+isaac/commands/status/run.py:115:26: F541 f-string is missing placeholders
+isaac/commands/status/run.py:116:26: F541 f-string is missing placeholders
+isaac/commands/status/run.py:121:18: F541 f-string is missing placeholders
+isaac/commands/status/run.py:139:18: F541 f-string is missing placeholders
+isaac/commands/status/run.py:142:1: W293 blank line contains whitespace
+isaac/commands/status/run.py:145:1: W293 blank line contains whitespace
+isaac/commands/status/run.py:149:1: W293 blank line contains whitespace
+isaac/commands/status/run.py:152:1: W293 blank line contains whitespace
+isaac/commands/status/run.py:157:1: W293 blank line contains whitespace
+isaac/commands/status/run.py:161:30: F541 f-string is missing placeholders
+isaac/commands/status/run.py:167:1: W293 blank line contains whitespace
+isaac/commands/status/run.py:172:1: W293 blank line contains whitespace
+isaac/commands/status/run.py:177:18: F541 f-string is missing placeholders
+isaac/commands/status/run.py:184:22: F541 f-string is missing placeholders
+isaac/commands/summarize/run.py:6:1: F401 'os' imported but unused
+isaac/commands/summarize/run.py:9:1: F401 'typing.Optional' imported but unused
+isaac/commands/summarize/run.py:25:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:34:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:37:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:42:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:45:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:56:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:61:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:64:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:74:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:76:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:85:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:94:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:97:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:115:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:121:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:126:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:130:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:133:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:140:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:148:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:154:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:163:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:165:1: W293 blank line contains whitespace
+isaac/commands/summarize/run.py:171:11: W292 no newline at end of file
+isaac/commands/sync/run.py:13:1: E402 module level import not at top of file
+isaac/commands/sync/run.py:15:1: E302 expected 2 blank lines, found 1
+isaac/commands/sync/run.py:59:11: W292 no newline at end of file
+isaac/commands/tasks/run.py:17:1: E402 module level import not at top of file
+isaac/commands/team/team_command.py:3:1: F401 'typing.Optional' imported but unused
+isaac/commands/team/team_command.py:312:20: F541 f-string is missing placeholders
+isaac/commands/team/team_command.py:497:9: F841 local variable 'team_id' is assigned to but never used
+isaac/commands/timemachine/run.py:12:1: E402 module level import not at top of file
+isaac/commands/timemachine/run.py:33:11: W292 no newline at end of file
+isaac/commands/timemachine/timemachine_command.py:9:1: F401 'pathlib.Path' imported but unused
+isaac/commands/timemachine/timemachine_command.py:10:1: F401 'typing.Optional' imported but unused
+isaac/commands/timemachine/timemachine_command.py:119:27: E128 continuation line under-indented for visual indent
+isaac/commands/timemachine/timemachine_command.py:141:27: E128 continuation line under-indented for visual indent
+isaac/commands/timemachine/timemachine_command.py:179:26: E131 continuation line unaligned for hanging indent
+isaac/commands/timemachine/timemachine_command.py:409:46: W292 no newline at end of file
+isaac/commands/update/run.py:11:1: F401 're' imported but unused
+isaac/commands/update/run.py:321:29: W292 no newline at end of file
+isaac/commands/upload/run.py:13:1: E402 module level import not at top of file
+isaac/commands/upload/run.py:84:11: F541 f-string is missing placeholders
+isaac/commands/upload/run.py:93:21: W292 no newline at end of file
+isaac/commands/watch/run.py:15:1: E402 module level import not at top of file
+isaac/commands/watch/run.py:16:1: E402 module level import not at top of file
+isaac/commands/watch/run.py:92:11: W292 no newline at end of file
+isaac/commands/whatis/run.py:13:1: E402 module level import not at top of file
+isaac/commands/workspace/run.py:8:1: F401 'pathlib.Path' imported but unused
+isaac/commands/workspace/run.py:15:1: W293 blank line contains whitespace
+isaac/commands/workspace/run.py:18:19: W291 trailing whitespace
+isaac/commands/workspace/run.py:22:1: W293 blank line contains whitespace
+isaac/commands/workspace/run.py:27:1: W293 blank line contains whitespace
+isaac/commands/workspace/run.py:30:1: W293 blank line contains whitespace
+isaac/commands/workspace/run.py:46:1: W293 blank line contains whitespace
+isaac/commands/workspace/run.py:64:1: W293 blank line contains whitespace
+isaac/commands/workspace/run.py:66:1: W293 blank line contains whitespace
+isaac/commands/workspace/run.py:103:1: W293 blank line contains whitespace
+isaac/commands/write/run.py:14:1: E402 module level import not at top of file
+isaac/core/agentic_orchestrator.py:42:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:126:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:132:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:139:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:141:13: F824 `nonlocal events` is unused: name is never assigned in scope
+isaac/core/agentic_orchestrator.py:145:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:150:54: W291 trailing whitespace
+isaac/core/agentic_orchestrator.py:155:88: W291 trailing whitespace
+isaac/core/agentic_orchestrator.py:162:88: W291 trailing whitespace
+isaac/core/agentic_orchestrator.py:168:50: W291 trailing whitespace
+isaac/core/agentic_orchestrator.py:174:51: W291 trailing whitespace
+isaac/core/agentic_orchestrator.py:177:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:181:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:189:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:212:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:216:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:218:1: W293 blank line contains whitespace
+isaac/core/agentic_orchestrator.py:283:28: E261 at least two spaces before inline comment
+isaac/core/agentic_orchestrator.py:286:34: E128 continuation line under-indented for visual indent
+isaac/core/agentic_orchestrator.py:443:10: W292 no newline at end of file
+isaac/core/ai_translator.py:181:22: E713 test for membership should be 'not in'
+isaac/core/aliases.py:209:48: W292 no newline at end of file
+isaac/core/boot_loader.py:8:1: F401 'sys' imported but unused
+isaac/core/boot_loader.py:14:1: F401 'time' imported but unused
+isaac/core/boot_loader.py:253:15: F541 f-string is missing placeholders
+isaac/core/boot_loader.py:254:15: F541 f-string is missing placeholders
+isaac/core/boot_loader.py:270:13: F841 local variable 'color' is assigned to but never used
+isaac/core/change_queue.py:7:1: F401 'pathlib.Path' imported but unused
+isaac/core/change_queue.py:8:1: F401 'typing.Tuple' imported but unused
+isaac/core/change_queue.py:12:1: F401 'datetime.datetime' imported but unused
+isaac/core/change_queue.py:147:38: W292 no newline at end of file
+isaac/core/cli_command_router.py:99:9: F841 local variable 'e' is assigned to but never used
+isaac/core/cli_command_router.py:269:23: F541 f-string is missing placeholders
+isaac/core/cli_command_router.py:330:42: W292 no newline at end of file
+isaac/core/command_history.py:10:1: F401 'datetime.datetime' imported but unused
+isaac/core/command_history.py:10:1: F401 'datetime.timedelta' imported but unused
+isaac/core/command_history.py:296:56: W292 no newline at end of file
+isaac/core/command_router.py:30:1: W293 blank line contains whitespace
+isaac/core/command_router.py:36:1: W293 blank line contains whitespace
+isaac/core/command_router.py:42:1: W293 blank line contains whitespace
+isaac/core/command_router.py:46:1: W293 blank line contains whitespace
+isaac/core/command_router.py:53:1: W293 blank line contains whitespace
+isaac/core/command_router.py:63:1: W293 blank line contains whitespace
+isaac/core/command_router.py:200:1: W293 blank line contains whitespace
+isaac/core/command_router.py:244:1: W293 blank line contains whitespace
+isaac/core/command_router.py:249:1: W293 blank line contains whitespace
+isaac/core/command_router.py:263:1: W293 blank line contains whitespace
+isaac/core/command_router.py:266:61: W291 trailing whitespace
+isaac/core/command_router.py:270:1: W293 blank line contains whitespace
+isaac/core/command_router.py:276:1: W293 blank line contains whitespace
+isaac/core/command_router.py:294:48: F541 f-string is missing placeholders
+isaac/core/command_router.py:315:1: W293 blank line contains whitespace
+isaac/core/command_router.py:317:1: W293 blank line contains whitespace
+isaac/core/command_router.py:324:1: W293 blank line contains whitespace
+isaac/core/command_router.py:328:1: W293 blank line contains whitespace
+isaac/core/command_router.py:331:1: W293 blank line contains whitespace
+isaac/core/command_router.py:340:1: W293 blank line contains whitespace
+isaac/core/command_router.py:346:1: W293 blank line contains whitespace
+isaac/core/command_router.py:359:1: W293 blank line contains whitespace
+isaac/core/command_router.py:366:1: W293 blank line contains whitespace
+isaac/core/command_router.py:374:1: W293 blank line contains whitespace
+isaac/core/command_router.py:377:1: W293 blank line contains whitespace
+isaac/core/command_router.py:410:1: W293 blank line contains whitespace
+isaac/core/command_router.py:413:1: W293 blank line contains whitespace
+isaac/core/command_router.py:417:1: W293 blank line contains whitespace
+isaac/core/command_router.py:421:1: W293 blank line contains whitespace
+isaac/core/command_router.py:425:1: W293 blank line contains whitespace
+isaac/core/command_router.py:432:1: W293 blank line contains whitespace
+isaac/core/command_router.py:435:1: W293 blank line contains whitespace
+isaac/core/command_router.py:444:1: W293 blank line contains whitespace
+isaac/core/command_router.py:447:1: W293 blank line contains whitespace
+isaac/core/command_router.py:452:1: W293 blank line contains whitespace
+isaac/core/command_router.py:455:1: W293 blank line contains whitespace
+isaac/core/command_router.py:466:1: W293 blank line contains whitespace
+isaac/core/command_router.py:535:1: W293 blank line contains whitespace
+isaac/core/command_router.py:538:1: W293 blank line contains whitespace
+isaac/core/command_router.py:546:1: W293 blank line contains whitespace
+isaac/core/command_router.py:565:1: W293 blank line contains whitespace
+isaac/core/command_router.py:575:1: W293 blank line contains whitespace
+isaac/core/command_router.py:578:1: W293 blank line contains whitespace
+isaac/core/command_router.py:586:1: W293 blank line contains whitespace
+isaac/core/command_router.py:593:1: W293 blank line contains whitespace
+isaac/core/command_router.py:599:1: W293 blank line contains whitespace
+isaac/core/command_router.py:622:1: W293 blank line contains whitespace
+isaac/core/command_router.py:626:1: W293 blank line contains whitespace
+isaac/core/command_router.py:629:1: W293 blank line contains whitespace
+isaac/core/command_router.py:635:1: W293 blank line contains whitespace
+isaac/core/command_router.py:638:1: W293 blank line contains whitespace
+isaac/core/command_router.py:641:1: W293 blank line contains whitespace
+isaac/core/command_router.py:647:1: W293 blank line contains whitespace
+isaac/core/command_router.py:650:1: W293 blank line contains whitespace
+isaac/core/command_router.py:660:1: W293 blank line contains whitespace
+isaac/core/command_router.py:672:1: W293 blank line contains whitespace
+isaac/core/command_router.py:679:1: W293 blank line contains whitespace
+isaac/core/command_router.py:683:1: W293 blank line contains whitespace
+isaac/core/command_router.py:686:1: W293 blank line contains whitespace
+isaac/core/command_router.py:698:1: W293 blank line contains whitespace
+isaac/core/command_router.py:716:1: W293 blank line contains whitespace
+isaac/core/command_router.py:720:33: E128 continuation line under-indented for visual indent
+isaac/core/command_router.py:832:72: W292 no newline at end of file
+isaac/core/context_manager.py:11:1: F401 'datetime.datetime' imported but unused
+isaac/core/context_manager.py:286:56: W292 no newline at end of file
+isaac/core/fallback_manager.py:147:27: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:148:27: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:149:27: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:150:27: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:191:26: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:192:26: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:193:26: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:194:26: E128 continuation line under-indented for visual indent
+isaac/core/fallback_manager.py:319:5: F401 'sys' imported but unused
+isaac/core/fallback_manager.py:350:11: F541 f-string is missing placeholders
+isaac/core/file_watcher.py:23:97: W291 trailing whitespace
+isaac/core/flag_parser.py:6:1: F401 're' imported but unused
+isaac/core/flag_parser.py:161:24: E128 continuation line under-indented for visual indent
+isaac/core/flag_parser.py:211:55: W292 no newline at end of file
+isaac/core/key_manager.py:216:26: E128 continuation line under-indented for visual indent
+isaac/core/key_manager.py:342:55: W292 no newline at end of file
+isaac/core/man_pages.py:10:1: F401 're' imported but unused
+isaac/core/man_pages.py:200:22: F541 f-string is missing placeholders
+isaac/core/message_queue.py:14:1: F401 'typing.Tuple' imported but unused
+isaac/core/message_queue.py:89:20: E128 continuation line under-indented for visual indent
+isaac/core/message_queue.py:90:20: E128 continuation line under-indented for visual indent
+isaac/core/message_queue.py:151:21: E128 continuation line under-indented for visual indent
+isaac/core/message_queue.py:369:23: E128 continuation line under-indented for visual indent
+isaac/core/message_queue.py:420:36: W292 no newline at end of file
+isaac/core/multifile_ops.py:9:1: F401 'typing.Optional' imported but unused
+isaac/core/multifile_ops.py:9:1: F401 'typing.Callable' imported but unused
+isaac/core/multifile_ops.py:84:22: E128 continuation line under-indented for visual indent
+isaac/core/multifile_ops.py:85:22: E128 continuation line under-indented for visual indent
+isaac/core/multifile_ops.py:296:5: F401 'sys' imported but unused
+isaac/core/performance.py:14:1: F401 'json' imported but unused
+isaac/core/performance.py:338:5: F401 'sys' imported but unused
+isaac/core/pipe_engine.py:10:1: F401 'typing.Dict' imported but unused
+isaac/core/pipe_engine.py:10:1: F401 'typing.Any' imported but unused
+isaac/core/pipe_engine.py:97:9: F401 'tempfile' imported but unused
+isaac/core/pipe_engine.py:98:9: F401 'os' imported but unused
+isaac/core/pipe_engine.py:180:20: W292 no newline at end of file
+isaac/core/sandbox_enforcer.py:407:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:4:1: F401 'os' imported but unused
+isaac/core/session_manager.py:49:78: E251 unexpected spaces around keyword / parameter equals
+isaac/core/session_manager.py:49:80: E251 unexpected spaces around keyword / parameter equals
+isaac/core/session_manager.py:208:9: F401 'platform' imported but unused
+isaac/core/session_manager.py:268:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:271:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:325:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:330:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:337:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:341:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:345:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:353:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:359:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:361:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:365:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:374:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:377:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:379:1: W293 blank line contains whitespace
+isaac/core/session_manager.py:448:22: E128 continuation line under-indented for visual indent
+isaac/core/session_manager.py:449:22: E128 continuation line under-indented for visual indent
+isaac/core/session_manager.py:486:29: E128 continuation line under-indented for visual indent
+isaac/core/session_manager.py:521:31: E128 continuation line under-indented for visual indent
+isaac/core/session_manager.py:577:21: W292 no newline at end of file
+isaac/core/streaming_executor.py:66:36: E128 continuation line under-indented for visual indent
+isaac/core/streaming_executor.py:158:36: E128 continuation line under-indented for visual indent
+isaac/core/streaming_executor.py:230:24: W292 no newline at end of file
+isaac/core/task_manager.py:9:1: F401 'os' imported but unused
+isaac/core/tier_validator.py:8:1: F401 'typing.Any' imported but unused
+isaac/core/tier_validator.py:13:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:18:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:24:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:48:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:52:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:55:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:61:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:66:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:71:1: W293 blank line contains whitespace
+isaac/core/tier_validator.py:73:17: W292 no newline at end of file
+isaac/core/unified_fs.py:8:1: F401 'os' imported but unused
+isaac/core/unix_aliases.py:7:1: F401 're' imported but unused
+isaac/core/workspace_integration.py:10:1: F401 'typing.Tuple' imported but unused
+isaac/core/workspace_integration.py:274:13: F841 local variable 'result' is assigned to but never used
+isaac/core/workspace_integration.py:351:11: F541 f-string is missing placeholders
+isaac/core/workspace_sessions.py:159:27: E128 continuation line under-indented for visual indent
+isaac/core/workspace_sessions.py:160:27: E128 continuation line under-indented for visual indent
+isaac/core/workspace_sessions.py:419:5: F401 'sys' imported but unused
+isaac/core/workspace_sessions.py:442:19: F541 f-string is missing placeholders
+isaac/core/workspace_sessions.py:449:15: F541 f-string is missing placeholders
+isaac/crossplatform/api/rest_api.py:7:1: F401 'typing.Dict' imported but unused
+isaac/crossplatform/api/rest_api.py:7:1: F401 'typing.Any' imported but unused
+isaac/crossplatform/api/rest_api.py:7:1: F401 'typing.Optional' imported but unused
+isaac/crossplatform/api/rest_api.py:8:1: F401 'asyncio' imported but unused
+isaac/crossplatform/api/rest_api.py:9:1: F401 'functools.wraps' imported but unused
+isaac/crossplatform/api/rest_api.py:45:13: F841 local variable 'data' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:90:13: F841 local variable 'target_path' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:101:13: F841 local variable 'workspace_id' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:125:13: F841 local variable 'path' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:157:13: F841 local variable 'data' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:164:13: F841 local variable 'workspace_id' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:174:13: F841 local variable 'workspace_id' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:189:13: F841 local variable 'workspace_id' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:190:13: F841 local variable 'limit' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:199:13: F841 local variable 'query' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:208:13: F841 local variable 'workspace_id' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:222:13: F841 local variable 'data' is assigned to but never used
+isaac/crossplatform/api/rest_api.py:236:13: F841 local variable 'data' is assigned to but never used
+isaac/crossplatform/api/websocket_api.py:7:1: F401 'typing.Optional' imported but unused
+isaac/crossplatform/api/websocket_api.py:135:9: F841 local variable 'workspace_id' is assigned to but never used
+isaac/crossplatform/api/websocket_api.py:164:9: F841 local variable 'workspace_id' is assigned to but never used
+isaac/crossplatform/bubbles/platform_adapter.py:233:1: E402 module level import not at top of file
+isaac/crossplatform/cloud/cloud_executor.py:6:1: F401 'json' imported but unused
+isaac/crossplatform/cloud/cloud_executor.py:7:1: F401 'typing.Callable' imported but unused
+isaac/crossplatform/cloud/cloud_storage.py:6:1: F401 'hashlib' imported but unused
+isaac/crossplatform/cloud/cloud_storage.py:7:1: F401 'typing.BinaryIO' imported but unused
+isaac/crossplatform/mobile/mobile_api.py:7:1: F401 'typing.Dict' imported but unused
+isaac/crossplatform/mobile/mobile_api.py:7:1: F401 'typing.Any' imported but unused
+isaac/crossplatform/mobile/mobile_api.py:7:1: F401 'typing.Optional' imported but unused
+isaac/crossplatform/mobile/mobile_api.py:7:1: F401 'typing.List' imported but unused
+isaac/crossplatform/mobile/mobile_api.py:158:13: F841 local variable 'limit' is assigned to but never used
+isaac/crossplatform/mobile/mobile_api.py:242:13: F841 local variable 'max_size' is assigned to but never used
+isaac/crossplatform/mobile/mobile_auth.py:6:1: F401 'hashlib' imported but unused
+isaac/crossplatform/mobile/notification_service.py:8:1: F401 'json' imported but unused
+isaac/crossplatform/offline/cache_manager.py:10:1: F401 'hashlib' imported but unused
+isaac/crossplatform/offline/offline_manager.py:6:1: F401 'typing.Optional' imported but unused
+isaac/crossplatform/offline/sync_queue.py:5:1: F401 'asyncio' imported but unused
+isaac/crossplatform/web/terminal_emulator.py:6:1: F401 'typing.Tuple' imported but unused
+isaac/crossplatform/web/web_server.py:5:1: F401 'flask.send_from_directory' imported but unused
+isaac/crossplatform/web/web_server.py:7:1: F401 'os' imported but unused
+isaac/crossplatform/web/web_server.py:8:1: F401 'pathlib.Path' imported but unused
+isaac/debugging/__init__.py:24:2: W292 no newline at end of file
+isaac/debugging/auto_investigator.py:9:1: F401 'subprocess' imported but unused
+isaac/debugging/auto_investigator.py:11:1: F401 'pathlib.Path' imported but unused
+isaac/debugging/auto_investigator.py:12:1: F401 'typing.Set' imported but unused
+isaac/debugging/auto_investigator.py:13:1: F401 'dataclasses.asdict' imported but unused
+isaac/debugging/auto_investigator.py:14:1: F401 'json' imported but unused
+isaac/debugging/auto_investigator.py:16:1: F401 'threading' imported but unused
+isaac/debugging/auto_investigator.py:112:26: E128 continuation line under-indented for visual indent
+isaac/debugging/auto_investigator.py:148:9: F841 local variable 'investigation_time' is assigned to but never used
+isaac/debugging/auto_investigator.py:170:28: E128 continuation line under-indented for visual indent
+isaac/debugging/auto_investigator.py:486:23: E128 continuation line under-indented for visual indent
+isaac/debugging/auto_investigator.py:553:64: W292 no newline at end of file
+isaac/debugging/debug_command.py:7:1: F401 'typing.List' imported but unused
+isaac/debugging/debug_command.py:7:1: F401 'typing.Optional' imported but unused
+isaac/debugging/debug_command.py:32:32: E128 continuation line under-indented for visual indent
+isaac/debugging/debug_command.py:90:17: F841 local variable 'profile_id' is assigned to but never used
+isaac/debugging/debug_command.py:218:17: F841 local variable 'profile_id' is assigned to but never used
+isaac/debugging/debug_command.py:423:31: E128 continuation line under-indented for visual indent
+isaac/debugging/debug_command.py:461:33: F821 undefined name 'json'
+isaac/debugging/debug_command.py:468:25: W292 no newline at end of file
+isaac/debugging/debug_history.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/debugging/debug_history.py:12:1: F401 'datetime.datetime' imported but unused
+isaac/debugging/debug_history.py:12:1: F401 'datetime.timedelta' imported but unused
+isaac/debugging/debug_history.py:170:27: E128 continuation line under-indented for visual indent
+isaac/debugging/debug_history.py:276:30: E128 continuation line under-indented for visual indent
+isaac/debugging/debug_history.py:475:51: F841 local variable 'conn' is assigned to but never used
+isaac/debugging/debug_history.py:531:17: F821 undefined name 're'
+isaac/debugging/debug_history.py:628:19: W292 no newline at end of file
+isaac/debugging/fix_suggester.py:8:1: F401 'typing.Tuple' imported but unused
+isaac/debugging/fix_suggester.py:9:1: F401 'dataclasses.asdict' imported but unused
+isaac/debugging/fix_suggester.py:10:1: F401 'pathlib.Path' imported but unused
+isaac/debugging/fix_suggester.py:259:22: E128 continuation line under-indented for visual indent
+isaac/debugging/fix_suggester.py:355:75: F821 undefined name 'time'
+isaac/debugging/fix_suggester.py:429:43: F821 undefined name 'time'
+isaac/debugging/fix_suggester.py:443:44: F821 undefined name 'time'
+isaac/debugging/fix_suggester.py:457:43: F821 undefined name 'time'
+isaac/debugging/fix_suggester.py:554:28: E128 continuation line under-indented for visual indent
+isaac/debugging/fix_suggester.py:564:26: W292 no newline at end of file
+isaac/debugging/performance_profiler.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/debugging/performance_profiler.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/debugging/performance_profiler.py:12:1: F401 'os' imported but unused
+isaac/debugging/performance_profiler.py:13:1: F401 'pathlib.Path' imported but unused
+isaac/debugging/performance_profiler.py:158:28: E128 continuation line under-indented for visual indent
+isaac/debugging/performance_profiler.py:254:29: E128 continuation line under-indented for visual indent
+isaac/debugging/performance_profiler.py:255:29: E128 continuation line under-indented for visual indent
+isaac/debugging/performance_profiler.py:292:33: E128 continuation line under-indented for visual indent
+isaac/debugging/performance_profiler.py:441:39: E128 continuation line under-indented for visual indent
+isaac/debugging/performance_profiler.py:504:30: W292 no newline at end of file
+isaac/debugging/root_cause_analyzer.py:6:1: F401 're' imported but unused
+isaac/debugging/root_cause_analyzer.py:8:1: F401 'typing.Set' imported but unused
+isaac/debugging/root_cause_analyzer.py:9:1: F401 'dataclasses.asdict' imported but unused
+isaac/debugging/root_cause_analyzer.py:11:1: F401 'json' imported but unused
+isaac/debugging/root_cause_analyzer.py:134:27: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:216:40: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:267:40: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:420:28: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:442:37: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:459:33: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:480:37: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:515:31: E128 continuation line under-indented for visual indent
+isaac/debugging/root_cause_analyzer.py:536:54: W292 no newline at end of file
+isaac/debugging/test_generator.py:7:1: F401 'os' imported but unused
+isaac/debugging/test_generator.py:8:1: F401 'ast' imported but unused
+isaac/debugging/test_generator.py:9:1: F401 'inspect' imported but unused
+isaac/debugging/test_generator.py:10:1: F401 'typing.Tuple' imported but unused
+isaac/debugging/test_generator.py:10:1: F401 'typing.Set' imported but unused
+isaac/debugging/test_generator.py:11:1: F401 'dataclasses.asdict' imported but unused
+isaac/debugging/test_generator.py:13:1: F401 'tempfile' imported but unused
+isaac/debugging/test_generator.py:196:38: E128 continuation line under-indented for visual indent
+isaac/debugging/test_generator.py:197:38: E128 continuation line under-indented for visual indent
+isaac/debugging/test_generator.py:208:29: F821 undefined name 'time'
+isaac/debugging/test_generator.py:340:42: F821 undefined name 'time'
+isaac/debugging/test_generator.py:372:42: F821 undefined name 'time'
+isaac/debugging/test_generator.py:579:39: F821 undefined name 'time'
+isaac/debugging/test_generator.py:594:53: F821 undefined name 'time'
+isaac/debugging/test_generator.py:717:14: W292 no newline at end of file
+isaac/dragdrop/__init__.py:33:2: W292 no newline at end of file
+isaac/dragdrop/batch_processor.py:6:1: F401 'os' imported but unused
+isaac/dragdrop/batch_processor.py:10:1: F401 'typing.Dict' imported but unused
+isaac/dragdrop/batch_processor.py:10:1: F401 'typing.Any' imported but unused
+isaac/dragdrop/batch_processor.py:10:1: F401 'typing.Tuple' imported but unused
+isaac/dragdrop/batch_processor.py:11:1: F401 'dataclasses.dataclass' imported but unused
+isaac/dragdrop/batch_processor.py:12:1: F401 'pathlib.Path' imported but unused
+isaac/dragdrop/batch_processor.py:15:1: F401 '.multi_file_detector.FileAnalysis' imported but unused
+isaac/dragdrop/batch_processor.py:31:22: E128 continuation line under-indented for visual indent
+isaac/dragdrop/batch_processor.py:86:28: E128 continuation line under-indented for visual indent
+isaac/dragdrop/batch_processor.py:148:28: E128 continuation line under-indented for visual indent
+isaac/dragdrop/batch_processor.py:149:28: E128 continuation line under-indented for visual indent
+isaac/dragdrop/batch_processor.py:288:26: E128 continuation line under-indented for visual indent
+isaac/dragdrop/batch_processor.py:358:23: E128 continuation line under-indented for visual indent
+isaac/dragdrop/batch_processor.py:376:36: W292 no newline at end of file
+isaac/dragdrop/interactive_decision.py:85:28: E128 continuation line under-indented for visual indent
+isaac/dragdrop/interactive_decision.py:97:27: E128 continuation line under-indented for visual indent
+isaac/dragdrop/interactive_decision.py:109:26: E128 continuation line under-indented for visual indent
+isaac/dragdrop/interactive_decision.py:122:30: E128 continuation line under-indented for visual indent
+isaac/dragdrop/interactive_decision.py:135:27: E128 continuation line under-indented for visual indent
+isaac/dragdrop/interactive_decision.py:354:13: E129 visually indented line with same indent as next logical line
+isaac/dragdrop/interactive_decision.py:363:13: E129 visually indented line with same indent as next logical line
+isaac/dragdrop/interactive_decision.py:370:20: W292 no newline at end of file
+isaac/dragdrop/multi_file_detector.py:6:1: F401 'os' imported but unused
+isaac/dragdrop/multi_file_detector.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/dragdrop/multi_file_detector.py:9:1: F401 'typing.Set' imported but unused
+isaac/dragdrop/multi_file_detector.py:235:17: F401 'hashlib' imported but unused
+isaac/dragdrop/multi_file_detector.py:395:83: W292 no newline at end of file
+isaac/dragdrop/progress.py:6:1: F401 'sys' imported but unused
+isaac/dragdrop/progress.py:9:1: F401 'typing.Any' imported but unused
+isaac/dragdrop/progress.py:252:29: E128 continuation line under-indented for visual indent
+isaac/dragdrop/progress.py:281:21: W292 no newline at end of file
+isaac/dragdrop/smart_router.py:6:1: F401 'os' imported but unused
+isaac/dragdrop/smart_router.py:11:1: F401 'dataclasses.dataclass' imported but unused
+isaac/dragdrop/smart_router.py:13:1: F401 '.multi_file_detector.FileAnalysis' imported but unused
+isaac/dragdrop/smart_router.py:15:1: F401 '.batch_processor.BatchConfig' imported but unused
+isaac/dragdrop/smart_router.py:39:20: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:81:29: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:134:28: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:173:33: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:214:31: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:256:25: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:301:30: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:374:20: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:452:38: E128 continuation line under-indented for visual indent
+isaac/dragdrop/smart_router.py:464:24: W292 no newline at end of file
+isaac/dragdrop/types.py:45:18: W292 no newline at end of file
+isaac/images/__init__.py:7:49: W292 no newline at end of file
+isaac/images/cloud_storage.py:6:1: F401 'os' imported but unused
+isaac/images/cloud_storage.py:14:1: F401 'base64' imported but unused
+isaac/images/cloud_storage.py:329:9: F841 local variable 'metadata' is assigned to but never used
+isaac/images/cloud_storage.py:676:66: W292 no newline at end of file
+isaac/integrations/totalcmd_parser.py:16:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:20:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:26:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:30:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:33:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:40:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:42:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:48:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:53:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:56:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:59:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:61:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:65:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:71:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:74:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:76:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:81:1: W293 blank line contains whitespace
+isaac/integrations/totalcmd_parser.py:89:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:13:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:15:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:19:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:26:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:30:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:33:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:39:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:41:9: F841 local variable 'documents' is assigned to but never used
+isaac/integrations/xai_collections.py:42:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:48:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:52:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:56:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:63:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:71:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:77:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:81:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:85:1: W293 blank line contains whitespace
+isaac/integrations/xai_collections.py:94:1: W293 blank line contains whitespace
+isaac/learning/behavior_adjustment.py:8:1: F401 'datetime.datetime' imported but unused
+isaac/learning/behavior_adjustment.py:8:1: F401 'datetime.timedelta' imported but unused
+isaac/learning/behavior_adjustment.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/learning/behavior_adjustment.py:144:48: E128 continuation line under-indented for visual indent
+isaac/learning/behavior_adjustment.py:178:48: E128 continuation line under-indented for visual indent
+isaac/learning/behavior_adjustment.py:218:32: E128 continuation line under-indented for visual indent
+isaac/learning/behavior_adjustment.py:268:41: E128 continuation line under-indented for visual indent
+isaac/learning/behavior_adjustment.py:326:57: W292 no newline at end of file
+isaac/learning/continuous_learning_coordinator.py:8:1: F401 'typing.List' imported but unused
+isaac/learning/continuous_learning_coordinator.py:8:1: F401 'typing.Optional' imported but unused
+isaac/learning/continuous_learning_coordinator.py:9:1: F401 'pathlib.Path' imported but unused
+isaac/learning/continuous_learning_coordinator.py:13:1: F401 'isaac.learning.mistake_learner.MistakeLearner' imported but unused
+isaac/learning/continuous_learning_coordinator.py:14:1: F401 'isaac.learning.behavior_adjustment.BehaviorAdjustmentEngine' imported but unused
+isaac/learning/continuous_learning_coordinator.py:15:1: F401 'isaac.learning.learning_metrics.LearningMetricsDashboard' imported but unused
+isaac/learning/continuous_learning_coordinator.py:16:1: F401 'isaac.learning.user_preference_learner.UserPreferenceLearner' imported but unused
+isaac/learning/continuous_learning_coordinator.py:220:25: F841 local variable 'to_keep' is assigned to but never used
+isaac/learning/learning_metrics.py:8:1: F401 'datetime.timedelta' imported but unused
+isaac/learning/learning_metrics.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/learning/learning_metrics.py:265:29: E128 continuation line under-indented for visual indent
+isaac/learning/learning_metrics.py:349:58: W292 no newline at end of file
+isaac/learning/mistake_learner.py:8:1: F401 'datetime.datetime' imported but unused
+isaac/learning/mistake_learner.py:8:1: F401 'datetime.timedelta' imported but unused
+isaac/learning/mistake_learner.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/learning/mistake_learner.py:135:28: E128 continuation line under-indented for visual indent
+isaac/learning/mistake_learner.py:314:64: W292 no newline at end of file
+isaac/learning/performance_analytics.py:8:1: F401 'typing.Tuple' imported but unused
+isaac/learning/performance_analytics.py:80:22: E128 continuation line under-indented for visual indent
+isaac/learning/user_preference_learner.py:8:1: F401 'datetime.timedelta' imported but unused
+isaac/learning/user_preference_learner.py:9:1: F401 'typing.Set' imported but unused
+isaac/learning/user_preference_learner.py:12:1: F401 'statistics' imported but unused
+isaac/learning/user_preference_learner.py:13:1: F401 'collections.defaultdict' imported but unused
+isaac/learning/user_preference_learner.py:13:1: F401 'collections.Counter' imported but unused
+isaac/learning/user_preference_learner.py:128:30: E128 continuation line under-indented for visual indent
+isaac/learning/user_preference_learner.py:147:29: E128 continuation line under-indented for visual indent
+isaac/learning/user_preference_learner.py:162:30: E128 continuation line under-indented for visual indent
+isaac/learning/user_preference_learner.py:174:30: E128 continuation line under-indented for visual indent
+isaac/learning/user_preference_learner.py:175:30: E128 continuation line under-indented for visual indent
+isaac/learning/user_preference_learner.py:183:13: F841 local variable 'response_pref' is assigned to but never used
+isaac/learning/user_preference_learner.py:185:39: E128 continuation line under-indented for visual indent
+isaac/learning/user_preference_learner.py:440:10: W292 no newline at end of file
+isaac/memory/__init__.py:13:2: W292 no newline at end of file
+isaac/memory/database.py:10:1: F401 'typing.Tuple' imported but unused
+isaac/memory/database.py:12:1: F401 'datetime.datetime' imported but unused
+isaac/memory/database.py:12:1: F401 'datetime.timedelta' imported but unused
+isaac/memory/database.py:174:21: E128 continuation line under-indented for visual indent
+isaac/memory/database.py:368:14: W292 no newline at end of file
+isaac/memory/manager.py:76:21: E128 continuation line under-indented for visual indent
+isaac/memory/manager.py:77:21: E128 continuation line under-indented for visual indent
+isaac/memory/manager.py:91:34: E128 continuation line under-indented for visual indent
+isaac/memory/manager.py:101:28: E128 continuation line under-indented for visual indent
+isaac/memory/manager.py:112:26: E128 continuation line under-indented for visual indent
+isaac/memory/manager.py:261:10: W292 no newline at end of file
+isaac/models/__init__.py:1:26: W292 no newline at end of file
+isaac/models/aiquery_history.py:8:1: F401 'typing.Optional' imported but unused
+isaac/models/aiquery_history.py:14:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:18:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:19:56: W291 trailing whitespace
+isaac/models/aiquery_history.py:23:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:32:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:42:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:44:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:48:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:51:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:56:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:60:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:63:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:71:16: E131 continuation line unaligned for hanging indent
+isaac/models/aiquery_history.py:73:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:77:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:80:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:85:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:89:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:101:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:106:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:109:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:116:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:120:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:127:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:132:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:135:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:141:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:148:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:152:1: W293 blank line contains whitespace
+isaac/models/aiquery_history.py:155:64: W292 no newline at end of file
+isaac/models/preferences.py:8:1: F401 'json' imported but unused
+isaac/models/preferences.py:82:38: W292 no newline at end of file
+isaac/models/task_history.py:13:1: W293 blank line contains whitespace
+isaac/models/task_history.py:19:1: W293 blank line contains whitespace
+isaac/models/task_history.py:23:1: W293 blank line contains whitespace
+isaac/models/task_history.py:28:1: W293 blank line contains whitespace
+isaac/models/task_history.py:33:1: W293 blank line contains whitespace
+isaac/models/task_history.py:44:1: W293 blank line contains whitespace
+isaac/models/task_history.py:46:1: W293 blank line contains whitespace
+isaac/models/task_history.py:50:1: W293 blank line contains whitespace
+isaac/models/task_history.py:52:1: W293 blank line contains whitespace
+isaac/models/task_history.py:53:66: W291 trailing whitespace
+isaac/models/task_history.py:57:1: W293 blank line contains whitespace
+isaac/models/task_history.py:70:1: W293 blank line contains whitespace
+isaac/models/task_history.py:77:1: W293 blank line contains whitespace
+isaac/models/task_history.py:84:1: W293 blank line contains whitespace
+isaac/models/task_history.py:87:1: W293 blank line contains whitespace
+isaac/models/task_history.py:91:1: W293 blank line contains whitespace
+isaac/models/task_history.py:100:1: W293 blank line contains whitespace
+isaac/models/task_history.py:107:1: W293 blank line contains whitespace
+isaac/models/task_history.py:111:1: W293 blank line contains whitespace
+isaac/models/task_history.py:119:1: W293 blank line contains whitespace
+isaac/models/task_history.py:126:23: W292 no newline at end of file
+isaac/monitoring/base_monitor.py:91:22: E128 continuation line under-indented for visual indent
+isaac/monitoring/base_monitor.py:92:22: E128 continuation line under-indented for visual indent
+isaac/monitoring/base_monitor.py:111:24: W292 no newline at end of file
+isaac/monitoring/code_monitor.py:10:1: F401 'os' imported but unused
+isaac/monitoring/code_monitor.py:14:1: F401 'datetime.datetime' imported but unused
+isaac/monitoring/code_monitor.py:15:1: F401 'typing.Dict' imported but unused
+isaac/monitoring/code_monitor.py:15:1: F401 'typing.Any' imported but unused
+isaac/monitoring/code_monitor.py:15:1: F401 'typing.List' imported but unused
+isaac/monitoring/code_monitor.py:202:40: E128 continuation line under-indented for visual indent
+isaac/monitoring/code_monitor.py:224:62: W292 no newline at end of file
+isaac/monitoring/system_monitor.py:15:1: F401 'typing.Dict' imported but unused
+isaac/monitoring/system_monitor.py:15:1: F401 'typing.Any' imported but unused
+isaac/monitoring/system_monitor.py:161:64: W292 no newline at end of file
+isaac/nlscript/explainer.py:7:1: F401 'typing.List' imported but unused
+isaac/nlscript/explainer.py:7:1: F401 'typing.Optional' imported but unused
+isaac/nlscript/scheduler.py:192:9: E722 do not use bare 'except'
+isaac/nlscript/translator.py:7:1: F401 'typing.List' imported but unused
+isaac/nlscript/translator.py:8:1: F401 'pathlib.Path' imported but unused
+isaac/nlscript/translator.py:82:27: F541 f-string is missing placeholders
+isaac/nlscript/validator.py:143:9: F841 local variable 'e' is assigned to but never used
+isaac/nlscript/validator.py:289:9: F841 local variable 'e' is assigned to but never used
+isaac/orchestration/__init__.py:13:2: W292 no newline at end of file
+isaac/orchestration/load_balancer.py:7:1: F401 'time' imported but unused
+isaac/orchestration/load_balancer.py:9:1: F401 'typing.Callable' imported but unused
+isaac/orchestration/load_balancer.py:43:23: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:44:23: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:45:23: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:46:23: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:47:23: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:86:25: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:87:25: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:88:25: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:122:24: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:188:24: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:189:24: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:190:24: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:203:22: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:204:22: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:230:38: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:246:20: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:247:20: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:256:33: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:276:20: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:277:20: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:282:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/load_balancer.py:320:63: W292 no newline at end of file
+isaac/orchestration/registry.py:8:1: F401 'subprocess' imported but unused
+isaac/orchestration/registry.py:58:17: F811 redefinition of unused 'subprocess' from line 8
+isaac/orchestration/registry.py:60:39: E128 continuation line under-indented for visual indent
+isaac/orchestration/registry.py:65:13: E722 do not use bare 'except'
+isaac/orchestration/registry.py:73:13: E722 do not use bare 'except'
+isaac/orchestration/registry.py:81:13: E722 do not use bare 'except'
+isaac/orchestration/registry.py:97:9: F841 local variable 'e' is assigned to but never used
+isaac/orchestration/registry.py:241:26: E128 continuation line under-indented for visual indent
+isaac/orchestration/registry.py:251:22: E128 continuation line under-indented for visual indent
+isaac/orchestration/registry.py:252:22: E128 continuation line under-indented for visual indent
+isaac/orchestration/registry.py:321:57: W292 no newline at end of file
+isaac/orchestration/remote.py:6:1: F401 'json' imported but unused
+isaac/orchestration/remote.py:8:1: F401 'socket' imported but unused
+isaac/orchestration/remote.py:12:1: F401 'typing.Any' imported but unused
+isaac/orchestration/remote.py:12:1: F401 'typing.Tuple' imported but unused
+isaac/orchestration/remote.py:14:1: F401 'pathlib.Path' imported but unused
+isaac/orchestration/remote.py:56:27: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:57:27: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:58:27: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:131:25: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:132:25: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:133:25: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:134:25: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:194:26: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:199:31: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:200:31: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:201:31: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:202:31: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:203:31: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:228:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:229:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:230:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:231:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:232:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:233:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:234:36: E128 continuation line under-indented for visual indent
+isaac/orchestration/remote.py:469:28: W292 no newline at end of file
+isaac/pairing/code_review.py:6:1: F401 'json' imported but unused
+isaac/pairing/code_review.py:11:1: F401 'typing.Tuple' imported but unused
+isaac/pairing/code_review.py:12:1: F401 'dataclasses.asdict' imported but unused
+isaac/pairing/pair_metrics.py:8:1: F401 'datetime.timedelta' imported but unused
+isaac/pairing/pair_metrics.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/pairing/pair_metrics.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/pairing/pair_mode.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/pairing/pairing_learner.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/pairing/suggestion_system.py:11:1: F401 'typing.Tuple' imported but unused
+isaac/pairing/suggestion_system.py:12:1: F401 'dataclasses.asdict' imported but unused
+isaac/pairing/task_division.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:7:1: F401 're' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:8:1: F401 'json' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:9:1: F401 'typing.Set' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:11:1: F401 'pathlib.Path' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:13:1: F401 'collections.defaultdict' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:13:1: F401 'collections.Counter' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:14:1: F401 'inspect' imported but unused
+isaac/patterns/enhanced_anti_patterns.py:392:37: E128 continuation line under-indented for visual indent
+isaac/patterns/enhanced_anti_patterns.py:840:17: F841 local variable 'imports_found' is assigned to but never used
+isaac/patterns/enhanced_anti_patterns.py:872:79: W292 no newline at end of file
+isaac/patterns/pattern_applier.py:8:1: F401 'difflib' imported but unused
+isaac/patterns/pattern_applier.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/patterns/pattern_applier.py:9:1: F401 'typing.Set' imported but unused
+isaac/patterns/pattern_applier.py:12:1: F401 'time' imported but unused
+isaac/patterns/pattern_applier.py:13:1: F401 '.pattern_learner.PatternMatch' imported but unused
+isaac/patterns/pattern_applier.py:115:9: E722 do not use bare 'except'
+isaac/patterns/pattern_applier.py:119:34: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_applier.py:153:29: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_applier.py:169:31: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_applier.py:174:9: F841 local variable 'has_type_hints' is assigned to but never used
+isaac/patterns/pattern_applier.py:175:9: F841 local variable 'complexity' is assigned to but never used
+isaac/patterns/pattern_applier.py:213:28: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_applier.py:216:9: F841 local variable 'has_init' is assigned to but never used
+isaac/patterns/pattern_applier.py:219:9: F841 local variable 'confidence' is assigned to but never used
+isaac/patterns/pattern_applier.py:243:27: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_applier.py:265:38: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_applier.py:497:5: E129 visually indented line with same indent as next logical line
+isaac/patterns/pattern_applier.py:503:35: F541 f-string is missing placeholders
+isaac/patterns/pattern_applier.py:508:20: W292 no newline at end of file
+isaac/patterns/pattern_documentation.py:9:1: F401 'typing.Set' imported but unused
+isaac/patterns/pattern_documentation.py:9:1: F401 'typing.Tuple' imported but unused
+isaac/patterns/pattern_documentation.py:12:1: F401 're' imported but unused
+isaac/patterns/pattern_documentation.py:89:30: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_documentation.py:277:5: E129 visually indented line with same indent as next logical line
+isaac/patterns/pattern_documentation.py:492:34: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_documentation.py:716:31: W292 no newline at end of file
+isaac/patterns/pattern_evolution.py:9:1: F401 'typing.Set' imported but unused
+isaac/patterns/pattern_evolution.py:13:1: F401 'datetime.timedelta' imported but unused
+isaac/patterns/pattern_evolution.py:222:30: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_evolution.py:566:31: E128 continuation line under-indented for visual indent
+isaac/patterns/pattern_evolution.py:703:57: W292 no newline at end of file
+isaac/patterns/pattern_learner.py:10:1: F401 'hashlib' imported but unused
+isaac/patterns/pattern_learner.py:11:1: F401 'typing.Set' imported but unused
+isaac/patterns/pattern_learner.py:11:1: F401 'typing.Callable' imported but unused
+isaac/patterns/pattern_learner.py:15:1: F401 'datetime.datetime' imported but unused
+isaac/patterns/pattern_learner.py:16:1: F401 'threading' imported but unused
+isaac/patterns/pattern_learner.py:17:1: F401 'collections.defaultdict' imported but unused
+isaac/patterns/pattern_learner.py:17:1: F401 'collections.Counter' imported but unused
+isaac/patterns/pattern_learner.py:18:1: F401 'difflib' imported but unused
+isaac/patterns/pattern_learner.py:206:9: E722 do not use bare 'except'
+isaac/patterns/pattern_learner.py:789:9: E722 do not use bare 'except'
+isaac/patterns/pattern_learner.py:935:30: W292 no newline at end of file
+isaac/patterns/team_sharing.py:8:1: F401 'hashlib' imported but unused
+isaac/patterns/team_sharing.py:13:1: F401 'requests' imported but unused
+isaac/patterns/team_sharing.py:14:1: F401 'datetime.datetime' imported but unused
+isaac/patterns/team_sharing.py:86:26: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:109:33: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:133:33: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:138:36: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:163:33: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:168:38: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:187:33: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:192:31: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:217:27: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:249:24: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:258:44: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:275:27: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:312:33: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:359:37: E128 continuation line under-indented for visual indent
+isaac/patterns/team_sharing.py:537:64: W292 no newline at end of file
+isaac/pipelines/executor.py:7:1: F401 'threading' imported but unused
+isaac/pipelines/executor.py:9:1: F401 'concurrent.futures.ThreadPoolExecutor' imported but unused
+isaac/pipelines/executor.py:9:1: F401 'concurrent.futures.Future' imported but unused
+isaac/pipelines/executor.py:10:1: F401 'typing.List' imported but unused
+isaac/pipelines/executor.py:10:1: F401 'typing.Callable' imported but unused
+isaac/pipelines/executor.py:13:1: F401 'isaac.pipelines.models.Pipeline' imported but unused
+isaac/pipelines/executor.py:13:1: F401 'isaac.pipelines.models.PipelineExecution' imported but unused
+isaac/pipelines/executor.py:13:1: F401 'isaac.pipelines.models.PipelineStatus' imported but unused
+isaac/pipelines/executor.py:28:21: E128 continuation line under-indented for visual indent
+isaac/pipelines/executor.py:77:25: E128 continuation line under-indented for visual indent
+isaac/pipelines/executor.py:111:24: E128 continuation line under-indented for visual indent
+isaac/pipelines/executor.py:228:20: W292 no newline at end of file
+isaac/pipelines/manager.py:10:1: F401 'dataclasses.asdict' imported but unused
+isaac/pipelines/manager.py:163:37: E128 continuation line under-indented for visual indent
+isaac/pipelines/manager.py:267:24: W292 no newline at end of file
+isaac/pipelines/models.py:6:1: F401 'json' imported but unused
+isaac/pipelines/models.py:8:1: F401 'threading' imported but unused
+isaac/pipelines/models.py:10:1: F401 'datetime.datetime' imported but unused
+isaac/pipelines/models.py:12:1: F401 'pathlib.Path' imported but unused
+isaac/pipelines/models.py:13:1: F401 'typing.Callable' imported but unused
+isaac/pipelines/models.py:13:1: F401 'typing.Union' imported but unused
+isaac/pipelines/models.py:14:1: F401 'abc.ABC' imported but unused
+isaac/pipelines/models.py:14:1: F401 'abc.abstractmethod' imported but unused
+isaac/pipelines/models.py:193:10: W292 no newline at end of file
+isaac/pipelines/pattern_learner.py:8:1: F401 'collections.Counter' imported but unused
+isaac/pipelines/pattern_learner.py:10:1: F401 'typing.Optional' imported but unused
+isaac/pipelines/pattern_learner.py:10:1: F401 'typing.Tuple' imported but unused
+isaac/pipelines/pattern_learner.py:10:1: F401 'typing.Set' imported but unused
+isaac/pipelines/pattern_learner.py:11:1: F401 'datetime.datetime' imported but unused
+isaac/pipelines/pattern_learner.py:11:1: F401 'datetime.timedelta' imported but unused
+isaac/pipelines/pattern_learner.py:13:1: F401 'isaac.pipelines.models.Pipeline' imported but unused
+isaac/pipelines/pattern_learner.py:13:1: F401 'isaac.pipelines.models.PipelineStep' imported but unused
+isaac/pipelines/pattern_learner.py:13:1: F401 'isaac.pipelines.models.StepType' imported but unused
+isaac/pipelines/pattern_learner.py:239:29: E128 continuation line under-indented for visual indent
+isaac/pipelines/pattern_learner.py:352:71: W292 no newline at end of file
+isaac/pipelines/runner.py:9:1: F401 'concurrent.futures.as_completed' imported but unused
+isaac/pipelines/runner.py:32:21: E128 continuation line under-indented for visual indent
+isaac/pipelines/runner.py:32:40: F821 undefined name 'Callable'
+isaac/pipelines/runner.py:124:26: E128 continuation line under-indented for visual indent
+isaac/pipelines/runner.py:124:45: F821 undefined name 'Callable'
+isaac/pipelines/runner.py:128:13: F841 local variable 'dependency_graph' is assigned to but never used
+isaac/pipelines/runner.py:216:35: E128 continuation line under-indented for visual indent
+isaac/pipelines/runner.py:271:30: W292 no newline at end of file
+isaac/plugins/examples/git_status.py:88:27: F541 f-string is missing placeholders
+isaac/plugins/plugin_devkit.py:4:1: F401 'shutil' imported but unused
+isaac/plugins/plugin_manager.py:9:1: F401 'typing.Set' imported but unused
+isaac/plugins/plugin_manager.py:12:1: F401 'isaac.plugins.plugin_api.PluginError' imported but unused
+isaac/plugins/plugin_manager.py:20:1: F401 'isaac.plugins.plugin_registry.RegistryEntry' imported but unused
+isaac/plugins/plugin_registry.py:4:1: F401 'os' imported but unused
+isaac/plugins/plugin_registry.py:6:1: F401 'requests' imported but unused
+isaac/plugins/plugin_registry.py:7:1: F401 'dataclasses.field' imported but unused
+isaac/plugins/plugin_security.py:3:1: F401 'sys' imported but unused
+isaac/plugins/plugin_security.py:4:1: F401 'os' imported but unused
+isaac/plugins/plugin_security.py:7:1: F401 'time' imported but unused
+isaac/plugins/plugin_security.py:191:43: F541 f-string is missing placeholders
+isaac/plugins/plugin_security.py:196:43: F541 f-string is missing placeholders
+isaac/plugins/plugin_security.py:219:43: F541 f-string is missing placeholders
+isaac/plugins/plugin_security.py:235:43: F541 f-string is missing placeholders
+isaac/queue/command_queue.py:229:67: W292 no newline at end of file
+isaac/queue/sync_worker.py:177:25: W292 no newline at end of file
+isaac/resources/alerts.py:320:5: E129 visually indented line with same indent as next logical line
+isaac/resources/cost_tracker.py:11:1: F401 'datetime.timedelta' imported but unused
+isaac/resources/optimizer.py:9:1: F401 'json' imported but unused
+isaac/resources/optimizer.py:13:1: F401 'glob' imported but unused
+isaac/resources/optimizer.py:81:17: F841 local variable 'output' is assigned to but never used
+isaac/resources/predictor.py:10:1: F401 'datetime.timedelta' imported but unused
+isaac/resources/predictor.py:12:1: F401 'json' imported but unused
+isaac/resources/predictor.py:13:1: F401 'os' imported but unused
+isaac/runtime/__init__.py:7:70: W292 no newline at end of file
+isaac/runtime/dispatcher.py:74:1: W293 blank line contains whitespace
+isaac/runtime/dispatcher.py:81:1: W293 blank line contains whitespace
+isaac/runtime/dispatcher.py:86:1: W293 blank line contains whitespace
+isaac/runtime/dispatcher.py:99:1: W293 blank line contains whitespace
+isaac/runtime/dispatcher.py:128:1: W293 blank line contains whitespace
+isaac/runtime/dispatcher.py:148:1: W293 blank line contains whitespace
+isaac/runtime/dispatcher.py:549:1: E402 module level import not at top of file
+isaac/runtime/dispatcher.py:550:1: E402 module level import not at top of file
+isaac/runtime/dispatcher.py:550:44: W292 no newline at end of file
+isaac/runtime/manifest_loader.py:3:1: F401 'json' imported but unused
+isaac/runtime/manifest_loader.py:143:45: W292 no newline at end of file
+isaac/runtime/security_enforcer.py:113:24: W292 no newline at end of file
+isaac/scheduler/cron_manager.py:15:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:20:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:21:55: W291 trailing whitespace
+isaac/scheduler/cron_manager.py:25:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:36:63: W291 trailing whitespace
+isaac/scheduler/cron_manager.py:37:25: E131 continuation line unaligned for hanging indent
+isaac/scheduler/cron_manager.py:40:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:45:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:50:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:57:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:62:1: W293 blank line contains whitespace
+isaac/scheduler/cron_manager.py:72:1: W293 blank line contains whitespace
+isaac/team/manager.py:9:1: F401 'typing.Dict' imported but unused
+isaac/team/manager.py:82:20: E128 continuation line under-indented for visual indent
+isaac/team/manager.py:336:29: E128 continuation line under-indented for visual indent
+isaac/team/models.py:7:1: F401 'uuid' imported but unused
+isaac/team/models.py:49:30: E128 continuation line under-indented for visual indent
+isaac/team/models.py:54:30: E128 continuation line under-indented for visual indent
+isaac/team/permission_system.py:131:25: E128 continuation line under-indented for visual indent
+isaac/team/permission_system.py:165:25: E128 continuation line under-indented for visual indent
+isaac/team/permission_system.py:166:25: E128 continuation line under-indented for visual indent
+isaac/team/permission_system.py:216:32: E128 continuation line under-indented for visual indent
+isaac/team/permission_system.py:262:29: E128 continuation line under-indented for visual indent
+isaac/team/permission_system.py:276:31: E128 continuation line under-indented for visual indent
+isaac/team/permission_system.py:277:31: E128 continuation line under-indented for visual indent
+isaac/team/team_collections.py:25:25: E128 continuation line under-indented for visual indent
+isaac/team/team_collections.py:26:25: E128 continuation line under-indented for visual indent
+isaac/team/team_collections.py:81:26: E128 continuation line under-indented for visual indent
+isaac/team/team_collections.py:108:17: E128 continuation line under-indented for visual indent
+isaac/team/team_collections.py:247:26: E128 continuation line under-indented for visual indent
+isaac/team/team_memory.py:79:19: E128 continuation line under-indented for visual indent
+isaac/team/team_memory.py:80:19: E128 continuation line under-indented for visual indent
+isaac/team/team_memory.py:111:21: E128 continuation line under-indented for visual indent
+isaac/team/team_memory.py:112:21: E128 continuation line under-indented for visual indent
+isaac/team/team_memory.py:218:27: E128 continuation line under-indented for visual indent
+isaac/team/team_memory.py:244:20: E128 continuation line under-indented for visual indent
+isaac/team/team_patterns.py:25:22: E128 continuation line under-indented for visual indent
+isaac/team/team_patterns.py:107:22: E128 continuation line under-indented for visual indent
+isaac/team/team_patterns.py:154:28: E128 continuation line under-indented for visual indent
+isaac/team/team_pipelines.py:25:23: E128 continuation line under-indented for visual indent
+isaac/team/team_pipelines.py:83:24: E128 continuation line under-indented for visual indent
+isaac/team/team_pipelines.py:163:24: E128 continuation line under-indented for visual indent
+isaac/team/team_pipelines.py:190:25: E128 continuation line under-indented for visual indent
+isaac/team/workspace_sharing.py:25:24: E128 continuation line under-indented for visual indent
+isaac/team/workspace_sharing.py:66:21: E128 continuation line under-indented for visual indent
+isaac/team/workspace_sharing.py:114:25: E128 continuation line under-indented for visual indent
+isaac/timemachine/time_machine.py:10:1: F401 'datetime.timedelta' imported but unused
+isaac/timemachine/time_machine.py:112:24: E128 continuation line under-indented for visual indent
+isaac/timemachine/time_machine.py:403:34: W292 no newline at end of file
+isaac/timemachine/timeline_browser.py:8:1: F401 'typing.Dict' imported but unused
+isaac/timemachine/timeline_browser.py:8:1: F401 'typing.Any' imported but unused
+isaac/timemachine/timeline_browser.py:151:24: E128 continuation line under-indented for visual indent
+isaac/timemachine/timeline_browser.py:163:24: E128 continuation line under-indented for visual indent
+isaac/timemachine/timeline_browser.py:308:1: W391 blank line at end of file
+isaac/tools/code_analysis.py:8:1: F401 'typing.Optional' imported but unused
+isaac/tools/code_analysis.py:8:1: F401 'typing.Set' imported but unused
+isaac/tools/code_analysis.py:68:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:155:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:157:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:160:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:163:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:166:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:169:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:172:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:174:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:191:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:196:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:203:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:207:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:219:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:234:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:248:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:263:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:269:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:278:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:284:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:288:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:294:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:307:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:318:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:322:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:326:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:330:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:334:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:350:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:354:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:358:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:361:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:364:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:367:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:374:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:376:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:380:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:391:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:404:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:414:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:424:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:426:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:430:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:441:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:443:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:447:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:458:1: W293 blank line contains whitespace
+isaac/tools/code_analysis.py:459:23: W292 no newline at end of file
+isaac/tools/code_search.py:8:1: F401 'typing.List' imported but unused
+isaac/tools/code_search.py:154:76: E741 ambiguous variable name 'l'
+isaac/tools/code_search.py:155:75: E741 ambiguous variable name 'l'
+isaac/tools/code_search.py:210:9: E722 do not use bare 'except'
+isaac/tools/file_ops.py:8:1: F401 'typing.Optional' imported but unused
+isaac/tools/file_ops.py:8:1: F401 'typing.List' imported but unused
+isaac/tools/file_ops.py:8:1: F401 'typing.Tuple' imported but unused
+isaac/tools/file_ops.py:104:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:138:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:148:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:171:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:178:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:212:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:356:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:362:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:368:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:418:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:467:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:545:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:551:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:659:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:665:1: W293 blank line contains whitespace
+isaac/tools/file_ops.py:671:1: W293 blank line contains whitespace
+isaac/tools/registry.py:45:5: E129 visually indented line with same indent as next logical line
+isaac/tools/registry.py:189:10: W292 no newline at end of file
+isaac/tools/shell_exec.py:6:1: F401 're' imported but unused
+isaac/tools/shell_exec.py:7:1: F401 'typing.Optional' imported but unused
+isaac/tools/shell_exec.py:8:1: F401 'pathlib.Path' imported but unused
+isaac/tools/shell_exec.py:158:14: W292 no newline at end of file
+isaac/ui/__init__.py:11:2: W292 no newline at end of file
+isaac/ui/_archived/advanced_input.py:8:1: F401 'typing.Optional' imported but unused
+isaac/ui/_archived/advanced_input.py:165:33: E128 continuation line under-indented for visual indent
+isaac/ui/_archived/advanced_input.py:172:29: E128 continuation line under-indented for visual indent
+isaac/ui/_archived/advanced_input.py:187:97: W292 no newline at end of file
+isaac/ui/_archived/terminal_control.py:12:1: F401 'xml.etree.ElementTree as ET' imported but unused
+isaac/ui/_archived/terminal_control.py:13:1: F401 'typing.Tuple' imported but unused
+isaac/ui/_archived/terminal_control.py:17:5: F401 'requests' imported but unused
+isaac/ui/_archived/terminal_control.py:30:5: F401 'psutil' imported but unused
+isaac/ui/_archived/terminal_control.py:52:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:59:30: W291 trailing whitespace
+isaac/ui/_archived/terminal_control.py:69:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:75:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:80:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:92:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:96:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:101:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:122:43: W291 trailing whitespace
+isaac/ui/_archived/terminal_control.py:207:19: F541 f-string is missing placeholders
+isaac/ui/_archived/terminal_control.py:208:19: F541 f-string is missing placeholders
+isaac/ui/_archived/terminal_control.py:221:30: E741 ambiguous variable name 'l'
+isaac/ui/_archived/terminal_control.py:233:15: F541 f-string is missing placeholders
+isaac/ui/_archived/terminal_control.py:243:15: F541 f-string is missing placeholders
+isaac/ui/_archived/terminal_control.py:260:13: F811 redefinition of unused 'requests' from line 17
+isaac/ui/_archived/terminal_control.py:291:21: F811 redefinition of unused 'psutil' from line 30
+isaac/ui/_archived/terminal_control.py:306:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:311:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:383:22: E128 continuation line under-indented for visual indent
+isaac/ui/_archived/terminal_control.py:417:20: F541 f-string is missing placeholders
+isaac/ui/_archived/terminal_control.py:456:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:461:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:463:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:466:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:484:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:486:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:506:9: F841 local variable 'total_width' is assigned to but never used
+isaac/ui/_archived/terminal_control.py:508:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:519:25: F541 f-string is missing placeholders
+isaac/ui/_archived/terminal_control.py:560:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:563:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:570:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:603:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:621:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:628:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:661:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:667:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:669:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:675:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:677:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:692:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:698:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:718:1: W293 blank line contains whitespace
+isaac/ui/_archived/terminal_control.py:743:57: W292 no newline at end of file
+isaac/ui/config_console.py:13:1: F401 'prompt_toolkit.widgets.Frame' imported but unused
+isaac/ui/config_console.py:15:1: F401 'prompt_toolkit.layout.containers.WindowAlign' imported but unused
+isaac/ui/config_console.py:18:1: F401 'asyncio' imported but unused
+isaac/ui/config_console.py:146:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:149:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:172:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:175:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:191:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:194:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:203:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:214:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:223:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:328:13: F811 redefinition of unused 'asyncio' from line 18
+isaac/ui/config_console.py:385:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:457:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:460:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:466:1: W293 blank line contains whitespace
+isaac/ui/config_console.py:516:54: W291 trailing whitespace
+isaac/ui/config_console.py:516:68: W292 no newline at end of file
+isaac/ui/header_display.py:6:1: F401 'time' imported but unused
+isaac/ui/header_display.py:26:22: E128 continuation line under-indented for visual indent
+isaac/ui/header_display.py:126:82: W292 no newline at end of file
+isaac/ui/inline_suggestions.py:145:62: W292 no newline at end of file
+isaac/ui/permanent_shell.py:29:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:32:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:37:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:40:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:46:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:49:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:53:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:71:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:76:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:190:9: F841 local variable 'e' is assigned to but never used
+isaac/ui/permanent_shell.py:209:9: E722 do not use bare 'except'
+isaac/ui/permanent_shell.py:259:9: F841 local variable 'e' is assigned to but never used
+isaac/ui/permanent_shell.py:276:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:312:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:321:1: W293 blank line contains whitespace
+isaac/ui/permanent_shell.py:324:1: W293 blank line contains whitespace
+isaac/ui/predictive_completer.py:7:1: F401 'os' imported but unused
+isaac/ui/predictive_completer.py:8:1: F401 're' imported but unused
+isaac/ui/predictive_completer.py:12:1: F401 'typing.Set' imported but unused
+isaac/ui/predictive_completer.py:13:1: F401 'datetime.timedelta' imported but unused
+isaac/ui/predictive_completer.py:400:57: W292 no newline at end of file
+isaac/ui/progress_indicator.py:8:1: F401 'typing.Callable' imported but unused
+isaac/ui/progress_indicator.py:9:1: F401 'dataclasses.dataclass' imported but unused
+isaac/ui/progress_indicator.py:9:1: F401 'dataclasses.field' imported but unused
+isaac/ui/progress_indicator.py:231:36: W292 no newline at end of file
+isaac/ui/prompt_handler.py:6:1: F401 'sys' imported but unused
+isaac/ui/prompt_handler.py:7:1: F401 'typing.Optional' imported but unused
+isaac/ui/prompt_handler.py:171:69: W292 no newline at end of file
+isaac/ui/splash_screen.py:7:1: F401 'os' imported but unused
+isaac/ui/splash_screen.py:102:60: W292 no newline at end of file
+isaac/ui/streaming_display.py:269:32: W292 no newline at end of file
+isaac/ui/visual_enhancer.py:7:1: F401 'typing.Optional' imported but unused
+isaac/ui/visual_enhancer.py:213:32: W292 no newline at end of file
+isaac/voice/multi_language.py:6:1: F401 'os' imported but unused
+isaac/voice/multi_language.py:9:1: F401 'typing.Callable' imported but unused
+isaac/voice/multi_language.py:9:1: F401 'typing.Union' imported but unused
+isaac/voice/multi_language.py:12:1: F401 'threading' imported but unused
+isaac/voice/multi_language.py:13:1: F401 're' imported but unused
+isaac/voice/multi_language.py:75:13: E722 do not use bare 'except'
+isaac/voice/multi_language.py:98:13: E722 do not use bare 'except'
+isaac/voice/multi_language.py:108:13: E722 do not use bare 'except'
+isaac/voice/multi_language.py:255:32: E128 continuation line under-indented for visual indent
+isaac/voice/multi_language.py:260:42: E128 continuation line under-indented for visual indent
+isaac/voice/multi_language.py:511:23: E128 continuation line under-indented for visual indent
+isaac/voice/multi_language.py:654:67: W292 no newline at end of file
+isaac/voice/speech_to_text.py:11:1: F401 'typing.Union' imported but unused
+isaac/voice/speech_to_text.py:14:1: F401 'tempfile' imported but unused
+isaac/voice/speech_to_text.py:15:1: F401 'subprocess' imported but unused
+isaac/voice/speech_to_text.py:156:13: F401 'google.auth' imported but unused
+isaac/voice/speech_to_text.py:209:13: F401 'vosk.KaldiRecognizer' imported but unused
+isaac/voice/speech_to_text.py:210:13: F401 'wave' imported but unused
+isaac/voice/speech_to_text.py:211:13: F401 'json' imported but unused
+isaac/voice/speech_to_text.py:532:10: W292 no newline at end of file
+isaac/voice/text_to_speech.py:11:1: F401 'dataclasses.asdict' imported but unused
+isaac/voice/text_to_speech.py:12:1: F401 'pathlib.Path' imported but unused
+isaac/voice/text_to_speech.py:116:9: E722 do not use bare 'except'
+isaac/voice/text_to_speech.py:267:13: E722 do not use bare 'except'
+isaac/voice/text_to_speech.py:342:19: E128 continuation line under-indented for visual indent
+isaac/voice/text_to_speech.py:393:13: E722 do not use bare 'except'
+isaac/voice/text_to_speech.py:533:13: E722 do not use bare 'except'
+isaac/voice/text_to_speech.py:534:22: W292 no newline at end of file
+isaac/voice/voice_shortcuts.py:6:1: F401 'os' imported but unused
+isaac/voice/voice_shortcuts.py:9:1: F401 'threading' imported but unused
+isaac/voice/voice_shortcuts.py:10:1: F401 'typing.Union' imported but unused
+isaac/voice/voice_shortcuts.py:11:1: F401 'dataclasses.field' imported but unused
+isaac/voice/voice_shortcuts.py:13:1: F401 're' imported but unused
+isaac/voice/voice_shortcuts.py:577:13: E722 do not use bare 'except'
+isaac/voice/voice_shortcuts.py:625:5: E129 visually indented line with same indent as next logical line
+isaac/voice/voice_shortcuts.py:634:30: W292 no newline at end of file
+isaac/voice/voice_transcription.py:11:1: F401 'typing.Union' imported but unused
+isaac/voice/voice_transcription.py:13:1: F401 'pathlib.Path' imported but unused
+isaac/voice/voice_transcription.py:187:9: E722 do not use bare 'except'
+isaac/voice/voice_transcription.py:315:21: F821 undefined name 'speech'
+isaac/voice/voice_transcription.py:316:22: F821 undefined name 'speech'
+isaac/voice/voice_transcription.py:317:26: F821 undefined name 'speech'
+isaac/voice/voice_transcription.py:429:25: E128 continuation line under-indented for visual indent
+isaac/voice/voice_transcription.py:458:30: E128 continuation line under-indented for visual indent
+isaac/voice/voice_transcription.py:497:17: E722 do not use bare 'except'
+isaac/voice/voice_transcription.py:594:27: E128 continuation line under-indented for visual indent
+isaac/voice/voice_transcription.py:608:29: F541 f-string is missing placeholders
+isaac/voice/voice_transcription.py:635:9: F841 local variable 'hours' is assigned to but never used
+isaac/voice/voice_transcription.py:636:9: F841 local variable 'minutes' is assigned to but never used
+isaac/voice/voice_transcription.py:637:9: F841 local variable 'secs' is assigned to but never used
+isaac/voice/voice_transcription.py:638:9: F841 local variable 'millis' is assigned to but never used
+isaac/voice/voice_transcription.py:649:13: E722 do not use bare 'except'
+isaac/voice/voice_transcription.py:650:22: W292 no newline at end of file
