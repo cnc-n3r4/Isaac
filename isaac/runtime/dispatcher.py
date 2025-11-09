@@ -65,34 +65,88 @@ class CommandDispatcher:
         # Split args_raw into parts (simple splitting for now)
         parts = shlex.split(args_raw) if args_raw.strip() else []
 
-        # Parse positional arguments
-        for i, arg_spec in enumerate(args_spec):
-            name = arg_spec['name']
-            arg_type = arg_spec['type']
-            required = arg_spec.get('required', False)
+        # Create lookup for argument specs by name
+        arg_specs_by_name = {spec['name']: spec for spec in args_spec}
 
-            if i < len(parts):
-                value = parts[i]
-                # Convert type
-                try:
-                    if arg_type == 'int':
-                        parsed_args[name] = int(value)
-                    elif arg_type == 'bool':
-                        parsed_args[name] = value.lower() in ['true', '1', 'yes', 'on']
-                    elif arg_type == 'enum':
-                        enum_values = arg_spec.get('enum', [])
-                        if value in enum_values:
-                            parsed_args[name] = value
+        i = 0
+        while i < len(parts):
+            part = parts[i]
+            
+            # Check if this is a named argument (starts with --)
+            if part.startswith('--'):
+                # Named argument
+                arg_name = part[2:]  # Remove --
+                # Convert arg_name from dash-case to underscore_case
+                arg_name = arg_name.replace('-', '_')
+                
+                if arg_name in arg_specs_by_name:
+                    spec = arg_specs_by_name[arg_name]
+                    arg_type = spec['type']
+                    required = spec.get('required', False)
+                    
+                    # Check if next part is a value
+                    if i + 1 < len(parts) and not parts[i + 1].startswith('--'):
+                        # Next part is a value
+                        value = parts[i + 1]
+                        i += 1  # Skip the value in next iteration
+                    else:
+                        # Boolean flag or enum value
+                        if arg_type == 'bool':
+                            value = 'true'
                         else:
-                            raise ValueError(f"Invalid value for {name}: {value}")
-                    else:  # string
-                        parsed_args[name] = value
-                except (ValueError, TypeError):
-                    if required:
-                        raise ValueError(f"Invalid {arg_type} value for {name}: {value}")
-                    # Skip invalid optional args
-            elif required:
-                raise ValueError(f"Missing required argument: {name}")
+                            # For enums and strings, use the flag itself as value
+                            value = part
+                    
+                    # Convert type
+                    try:
+                        if arg_type == 'int':
+                            parsed_args[arg_name] = int(value)
+                        elif arg_type == 'bool':
+                            parsed_args[arg_name] = value.lower() in ['true', '1', 'yes', 'on']
+                        elif arg_type == 'enum':
+                            enum_values = spec.get('enum', [])
+                            if value in enum_values:
+                                parsed_args[arg_name] = value
+                            else:
+                                raise ValueError(f"Invalid value for {arg_name}: {value}")
+                        else:  # string
+                            parsed_args[arg_name] = value
+                    except (ValueError, TypeError):
+                        if required:
+                            raise ValueError(f"Invalid {arg_type} value for {arg_name}: {value}")
+                        # Skip invalid optional args
+                else:
+                    # Unknown named argument, skip
+                    pass
+            else:
+                # Positional argument - assign to next spec
+                for spec in args_spec:
+                    name = spec['name']
+                    if name not in parsed_args:  # Don't overwrite named args
+                        arg_type = spec['type']
+                        required = spec.get('required', False)
+                        
+                        value = part
+                        try:
+                            if arg_type == 'int':
+                                parsed_args[name] = int(value)
+                            elif arg_type == 'bool':
+                                parsed_args[name] = value.lower() in ['true', '1', 'yes', 'on']
+                            elif arg_type == 'enum':
+                                enum_values = spec.get('enum', [])
+                                if value in enum_values:
+                                    parsed_args[name] = value
+                                else:
+                                    raise ValueError(f"Invalid value for {name}: {value}")
+                            else:  # string
+                                parsed_args[name] = value
+                        except (ValueError, TypeError):
+                            if required:
+                                raise ValueError(f"Invalid {arg_type} value for {name}: {value}")
+                            # Skip invalid optional args
+                        break  # Only assign to first available positional arg
+            
+            i += 1
 
         return parsed_args
 

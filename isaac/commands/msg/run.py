@@ -34,28 +34,26 @@ def main():
         # Unix: use select
         has_stdin = select.select([sys.stdin], [], [], 0)[0]
     
+    parsed_args = {}
+    manual_args = []
+    
     if has_stdin:
-        print("DEBUG: Reading from stdin (dispatcher mode)", file=sys.stderr)
         # Running through dispatcher - read JSON payload
         try:
             payload = json.loads(sys.stdin.read())
             command = payload.get("command", "/msg")
-            print(f"DEBUG: Received command: '{command}'", file=sys.stderr)
-            # Extract arguments from command (everything after "/msg")
-            parts = command.split()
-            if len(parts) > 1:
-                args = parts[1:]
-            else:
-                args = []
-            print(f"DEBUG: Extracted args: {args}", file=sys.stderr)
+            parsed_args = payload.get("args", {})
+            
+            # If no parsed args, fall back to extracting from command string
+            if not parsed_args:
+                parts = command.split()
+                if len(parts) > 1:
+                    manual_args = parts[1:]
         except (json.JSONDecodeError, KeyError):
-            args = sys.argv[1:]
-            print(f"DEBUG: JSON decode failed, using sys.argv: {args}", file=sys.stderr)
+            manual_args = sys.argv[1:]
     else:
-        print("DEBUG: No stdin, using sys.argv", file=sys.stderr)
         # Running directly - use command line args
-        args = sys.argv[1:]
-        print(f"DEBUG: sys.argv args: {args}", file=sys.stderr)
+        manual_args = sys.argv[1:]
 
     # Initialize message queue
     try:
@@ -64,7 +62,7 @@ def main():
         print(f"Error initializing message queue: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Parse arguments
+    # Parse arguments - prefer parsed args from payload, fall back to manual parsing
     show_system = False
     show_code = False
     show_all = False
@@ -77,71 +75,119 @@ def main():
     clear_type = None
     auto_run = False
 
-    i = 0
-    while i < len(args):
-        arg = args[i]
-        print(f"DEBUG: Processing arg {i}: '{arg}'", file=sys.stderr)  # Debug output
-        if arg in ['--sys', '-s']:
+    # Check if we have parsed args from dispatcher
+    if parsed_args:
+        # Use parsed args from dispatcher
+        if parsed_args.get('filter') == '--sys':
             show_system = True
-        elif arg in ['--code', '-c']:
+        elif parsed_args.get('filter') == '--code':
             show_code = True
-        elif arg in ['--all', '-a']:
+        elif parsed_args.get('filter') == '--all':
             show_all = True
-        elif arg == '--ack' and i + 1 < len(args):
+        
+        if parsed_args.get('ack'):
             try:
-                ack_id = int(args[i + 1])
-                i += 1
+                ack_id = int(parsed_args['ack'])
             except ValueError:
                 print("Error: --ack requires a valid message ID", file=sys.stderr)
                 sys.exit(1)
-        elif arg == '--ack-all':
+        
+        if parsed_args.get('ack_all'):
             ack_all = True
-            if i + 1 < len(args) and args[i + 1] in ['--sys', '--code']:
-                ack_type = MessageType.SYSTEM if args[i + 1] == '--sys' else MessageType.CODE
-                i += 1
-        elif arg == '--read' and i + 1 < len(args):
+            if parsed_args['ack_all'] == '--sys':
+                ack_type = MessageType.SYSTEM
+            elif parsed_args['ack_all'] == '--code':
+                ack_type = MessageType.CODE
+        
+        if parsed_args.get('read'):
             try:
-                read_id = int(args[i + 1])
-                i += 1
+                read_id = int(parsed_args['read'])
             except ValueError:
                 print("Error: --read requires a valid message ID", file=sys.stderr)
                 sys.exit(1)
-        elif arg == '--delete' and i + 1 < len(args):
+        
+        if parsed_args.get('delete'):
             try:
-                delete_id = int(args[i + 1])
-                i += 1
+                delete_id = int(parsed_args['delete'])
             except ValueError:
                 print("Error: --delete requires a valid message ID", file=sys.stderr)
                 sys.exit(1)
-        elif arg == '--clear':
+        
+        if parsed_args.get('clear'):
             clear_all = True
-            if i + 1 < len(args) and args[i + 1] in ['--sys', '--code', '--ack']:
-                if args[i + 1] == '--sys':
-                    clear_type = ('type', MessageType.SYSTEM)
-                elif args[i + 1] == '--code':
-                    clear_type = ('type', MessageType.CODE)
-                elif args[i + 1] == '--ack':
-                    clear_type = ('status', 'acknowledged')
-                i += 1
-        elif arg in ['--auto-run', '-ar']:
-            print("DEBUG: Setting auto_run = True", file=sys.stderr)  # Debug output
+            if parsed_args['clear'] == '--sys':
+                clear_type = ('type', MessageType.SYSTEM)
+            elif parsed_args['clear'] == '--code':
+                clear_type = ('type', MessageType.CODE)
+            elif parsed_args['clear'] == '--ack':
+                clear_type = ('status', 'acknowledged')
+        
+        if parsed_args.get('auto_run'):
             auto_run = True
-        else:
-            print(f"DEBUG: Unknown argument: {arg}", file=sys.stderr)  # Debug output
-            print("Usage: /msg [OPTIONS]", file=sys.stderr)
-            print("  --sys, -s              Show system messages", file=sys.stderr)
-            print("  --code, -c             Show code messages", file=sys.stderr)
-            print("  --all, -a              Show all messages", file=sys.stderr)
-            print("  --read ID              Read full message", file=sys.stderr)
-            print("  --ack ID               Acknowledge message", file=sys.stderr)
-            print("  --ack-all [--sys|--code]  Acknowledge all messages", file=sys.stderr)
-            print("  --delete ID            Delete message", file=sys.stderr)
-            print("  --clear [--sys|--code|--ack]  Clear messages", file=sys.stderr)
-            print("  --auto-run, -ar        Auto-run safe recommendations", file=sys.stderr)
-            sys.exit(1)
-        i += 1
-
-    print(f"DEBUG: Final auto_run = {auto_run}", file=sys.stderr)  # Debug output
+    else:
+        # Manual argument parsing for direct execution
+        args = manual_args
+        i = 0
+        while i < len(args):
+            arg = args[i]
+            if arg in ['--sys', '-s']:
+                show_system = True
+            elif arg in ['--code', '-c']:
+                show_code = True
+            elif arg in ['--all', '-a']:
+                show_all = True
+            elif arg == '--ack' and i + 1 < len(args):
+                try:
+                    ack_id = int(args[i + 1])
+                    i += 1
+                except ValueError:
+                    print("Error: --ack requires a valid message ID", file=sys.stderr)
+                    sys.exit(1)
+            elif arg == '--ack-all':
+                ack_all = True
+                if i + 1 < len(args) and args[i + 1] in ['--sys', '--code']:
+                    ack_type = MessageType.SYSTEM if args[i + 1] == '--sys' else MessageType.CODE
+                    i += 1
+            elif arg == '--read' and i + 1 < len(args):
+                try:
+                    read_id = int(args[i + 1])
+                    i += 1
+                except ValueError:
+                    print("Error: --read requires a valid message ID", file=sys.stderr)
+                    sys.exit(1)
+            elif arg == '--delete' and i + 1 < len(args):
+                try:
+                    delete_id = int(args[i + 1])
+                    i += 1
+                except ValueError:
+                    print("Error: --delete requires a valid message ID", file=sys.stderr)
+                    sys.exit(1)
+            elif arg == '--clear':
+                clear_all = True
+                if i + 1 < len(args) and args[i + 1] in ['--sys', '--code', '--ack']:
+                    if args[i + 1] == '--sys':
+                        clear_type = ('type', MessageType.SYSTEM)
+                    elif args[i + 1] == '--code':
+                        clear_type = ('type', MessageType.CODE)
+                    elif args[i + 1] == '--ack':
+                        clear_type = ('status', 'acknowledged')
+                    i += 1
+            elif arg in ['--auto-run', '-ar']:
+                auto_run = True
+            else:
+                print(f"Unknown argument: {arg}", file=sys.stderr)
+                print("Usage: /msg [OPTIONS]", file=sys.stderr)
+                print("  --sys, -s              Show system messages", file=sys.stderr)
+                print("  --code, -c             Show code messages", file=sys.stderr)
+                print("  --all, -a              Show all messages", file=sys.stderr)
+                print("  --read ID              Read full message", file=sys.stderr)
+                print("  --ack ID               Acknowledge message", file=sys.stderr)
+                print("  --ack-all [--sys|--code]  Acknowledge all messages", file=sys.stderr)
+                print("  --delete ID            Delete message", file=sys.stderr)
+                print("  --clear [--sys|--code|--ack]  Clear messages", file=sys.stderr)
+                print("  --auto-run, -ar        Auto-run safe recommendations", file=sys.stderr)
+                sys.exit(1)
+            i += 1
 
     # Handle operations in priority order
 

@@ -52,6 +52,16 @@ def test_msg_filtering():
     print(f"Result OK: {result.get('ok')}")
     stdout = result.get('stdout', '')
     print(f"Output:\n{stdout}")
+    print()
+
+    print("Testing /msg --auto-run")
+    result = dispatcher.execute('/msg --auto-run')
+    print(f"Result OK: {result.get('ok')}")
+    stdout = result.get('stdout', '')
+    stderr = result.get('stderr', '')
+    print(f"Stdout length: {len(stdout)}")
+    print(f"Stderr preview: {repr(stderr[:200])}")
+    print()
 
 if __name__ == "__main__":
     test_msg_filtering()
