@@ -36,69 +36,81 @@ def main():
 def get_overview_help(session):
     """Show overview of available commands"""
     return """
-Available Commands:
-  /help              - Show this help
-  /status            - Quick system status
-  /status -v         - Detailed status
-  /config            - Configuration overview
-  /config --status     - System status check
-  /config --ai         - AI provider details
-  /config --ai-routing - AI routing configuration
-  /config --cloud      - Cloud sync status
-  /config --plugins    - List plugins
-  /config --set <k> <v> - Change setting
-  /config --apikey <service> <key> - Set API key
-  /clear             - Clear screen
-  /exit, /quit       - Exit ISAAC
+Isaac Command Reference - Phase 9 (Consolidated Commands)
 
-Collections (xAI):
-  /mine --list              - List all collections
-  /mine --create <name>     - Create new collection
-  /mine --use <name>        - Switch active collection
-  /mine --delete <name>     - Delete collection
-  /mine --upload <file>     - Upload file to collection
-  /mine --search <query>    - Search active collection
-  /mine --info              - Show collection details
+════════════════════════════════════════════════════════════
+✨ 6 CORE COMMANDS (Unified Interface):
+════════════════════════════════════════════════════════════
 
-AI Interaction:
+  /help [command]         Unified help (replaces /man, /apropos, /whatis)
+    /help                   Command overview
+    /help /search           Detailed help for specific command
+
+  /file <operation>       All file operations (replaces /read, /write, /edit)
+    /file read <path>       Read files
+    /file write <path>      Write/create files
+    /file edit <path>       Edit with string replacement
+    /file append <path>     Append to files
+    /file <path>            Smart mode (auto-detect)
+
+  /search <query>         Universal search (replaces /grep, /glob)
+    /search "*.py"          Find Python files (auto-detects glob)
+    /search "TODO"          Search for TODO (auto-detects grep)
+    /search "TODO" in "*.py" Search TODO in Python files
+
+  /task <operation>       Background task management
+    /task list              List all tasks
+    /task show <id>         Show task details
+    /task cancel <id>       Cancel task
+
+  /status [mode]          System status dashboard
+    /status                 Quick status
+    /status -v              Detailed status
+
+  /config <setting>       Configuration
+    /config --ai            AI provider settings
+    /config --ai-routing    AI routing config
+    /config --apikey <srv> <key> Set API key
+
+════════════════════════════════════════════════════════════
+🔧 SHELL COMMANDS (Work directly - no prefix):
+════════════════════════════════════════════════════════════
+  cat, grep, ls, cd, pwd, find, cp, mv, rm, mkdir, echo
+
+════════════════════════════════════════════════════════════
+💬 AI & MESSAGING:
+════════════════════════════════════════════════════════════
+  isaac <query>      - Natural language AI (primary interface!)
   /ask <question>    - Direct AI chat (no execution)
-  /a <question>      - Short alias for /ask
-  isaac <query>      - AI query or command translation
-
-Messaging & Notifications:
-  /msg               - View pending notifications
-  /msg --read ID     - Read full message
+  /msg               - View notifications
   /msg --ack ID      - Acknowledge message
-  /msg --delete ID   - Delete message
-  /msg --clear       - Clear all messages
+  /msg --clear       - Clear messages
 
-File Operations:
-  /read <file>       - Read file contents
-  /write <file>      - Write/create file
-  /edit <file>       - Edit existing file
-  /newfile <name>    - Create new file
-  /backup            - Backup config/session data
-  /restore           - Restore from backup
+════════════════════════════════════════════════════════════
+📚 COLLECTIONS & DATA:
+════════════════════════════════════════════════════════════
+  /mine --create <name>     Create xAI collection
+  /mine --use <name>        Switch collection
+  /mine --upload <file>     Upload to collection
+  /mine --search <query>    Search collection
 
-Search & Navigation:
-  /grep <pattern>    - Search files with regex
-  /glob <pattern>    - Find files by pattern
-  /list <name>       - Manage named lists
-  /workspace         - Show workspace info
+════════════════════════════════════════════════════════════
+🎯 QUICK EXAMPLES:
+════════════════════════════════════════════════════════════
+  /search "TODO"                    Search for TODOs
+  /file read app.py                 Read a file
+  isaac update all pip packages     Let AI help you!
+  /msg                              Check notifications
+  /help /search                     Detailed help
 
-System Management:
-  /alias             - Manage command aliases
-  /sync              - Sync data with cloud
-  /queue             - Show command queue
-  <cmd> | <cmd>      - Chain commands together
-  /mine --search "query" | /ask "analyze this"
-  ls | /save files.txt
+════════════════════════════════════════════════════════════
+📝 NOTE:
+════════════════════════════════════════════════════════════
+  Legacy commands (/read, /write, /grep, /glob, /man, /apropos)
+  still work for backward compatibility, but the 6 core commands
+  above are simpler and recommended.
 
-Examples:
-  /help /config      - Detailed help for config command
-  /status -v         - Verbose system status
-  /mine --use cnc-info - Switch to CNC manuals collection
-  /mine --search "g01" | /ask "explain this"
+  Natural language is the PRIMARY interface - just ask Isaac!
 """.strip()
 
 
@@ -540,6 +552,106 @@ EXAMPLES:
 
 QUEUE FEATURES:
   Batch execution, offline queuing, progress tracking
+""".strip(),
+
+        "/search": """
+Search Command - Unified Search (Phase 9)
+
+USAGE:
+  /search <query>                    - Smart auto-detect mode
+  /search <pattern> in <files>       - Explicit grep mode
+  /search --mode glob <pattern>      - Force glob mode
+  /search --mode grep <pattern>      - Force grep mode
+
+SMART AUTO-DETECTION:
+  Automatically detects whether to find files (glob) or search content (grep):
+  - Patterns with *, **, ?, [ ] → Find files (glob mode)
+  - File extensions (.py, *.js) → Find files (glob mode)
+  - Plain text patterns → Search content (grep mode)
+  - "pattern in files" syntax → Search content with file filter
+
+EXAMPLES:
+  # Auto-detect (glob mode)
+  /search "*.py"                     Find Python files
+  /search "**/*.md"                  Find all markdown files
+  /search "src/**/*.js"              Find JS files in src/
+
+  # Auto-detect (grep mode)
+  /search "TODO"                     Search for TODO in all files
+  /search "import re"                Search for imports
+  /search "class.*Manager"           Regex search
+
+  # Explicit "in" syntax (grep with filter)
+  /search "TODO" in "*.py"           Search TODO in Python files
+  /search "error" in "**/*.log"      Search errors in log files
+  /search "def test_" in "test_*.py" Find test functions
+
+  # Force mode
+  /search --mode glob "test"         Find files named 'test'
+  /search --mode grep "*.py"         Search for literal "*.py" text
+
+GREP OPTIONS:
+  -i, --ignore-case                  Case-insensitive search
+  -C <n>, --context <n>              Show n lines of context
+  --output content                   Show matching lines (not just files)
+  --output count                     Show match counts per file
+  --path <dir>                       Search in specific directory
+
+CONSOLIDATES:
+  /grep - Search file contents
+  /glob - Find files by pattern
+
+ALIASES:
+  /find - Same as /search
+""".strip(),
+
+        "/file": """
+File Command - Unified File Operations (Phase 9)
+
+USAGE:
+  /file <operation> <args>           - Explicit operation
+  /file <path>                       - Smart mode (auto-detect)
+  /file <path> <content>             - Smart mode (write)
+
+OPERATIONS:
+  read    - Read file contents with line numbers
+  write   - Create or overwrite files
+  edit    - Edit with exact string replacement
+  append  - Append content to files
+
+READ OPERATION:
+  /file read <path>                  Read entire file
+  /file read <path> --offset 10      Start from line 10
+  /file read <path> --limit 50       Read first 50 lines
+
+WRITE OPERATION:
+  /file write <path> <content>       Create/write file
+  /file write <path> --overwrite     Allow overwriting existing
+  echo "data" | /file write <path>   Write from stdin
+
+EDIT OPERATION:
+  /file edit <path> <old> <new>      Replace first occurrence
+  /file edit <path> <old> <new> --replace-all  Replace all
+
+APPEND OPERATION:
+  /file append <path> <content>      Append to file
+  echo "log" | /file append log.txt  Append from stdin
+
+SMART MODE:
+  /file myfile.txt                   Reads if exists, error if not
+  /file myfile.txt "content"         Writes content (overwrites)
+
+EXAMPLES:
+  /file read README.md               Read file
+  /file write config.json '{"a":1}'  Write JSON
+  /file edit app.py "old" "new"      Edit file
+  /file append log.txt "Entry"       Append to log
+
+CONSOLIDATES:
+  /read    - Read files
+  /write   - Write files
+  /edit    - Edit files
+  /newfile - Create new files
 """.strip(),
 
         "/msg": """
