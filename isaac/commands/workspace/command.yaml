@@ -1,8 +1,13 @@
 name: workspace
 version: 1.0.0
+status: stable
 summary: "Manage isolated workspaces"
 
 triggers: ["/workspace"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: list

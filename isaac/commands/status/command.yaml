@@ -1,9 +1,14 @@
 name: status
 version: 1.0.0
+status: stable
 summary: "Quick system status or detailed diagnostics"
 
 triggers: ["/status"]
 aliases: ["/s"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: verbose

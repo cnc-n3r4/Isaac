@@ -1,11 +1,16 @@
 name: help
 version: 1.0.0
+status: stable
 summary: "Display command reference or detailed help for specific command"
 description: |
   Shows available commands and usage. Can provide detailed help for specific commands.
 
 triggers: ["/help"]
 aliases: ["/h"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: command

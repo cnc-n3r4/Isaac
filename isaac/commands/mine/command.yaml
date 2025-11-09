@@ -1,5 +1,6 @@
 name: mine
 version: 1.0.0
+status: stable
 summary: Personal file history and collection search
 description: |
   Search your personal file history (Total Commander logs, project snapshots)
@@ -10,6 +11,10 @@ triggers:
 
 aliases:
   - /mine
+
+dependencies:
+  packages: []
+  api_keys: ["XAI_API_KEY"]
 
 args:
   - name: create

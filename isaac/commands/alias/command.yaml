@@ -1,8 +1,13 @@
 name: alias
 version: 1.0.0
+status: stable
 summary: "Manage Unix-to-PowerShell command aliases"
 
 triggers: ["/alias"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: flag

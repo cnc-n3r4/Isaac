@@ -1,8 +1,13 @@
 name: restore
 version: 1.0.0
+status: stable
 summary: "Restore backups"
 
 triggers: ["/restore"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: flag

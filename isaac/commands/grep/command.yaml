@@ -1,5 +1,6 @@
 name: grep
 version: 1.0.0
+status: stable
 summary: Search files for regex patterns
 description: |
   Search files for regex patterns. Returns matching lines with context.
@@ -11,6 +12,10 @@ triggers:
 aliases:
   - /grep
   - /search
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args: []
 

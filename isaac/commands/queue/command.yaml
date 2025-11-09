@@ -1,11 +1,16 @@
 name: queue
 version: 1.0.0
+status: stable
 summary: "View queued commands awaiting sync"
 description: |
   Shows commands that are queued for sync when cloud connection is restored.
 
 triggers: ["/queue"]
 aliases: ["/q"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args: []
 

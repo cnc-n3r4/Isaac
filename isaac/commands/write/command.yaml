@@ -1,5 +1,6 @@
 name: write
 version: 1.0.0
+status: stable
 summary: Create new files
 description: |
   Create new file with content. Creates parent directories if needed.
@@ -10,6 +11,10 @@ triggers:
 
 aliases:
   - /write
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args: []
 
