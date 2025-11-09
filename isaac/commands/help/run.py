@@ -43,6 +43,7 @@ Available Commands:
   /config            - Configuration overview
   /config --status     - System status check
   /config --ai         - AI provider details
+  /config --ai-routing - AI routing configuration
   /config --cloud      - Cloud sync status
   /config --plugins    - List plugins
   /config --set <k> <v> - Change setting
@@ -104,25 +105,53 @@ USAGE:
   /config                    - Show configuration overview
   /config --status           - Detailed system status
   /config --ai               - AI provider configuration
+  /config --ai-routing       - AI routing configuration
   /config --cloud            - Cloud sync status
   /config --plugins          - List available plugins
   /config --collections      - xAI Collections status
   /config --set <key> <value> - Change configuration setting
   /config --apikey <service> <key> - Set API key for AI service
 
+AI ROUTING CONFIGURATION:
+  /config --ai-routing                         - View current routing settings
+  /config --ai-routing-set <level> <provider>  - Set provider for complexity
+  /config --ai-routing-model <prov> <model>    - Set model for provider
+  /config --ai-routing-limits <period> <amt>   - Set cost limits
+  /config --ai-routing-reset                   - Reset to defaults
+
 EXAMPLES:
   /config                    - Show version, session, history
   /config --status          - Show cloud, AI, network status
   /config --ai              - Show AI provider and connection
+  /config --ai-routing      - View routing configuration
   /config --set default_tier 3 - Change safety tier
   /config --apikey xai-chat YOUR_API_KEY - Set xAI chat API key
   /config --apikey claude YOUR_API_KEY - Set Claude API key
+
+AI ROUTING EXAMPLES:
+  /config --ai-routing-set simple grok - Use Grok for simple tasks
+  /config --ai-routing-set complex claude - Use Claude for complex tasks
+  /config --ai-routing-set code_write claude - Always use Claude for code
+  /config --ai-routing-model claude claude-opus - Change Claude model
+  /config --ai-routing-limits daily 10.0 - Set $10 daily limit
+  /config --ai-routing-limits monthly 100.0 - Set $100 monthly limit
 
 API KEY SERVICES:
   xai-chat        - xAI API key for chat completion
   xai-collections - xAI API key for collections
   claude          - Anthropic Claude API key
   openai          - OpenAI API key
+
+ROUTING COMPLEXITY LEVELS:
+  simple   - Quick answers, basic queries (default: openai)
+  medium   - Standard questions, explanations (default: grok)
+  complex  - Multi-step reasoning, code review (default: claude)
+  expert   - Architecture, system design (default: claude)
+
+ROUTING TASK TYPES:
+  code_write  - Code generation (default: claude)
+  code_debug  - Debugging and fixes (default: claude)
+  tool_use    - Tool/function calling (default: claude)
 
 SETTINGS:
   default_tier: Command safety level (1-4)
