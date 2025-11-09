@@ -1,0 +1,51 @@
+Command,Primary File,Syntax Pattern,Positional Args,Optional Args,Short Flags,Long Flags,Default Values,Help Text,Examples,Schema Compliant,Inconsistencies,Priority Fix
+/alias,commands/alias/run.py,stdin-json + custom flag parser,None,"show, enable, disable, add, remove",None,"--list, --show, --enable, --disable, --add, --remove, --help",list=default,Y,Y,Partial,Custom flag parser instead of argparse; session dict mutation,P1
+/ambient,commands/ambient/run.py,Command class delegate,Variable (sys.argv[1:]),Unknown,Unknown,Unknown,Unknown,N,N,N,No JSON envelope; sys.argv; delegates to class,P2
+/analyze,commands/analyze/run.py,stdin-json (blob format),analysis_type (from command),None,None,None,analysis_type='general',N,N,Partial,Blob format instead of envelope; no help,P2
+/apropos,commands/apropos/run.py,stdin-json + sys.argv fallback,keyword (required),None,None,None,None,N,N,Partial,No JSON envelope; direct print; no examples,P2
+/arvr,commands/arvr/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P3
+/ask,commands/ask/run.py,Complex hybrid (blob/envelope/standalone),question (from command/args),None,None,None,None,N,N,N,Multiple output formats; complex mode detection; no help,P1
+/backup,commands/backup/run.py,stdin-json (placeholder),None,target,"",""target='all',N,N,N,Placeholder implementation (not functional),P0
+/bubble,commands/bubble/run.py,Custom sys.argv parsing,action (required),"name, description, tags, bubble-id, file, suspend-processes",None,"--name, --description, --tags, --bubble-id, --file, --suspend-processes",Multiple per action,N,N,N,No JSON envelope; manual parsing; sys.argv,P2
+/claude-artifacts,Unknown,Unknown (stub),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Empty stub command,P0
+/config,commands/config/run.py,stdin-json + extensive flags,None,"status, ai, cloud, plugins, collections, console, set, apikey, ai-routing, ai-routing-set, ai-routing-model, ai-routing-limits, ai-routing-reset, env, env-validate, env-create",None,"--status, --ai, --cloud, --plugins, --collections, --console, --set, --apikey, --ai-routing, --ai-routing-set, --ai-routing-model, --ai-routing-limits, --ai-routing-reset, --env, --env-validate, --env-create",Shows overview if no flags,Y,Y,Y,None - well-structured,P3
+/debug,commands/debug/run.py,Args dict from dispatcher,None,"mode, command, error, output",None,None,mode='full',N,N,Partial,No JSON envelope; no examples,P2
+/edit,commands/edit/run.py,argparse + EditTool,"file_path, old_string, new_string",help-cmd,-,"--replace-all, --help-cmd","replace_all=False, help_cmd=False",Y,Y,Y,Dual output (TTY/non-TTY) - minor,P3
+/file,commands/file/run.py,argparse with subcommands,Varies by subcommand,Subcommand-specific,Varies,"--offset, --limit, --overwrite, --replace-all",Various per subcommand,Y,Y,Y,None - excellent unified design,P3
+/glob,commands/glob/run.py,argparse + GlobTool,pattern (required),path,,"--path",path=cwd,Y,Y,Y,Double output (human + JSON),P2
+/grep,commands/grep/run.py,argparse + GrepTool,pattern (required),"path, glob_pattern, ignore_case, context, output, help-cmd","-i, -C","--path, --glob, --ignore-case, --context, --output, --help-cmd","path='.', context=0, output='files'",Y,Y,Y,None - well-structured,P3
+/help,commands/help/run.py,stdin-json,command (optional),None,None,None,Shows overview if no command,Y,Y,Y,None - well-structured,P3
+/help_unified,commands/help_unified/run.py,Custom sys.argv parser,Variable,"search, whatis, man, all, verbose","-s, -w, -m, -a, -v","--search, --whatis, --man, --all, --verbose",Lists all if no args,Y,Y,Partial,No JSON envelope; sys.argv,P2
+/images,commands/images/run.py,Manual sys.argv parsing,None,"action, query, checksum, limit",None,"--action, --query, --checksum, --limit","action='history', limit=10",N,N,N,No JSON envelope; sys.argv; no help,P2
+/learn,commands/learn/run.py,Command class delegate,sys.argv[1:],Unknown,Unknown,Unknown,Unknown,N,N,N,No JSON envelope; sys.argv; delegates to class,P2
+/list,commands/list/run.py,stdin-json (placeholder),None,list_name,None,None,list_name='default',N,N,N,Placeholder implementation (not functional),P0
+/machine,commands/machine/run.py,Manual sys.argv parsing,action (required),"machine-id, hostname, ip-address, port, tags, group-name, group-members, filter-tags, min-cpu, min-memory",None,"--machine-id, --hostname, --ip-address, --port, --tags, --group-name, --group-members, --filter-tags, --min-cpu, --min-memory",Multiple per action,Y,N,N,No JSON envelope; manual sys.argv; no examples,P1
+/machines,commands/machines/run.py,stdin-json,"action, target, verbose",None,None,None,"action='status', verbose=False",N,N,Y,None - well-structured,P3
+/man,commands/man/run.py,stdin-json + sys.argv fallback,command (optional),None,None,None,command='isaac',Y,Y,Partial,No JSON envelope; plain text output,P2
+/mine,commands/mine/run.py,stdin-json + complex custom parser,Variable,"create, use, delete, list, info, upload, search, nuggets, skip, haul, pan, drop, survey, grokbug, grokrefactor",None,"--create, --use, --delete, --list, --info, --upload, --search, --nuggets, --skip, --haul, --pan, --drop, --survey, --grokbug, --grokrefactor",Multiple per operation,Y,Y,Y,None - most complex but well-structured,P3
+/msg,commands/msg/run.py,Hybrid stdin-json/sys.argv,None,"sys, code, all, read, ack, delete, ack-all, clear, auto-run","-s, -c, -a, -ar","--sys, --code, --all, --read, --ack, --delete, --ack-all, --clear, --auto-run",Shows all pending if no filter,Y,N,N,No JSON envelope; complex stdin detection; no examples,P1
+/newfile,commands/newfile/run.py,stdin-json + argparse,file (required),"template, content, force, list-templates, set-template, help","-t, -c, -f, -l, -s, -h","--template, --content, --force, --list-templates, --set-template, --help",Auto-detect template from extension,Y,Y,Y,None - well-designed,P3
+/openai-vision,Unknown,Unknown (stub),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Empty stub command,P0
+/pair,commands/pair/run.py,Command class delegate,sys.argv[1:],Unknown,Unknown,Unknown,Unknown,N,N,N,No JSON envelope; sys.argv; delegates to class,P2
+/pipeline,commands/pipeline/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed - likely minimal stub,P2
+/plugin,commands/plugin/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/queue,commands/queue/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed - likely minimal stub,P2
+/read,commands/read/run.py,argparse + ReadTool,file_path (required),"offset, limit, help-cmd",,"--offset, --limit, --help-cmd","offset=0, limit=None",Y,Y,Y,None - well-designed,P3
+/resources,commands/resources/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/restore,commands/restore/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/save,commands/save/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/script,commands/script/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/search,commands/search/run.py,argparse + smart detection,query (nargs='+'),"mode, path, ignore_case, context, output","-i, -C","--mode, --path, --ignore-case, --context, --output","mode='auto', path='.'",Y,Y,Y,None - excellent unified design,P3
+/share,commands/share/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/status,commands/status/run.py,stdin-json,None,verbose,None,None,"verbose=False (one-line summary)",N,N,Y,None - well-structured,P3
+/summarize,commands/summarize/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/sync,commands/sync/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/tasks,commands/tasks/run.py,Hybrid stdin-json/sys.argv,None,"running, completed, failed, stats, show, cancel, clear, list","-r, -c, -f, -s, -l","--running, --completed, --failed, --stats, --show, --cancel, --clear, --list",Lists all tasks,Y,N,N,No JSON envelope; hybrid input; no examples,P1
+/team,commands/team/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/timemachine,commands/timemachine/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed - likely minimal stub,P2
+/update,commands/update/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/upload,commands/upload/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/watch,commands/watch/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/whatis,commands/whatis/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/workspace,commands/workspace/run.py,Unknown (not analyzed),Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Unknown,Not analyzed in detail,P2
+/write,commands/write/run.py,argparse + WriteTool,"file_path (required), content (optional)","overwrite, help-cmd",,"--overwrite, --help-cmd","overwrite=False, content=stdin",Y,Y,Y,None - well-designed,P3
