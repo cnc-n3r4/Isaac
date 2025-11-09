@@ -30,7 +30,7 @@ class BootLoader:
     and provides visual boot feedback.
     """
 
-    def __init__(self, commands_dir: Optional[Path] = None, quiet: bool = False):
+    def __init__(self, commands_dir: Optional[Path] = None, quiet: bool = False) -> None:
         """
         Initialize boot loader
 
@@ -155,7 +155,7 @@ class BootLoader:
 
         return self.plugins
 
-    def display_boot_sequence(self):
+    def display_boot_sequence(self) -> None:
         """Display visual boot sequence"""
         if self.quiet:
             return
@@ -258,7 +258,7 @@ class BootLoader:
         print(f"  Type '/help' for documentation or 'isaac <query>' for AI assistance")
         print()
 
-    def _print_status(self, status: PluginStatus, message: str):
+    def _print_status(self, status: PluginStatus, message: str) -> None:
         """Print a status line"""
         if status == PluginStatus.OK:
             symbol = "  OK  "
@@ -275,7 +275,7 @@ class BootLoader:
 
         print(f"[{symbol}] {message}")
 
-    def _check_ai_provider(self, name: str, key_env: str, model: str):
+    def _check_ai_provider(self, name: str, key_env: str, model: str) -> None:
         """Check AI provider availability"""
         if os.environ.get(key_env):
             self._print_status(PluginStatus.OK, f"{name} - {model}")
