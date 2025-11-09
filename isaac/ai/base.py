@@ -35,6 +35,7 @@ class AIResponse:
     finish_reason: str = ""
     error: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.now)
+    metadata: Optional[Dict[str, Any]] = None  # Phase 3: Enhanced metadata
 
     @property
     def success(self) -> bool:
@@ -45,7 +46,7 @@ class AIResponse:
         return len(self.tool_calls) > 0
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             'content': self.content,
             'tool_calls': [tc.to_dict() for tc in self.tool_calls],
             'model': self.model,
@@ -56,6 +57,12 @@ class AIResponse:
             'timestamp': self.timestamp.isoformat(),
             'success': self.success
         }
+
+        # Phase 3: Include metadata if present
+        if self.metadata:
+            result['metadata'] = self.metadata
+
+        return result
 
 
 class BaseAIClient(ABC):
