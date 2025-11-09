@@ -1,12 +1,12 @@
 # isaac/runtime/dispatcher.py
 
 import json
+import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-import shlex
-import re
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class CommandDispatcher:
@@ -26,21 +26,15 @@ class CommandDispatcher:
                 continue
 
             # Find all command.yaml files
-            for yaml_file in directory.rglob('command.yaml'):
+            for yaml_file in directory.rglob("command.yaml"):
                 manifest = self.loader.load_manifest(yaml_file)
                 if manifest:
                     # Register all triggers and aliases
-                    for trigger in manifest.get('triggers', []):
-                        self.commands[trigger] = {
-                            'manifest': manifest,
-                            'path': yaml_file.parent
-                        }
+                    for trigger in manifest.get("triggers", []):
+                        self.commands[trigger] = {"manifest": manifest, "path": yaml_file.parent}
 
-                    for alias in manifest.get('aliases', []):
-                        self.commands[alias] = {
-                            'manifest': manifest,
-                            'path': yaml_file.parent
-                        }
+                    for alias in manifest.get("aliases", []):
+                        self.commands[alias] = {"manifest": manifest, "path": yaml_file.parent}
 
     def resolve_trigger(self, input_text: str) -> Optional[Dict]:
         """Match /command to loaded manifest"""
@@ -59,52 +53,52 @@ class CommandDispatcher:
 
     def parse_args(self, manifest: Dict, args_raw: str) -> Dict[str, Any]:
         """Extract and validate arguments per manifest"""
-        args_spec = manifest.get('args', [])
+        args_spec = manifest.get("args", [])
         parsed_args = {}
 
         # Split args_raw into parts (simple splitting for now)
         parts = shlex.split(args_raw) if args_raw.strip() else []
 
         # Create lookup for argument specs by name
-        arg_specs_by_name = {spec['name']: spec for spec in args_spec}
+        arg_specs_by_name = {spec["name"]: spec for spec in args_spec}
 
         i = 0
         while i < len(parts):
             part = parts[i]
-            
+
             # Check if this is a named argument (starts with --)
-            if part.startswith('--'):
+            if part.startswith("--"):
                 # Named argument
                 arg_name = part[2:]  # Remove --
                 # Convert arg_name from dash-case to underscore_case
-                arg_name = arg_name.replace('-', '_')
-                
+                arg_name = arg_name.replace("-", "_")
+
                 if arg_name in arg_specs_by_name:
                     spec = arg_specs_by_name[arg_name]
-                    arg_type = spec['type']
-                    required = spec.get('required', False)
-                    
+                    arg_type = spec["type"]
+                    required = spec.get("required", False)
+
                     # Check if next part is a value
-                    if i + 1 < len(parts) and not parts[i + 1].startswith('--'):
+                    if i + 1 < len(parts) and not parts[i + 1].startswith("--"):
                         # Next part is a value
                         value = parts[i + 1]
                         i += 1  # Skip the value in next iteration
                     else:
                         # Boolean flag or enum value
-                        if arg_type == 'bool':
-                            value = 'true'
+                        if arg_type == "bool":
+                            value = "true"
                         else:
                             # For enums and strings, use the flag itself as value
                             value = part
-                    
+
                     # Convert type
                     try:
-                        if arg_type == 'int':
+                        if arg_type == "int":
                             parsed_args[arg_name] = int(value)
-                        elif arg_type == 'bool':
-                            parsed_args[arg_name] = value.lower() in ['true', '1', 'yes', 'on']
-                        elif arg_type == 'enum':
-                            enum_values = spec.get('enum', [])
+                        elif arg_type == "bool":
+                            parsed_args[arg_name] = value.lower() in ["true", "1", "yes", "on"]
+                        elif arg_type == "enum":
+                            enum_values = spec.get("enum", [])
                             if value in enum_values:
                                 parsed_args[arg_name] = value
                             else:
@@ -121,19 +115,19 @@ class CommandDispatcher:
             else:
                 # Positional argument - assign to next spec
                 for spec in args_spec:
-                    name = spec['name']
+                    name = spec["name"]
                     if name not in parsed_args:  # Don't overwrite named args
-                        arg_type = spec['type']
-                        required = spec.get('required', False)
-                        
+                        arg_type = spec["type"]
+                        required = spec.get("required", False)
+
                         value = part
                         try:
-                            if arg_type == 'int':
+                            if arg_type == "int":
                                 parsed_args[name] = int(value)
-                            elif arg_type == 'bool':
-                                parsed_args[name] = value.lower() in ['true', '1', 'yes', 'on']
-                            elif arg_type == 'enum':
-                                enum_values = spec.get('enum', [])
+                            elif arg_type == "bool":
+                                parsed_args[name] = value.lower() in ["true", "1", "yes", "on"]
+                            elif arg_type == "enum":
+                                enum_values = spec.get("enum", [])
                                 if value in enum_values:
                                     parsed_args[name] = value
                                 else:
@@ -145,7 +139,7 @@ class CommandDispatcher:
                                 raise ValueError(f"Invalid {arg_type} value for {name}: {value}")
                             # Skip invalid optional args
                         break  # Only assign to first available positional arg
-            
+
             i += 1
 
         return parsed_args
@@ -161,23 +155,26 @@ class CommandDispatcher:
             Tuple of (command without flags, execution_mode)
         """
         # Check for background execution flags
-        bg_pattern = r'\s+(--background|--bg|-bg)\b'
+        bg_pattern = r"\s+(--background|--bg|-bg)\b"
 
         if re.search(bg_pattern, command):
             # Remove the flag from command
-            cleaned_command = re.sub(bg_pattern, '', command)
-            return (cleaned_command.strip(), 'background')
+            cleaned_command = re.sub(bg_pattern, "", command)
+            return (cleaned_command.strip(), "background")
 
-        return (command, 'verbose')
+        return (command, "verbose")
 
     def _get_task_manager(self):
         """Lazy load TaskManager"""
         if self.task_manager is None:
             from isaac.core.task_manager import get_task_manager
+
             self.task_manager = get_task_manager()
         return self.task_manager
 
-    def _execute_background(self, command: str, args: Optional[Dict] = None, stdin: Optional[str] = None) -> Dict:
+    def _execute_background(
+        self, command: str, args: Optional[Dict] = None, stdin: Optional[str] = None
+    ) -> Dict:
         """
         Execute command in background using TaskManager
 
@@ -190,9 +187,9 @@ class CommandDispatcher:
             # Determine task type based on command
             # System commands: backup, restore, sync, workspace operations
             # Code commands: grep, read, write, edit, etc.
-            system_commands = {'/backup', '/restore', '/sync', '/workspace', '/status'}
-            base_cmd = command.split()[0] if command else ''
-            task_type = 'system' if base_cmd in system_commands else 'code'
+            system_commands = {"/backup", "/restore", "/sync", "/workspace", "/status"}
+            base_cmd = command.split()[0] if command else ""
+            task_type = "system" if base_cmd in system_commands else "code"
 
             # Build full command string for execution
             # For now, we'll execute commands through the shell
@@ -203,22 +200,19 @@ class CommandDispatcher:
             task_id = task_manager.spawn_task(
                 command=full_command,
                 task_type=task_type,
-                priority='normal',
+                priority="normal",
                 metadata={
-                    'dispatcher': 'CommandDispatcher',
-                    'original_command': command,
-                    'has_stdin': stdin is not None
-                }
+                    "dispatcher": "CommandDispatcher",
+                    "original_command": command,
+                    "has_stdin": stdin is not None,
+                },
             )
 
             return {
                 "ok": True,
                 "kind": "text",
                 "stdout": f"✓ Background task started: {task_id}\n\nCommand: {command}\nType: {task_type}\n\nMonitor with: /tasks --show {task_id}\nView all tasks: /tasks",
-                "meta": {
-                    "task_id": task_id,
-                    "execution_mode": "background"
-                }
+                "meta": {"task_id": task_id, "execution_mode": "background"},
             }
 
         except Exception as e:
@@ -226,19 +220,21 @@ class CommandDispatcher:
                 "ok": False,
                 "error": {
                     "code": "BACKGROUND_EXECUTION_ERROR",
-                    "message": f"Failed to spawn background task: {str(e)}"
+                    "message": f"Failed to spawn background task: {str(e)}",
                 },
-                "meta": {}
+                "meta": {},
             }
 
-    def execute(self, command: str, args: Optional[Dict] = None, stdin: Optional[str] = None) -> Dict:
+    def execute(
+        self, command: str, args: Optional[Dict] = None, stdin: Optional[str] = None
+    ) -> Dict:
         """Run handler and return normalized envelope"""
         try:
             # Detect execution mode
             cleaned_command, exec_mode = self._detect_execution_mode(command)
 
             # Handle background execution
-            if exec_mode == 'background':
+            if exec_mode == "background":
                 return self._execute_background(cleaned_command, args, stdin)
 
             # Continue with normal execution for verbose mode
@@ -252,13 +248,13 @@ class CommandDispatcher:
                     "error": {
                         "code": "UNKNOWN_COMMAND",
                         "message": f"Unknown command: {command}",
-                        "hint": "Try /help for available commands"
+                        "hint": "Try /help for available commands",
                     },
-                    "meta": {}
+                    "meta": {},
                 }
 
-            manifest = resolved['manifest']
-            command_dir = resolved['path']
+            manifest = resolved["manifest"]
+            command_dir = resolved["path"]
 
             # Validate resources
             valid, error_msg = self.security.validate_resources(manifest)
@@ -267,9 +263,9 @@ class CommandDispatcher:
                     "ok": False,
                     "error": {
                         "code": "INVALID_MANIFEST",
-                        "message": f"Manifest validation failed: {error_msg}"
+                        "message": f"Manifest validation failed: {error_msg}",
                     },
-                    "meta": {}
+                    "meta": {},
                 }
 
             # Parse args if not provided
@@ -281,19 +277,19 @@ class CommandDispatcher:
                 args = self.parse_args(manifest, args_raw)
 
             # Check for --help flag and redirect to help command
-            if isinstance(args, dict) and args.get('help'):
+            if isinstance(args, dict) and args.get("help"):
                 # Redirect to help command
                 help_command = f"/help {command.split()[0]}"
                 return self.execute(help_command, None, stdin)
-            elif args_raw and ('--help' in args_raw or '-h' in args_raw):
+            elif args_raw and ("--help" in args_raw or "-h" in args_raw):
                 # Also check raw args for --help or -h
                 help_command = f"/help {command.split()[0]}"
                 return self.execute(help_command, None, stdin)
 
             # Prepare execution
-            runtime = manifest.get('runtime', {})
-            entry_point = runtime.get('entry', 'run.py')
-            interpreter = runtime.get('interpreter', 'python')
+            runtime = manifest.get("runtime", {})
+            entry_point = runtime.get("entry", "run.py")
+            interpreter = runtime.get("interpreter", "python")
 
             script_path = command_dir / entry_point
             if not script_path.exists():
@@ -301,9 +297,9 @@ class CommandDispatcher:
                     "ok": False,
                     "error": {
                         "code": "MISSING_HANDLER",
-                        "message": f"Handler not found: {script_path}"
+                        "message": f"Handler not found: {script_path}",
                     },
-                    "meta": {}
+                    "meta": {},
                 }
 
             # Create envelope payload
@@ -313,43 +309,44 @@ class CommandDispatcher:
                 "stdin": stdin or "",
                 "manifest": manifest,
                 "session": {
-                    "machine_id": getattr(self.session.config, 'machine_id', 'unknown'),
-                    "user_prefs": getattr(self.session.preferences, 'data', {}),
-                    "config": self.session.get_config()
-                }
+                    "machine_id": getattr(self.session.config, "machine_id", "unknown"),
+                    "user_prefs": getattr(self.session.preferences, "data", {}),
+                    "config": self.session.get_config(),
+                },
             }
 
             # Execute handler
             result = self._run_handler(script_path, interpreter, payload, manifest)
 
             # Apply telemetry redaction if configured
-            telemetry = manifest.get('telemetry', {})
-            if telemetry.get('log_output', False):
-                redact_patterns = telemetry.get('redact_patterns', [])
-                if 'stdout' in result and redact_patterns:
-                    result['stdout'] = self.security.redact_patterns(result['stdout'], redact_patterns)
+            telemetry = manifest.get("telemetry", {})
+            if telemetry.get("log_output", False):
+                redact_patterns = telemetry.get("redact_patterns", [])
+                if "stdout" in result and redact_patterns:
+                    result["stdout"] = self.security.redact_patterns(
+                        result["stdout"], redact_patterns
+                    )
 
             return result
 
         except Exception as e:
             return {
                 "ok": False,
-                "error": {
-                    "code": "EXECUTION_ERROR",
-                    "message": str(e)
-                },
-                "meta": {}
+                "error": {"code": "EXECUTION_ERROR", "message": str(e)},
+                "meta": {},
             }
 
-    def _run_handler(self, script_path: Path, interpreter: str, payload: Dict, manifest: Dict) -> Dict:
+    def _run_handler(
+        self, script_path: Path, interpreter: str, payload: Dict, manifest: Dict
+    ) -> Dict:
         """Execute the command handler script"""
         # Get resource limits
-        resources = manifest.get('security', {}).get('resources', {})
-        timeout_ms = resources.get('timeout_ms', 5000)
-        max_stdout_kib = resources.get('max_stdout_kib', 64)
+        resources = manifest.get("security", {}).get("resources", {})
+        timeout_ms = resources.get("timeout_ms", 5000)
+        max_stdout_kib = resources.get("max_stdout_kib", 64)
 
         # Prepare command
-        if interpreter == 'python':
+        if interpreter == "python":
             cmd = [sys.executable, str(script_path)]
         else:
             cmd = [interpreter, str(script_path)]
@@ -362,12 +359,14 @@ class CommandDispatcher:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                env=self.security.sanitize_env()
+                env=self.security.sanitize_env(),
             )
 
             # Send payload via stdin
             payload_json = json.dumps(payload)
-            stdout, stderr = process.communicate(input=payload_json, timeout=(timeout_ms + 1000) / 1000)
+            stdout, stderr = process.communicate(
+                input=payload_json, timeout=(timeout_ms + 1000) / 1000
+            )
 
             # Check for timeout
             if self.security.enforce_timeout(process, timeout_ms):
@@ -375,9 +374,9 @@ class CommandDispatcher:
                     "ok": False,
                     "error": {
                         "code": "TIMEOUT",
-                        "message": f"Command timed out after {timeout_ms}ms"
+                        "message": f"Command timed out after {timeout_ms}ms",
                     },
-                    "meta": {}
+                    "meta": {},
                 }
 
             # Parse result
@@ -390,34 +389,30 @@ class CommandDispatcher:
                     "kind": "text",
                     "stdout": stdout,
                     "stderr": stderr,
-                    "meta": {}
+                    "meta": {},
                 }
 
             # Apply output cap
-            if 'stdout' in result:
-                result['stdout'], truncated = self.security.cap_stdout(result['stdout'], max_stdout_kib)
+            if "stdout" in result:
+                result["stdout"], truncated = self.security.cap_stdout(
+                    result["stdout"], max_stdout_kib
+                )
                 if truncated:
-                    result['meta']['truncated'] = True
+                    result["meta"]["truncated"] = True
 
             return result
 
         except subprocess.TimeoutExpired:
             return {
                 "ok": False,
-                "error": {
-                    "code": "TIMEOUT",
-                    "message": f"Command timed out after {timeout_ms}ms"
-                },
-                "meta": {}
+                "error": {"code": "TIMEOUT", "message": f"Command timed out after {timeout_ms}ms"},
+                "meta": {},
             }
         except Exception as e:
             return {
                 "ok": False,
-                "error": {
-                    "code": "EXECUTION_ERROR",
-                    "message": str(e)
-                },
-                "meta": {}
+                "error": {"code": "EXECUTION_ERROR", "message": str(e)},
+                "meta": {},
             }
 
     def parse_pipeline(self, input_text: str) -> List[str]:
@@ -441,9 +436,9 @@ class CommandDispatcher:
                 in_quotes = not in_quotes
                 quote_char = char if in_quotes else None
                 current_cmd.append(char)
-            elif char == '|' and not in_quotes:
+            elif char == "|" and not in_quotes:
                 # End of current command
-                cmd_str = ''.join(current_cmd).strip()
+                cmd_str = "".join(current_cmd).strip()
                 if cmd_str:
                     commands.append(cmd_str)
                 current_cmd = []
@@ -451,7 +446,7 @@ class CommandDispatcher:
                 current_cmd.append(char)
 
         # Add final command
-        cmd_str = ''.join(current_cmd).strip()
+        cmd_str = "".join(current_cmd).strip()
         if cmd_str:
             commands.append(cmd_str)
 
@@ -472,11 +467,8 @@ class CommandDispatcher:
         if len(commands) == 0:
             return {
                 "ok": False,
-                "error": {
-                    "code": "EMPTY_PIPELINE",
-                    "message": "No commands in pipeline"
-                },
-                "meta": {}
+                "error": {"code": "EMPTY_PIPELINE", "message": "No commands in pipeline"},
+                "meta": {},
             }
 
         if len(commands) == 1:
@@ -487,8 +479,8 @@ class CommandDispatcher:
         stdin_data = None
 
         for i, cmd in enumerate(commands):
-            is_first = (i == 0)
-            is_last = (i == len(commands) - 1)
+            is_first = i == 0
+            is_last = i == len(commands) - 1
 
             # Execute command
             if is_first:
@@ -501,31 +493,31 @@ class CommandDispatcher:
                         "ok": False,
                         "error": {
                             "code": "UNKNOWN_COMMAND",
-                            "message": f"Unknown command in pipeline: {cmd}"
+                            "message": f"Unknown command in pipeline: {cmd}",
                         },
-                        "meta": {"pipeline_stage": i + 1}
+                        "meta": {"pipeline_stage": i + 1},
                     }
 
-                manifest = resolved['manifest']
-                if not manifest.get('stdin', False):
+                manifest = resolved["manifest"]
+                if not manifest.get("stdin", False):
                     return {
                         "ok": False,
                         "error": {
                             "code": "PIPE_NOT_SUPPORTED",
-                            "message": f"Command '{cmd}' does not accept stdin (pipeline stage {i + 1})"
+                            "message": f"Command '{cmd}' does not accept stdin (pipeline stage {i + 1})",
                         },
-                        "meta": {"pipeline_stage": i + 1}
+                        "meta": {"pipeline_stage": i + 1},
                     }
 
                 result = self.execute(cmd, stdin=stdin_data)
 
             # Check if command succeeded
-            if not result.get('ok', False):
+            if not result.get("ok", False):
                 return result
 
             # Pass stdout to next command (unless this is the last command)
             if not is_last:
-                stdin_data = result.get('stdout', '')
+                stdin_data = result.get("stdout", "")
 
         # Return result of final command
         return result
@@ -541,10 +533,11 @@ class CommandDispatcher:
             "ok": True,
             "kind": "text",
             "stdout": f"Queued command '{command}' for device '{alias}'",
-            "meta": {"queued": True, "device": alias}
+            "meta": {"queued": True, "device": alias},
         }
 
 
+from .manifest_loader import ManifestLoader
+
 # Import here to avoid circular imports
 from .security_enforcer import SecurityEnforcer
-from .manifest_loader import ManifestLoader

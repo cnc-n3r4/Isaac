@@ -5,11 +5,11 @@ Track and analyze pair programming effectiveness.
 
 import json
 import sqlite3
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from pathlib import Path
 from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 
@@ -17,6 +17,7 @@ from isaac.core.session_manager import SessionManager
 @dataclass
 class PairingMetrics:
     """Metrics for a pairing session."""
+
     session_id: str
     duration_seconds: float
     tasks_completed: int
@@ -50,17 +51,18 @@ class PairMetrics:
             session_manager: Session manager instance
         """
         self.session_manager = session_manager
-        self.data_dir = Path.home() / '.isaac' / 'pairing'
+        self.data_dir = Path.home() / ".isaac" / "pairing"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Database for metrics storage
-        self.db_path = self.data_dir / 'metrics.db'
+        self.db_path = self.data_dir / "metrics.db"
         self._init_database()
 
     def _init_database(self):
         """Initialize SQLite database for metrics storage."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS session_metrics (
                     session_id TEXT PRIMARY KEY,
                     duration_seconds REAL,
@@ -80,10 +82,12 @@ class PairMetrics:
                     overall_score REAL,
                     metadata TEXT
                 )
-            ''')
+            """
+            )
 
             # Track individual events for detailed analysis
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS metric_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     session_id TEXT,
@@ -91,15 +95,13 @@ class PairMetrics:
                     event_type TEXT,
                     event_data TEXT
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_session_events ON metric_events(session_id)')
+            """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_session_events ON metric_events(session_id)"
+            )
 
-    def record_event(
-        self,
-        session_id: str,
-        event_type: str,
-        event_data: Dict[str, Any]
-    ):
+    def record_event(self, session_id: str, event_type: str, event_data: Dict[str, Any]):
         """Record a metric event.
 
         Args:
@@ -108,20 +110,16 @@ class PairMetrics:
             event_data: Event data
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT INTO metric_events (session_id, timestamp, event_type, event_data)
                 VALUES (?, ?, ?, ?)
-            ''', (
-                session_id,
-                datetime.now().timestamp(),
-                event_type,
-                json.dumps(event_data)
-            ))
+            """,
+                (session_id, datetime.now().timestamp(), event_type, json.dumps(event_data)),
+            )
 
     def calculate_session_metrics(
-        self,
-        session_id: str,
-        session_data: Dict[str, Any]
+        self, session_id: str, session_data: Dict[str, Any]
     ) -> PairingMetrics:
         """Calculate comprehensive metrics for a session.
 
@@ -138,19 +136,27 @@ class PairMetrics:
         # Count event types
         event_counts = defaultdict(int)
         for event in events:
-            event_counts[event['event_type']] += 1
+            event_counts[event["event_type"]] += 1
 
         # Calculate basic metrics
-        duration = session_data.get('end_time', datetime.now().timestamp()) - session_data.get('start_time', 0)
-        tasks_completed = event_counts.get('task_completed', 0)
-        tasks_total = session_data.get('tasks_total', 0)
-        suggestions_made = event_counts.get('suggestion_made', 0)
-        suggestions_accepted = event_counts.get('suggestion_accepted', 0)
-        code_reviews = event_counts.get('code_review', 0)
-        files_modified = len(session_data.get('files_touched', []))
-        lines_added = sum(e['event_data'].get('lines_added', 0) for e in events if e['event_type'] == 'code_edit')
-        lines_removed = sum(e['event_data'].get('lines_removed', 0) for e in events if e['event_type'] == 'code_edit')
-        role_switches = event_counts.get('role_switch', 0)
+        duration = session_data.get("end_time", datetime.now().timestamp()) - session_data.get(
+            "start_time", 0
+        )
+        tasks_completed = event_counts.get("task_completed", 0)
+        tasks_total = session_data.get("tasks_total", 0)
+        suggestions_made = event_counts.get("suggestion_made", 0)
+        suggestions_accepted = event_counts.get("suggestion_accepted", 0)
+        code_reviews = event_counts.get("code_review", 0)
+        files_modified = len(session_data.get("files_touched", []))
+        lines_added = sum(
+            e["event_data"].get("lines_added", 0) for e in events if e["event_type"] == "code_edit"
+        )
+        lines_removed = sum(
+            e["event_data"].get("lines_removed", 0)
+            for e in events
+            if e["event_type"] == "code_edit"
+        )
+        role_switches = event_counts.get("role_switch", 0)
 
         # Calculate scores
         productivity_score = self._calculate_productivity_score(
@@ -170,10 +176,10 @@ class PairMetrics:
         )
 
         overall_score = (
-            productivity_score * 0.3 +
-            collaboration_score * 0.25 +
-            code_quality_score * 0.25 +
-            learning_score * 0.2
+            productivity_score * 0.3
+            + collaboration_score * 0.25
+            + code_quality_score * 0.25
+            + learning_score * 0.2
         )
 
         metrics = PairingMetrics(
@@ -192,18 +198,14 @@ class PairMetrics:
             collaboration_score=collaboration_score,
             code_quality_score=code_quality_score,
             learning_score=learning_score,
-            overall_score=overall_score
+            overall_score=overall_score,
         )
 
         self._save_metrics(metrics)
         return metrics
 
     def _calculate_productivity_score(
-        self,
-        duration: float,
-        tasks_completed: int,
-        tasks_total: int,
-        files_modified: int
+        self, duration: float, tasks_completed: int, tasks_total: int, files_modified: int
     ) -> float:
         """Calculate productivity score.
 
@@ -231,9 +233,9 @@ class PairMetrics:
 
         # Weighted score
         score = (
-            completion_rate * 50 +  # 50% weight on completion
-            min(tasks_per_hour / 3 * 30, 30) +  # 30% weight on task velocity (max 3/hr)
-            min(files_per_hour / 5 * 20, 20)  # 20% weight on file velocity (max 5/hr)
+            completion_rate * 50  # 50% weight on completion
+            + min(tasks_per_hour / 3 * 30, 30)  # 30% weight on task velocity (max 3/hr)
+            + min(files_per_hour / 5 * 20, 20)  # 20% weight on file velocity (max 5/hr)
         )
 
         return min(100.0, score)
@@ -243,7 +245,7 @@ class PairMetrics:
         role_switches: int,
         suggestions_made: int,
         suggestions_accepted: int,
-        code_reviews: int
+        code_reviews: int,
     ) -> float:
         """Calculate collaboration score.
 
@@ -282,10 +284,7 @@ class PairMetrics:
         return min(100.0, score)
 
     def _calculate_code_quality_score(
-        self,
-        code_reviews: int,
-        suggestions_made: int,
-        events: List[Dict[str, Any]]
+        self, code_reviews: int, suggestions_made: int, events: List[Dict[str, Any]]
     ) -> float:
         """Calculate code quality score.
 
@@ -312,17 +311,14 @@ class PairMetrics:
             score += 10
 
         # Test-related events
-        test_events = sum(1 for e in events if 'test' in e['event_type'].lower())
+        test_events = sum(1 for e in events if "test" in e["event_type"].lower())
         if test_events >= 3:
             score += 10
 
         return min(100.0, score)
 
     def _calculate_learning_score(
-        self,
-        suggestions_accepted: int,
-        event_counts: Dict[str, int],
-        duration: float
+        self, suggestions_accepted: int, event_counts: Dict[str, int], duration: float
     ) -> float:
         """Calculate learning score.
 
@@ -345,11 +341,11 @@ class PairMetrics:
             score += 10
 
         # Pattern learning events
-        pattern_events = event_counts.get('pattern_learned', 0)
+        pattern_events = event_counts.get("pattern_learned", 0)
         score += min(pattern_events * 10, 30)
 
         # Preference learning events
-        preference_events = event_counts.get('preference_learned', 0)
+        preference_events = event_counts.get("preference_learned", 0)
         score += min(preference_events * 10, 30)
 
         return min(100.0, score)
@@ -365,19 +361,24 @@ class PairMetrics:
         """
         events = []
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT timestamp, event_type, event_data
                 FROM metric_events
                 WHERE session_id = ?
                 ORDER BY timestamp ASC
-            ''', (session_id,))
+            """,
+                (session_id,),
+            )
 
             for row in cursor:
-                events.append({
-                    'timestamp': row[0],
-                    'event_type': row[1],
-                    'event_data': json.loads(row[2]) if row[2] else {}
-                })
+                events.append(
+                    {
+                        "timestamp": row[0],
+                        "event_type": row[1],
+                        "event_data": json.loads(row[2]) if row[2] else {},
+                    }
+                )
 
         return events
 
@@ -391,7 +392,8 @@ class PairMetrics:
             Metrics or None
         """
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT session_id, duration_seconds, tasks_completed, tasks_total,
                        suggestions_made, suggestions_accepted, code_reviews_performed,
                        files_modified, lines_added, lines_removed, role_switches,
@@ -399,7 +401,9 @@ class PairMetrics:
                        learning_score, overall_score, metadata
                 FROM session_metrics
                 WHERE session_id = ?
-            ''', (session_id,))
+            """,
+                (session_id,),
+            )
 
             row = cursor.fetchone()
             if not row:
@@ -422,7 +426,7 @@ class PairMetrics:
                 code_quality_score=row[13],
                 learning_score=row[14],
                 overall_score=row[15],
-                metadata=json.loads(row[16]) if row[16] else {}
+                metadata=json.loads(row[16]) if row[16] else {},
             )
 
     def get_aggregate_metrics(self, days: int = 30) -> Dict[str, Any]:
@@ -438,21 +442,19 @@ class PairMetrics:
 
         with sqlite3.connect(self.db_path) as conn:
             # Get all sessions in period
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT session_id FROM metric_events
                 WHERE timestamp >= ?
                 GROUP BY session_id
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
 
             session_ids = [row[0] for row in cursor]
 
         if not session_ids:
-            return {
-                'period_days': days,
-                'total_sessions': 0,
-                'average_scores': {},
-                'totals': {}
-            }
+            return {"period_days": days, "total_sessions": 0, "average_scores": {}, "totals": {}}
 
         # Get metrics for all sessions
         all_metrics = []
@@ -464,11 +466,27 @@ class PairMetrics:
         # Calculate aggregates
         total_sessions = len(all_metrics)
 
-        avg_productivity = sum(m.productivity_score for m in all_metrics) / total_sessions if total_sessions > 0 else 0
-        avg_collaboration = sum(m.collaboration_score for m in all_metrics) / total_sessions if total_sessions > 0 else 0
-        avg_quality = sum(m.code_quality_score for m in all_metrics) / total_sessions if total_sessions > 0 else 0
-        avg_learning = sum(m.learning_score for m in all_metrics) / total_sessions if total_sessions > 0 else 0
-        avg_overall = sum(m.overall_score for m in all_metrics) / total_sessions if total_sessions > 0 else 0
+        avg_productivity = (
+            sum(m.productivity_score for m in all_metrics) / total_sessions
+            if total_sessions > 0
+            else 0
+        )
+        avg_collaboration = (
+            sum(m.collaboration_score for m in all_metrics) / total_sessions
+            if total_sessions > 0
+            else 0
+        )
+        avg_quality = (
+            sum(m.code_quality_score for m in all_metrics) / total_sessions
+            if total_sessions > 0
+            else 0
+        )
+        avg_learning = (
+            sum(m.learning_score for m in all_metrics) / total_sessions if total_sessions > 0 else 0
+        )
+        avg_overall = (
+            sum(m.overall_score for m in all_metrics) / total_sessions if total_sessions > 0 else 0
+        )
 
         total_tasks = sum(m.tasks_completed for m in all_metrics)
         total_suggestions = sum(m.suggestions_made for m in all_metrics)
@@ -476,21 +494,21 @@ class PairMetrics:
         total_duration = sum(m.duration_seconds for m in all_metrics)
 
         return {
-            'period_days': days,
-            'total_sessions': total_sessions,
-            'average_scores': {
-                'productivity': avg_productivity,
-                'collaboration': avg_collaboration,
-                'code_quality': avg_quality,
-                'learning': avg_learning,
-                'overall': avg_overall
+            "period_days": days,
+            "total_sessions": total_sessions,
+            "average_scores": {
+                "productivity": avg_productivity,
+                "collaboration": avg_collaboration,
+                "code_quality": avg_quality,
+                "learning": avg_learning,
+                "overall": avg_overall,
             },
-            'totals': {
-                'tasks_completed': total_tasks,
-                'suggestions_made': total_suggestions,
-                'code_reviews_performed': total_reviews,
-                'total_hours': total_duration / 3600
-            }
+            "totals": {
+                "tasks_completed": total_tasks,
+                "suggestions_made": total_suggestions,
+                "code_reviews_performed": total_reviews,
+                "total_hours": total_duration / 3600,
+            },
         }
 
     def _save_metrics(self, metrics: PairingMetrics):
@@ -500,7 +518,8 @@ class PairMetrics:
             metrics: Metrics to save
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO session_metrics
                 (session_id, duration_seconds, tasks_completed, tasks_total,
                  suggestions_made, suggestions_accepted, code_reviews_performed,
@@ -508,22 +527,24 @@ class PairMetrics:
                  productivity_score, collaboration_score, code_quality_score,
                  learning_score, overall_score, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                metrics.session_id,
-                metrics.duration_seconds,
-                metrics.tasks_completed,
-                metrics.tasks_total,
-                metrics.suggestions_made,
-                metrics.suggestions_accepted,
-                metrics.code_reviews_performed,
-                metrics.files_modified,
-                metrics.lines_added,
-                metrics.lines_removed,
-                metrics.role_switches,
-                metrics.productivity_score,
-                metrics.collaboration_score,
-                metrics.code_quality_score,
-                metrics.learning_score,
-                metrics.overall_score,
-                json.dumps(metrics.metadata or {})
-            ))
+            """,
+                (
+                    metrics.session_id,
+                    metrics.duration_seconds,
+                    metrics.tasks_completed,
+                    metrics.tasks_total,
+                    metrics.suggestions_made,
+                    metrics.suggestions_accepted,
+                    metrics.code_reviews_performed,
+                    metrics.files_modified,
+                    metrics.lines_added,
+                    metrics.lines_removed,
+                    metrics.role_switches,
+                    metrics.productivity_score,
+                    metrics.collaboration_score,
+                    metrics.code_quality_score,
+                    metrics.learning_score,
+                    metrics.overall_score,
+                    json.dumps(metrics.metadata or {}),
+                ),
+            )

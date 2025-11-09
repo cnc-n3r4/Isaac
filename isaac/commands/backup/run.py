@@ -3,8 +3,8 @@
 Backup Command Handler - Plugin format
 """
 
-import sys
 import json
+import sys
 
 
 def main():
@@ -24,12 +24,7 @@ def main():
     output += "Destination: ~/.isaac/backups/\n"
 
     # Return envelope
-    print(json.dumps({
-        "ok": True,
-        "kind": "text",
-        "stdout": output,
-        "meta": {}
-    }))
+    print(json.dumps({"ok": True, "kind": "text", "stdout": output, "meta": {}}))
 
 
 if __name__ == "__main__":

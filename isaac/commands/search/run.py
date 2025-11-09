@@ -12,15 +12,15 @@ Smart Detection:
   /search --mode grep "error" → Force grep mode
 """
 
-import sys
-import json
 import argparse
+import json
+import sys
 from pathlib import Path
 
 # Add isaac to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from isaac.tools import GrepTool, GlobTool
+from isaac.tools import GlobTool, GrepTool
 
 
 def detect_search_mode(pattern: str, file_pattern: str = None) -> str:
@@ -36,23 +36,23 @@ def detect_search_mode(pattern: str, file_pattern: str = None) -> str:
     """
     # If file_pattern specified with "in", it's grep
     if file_pattern:
-        return 'grep'
+        return "grep"
 
     # Glob indicators: *, ?, **, [, ]
-    glob_indicators = ['*', '?', '[', ']']
+    glob_indicators = ["*", "?", "[", "]"]
     if any(indicator in pattern for indicator in glob_indicators):
-        return 'glob'
+        return "glob"
 
     # File extension patterns like ".py" or "*.py"
-    if pattern.startswith('.') and '/' not in pattern:
-        return 'glob'
+    if pattern.startswith(".") and "/" not in pattern:
+        return "glob"
 
     # Path-like patterns
-    if '/' in pattern or '\\' in pattern:
-        return 'glob'
+    if "/" in pattern or "\\" in pattern:
+        return "glob"
 
     # Default to content search (grep)
-    return 'grep'
+    return "grep"
 
 
 def parse_search_query(args_list):
@@ -65,28 +65,28 @@ def parse_search_query(args_list):
         ["import", "re", "in", "**/*.py"] → pattern="import re", file_pattern="**/*.py"
     """
     # Find "in" keyword
-    if 'in' in args_list:
-        in_index = args_list.index('in')
+    if "in" in args_list:
+        in_index = args_list.index("in")
         pattern_parts = args_list[:in_index]
-        file_pattern_parts = args_list[in_index + 1:]
+        file_pattern_parts = args_list[in_index + 1 :]
 
-        pattern = ' '.join(pattern_parts)
-        file_pattern = ' '.join(file_pattern_parts) if file_pattern_parts else None
+        pattern = " ".join(pattern_parts)
+        file_pattern = " ".join(file_pattern_parts) if file_pattern_parts else None
     else:
-        pattern = ' '.join(args_list)
+        pattern = " ".join(args_list)
         file_pattern = None
 
     return pattern, file_pattern
 
 
-def execute_glob_search(pattern: str, path: str = '.'):
+def execute_glob_search(pattern: str, path: str = "."):
     """Execute file pattern search (glob mode)"""
     tool = GlobTool()
     result = tool.execute(pattern=pattern, path=path)
 
-    if result['success']:
-        files = result.get('files', [])
-        count = result.get('count', 0)
+    if result["success"]:
+        files = result.get("files", [])
+        count = result.get("count", 0)
 
         if files:
             print(f"Found {count} files:")
@@ -96,28 +96,26 @@ def execute_glob_search(pattern: str, path: str = '.'):
             print("No files found")
 
         return {
-            'success': True,
-            'mode': 'glob',
-            'count': count,
-            'files': [f['path'] for f in files]
+            "success": True,
+            "mode": "glob",
+            "count": count,
+            "files": [f["path"] for f in files],
         }
     else:
         print(f"Error: {result['error']}", file=sys.stderr)
-        return {
-            'success': False,
-            'mode': 'glob',
-            'error': result['error']
-        }
+        return {"success": False, "mode": "glob", "error": result["error"]}
 
 
-def execute_grep_search(pattern: str, path: str = '.', file_pattern: str = None,
-                       ignore_case: bool = False, context: int = 0, output: str = 'files'):
+def execute_grep_search(
+    pattern: str,
+    path: str = ".",
+    file_pattern: str = None,
+    ignore_case: bool = False,
+    context: int = 0,
+    output: str = "files",
+):
     """Execute content search (grep mode)"""
-    output_mode_map = {
-        'files': 'files_with_matches',
-        'content': 'content',
-        'count': 'count'
-    }
+    output_mode_map = {"files": "files_with_matches", "content": "content", "count": "count"}
 
     tool = GrepTool()
     result = tool.execute(
@@ -126,13 +124,13 @@ def execute_grep_search(pattern: str, path: str = '.', file_pattern: str = None,
         glob_pattern=file_pattern,
         ignore_case=ignore_case,
         context_lines=context,
-        output_mode=output_mode_map[output]
+        output_mode=output_mode_map[output],
     )
 
-    if result['success']:
-        matches = result['matches']
+    if result["success"]:
+        matches = result["matches"]
 
-        if output == 'files':
+        if output == "files":
             if matches:
                 print(f"Found in {len(matches)} files:")
                 for file in matches:
@@ -140,22 +138,22 @@ def execute_grep_search(pattern: str, path: str = '.', file_pattern: str = None,
             else:
                 print("No matches found")
 
-        elif output == 'content':
+        elif output == "content":
             if matches:
                 print(f"Found {len(matches)} matches:")
                 for match in matches:
                     print(f"\n{match['file']}:{match['line_number']}")
-                    if context and 'context_before' in match:
-                        for line in match['context_before']:
+                    if context and "context_before" in match:
+                        for line in match["context_before"]:
                             print(f"  -  {line}")
                     print(f"  >  {match['content']}")
-                    if context and 'context_after' in match:
-                        for line in match['context_after']:
+                    if context and "context_after" in match:
+                        for line in match["context_after"]:
                             print(f"  -  {line}")
             else:
                 print("No matches found")
 
-        elif output == 'count':
+        elif output == "count":
             if matches:
                 print("Match counts:")
                 for item in matches:
@@ -170,24 +168,20 @@ def execute_grep_search(pattern: str, path: str = '.', file_pattern: str = None,
         print(search_info, file=sys.stderr)
 
         return {
-            'success': True,
-            'mode': 'grep',
-            'matches': matches,
-            'total_files_searched': result['total_files_searched']
+            "success": True,
+            "mode": "grep",
+            "matches": matches,
+            "total_files_searched": result["total_files_searched"],
         }
     else:
         print(f"Error: {result['error']}", file=sys.stderr)
-        return {
-            'success': False,
-            'mode': 'grep',
-            'error': result['error']
-        }
+        return {"success": False, "mode": "grep", "error": result["error"]}
 
 
 def main():
     """Main entry point for unified /search command"""
     parser = argparse.ArgumentParser(
-        description='Unified search - Find files or search content',
+        description="Unified search - Find files or search content",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -214,27 +208,36 @@ Output Modes (grep only):
   --output files     List files with matches (default)
   --output content   Show matching lines with context
   --output count     Show match counts per file
-        """
+        """,
     )
 
     # Positional arguments (variable, handles "in" syntax)
-    parser.add_argument('query', nargs='+', help='Search query (supports "pattern in files" syntax)')
+    parser.add_argument(
+        "query", nargs="+", help='Search query (supports "pattern in files" syntax)'
+    )
 
     # Mode control
-    parser.add_argument('--mode', choices=['auto', 'glob', 'grep'], default='auto',
-                       help='Search mode (default: auto-detect)')
+    parser.add_argument(
+        "--mode",
+        choices=["auto", "glob", "grep"],
+        default="auto",
+        help="Search mode (default: auto-detect)",
+    )
 
     # Common options
-    parser.add_argument('--path', default='.',
-                       help='Directory to search (default: current)')
+    parser.add_argument("--path", default=".", help="Directory to search (default: current)")
 
     # Grep-specific options
-    parser.add_argument('--ignore-case', '-i', action='store_true',
-                       help='Case-insensitive search (grep mode)')
-    parser.add_argument('--context', '-C', type=int, default=0,
-                       help='Lines of context (grep mode)')
-    parser.add_argument('--output', choices=['files', 'content', 'count'], default='files',
-                       help='Output mode (grep mode, default: files)')
+    parser.add_argument(
+        "--ignore-case", "-i", action="store_true", help="Case-insensitive search (grep mode)"
+    )
+    parser.add_argument("--context", "-C", type=int, default=0, help="Lines of context (grep mode)")
+    parser.add_argument(
+        "--output",
+        choices=["files", "content", "count"],
+        default="files",
+        help="Output mode (grep mode, default: files)",
+    )
 
     try:
         if len(sys.argv) == 1:
@@ -247,43 +250,31 @@ Output Modes (grep only):
         pattern, file_pattern = parse_search_query(args.query)
 
         # Determine mode
-        if args.mode == 'auto':
+        if args.mode == "auto":
             mode = detect_search_mode(pattern, file_pattern)
         else:
             mode = args.mode
 
         # Execute appropriate search
-        if mode == 'glob':
+        if mode == "glob":
             result = execute_glob_search(pattern, args.path)
         else:  # grep
             result = execute_grep_search(
-                pattern,
-                args.path,
-                file_pattern,
-                args.ignore_case,
-                args.context,
-                args.output
+                pattern, args.path, file_pattern, args.ignore_case, args.context, args.output
             )
 
         # Output JSON envelope for non-TTY
         if not sys.stdout.isatty():
-            envelope = {
-                "ok": result['success'],
-                "mode": result.get('mode'),
-                "result": result
-            }
+            envelope = {"ok": result["success"], "mode": result.get("mode"), "result": result}
             print(json.dumps(envelope))
 
-        sys.exit(0 if result['success'] else 1)
+        sys.exit(0 if result["success"] else 1)
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
 
         if not sys.stdout.isatty():
-            envelope = {
-                "ok": False,
-                "error": {"message": str(e)}
-            }
+            envelope = {"ok": False, "error": {"message": str(e)}}
             print(json.dumps(envelope))
 
         sys.exit(1)

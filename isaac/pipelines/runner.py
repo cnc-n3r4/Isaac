@@ -3,15 +3,20 @@ Pipeline Runner - Orchestrate pipeline execution with dependencies
 Isaac's pipeline execution orchestrator
 """
 
+import threading
 import time
 import uuid
-import threading
-from concurrent.futures import ThreadPoolExecutor, Future
-from typing import Dict, Any, Optional, List, Set
 from collections import defaultdict, deque
+from concurrent.futures import Future, ThreadPoolExecutor
+from typing import Any, Dict, List, Optional, Set
 
-from isaac.pipelines.models import Pipeline, PipelineExecution, PipelineStatus, PipelineStep
 from isaac.pipelines.executor import StepExecutor
+from isaac.pipelines.models import (
+    Pipeline,
+    PipelineExecution,
+    PipelineStatus,
+    PipelineStep,
+)
 
 
 class PipelineRunner:
@@ -28,8 +33,12 @@ class PipelineRunner:
         self.active_executions: Dict[str, PipelineExecution] = {}
         self.execution_lock = threading.Lock()
 
-    def run_pipeline(self, pipeline: Pipeline, variables: Optional[Dict[str, Any]] = None,
-                    callback: Optional[Callable[[PipelineExecution], None]] = None) -> str:
+    def run_pipeline(
+        self,
+        pipeline: Pipeline,
+        variables: Optional[Dict[str, Any]] = None,
+        callback: Optional[Callable[[PipelineExecution], None]] = None,
+    ) -> str:
         """Start pipeline execution.
 
         Args:
@@ -53,7 +62,7 @@ class PipelineRunner:
             execution_id=execution_id,
             start_time=time.time(),
             status=PipelineStatus.RUNNING,
-            variables=execution_variables
+            variables=execution_variables,
         )
 
         with self.execution_lock:
@@ -61,15 +70,15 @@ class PipelineRunner:
 
         # Start execution in background
         thread = threading.Thread(
-            target=self._execute_pipeline,
-            args=(pipeline, execution, callback),
-            daemon=True
+            target=self._execute_pipeline, args=(pipeline, execution, callback), daemon=True
         )
         thread.start()
 
         return execution_id
 
-    def run_pipeline_sync(self, pipeline: Pipeline, variables: Optional[Dict[str, Any]] = None) -> PipelineExecution:
+    def run_pipeline_sync(
+        self, pipeline: Pipeline, variables: Optional[Dict[str, Any]] = None
+    ) -> PipelineExecution:
         """Run pipeline synchronously and return execution result.
 
         Args:
@@ -92,7 +101,7 @@ class PipelineRunner:
             execution_id=execution_id,
             start_time=time.time(),
             status=PipelineStatus.RUNNING,
-            variables=execution_variables
+            variables=execution_variables,
         )
 
         # Execute synchronously
@@ -120,8 +129,12 @@ class PipelineRunner:
         with self.execution_lock:
             return list(self.active_executions.values())
 
-    def _execute_pipeline(self, pipeline: Pipeline, execution: PipelineExecution,
-                         callback: Optional[Callable[[PipelineExecution], None]] = None) -> None:
+    def _execute_pipeline(
+        self,
+        pipeline: Pipeline,
+        execution: PipelineExecution,
+        callback: Optional[Callable[[PipelineExecution], None]] = None,
+    ) -> None:
         """Execute pipeline with dependency management."""
         try:
             # Build dependency graph
@@ -145,7 +158,10 @@ class PipelineRunner:
 
                     future = self.executor.submit(
                         self._execute_step_with_retries,
-                        step_executor, step, execution.variables, step.timeout_seconds
+                        step_executor,
+                        step,
+                        execution.variables,
+                        step.timeout_seconds,
                     )
                     pending_futures[step.id] = future
 
@@ -159,7 +175,7 @@ class PipelineRunner:
                                 result = future.result()
                                 execution.steps_results[step_id] = result
 
-                                if result['success']:
+                                if result["success"]:
                                     completed_steps.add(step_id)
 
                                     # Check if this unlocks new steps
@@ -172,26 +188,33 @@ class PipelineRunner:
                                 else:
                                     # Step failed - handle based on on_failure policy
                                     step = pipeline.get_step(step_id)
-                                    if step and step.on_failure == 'stop':
+                                    if step and step.on_failure == "stop":
                                         execution.status = PipelineStatus.FAILED
-                                        execution.error_message = f"Step {step_id} failed: {result.get('output', '')}"
+                                        execution.error_message = (
+                                            f"Step {step_id} failed: {result.get('output', '')}"
+                                        )
                                         break
 
                             except Exception as e:
                                 execution.steps_results[step_id] = {
-                                    'success': False,
-                                    'output': f'Execution error: {e}',
-                                    'exit_code': 1,
-                                    'duration': 0
+                                    "success": False,
+                                    "output": f"Execution error: {e}",
+                                    "exit_code": 1,
+                                    "duration": 0,
                                 }
 
                 # Small delay to prevent busy waiting
                 time.sleep(0.1)
 
                 # Check for timeout
-                if pipeline.timeout_seconds and (time.time() - execution.start_time) > pipeline.timeout_seconds:
+                if (
+                    pipeline.timeout_seconds
+                    and (time.time() - execution.start_time) > pipeline.timeout_seconds
+                ):
                     execution.status = PipelineStatus.FAILED
-                    execution.error_message = f"Pipeline timed out after {pipeline.timeout_seconds} seconds"
+                    execution.error_message = (
+                        f"Pipeline timed out after {pipeline.timeout_seconds} seconds"
+                    )
                     break
 
             # Set final status
@@ -212,8 +235,13 @@ class PipelineRunner:
                 except Exception:
                     pass  # Ignore callback errors
 
-    def _execute_step_with_retries(self, executor: StepExecutor, step: PipelineStep,
-                                  variables: Dict[str, Any], timeout: Optional[int]) -> Dict[str, Any]:
+    def _execute_step_with_retries(
+        self,
+        executor: StepExecutor,
+        step: PipelineStep,
+        variables: Dict[str, Any],
+        timeout: Optional[int],
+    ) -> Dict[str, Any]:
         """Execute a step with retry logic."""
         last_result = None
 
@@ -224,7 +252,7 @@ class PipelineRunner:
             result = executor.execute_step(step, variables, timeout)
             last_result = result
 
-            if result['success']:
+            if result["success"]:
                 break
 
         return last_result
@@ -262,7 +290,11 @@ class PipelineRunner:
 
         with self.execution_lock:
             for execution_id, execution in self.active_executions.items():
-                if execution.is_complete and execution.end_time and execution.end_time < cutoff_time:
+                if (
+                    execution.is_complete
+                    and execution.end_time
+                    and execution.end_time < cutoff_time
+                ):
                     to_remove.append(execution_id)
 
             for execution_id in to_remove:

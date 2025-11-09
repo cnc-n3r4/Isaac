@@ -4,10 +4,10 @@ Provides access to proactive suggestions and learning features
 """
 
 import time
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
-from isaac.ambient.workflow_learner import WorkflowLearner
 from isaac.ambient.proactive_suggester import ProactiveSuggester
+from isaac.ambient.workflow_learner import WorkflowLearner
 
 
 class AmbientCommand:
@@ -32,30 +32,26 @@ class AmbientCommand:
 
         subcommand = args[0].lower()
 
-        if subcommand == 'analyze':
+        if subcommand == "analyze":
             return self._analyze_history(args[1:])
-        elif subcommand == 'suggestions':
+        elif subcommand == "suggestions":
             return self._show_suggestions(args[1:])
-        elif subcommand == 'patterns':
+        elif subcommand == "patterns":
             return self._manage_patterns(args[1:])
-        elif subcommand == 'stats':
+        elif subcommand == "stats":
             return self._show_stats(args[1:])
-        elif subcommand == 'learn':
+        elif subcommand == "learn":
             return self._learn_from_history(args[1:])
         else:
             return {
-                'success': False,
-                'output': f"Unknown subcommand: {subcommand}\n{self._get_help_text()}",
-                'exit_code': 1
+                "success": False,
+                "output": f"Unknown subcommand: {subcommand}\n{self._get_help_text()}",
+                "exit_code": 1,
             }
 
     def _show_help(self) -> Dict[str, Any]:
         """Show help information."""
-        return {
-            'success': True,
-            'output': self._get_help_text(),
-            'exit_code': 0
-        }
+        return {"success": True, "output": self._get_help_text(), "exit_code": 0}
 
     def _get_help_text(self) -> str:
         """Get help text."""
@@ -87,40 +83,28 @@ The ambient system learns from your behavior and provides proactive assistance."
 
             output = "🎯 Command History Analysis Complete\n\n"
 
-            if 'error' in results:
+            if "error" in results:
                 output += f"❌ Error: {results['error']}\n"
-                return {
-                    'success': False,
-                    'output': output,
-                    'exit_code': 1
-                }
+                return {"success": False, "output": output, "exit_code": 1}
 
             output += f"📊 Patterns Found: {results['patterns_found']}\n"
             output += f"🔄 Workflows Found: {results['workflows_found']}\n"
             output += f"✨ New Patterns: {results['new_patterns']}\n"
             output += f"🚀 New Workflows: {results['new_workflows']}\n\n"
 
-            if results['suggestions']:
+            if results["suggestions"]:
                 output += "💡 Suggestions:\n"
-                for i, suggestion in enumerate(results['suggestions'][:5], 1):
+                for i, suggestion in enumerate(results["suggestions"][:5], 1):
                     output += f"  {i}. {suggestion['description']}\n"
-                    if suggestion['type'] == 'pipeline_suggestion':
+                    if suggestion["type"] == "pipeline_suggestion":
                         output += f"     Frequency: {suggestion['frequency']} times\n"
                         output += f"     Commands: {' → '.join(suggestion['commands'][:3])}\n"
                     output += "\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
 
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"❌ Analysis failed: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"❌ Analysis failed: {e}", "exit_code": 1}
 
     def _show_suggestions(self, args: List[str]) -> Dict[str, Any]:
         """Show proactive suggestions."""
@@ -134,7 +118,9 @@ The ambient system learns from your behavior and provides proactive assistance."
                 output += "• Commands fail with common errors\n"
                 output += "• You're idle for extended periods\n"
                 output += "• High error rates are detected\n\n"
-                output += "Try running '/ambient analyze' to generate suggestions from your history."
+                output += (
+                    "Try running '/ambient analyze' to generate suggestions from your history."
+                )
             else:
                 output = f"💡 Proactive Suggestions ({len(suggestions)})\n\n"
 
@@ -150,41 +136,37 @@ The ambient system learns from your behavior and provides proactive assistance."
 
                     output += "\n"
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
 
         except Exception as e:
             return {
-                'success': False,
-                'output': f"❌ Failed to get suggestions: {e}",
-                'exit_code': 1
+                "success": False,
+                "output": f"❌ Failed to get suggestions: {e}",
+                "exit_code": 1,
             }
 
     def _manage_patterns(self, args: List[str]) -> Dict[str, Any]:
         """Manage learned patterns."""
         if not args:
             return {
-                'success': False,
-                'output': "Usage: /ambient patterns <list|show|delete> [pattern_id]",
-                'exit_code': 1
+                "success": False,
+                "output": "Usage: /ambient patterns <list|show|delete> [pattern_id]",
+                "exit_code": 1,
             }
 
         subcommand = args[0].lower()
 
-        if subcommand == 'list':
+        if subcommand == "list":
             return self._list_patterns()
-        elif subcommand == 'show' and len(args) > 1:
+        elif subcommand == "show" and len(args) > 1:
             return self._show_pattern(args[1])
-        elif subcommand == 'delete' and len(args) > 1:
+        elif subcommand == "delete" and len(args) > 1:
             return self._delete_pattern(args[1])
         else:
             return {
-                'success': False,
-                'output': "Usage: /ambient patterns <list|show|delete> [pattern_id]",
-                'exit_code': 1
+                "success": False,
+                "output": "Usage: /ambient patterns <list|show|delete> [pattern_id]",
+                "exit_code": 1,
             }
 
     def _list_patterns(self) -> Dict[str, Any]:
@@ -211,11 +193,7 @@ The ambient system learns from your behavior and provides proactive assistance."
         if not patterns and not workflows:
             output += "No patterns learned yet. Try running '/ambient analyze' to discover patterns in your command history."
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _show_pattern(self, pattern_id: str) -> Dict[str, Any]:
         """Show details of a specific pattern."""
@@ -223,11 +201,7 @@ The ambient system learns from your behavior and provides proactive assistance."
         workflow = self.workflow_learner.workflows.get(pattern_id)
 
         if not pattern and not workflow:
-            return {
-                'success': False,
-                'output': f"Pattern '{pattern_id}' not found",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Pattern '{pattern_id}' not found", "exit_code": 1}
 
         output = f"📋 Pattern Details: {pattern_id}\n\n"
 
@@ -252,11 +226,7 @@ The ambient system learns from your behavior and provides proactive assistance."
             output += f"Tags: {', '.join(workflow.tags)}\n"
             output += f"Last Executed: {time.ctime(workflow.last_executed)}\n"
 
-        return {
-            'success': True,
-            'output': output,
-            'exit_code': 0
-        }
+        return {"success": True, "output": output, "exit_code": 0}
 
     def _delete_pattern(self, pattern_id: str) -> Dict[str, Any]:
         """Delete a learned pattern."""
@@ -264,24 +234,20 @@ The ambient system learns from your behavior and provides proactive assistance."
             del self.workflow_learner.patterns[pattern_id]
             self.workflow_learner._save_patterns()
             return {
-                'success': True,
-                'output': f"Deleted command pattern '{pattern_id}'",
-                'exit_code': 0
+                "success": True,
+                "output": f"Deleted command pattern '{pattern_id}'",
+                "exit_code": 0,
             }
         elif pattern_id in self.workflow_learner.workflows:
             del self.workflow_learner.workflows[pattern_id]
             self.workflow_learner._save_patterns()
             return {
-                'success': True,
-                'output': f"Deleted workflow pattern '{pattern_id}'",
-                'exit_code': 0
+                "success": True,
+                "output": f"Deleted workflow pattern '{pattern_id}'",
+                "exit_code": 0,
             }
         else:
-            return {
-                'success': False,
-                'output': f"Pattern '{pattern_id}' not found",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"Pattern '{pattern_id}' not found", "exit_code": 1}
 
     def _show_stats(self, args: List[str]) -> Dict[str, Any]:
         """Show learning statistics."""
@@ -294,7 +260,9 @@ The ambient system learns from your behavior and provides proactive assistance."
             output += "Pattern Learning:\n"
             output += f"• Command Patterns: {len(self.workflow_learner.patterns)}\n"
             output += f"• Workflow Patterns: {len(self.workflow_learner.workflows)}\n"
-            output += f"• Command Sequences Analyzed: {len(self.workflow_learner.command_sequences)}\n\n"
+            output += (
+                f"• Command Sequences Analyzed: {len(self.workflow_learner.command_sequences)}\n\n"
+            )
 
             output += "Proactive Suggestions:\n"
             output += f"• Total Suggestions: {suggester_stats['total_suggestions']}\n"
@@ -307,20 +275,14 @@ The ambient system learns from your behavior and provides proactive assistance."
             output += f"• Commands Executed: {context['command_count']}\n"
             output += f"• Errors Encountered: {context['error_count']}\n"
             output += f"• Last Command: {context['last_command'] or 'None'}\n"
-            output += f"• Time Since Last Command: {context['time_since_last_command']:.0f} seconds\n"
+            output += (
+                f"• Time Since Last Command: {context['time_since_last_command']:.0f} seconds\n"
+            )
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
 
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"❌ Failed to get statistics: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"❌ Failed to get statistics: {e}", "exit_code": 1}
 
     def _learn_from_history(self, args: List[str]) -> Dict[str, Any]:
         """Force learning from recent command history."""
@@ -330,31 +292,21 @@ The ambient system learns from your behavior and provides proactive assistance."
 
             output = "🧠 Learning from Recent History\n\n"
 
-            if 'error' in results:
+            if "error" in results:
                 output += f"❌ Error: {results['error']}\n"
-                return {
-                    'success': False,
-                    'output': output,
-                    'exit_code': 1
-                }
+                return {"success": False, "output": output, "exit_code": 1}
 
             output += f"✅ Analysis complete!\n"
-            output += f"📊 Patterns: {results['patterns_found']} total ({results['new_patterns']} new)\n"
+            output += (
+                f"📊 Patterns: {results['patterns_found']} total ({results['new_patterns']} new)\n"
+            )
             output += f"🔄 Workflows: {results['workflows_found']} total ({results['new_workflows']} new)\n\n"
 
-            if results['suggestions']:
+            if results["suggestions"]:
                 output += f"💡 Generated {len(results['suggestions'])} new suggestions\n"
                 output += "Run '/ambient suggestions' to see them."
 
-            return {
-                'success': True,
-                'output': output,
-                'exit_code': 0
-            }
+            return {"success": True, "output": output, "exit_code": 0}
 
         except Exception as e:
-            return {
-                'success': False,
-                'output': f"❌ Learning failed: {e}",
-                'exit_code': 1
-            }
+            return {"success": False, "output": f"❌ Learning failed: {e}", "exit_code": 1}

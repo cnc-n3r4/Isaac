@@ -3,8 +3,8 @@
 Help Command Handler - Plugin format
 """
 
-import sys
 import json
+import sys
 
 
 def main():
@@ -25,12 +25,7 @@ def main():
         output = get_overview_help(session)
 
     # Return envelope
-    print(json.dumps({
-        "ok": True,
-        "kind": "text",
-        "stdout": output,
-        "meta": {}
-    }))
+    print(json.dumps({"ok": True, "kind": "text", "stdout": output, "meta": {}}))
 
 
 def get_overview_help(session):
@@ -178,7 +173,6 @@ SETTINGS:
   ai_provider: AI service (xai, claude, etc.)
   ai_model: Specific AI model to use
 """.strip(),
-
         "/mine": """
 Mine Command - xAI Collections Manager
 
@@ -208,7 +202,6 @@ EXAMPLES:
   /mine --search "query"    - Search collection
   /mine --info              - Show collection info
 """.strip(),
-
         "/ask": """
 Ask Command - Direct AI Chat
 
@@ -231,7 +224,6 @@ DIFFERENCE FROM ISAAC:
   /ask - Conversational, returns text only
   isaac <query> - Translates to shell commands for execution
 """.strip(),
-
         "/alias": """
 Alias Command - Manage Command Aliases
 
@@ -254,7 +246,6 @@ EXAMPLES:
   /alias --add ll "ls -la"  - Add ll alias
   /alias --enable           - Enable aliases
 """.strip(),
-
         "/status": """
 Status Command - Detailed Help
 
@@ -272,7 +263,6 @@ DISPLAY:
   AI: ✓ Available / ✗ No key / ✗ Unreachable
   History: Command count today
 """.strip(),
-
         "/help": """
 Help Command - Detailed Help
 
@@ -288,7 +278,6 @@ EXAMPLES:
 ALIASES:
   /h, /?             - Same as /help
 """.strip(),
-
         "/glob": """
 Glob Command - Find Files by Pattern
 
@@ -313,7 +302,6 @@ PATTERN SYNTAX:
   [abc] - Match any character in the set
   **    - Match directories recursively
 """.strip(),
-
         "/grep": """
 Grep Command - Search Files with Regex
 
@@ -340,7 +328,6 @@ REGEX FLAGS:
   -n    - Show line numbers
   -v    - Invert match (show non-matching lines)
 """.strip(),
-
         "/read": """
 Read Command - Display File Contents
 
@@ -364,7 +351,6 @@ OPTIONS:
   --head N             - Show first N lines
   --tail N             - Show last N lines
 """.strip(),
-
         "/write": """
 Write Command - Create or Overwrite Files
 
@@ -385,7 +371,6 @@ OPTIONS:
   --content TEXT       - Write text directly (no editor)
   --append             - Append to existing file instead of overwrite
 """.strip(),
-
         "/edit": """
 Edit Command - Modify Existing Files
 
@@ -407,7 +392,6 @@ OPTIONS:
   --search TEXT        - Text to find
   --replace TEXT       - Replacement text
 """.strip(),
-
         "/newfile": """
 Newfile Command - Create New Files
 
@@ -426,7 +410,6 @@ EXAMPLES:
 TEMPLATES:
   python, json, markdown, html, css, javascript, shell
 """.strip(),
-
         "/backup": """
 Backup Command - Backup Configuration
 
@@ -446,7 +429,6 @@ EXAMPLES:
 BACKUP CONTENTS:
   Configuration files, session data, command history, AI queries
 """.strip(),
-
         "/restore": """
 Restore Command - Restore from Backup
 
@@ -466,7 +448,6 @@ EXAMPLES:
 RESTORE SCOPE:
   Configuration, preferences, command history, AI query history
 """.strip(),
-
         "/list": """
 List Command - Manage Named Lists
 
@@ -489,7 +470,6 @@ EXAMPLES:
 LIST TYPES:
   todos, files, favorites, bookmarks, temp, etc.
 """.strip(),
-
         "/workspace": """
 Workspace Command - Show Workspace Information
 
@@ -509,7 +489,6 @@ EXAMPLES:
 INFORMATION:
   Workspace root, file count, directory structure, recent changes
 """.strip(),
-
         "/sync": """
 Sync Command - Cloud Synchronization
 
@@ -531,7 +510,6 @@ EXAMPLES:
 SYNC DATA:
   Command history, AI queries, preferences, configuration
 """.strip(),
-
         "/queue": """
 Queue Command - Command Queue Management
 
@@ -553,7 +531,6 @@ EXAMPLES:
 QUEUE FEATURES:
   Batch execution, offline queuing, progress tracking
 """.strip(),
-
         "/search": """
 Search Command - Unified Search (Phase 9)
 
@@ -604,7 +581,6 @@ CONSOLIDATES:
 ALIASES:
   /find - Same as /search
 """.strip(),
-
         "/file": """
 File Command - Unified File Operations (Phase 9)
 
@@ -653,7 +629,6 @@ CONSOLIDATES:
   /edit    - Edit files
   /newfile - Create new files
 """.strip(),
-
         "/msg": """
 Message Command - Notification Management
 

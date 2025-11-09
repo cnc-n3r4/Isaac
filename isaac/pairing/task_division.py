@@ -5,18 +5,19 @@ Intelligent task division between AI and human for simultaneous work.
 
 import json
 import sqlite3
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from pathlib import Path
-from enum import Enum
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 
 
 class TaskStatus(Enum):
     """Task status."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -26,6 +27,7 @@ class TaskStatus(Enum):
 
 class TaskPriority(Enum):
     """Task priority."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -34,6 +36,7 @@ class TaskPriority(Enum):
 
 class TaskAssignee(Enum):
     """Who is assigned to the task."""
+
     ISAAC = "isaac"
     HUMAN = "human"
     BOTH = "both"
@@ -43,6 +46,7 @@ class TaskAssignee(Enum):
 @dataclass
 class Task:
     """A task in the pair programming session."""
+
     id: str
     session_id: str
     title: str
@@ -75,17 +79,18 @@ class TaskDivider:
             session_manager: Session manager instance
         """
         self.session_manager = session_manager
-        self.data_dir = Path.home() / '.isaac' / 'pairing'
+        self.data_dir = Path.home() / ".isaac" / "pairing"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Database for task storage
-        self.db_path = self.data_dir / 'tasks.db'
+        self.db_path = self.data_dir / "tasks.db"
         self._init_database()
 
     def _init_database(self):
         """Initialize SQLite database for task storage."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS tasks (
                     id TEXT PRIMARY KEY,
                     session_id TEXT,
@@ -102,10 +107,11 @@ class TaskDivider:
                     context TEXT,
                     result TEXT
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_session ON tasks(session_id)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_status ON tasks(status)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_assignee ON tasks(assignee)')
+            """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_session ON tasks(session_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_status ON tasks(status)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_assignee ON tasks(assignee)")
 
     def create_task(
         self,
@@ -115,7 +121,7 @@ class TaskDivider:
         assignee: TaskAssignee = TaskAssignee.UNASSIGNED,
         priority: TaskPriority = TaskPriority.MEDIUM,
         estimated_minutes: Optional[int] = None,
-        dependencies: Optional[List[str]] = None
+        dependencies: Optional[List[str]] = None,
     ) -> Task:
         """Create a new task.
 
@@ -144,16 +150,14 @@ class TaskDivider:
             completed_at=None,
             estimated_minutes=estimated_minutes,
             dependencies=dependencies or [],
-            context={}
+            context={},
         )
 
         self._save_task(task)
         return task
 
     def suggest_task_division(
-        self,
-        overall_task: str,
-        context: Optional[Dict[str, Any]] = None
+        self, overall_task: str, context: Optional[Dict[str, Any]] = None
     ) -> List[Task]:
         """Suggest how to divide a large task between Isaac and human.
 
@@ -187,10 +191,7 @@ class TaskDivider:
         return tasks
 
     def _divide_refactoring_task(
-        self,
-        session_id: str,
-        task: str,
-        context: Optional[Dict[str, Any]]
+        self, session_id: str, task: str, context: Optional[Dict[str, Any]]
     ) -> List[Task]:
         """Divide a refactoring task."""
         return [
@@ -199,36 +200,33 @@ class TaskDivider:
                 "Analyze current code structure",
                 "Review the code to understand current architecture and identify refactoring opportunities",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Write tests for existing behavior",
                 "Ensure current behavior is well-tested before refactoring",
                 assignee=TaskAssignee.BOTH,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Refactor implementation",
                 "Apply refactoring changes to improve code structure",
                 assignee=TaskAssignee.HUMAN,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
             self.create_task(
                 session_id,
                 "Update documentation",
                 "Update docs to reflect refactored code",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.LOW
+                priority=TaskPriority.LOW,
             ),
         ]
 
     def _divide_feature_task(
-        self,
-        session_id: str,
-        task: str,
-        context: Optional[Dict[str, Any]]
+        self, session_id: str, task: str, context: Optional[Dict[str, Any]]
     ) -> List[Task]:
         """Divide a feature implementation task."""
         return [
@@ -237,36 +235,33 @@ class TaskDivider:
                 "Design feature architecture",
                 "Plan the feature's architecture and integration points",
                 assignee=TaskAssignee.BOTH,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Implement core logic",
                 "Write the main feature implementation",
                 assignee=TaskAssignee.HUMAN,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Write unit tests",
                 "Create comprehensive unit tests for the feature",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
             self.create_task(
                 session_id,
                 "Integration and testing",
                 "Integrate feature and run integration tests",
                 assignee=TaskAssignee.BOTH,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
         ]
 
     def _divide_bug_fix_task(
-        self,
-        session_id: str,
-        task: str,
-        context: Optional[Dict[str, Any]]
+        self, session_id: str, task: str, context: Optional[Dict[str, Any]]
     ) -> List[Task]:
         """Divide a bug fix task."""
         return [
@@ -275,36 +270,33 @@ class TaskDivider:
                 "Reproduce the bug",
                 "Create a minimal reproduction of the issue",
                 assignee=TaskAssignee.BOTH,
-                priority=TaskPriority.CRITICAL
+                priority=TaskPriority.CRITICAL,
             ),
             self.create_task(
                 session_id,
                 "Root cause analysis",
                 "Investigate and identify the root cause",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Implement fix",
                 "Apply the fix to resolve the bug",
                 assignee=TaskAssignee.HUMAN,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Write regression test",
                 "Create test to prevent bug from recurring",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
         ]
 
     def _divide_testing_task(
-        self,
-        session_id: str,
-        task: str,
-        context: Optional[Dict[str, Any]]
+        self, session_id: str, task: str, context: Optional[Dict[str, Any]]
     ) -> List[Task]:
         """Divide a testing task."""
         return [
@@ -313,36 +305,33 @@ class TaskDivider:
                 "Identify test scenarios",
                 "List all scenarios that need testing",
                 assignee=TaskAssignee.BOTH,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Write unit tests",
                 "Implement unit tests for individual components",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
             self.create_task(
                 session_id,
                 "Write integration tests",
                 "Implement integration tests for system workflows",
                 assignee=TaskAssignee.HUMAN,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
             self.create_task(
                 session_id,
                 "Review test coverage",
                 "Analyze coverage and identify gaps",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.LOW
+                priority=TaskPriority.LOW,
             ),
         ]
 
     def _divide_generic_task(
-        self,
-        session_id: str,
-        task: str,
-        context: Optional[Dict[str, Any]]
+        self, session_id: str, task: str, context: Optional[Dict[str, Any]]
     ) -> List[Task]:
         """Divide a generic task."""
         return [
@@ -351,21 +340,21 @@ class TaskDivider:
                 "Research and planning",
                 "Understand requirements and plan approach",
                 assignee=TaskAssignee.BOTH,
-                priority=TaskPriority.HIGH
+                priority=TaskPriority.HIGH,
             ),
             self.create_task(
                 session_id,
                 "Implementation",
                 f"Implement: {task}",
                 assignee=TaskAssignee.HUMAN,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
             self.create_task(
                 session_id,
                 "Testing and validation",
                 "Test the implementation",
                 assignee=TaskAssignee.ISAAC,
-                priority=TaskPriority.MEDIUM
+                priority=TaskPriority.MEDIUM,
             ),
         ]
 
@@ -387,11 +376,14 @@ class TaskDivider:
             return False
 
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 UPDATE tasks
                 SET status = ?, started_at = ?
                 WHERE id = ?
-            ''', (TaskStatus.IN_PROGRESS.value, datetime.now().timestamp(), task_id))
+            """,
+                (TaskStatus.IN_PROGRESS.value, datetime.now().timestamp(), task_id),
+            )
 
         return True
 
@@ -406,11 +398,14 @@ class TaskDivider:
             True if successful
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 UPDATE tasks
                 SET status = ?, completed_at = ?, result = ?
                 WHERE id = ?
-            ''', (TaskStatus.COMPLETED.value, datetime.now().timestamp(), result, task_id))
+            """,
+                (TaskStatus.COMPLETED.value, datetime.now().timestamp(), result, task_id),
+            )
 
         return True
 
@@ -424,13 +419,16 @@ class TaskDivider:
             Task or None
         """
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT id, session_id, title, description, assignee, status, priority,
                        created_at, started_at, completed_at, estimated_minutes,
                        dependencies, context, result
                 FROM tasks
                 WHERE id = ?
-            ''', (task_id,))
+            """,
+                (task_id,),
+            )
 
             row = cursor.fetchone()
             if not row:
@@ -450,7 +448,7 @@ class TaskDivider:
                 estimated_minutes=row[10],
                 dependencies=json.loads(row[11]) if row[11] else [],
                 context=json.loads(row[12]) if row[12] else {},
-                result=row[13]
+                result=row[13],
             )
 
     def get_session_tasks(self, session_id: str) -> List[Task]:
@@ -464,14 +462,17 @@ class TaskDivider:
         """
         tasks = []
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT id, session_id, title, description, assignee, status, priority,
                        created_at, started_at, completed_at, estimated_minutes,
                        dependencies, context, result
                 FROM tasks
                 WHERE session_id = ?
                 ORDER BY priority DESC, created_at ASC
-            ''', (session_id,))
+            """,
+                (session_id,),
+            )
 
             for row in cursor:
                 task = Task(
@@ -488,7 +489,7 @@ class TaskDivider:
                     estimated_minutes=row[10],
                     dependencies=json.loads(row[11]) if row[11] else [],
                     context=json.loads(row[12]) if row[12] else {},
-                    result=row[13]
+                    result=row[13],
                 )
                 tasks.append(task)
 
@@ -507,12 +508,15 @@ class TaskDivider:
             return True
 
         with sqlite3.connect(self.db_path) as conn:
-            placeholders = ','.join('?' * len(task.dependencies))
-            cursor = conn.execute(f'''
+            placeholders = ",".join("?" * len(task.dependencies))
+            cursor = conn.execute(
+                f"""
                 SELECT COUNT(*) FROM tasks
                 WHERE id IN ({placeholders})
                 AND status = ?
-            ''', (*task.dependencies, TaskStatus.COMPLETED.value))
+            """,
+                (*task.dependencies, TaskStatus.COMPLETED.value),
+            )
 
             completed_count = cursor.fetchone()[0]
             return completed_count == len(task.dependencies)
@@ -524,25 +528,28 @@ class TaskDivider:
             task: Task to save
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO tasks
                 (id, session_id, title, description, assignee, status, priority,
                  created_at, started_at, completed_at, estimated_minutes,
                  dependencies, context, result)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                task.id,
-                task.session_id,
-                task.title,
-                task.description,
-                task.assignee,
-                task.status,
-                task.priority,
-                task.created_at,
-                task.started_at,
-                task.completed_at,
-                task.estimated_minutes,
-                json.dumps(task.dependencies),
-                json.dumps(task.context),
-                task.result
-            ))
+            """,
+                (
+                    task.id,
+                    task.session_id,
+                    task.title,
+                    task.description,
+                    task.assignee,
+                    task.status,
+                    task.priority,
+                    task.created_at,
+                    task.started_at,
+                    task.completed_at,
+                    task.estimated_minutes,
+                    json.dumps(task.dependencies),
+                    json.dumps(task.context),
+                    task.result,
+                ),
+            )

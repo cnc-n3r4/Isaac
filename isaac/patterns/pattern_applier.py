@@ -3,17 +3,19 @@ Pattern Application - Apply learned patterns to new code
 Phase 3.4.2: Suggest and apply learned patterns intelligently
 """
 
-import re
 import ast
-from typing import Dict, List, Any, Optional
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 from .pattern_learner import CodePattern
 
 
 @dataclass
 class PatternApplication:
     """Result of applying a pattern to code."""
+
     pattern: CodePattern
     original_code: str
     modified_code: str
@@ -27,6 +29,7 @@ class PatternApplication:
 @dataclass
 class PatternSuggestion:
     """A suggestion to apply a pattern."""
+
     pattern: CodePattern
     target_code: str
     suggested_code: str
@@ -52,7 +55,7 @@ class PatternApplier:
             return self.suggestion_cache[cache_key]
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             language = self._detect_language(file_path)
@@ -71,7 +74,9 @@ class PatternApplier:
 
             # Analyze each node for pattern application opportunities
             for node in ast.walk(tree):
-                node_suggestions = self._analyze_node_for_patterns(node, content, patterns, language)
+                node_suggestions = self._analyze_node_for_patterns(
+                    node, content, patterns, language
+                )
                 suggestions.extend(node_suggestions)
 
             # Additional suggestions based on code analysis
@@ -92,79 +97,82 @@ class PatternApplier:
         """Detect programming language from file extension."""
         ext = Path(file_path).suffix.lower()
         language_map = {
-            '.py': 'python',
-            '.js': 'javascript',
-            '.ts': 'typescript',
-            '.java': 'java',
-            '.cpp': 'cpp',
-            '.c': 'c',
-            '.go': 'go',
-            '.rs': 'rust',
-            '.php': 'php'
+            ".py": "python",
+            ".js": "javascript",
+            ".ts": "typescript",
+            ".java": "java",
+            ".cpp": "cpp",
+            ".c": "c",
+            ".go": "go",
+            ".rs": "rust",
+            ".php": "php",
         }
         return language_map.get(ext)
 
     def _parse_code(self, content: str, language: str) -> Optional[Any]:
         """Parse code into AST or similar structure."""
         try:
-            if language == 'python':
+            if language == "python":
                 return ast.parse(content)
             return None
         except:
             return None
 
-    def _analyze_node_for_patterns(self, node: ast.AST, content: str,
-                                 patterns: List[CodePattern], language: str) -> List[PatternSuggestion]:
+    def _analyze_node_for_patterns(
+        self, node: ast.AST, content: str, patterns: List[CodePattern], language: str
+    ) -> List[PatternSuggestion]:
         """Analyze a node for pattern application opportunities."""
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return suggestions
 
         # Get the source code for this node
         node_source = self._get_node_source(node, content)
-        if not node_source or len(node_source.split('\n')) > 50:  # Skip very large nodes
+        if not node_source or len(node_source.split("\n")) > 50:  # Skip very large nodes
             return suggestions
 
         for pattern in patterns:
-            if pattern.is_anti_pattern or pattern.category not in ['function', 'class', 'loop']:
+            if pattern.is_anti_pattern or pattern.category not in ["function", "class", "loop"]:
                 continue
 
             # Check if this pattern could apply to this node
             match_result = self._pattern_matches_node(pattern, node, node_source, language)
 
-            if match_result and match_result['confidence'] > 0.6:
+            if match_result and match_result["confidence"] > 0.6:
                 suggestion = PatternSuggestion(
                     pattern=pattern,
                     target_code=node_source,
-                    suggested_code=match_result['suggested_code'],
-                    confidence=match_result['confidence'],
-                    benefit=match_result['benefit'],
-                    risk=match_result['risk'],
-                    line_number=getattr(node, 'lineno', 1)
+                    suggested_code=match_result["suggested_code"],
+                    confidence=match_result["confidence"],
+                    benefit=match_result["benefit"],
+                    risk=match_result["risk"],
+                    line_number=getattr(node, "lineno", 1),
                 )
                 suggestions.append(suggestion)
 
         return suggestions
 
-    def _pattern_matches_node(self, pattern: CodePattern, node: ast.AST,
-                            node_source: str, language: str) -> Optional[Dict[str, Any]]:
+    def _pattern_matches_node(
+        self, pattern: CodePattern, node: ast.AST, node_source: str, language: str
+    ) -> Optional[Dict[str, Any]]:
         """Check if a pattern matches a code node."""
-        if language != 'python':
+        if language != "python":
             return None
 
         # Simple pattern matching based on pattern type
-        if pattern.category == 'function' and isinstance(node, ast.FunctionDef):
+        if pattern.category == "function" and isinstance(node, ast.FunctionDef):
             return self._function_pattern_match(pattern, node, node_source)
-        elif pattern.category == 'class' and isinstance(node, ast.ClassDef):
+        elif pattern.category == "class" and isinstance(node, ast.ClassDef):
             return self._class_pattern_match(pattern, node, node_source)
-        elif pattern.category == 'loop' and isinstance(node, (ast.For, ast.While)):
+        elif pattern.category == "loop" and isinstance(node, (ast.For, ast.While)):
             return self._loop_pattern_match(pattern, node, node_source)
 
         return None
 
-    def _function_pattern_match(self, pattern: CodePattern, node: ast.FunctionDef,
-                              node_source: str) -> Optional[Dict[str, Any]]:
+    def _function_pattern_match(
+        self, pattern: CodePattern, node: ast.FunctionDef, node_source: str
+    ) -> Optional[Dict[str, Any]]:
         """Check if a function pattern matches."""
         # Analyze function characteristics
         arg_count = len(node.args.args)
@@ -179,7 +187,7 @@ class PatternApplier:
         confidence = 0.0
         reasons = []
 
-        if 'function_name' in pattern_vars:
+        if "function_name" in pattern_vars:
             confidence += 0.3
             reasons.append("Function structure matches pattern")
 
@@ -187,67 +195,68 @@ class PatternApplier:
             confidence += 0.2
             reasons.append("Appropriate number of arguments")
 
-        if not has_docstring and pattern.name.lower().find('documented') >= 0:
+        if not has_docstring and pattern.name.lower().find("documented") >= 0:
             # Suggest adding docstring
             suggested_code = self._add_docstring_to_function(node_source)
             return {
-                'confidence': 0.8,
-                'suggested_code': suggested_code,
-                'benefit': 'Adds documentation following established patterns',
-                'risk': 'May require updating docstring content'
+                "confidence": 0.8,
+                "suggested_code": suggested_code,
+                "benefit": "Adds documentation following established patterns",
+                "risk": "May require updating docstring content",
             }
 
         if confidence > 0.5:
             return {
-                'confidence': confidence,
-                'suggested_code': node_source,  # No change needed
-                'benefit': f"Follows established {pattern.name.lower()} pattern",
-                'risk': 'Minimal - pattern already matches'
+                "confidence": confidence,
+                "suggested_code": node_source,  # No change needed
+                "benefit": f"Follows established {pattern.name.lower()} pattern",
+                "risk": "Minimal - pattern already matches",
             }
 
         return None
 
-    def _class_pattern_match(self, pattern: CodePattern, node: ast.ClassDef,
-                           node_source: str) -> Optional[Dict[str, Any]]:
+    def _class_pattern_match(
+        self, pattern: CodePattern, node: ast.ClassDef, node_source: str
+    ) -> Optional[Dict[str, Any]]:
         """Check if a class pattern matches."""
         method_count = len([n for n in node.body if isinstance(n, ast.FunctionDef)])
-        has_init = any(isinstance(n, ast.FunctionDef) and n.name == '__init__' for n in node.body)
+        has_init = any(isinstance(n, ast.FunctionDef) and n.name == "__init__" for n in node.body)
         has_docstring = self._has_docstring(node)
-
 
         if not has_docstring:
             suggested_code = self._add_docstring_to_class(node_source)
             return {
-                'confidence': 0.7,
-                'suggested_code': suggested_code,
-                'benefit': 'Adds class documentation following patterns',
-                'risk': 'Requires writing appropriate docstring'
+                "confidence": 0.7,
+                "suggested_code": suggested_code,
+                "benefit": "Adds class documentation following patterns",
+                "risk": "Requires writing appropriate docstring",
             }
 
         if method_count == 0 and len(node.body) > 0:
             # Suggest converting to dataclass
             suggested_code = self._convert_to_dataclass(node_source)
             return {
-                'confidence': 0.6,
-                'suggested_code': suggested_code,
-                'benefit': 'Converts simple data class to dataclass for better pattern compliance',
-                'risk': 'Requires dataclass import and may change behavior slightly'
+                "confidence": 0.6,
+                "suggested_code": suggested_code,
+                "benefit": "Converts simple data class to dataclass for better pattern compliance",
+                "risk": "Requires dataclass import and may change behavior slightly",
             }
 
         return None
 
-    def _loop_pattern_match(self, pattern: CodePattern, node: ast.AST,
-                          node_source: str) -> Optional[Dict[str, Any]]:
+    def _loop_pattern_match(
+        self, pattern: CodePattern, node: ast.AST, node_source: str
+    ) -> Optional[Dict[str, Any]]:
         """Check if a loop pattern matches."""
         # Check for nested loops that could be simplified
         nesting_level = self._calculate_nesting_level(node)
 
         if nesting_level > 2:
             return {
-                'confidence': 0.7,
-                'suggested_code': self._simplify_nested_loops(node_source),
-                'benefit': 'Reduces loop nesting complexity',
-                'risk': 'May require extracting logic to separate functions'
+                "confidence": 0.7,
+                "suggested_code": self._simplify_nested_loops(node_source),
+                "benefit": "Reduces loop nesting complexity",
+                "risk": "May require extracting logic to separate functions",
             }
 
         # Check for loops that could be list comprehensions
@@ -258,12 +267,13 @@ class PatternApplier:
 
         return None
 
-    def _analyze_code_for_improvements(self, tree: ast.AST, content: str,
-                                     language: str) -> List[PatternSuggestion]:
+    def _analyze_code_for_improvements(
+        self, tree: ast.AST, content: str, language: str
+    ) -> List[PatternSuggestion]:
         """Analyze code for general improvement opportunities."""
         suggestions = []
 
-        if language != 'python':
+        if language != "python":
             return suggestions
 
         # Check for imports that could be organized
@@ -292,24 +302,26 @@ class PatternApplier:
         # Check for unused imports (simplified check)
         # In practice, this would need more sophisticated analysis
         if len(imports) > 10:
-            suggestions.append(PatternSuggestion(
-                pattern=CodePattern(
-                    id="import_organization",
-                    name="Import Organization",
-                    description="Organize imports following PEP 8",
-                    category="style",
-                    language="python",
-                    pattern_type="structural",
-                    template="",
-                    variables={}
-                ),
-                target_code="",  # Applies to whole file
-                suggested_code="",  # Would be generated
-                confidence=0.6,
-                benefit="Improves code readability and follows conventions",
-                risk="May require reorganizing import order",
-                line_number=1
-            ))
+            suggestions.append(
+                PatternSuggestion(
+                    pattern=CodePattern(
+                        id="import_organization",
+                        name="Import Organization",
+                        description="Organize imports following PEP 8",
+                        category="style",
+                        language="python",
+                        pattern_type="structural",
+                        template="",
+                        variables={},
+                    ),
+                    target_code="",  # Applies to whole file
+                    suggested_code="",  # Would be generated
+                    confidence=0.6,
+                    benefit="Improves code readability and follows conventions",
+                    risk="May require reorganizing import order",
+                    line_number=1,
+                )
+            )
 
         return suggestions
 
@@ -324,28 +336,30 @@ class PatternApplier:
                 names.append(node.id)
 
         # Check for inconsistent naming
-        snake_case = [n for n in names if re.match(r'^[a-z][a-z0-9_]*$', n)]
-        camel_case = [n for n in names if re.match(r'^[a-z][a-zA-Z0-9]*$', n)]
+        snake_case = [n for n in names if re.match(r"^[a-z][a-z0-9_]*$", n)]
+        camel_case = [n for n in names if re.match(r"^[a-z][a-zA-Z0-9]*$", n)]
 
         if snake_case and camel_case:
-            suggestions.append(PatternSuggestion(
-                pattern=CodePattern(
-                    id="naming_consistency",
-                    name="Naming Consistency",
-                    description="Use consistent naming conventions",
-                    category="naming",
-                    language="python",
-                    pattern_type="style",
-                    template="",
-                    variables={}
-                ),
-                target_code="",  # Applies to whole file
-                suggested_code="",  # Would require manual fixes
-                confidence=0.8,
-                benefit="Improves code readability and maintainability",
-                risk="Requires renaming variables/functions",
-                line_number=1
-            ))
+            suggestions.append(
+                PatternSuggestion(
+                    pattern=CodePattern(
+                        id="naming_consistency",
+                        name="Naming Consistency",
+                        description="Use consistent naming conventions",
+                        category="naming",
+                        language="python",
+                        pattern_type="style",
+                        template="",
+                        variables={},
+                    ),
+                    target_code="",  # Applies to whole file
+                    suggested_code="",  # Would require manual fixes
+                    confidence=0.8,
+                    benefit="Improves code readability and maintainability",
+                    risk="Requires renaming variables/functions",
+                    line_number=1,
+                )
+            )
 
         return suggestions
 
@@ -356,24 +370,26 @@ class PatternApplier:
         # Look for complex boolean expressions that could be simplified
         for node in ast.walk(tree):
             if isinstance(node, ast.BoolOp) and len(node.values) > 2:
-                suggestions.append(PatternSuggestion(
-                    pattern=CodePattern(
-                        id="boolean_simplification",
-                        name="Boolean Expression Simplification",
-                        description="Simplify complex boolean expressions",
-                        category="logic",
-                        language="python",
-                        pattern_type="style",
-                        template="",
-                        variables={}
-                    ),
-                    target_code=self._get_node_source(node, content),
-                    suggested_code="",  # Would need AST transformation
-                    confidence=0.5,
-                    benefit="Makes code more readable",
-                    risk="May change logic if not careful",
-                    line_number=getattr(node, 'lineno', 1)
-                ))
+                suggestions.append(
+                    PatternSuggestion(
+                        pattern=CodePattern(
+                            id="boolean_simplification",
+                            name="Boolean Expression Simplification",
+                            description="Simplify complex boolean expressions",
+                            category="logic",
+                            language="python",
+                            pattern_type="style",
+                            template="",
+                            variables={},
+                        ),
+                        target_code=self._get_node_source(node, content),
+                        suggested_code="",  # Would need AST transformation
+                        confidence=0.5,
+                        benefit="Makes code more readable",
+                        risk="May change logic if not careful",
+                        line_number=getattr(node, "lineno", 1),
+                    )
+                )
 
         return suggestions
 
@@ -390,10 +406,12 @@ class PatternApplier:
             changes_made=["Applied pattern suggestion"],
             line_number=suggestion.line_number,
             explanation=suggestion.benefit,
-            variables_used={}
+            variables_used={},
         )
 
-    def apply_patterns_to_file(self, file_path: str, min_confidence: float = 0.7) -> List[PatternApplication]:
+    def apply_patterns_to_file(
+        self, file_path: str, min_confidence: float = 0.7
+    ) -> List[PatternApplication]:
         """Apply high-confidence patterns to a file."""
         suggestions = self.analyze_and_suggest(file_path)
         applications = []
@@ -408,7 +426,7 @@ class PatternApplier:
     # Helper methods
     def _has_docstring(self, node: ast.AST) -> bool:
         """Check if a node has a docstring."""
-        if hasattr(node, 'body') and node.body:
+        if hasattr(node, "body") and node.body:
             first_stmt = node.body[0]
             return isinstance(first_stmt, ast.Expr) and isinstance(first_stmt.value, ast.Str)
         return False
@@ -440,42 +458,42 @@ class PatternApplier:
 
     def _get_node_source(self, node: ast.AST, content: str) -> str:
         """Extract source code for a node."""
-        if hasattr(node, 'lineno') and hasattr(node, 'end_lineno'):
-            lines = content.split('\n')
+        if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
+            lines = content.split("\n")
             start_line = node.lineno - 1
             end_line = node.end_lineno
-            return '\n'.join(lines[start_line:end_line])
+            return "\n".join(lines[start_line:end_line])
         return ""
 
     # Code transformation methods
     def _add_docstring_to_function(self, code: str) -> str:
         """Add a docstring to a function."""
-        lines = code.split('\n')
+        lines = code.split("\n")
         if len(lines) > 1:
             # Insert docstring after function definition
-            indent = '    '  # Assume 4-space indentation
+            indent = "    "  # Assume 4-space indentation
             lines.insert(1, f'{indent}"""Function docstring."""')
-            return '\n'.join(lines)
+            return "\n".join(lines)
         return code
 
     def _add_docstring_to_class(self, code: str) -> str:
         """Add a docstring to a class."""
-        lines = code.split('\n')
+        lines = code.split("\n")
         if len(lines) > 1:
-            indent = '    '  # Assume 4-space indentation
+            indent = "    "  # Assume 4-space indentation
             lines.insert(1, f'{indent}"""Class docstring."""')
-            return '\n'.join(lines)
+            return "\n".join(lines)
         return code
 
     def _convert_to_dataclass(self, code: str) -> str:
         """Convert a simple class to a dataclass."""
         # This is a simplified transformation
-        lines = code.split('\n')
+        lines = code.split("\n")
         # Add dataclass decorator and import
-        lines.insert(0, '@dataclass')
-        lines.insert(0, 'from dataclasses import dataclass')
-        lines.insert(1, '')  # Empty line
-        return '\n'.join(lines)
+        lines.insert(0, "@dataclass")
+        lines.insert(0, "from dataclasses import dataclass")
+        lines.insert(1, "")  # Empty line
+        return "\n".join(lines)
 
     def _simplify_nested_loops(self, code: str) -> str:
         """Suggest simplification for nested loops."""
@@ -490,16 +508,18 @@ class PatternApplier:
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.Expr) and isinstance(child.value, ast.Call):
                 # Check if it's a list append
-                if (isinstance(child.value.func, ast.Attribute) and
-                    child.value.func.attr == 'append'):
+                if (
+                    isinstance(child.value.func, ast.Attribute)
+                    and child.value.func.attr == "append"
+                ):
                     loop_body.append(child)
 
         if len(loop_body) == 1:
             return {
-                'confidence': 0.6,
-                'suggested_code': f"# Consider: [item for item in iterable]",
-                'benefit': 'List comprehensions are more concise and often faster',
-                'risk': 'May not be suitable for complex loop logic'
+                "confidence": 0.6,
+                "suggested_code": f"# Consider: [item for item in iterable]",
+                "benefit": "List comprehensions are more concise and often faster",
+                "risk": "May not be suitable for complex loop logic",
             }
 
         return None

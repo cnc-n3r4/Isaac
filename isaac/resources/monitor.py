@@ -4,19 +4,21 @@ Real-time Resource Monitoring
 Tracks CPU, memory, disk, network, and process-level resources.
 """
 
-import psutil
-import time
-import threading
-from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass, asdict
-from datetime import datetime
 import json
 import os
+import threading
+import time
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
+
+import psutil
 
 
 @dataclass
 class ResourceSnapshot:
     """Snapshot of system resources at a point in time"""
+
     timestamp: float
     cpu_percent: float
     memory_percent: float
@@ -34,13 +36,14 @@ class ResourceSnapshot:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
-        data['timestamp_readable'] = datetime.fromtimestamp(self.timestamp).isoformat()
+        data["timestamp_readable"] = datetime.fromtimestamp(self.timestamp).isoformat()
         return data
 
 
 @dataclass
 class ProcessInfo:
     """Information about a process"""
+
     pid: int
     name: str
     cpu_percent: float
@@ -94,7 +97,7 @@ class ResourceMonitor:
         memory_available_mb = mem.available / (1024 * 1024)
 
         # Disk
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
         disk_percent = disk.percent
         disk_used_gb = disk.used / (1024 * 1024 * 1024)
         disk_free_gb = disk.free / (1024 * 1024 * 1024)
@@ -127,7 +130,7 @@ class ResourceMonitor:
             network_recv_mb=network_recv_mb,
             swap_percent=swap_percent,
             load_average=load_average,
-            process_count=process_count
+            process_count=process_count,
         )
 
         # Add to history
@@ -144,7 +147,7 @@ class ResourceMonitor:
 
         return snapshot
 
-    def get_top_processes(self, limit: int = 10, sort_by: str = 'cpu') -> List[ProcessInfo]:
+    def get_top_processes(self, limit: int = 10, sort_by: str = "cpu") -> List[ProcessInfo]:
         """
         Get top processes by resource usage
 
@@ -157,25 +160,31 @@ class ResourceMonitor:
         """
         processes = []
 
-        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'memory_info', 'num_threads', 'status']):
+        for proc in psutil.process_iter(
+            ["pid", "name", "cpu_percent", "memory_percent", "memory_info", "num_threads", "status"]
+        ):
             try:
                 info = proc.info
-                memory_mb = info['memory_info'].rss / (1024 * 1024) if info.get('memory_info') else 0
+                memory_mb = (
+                    info["memory_info"].rss / (1024 * 1024) if info.get("memory_info") else 0
+                )
 
-                processes.append(ProcessInfo(
-                    pid=info['pid'],
-                    name=info['name'] or 'Unknown',
-                    cpu_percent=info['cpu_percent'] or 0,
-                    memory_percent=info['memory_percent'] or 0,
-                    memory_mb=memory_mb,
-                    num_threads=info['num_threads'] or 0,
-                    status=info['status'] or 'unknown'
-                ))
+                processes.append(
+                    ProcessInfo(
+                        pid=info["pid"],
+                        name=info["name"] or "Unknown",
+                        cpu_percent=info["cpu_percent"] or 0,
+                        memory_percent=info["memory_percent"] or 0,
+                        memory_mb=memory_mb,
+                        num_threads=info["num_threads"] or 0,
+                        status=info["status"] or "unknown",
+                    )
+                )
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
 
         # Sort processes
-        if sort_by == 'cpu':
+        if sort_by == "cpu":
             processes.sort(key=lambda p: p.cpu_percent, reverse=True)
         else:  # memory
             processes.sort(key=lambda p: p.memory_percent, reverse=True)
@@ -185,14 +194,14 @@ class ResourceMonitor:
     def get_current_state(self) -> Dict[str, Any]:
         """Get current resource state as dictionary"""
         snapshot = self.capture_snapshot()
-        top_cpu = self.get_top_processes(5, 'cpu')
-        top_mem = self.get_top_processes(5, 'memory')
+        top_cpu = self.get_top_processes(5, "cpu")
+        top_mem = self.get_top_processes(5, "memory")
 
         return {
-            'snapshot': snapshot.to_dict(),
-            'top_cpu_processes': [p.to_dict() for p in top_cpu],
-            'top_memory_processes': [p.to_dict() for p in top_mem],
-            'history_count': len(self.history)
+            "snapshot": snapshot.to_dict(),
+            "top_cpu_processes": [p.to_dict() for p in top_cpu],
+            "top_memory_processes": [p.to_dict() for p in top_mem],
+            "history_count": len(self.history),
         }
 
     def get_statistics(self, minutes: int = 5) -> Dict[str, Any]:
@@ -206,10 +215,7 @@ class ResourceMonitor:
             Dictionary with statistics
         """
         if not self.history:
-            return {
-                'error': 'No history available',
-                'available_snapshots': 0
-            }
+            return {"error": "No history available", "available_snapshots": 0}
 
         cutoff_time = time.time() - (minutes * 60)
         recent_snapshots = [s for s in self.history if s.timestamp >= cutoff_time]
@@ -221,25 +227,25 @@ class ResourceMonitor:
         mem_values = [s.memory_percent for s in recent_snapshots]
 
         return {
-            'period_minutes': minutes,
-            'snapshots_analyzed': len(recent_snapshots),
-            'cpu': {
-                'current': cpu_values[-1] if cpu_values else 0,
-                'average': sum(cpu_values) / len(cpu_values) if cpu_values else 0,
-                'max': max(cpu_values) if cpu_values else 0,
-                'min': min(cpu_values) if cpu_values else 0,
+            "period_minutes": minutes,
+            "snapshots_analyzed": len(recent_snapshots),
+            "cpu": {
+                "current": cpu_values[-1] if cpu_values else 0,
+                "average": sum(cpu_values) / len(cpu_values) if cpu_values else 0,
+                "max": max(cpu_values) if cpu_values else 0,
+                "min": min(cpu_values) if cpu_values else 0,
             },
-            'memory': {
-                'current': mem_values[-1] if mem_values else 0,
-                'average': sum(mem_values) / len(mem_values) if mem_values else 0,
-                'max': max(mem_values) if mem_values else 0,
-                'min': min(mem_values) if mem_values else 0,
+            "memory": {
+                "current": mem_values[-1] if mem_values else 0,
+                "average": sum(mem_values) / len(mem_values) if mem_values else 0,
+                "max": max(mem_values) if mem_values else 0,
+                "min": min(mem_values) if mem_values else 0,
             },
-            'disk': {
-                'used_gb': recent_snapshots[-1].disk_used_gb if recent_snapshots else 0,
-                'free_gb': recent_snapshots[-1].disk_free_gb if recent_snapshots else 0,
-                'percent': recent_snapshots[-1].disk_percent if recent_snapshots else 0,
-            }
+            "disk": {
+                "used_gb": recent_snapshots[-1].disk_used_gb if recent_snapshots else 0,
+                "free_gb": recent_snapshots[-1].disk_free_gb if recent_snapshots else 0,
+                "percent": recent_snapshots[-1].disk_percent if recent_snapshots else 0,
+            },
         }
 
     def start_monitoring(self):
@@ -280,15 +286,16 @@ class ResourceMonitor:
         """Get Docker resource usage if Docker is available"""
         try:
             import subprocess
+
             result = subprocess.run(
-                ['docker', 'system', 'df', '--format', '{{json .}}'],
+                ["docker", "system", "df", "--format", "{{json .}}"],
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5,
             )
 
             if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')
+                lines = result.stdout.strip().split("\n")
                 docker_data = []
                 for line in lines:
                     if line:
@@ -296,23 +303,20 @@ class ResourceMonitor:
                             docker_data.append(json.loads(line))
                         except json.JSONDecodeError:
                             continue
-                return {
-                    'available': True,
-                    'data': docker_data
-                }
+                return {"available": True, "data": docker_data}
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
             pass
 
-        return {'available': False}
+        return {"available": False}
 
     def export_history(self, filepath: str):
         """Export monitoring history to JSON file"""
         data = {
-            'exported_at': datetime.now().isoformat(),
-            'history_size': len(self.history),
-            'snapshots': [s.to_dict() for s in self.history]
+            "exported_at": datetime.now().isoformat(),
+            "history_size": len(self.history),
+            "snapshots": [s.to_dict() for s in self.history],
         }
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(data, f, indent=2)

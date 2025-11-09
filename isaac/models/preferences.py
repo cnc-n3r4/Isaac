@@ -3,9 +3,9 @@ Preferences - User settings and configuration
 Cloud-synced user preferences for Isaac behavior
 """
 
-from dataclasses import dataclass, asdict
-from typing import Dict, Optional
 import platform
+from dataclasses import asdict, dataclass
+from typing import Dict, Optional
 
 
 @dataclass
@@ -30,7 +30,7 @@ class Preferences:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'Preferences':
+    def from_dict(cls, data: Dict) -> "Preferences":
         """Create from dictionary (JSON deserialization)."""
         return cls(**data)
 

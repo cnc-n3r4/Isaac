@@ -5,13 +5,13 @@ Performance Optimizations - Caching, lazy loading, and metrics
 Optimizes ISAAC performance through intelligent caching and monitoring.
 """
 
+import functools
+import hashlib
 import logging
 import time
-import functools
-from typing import Dict, Optional, Any, Callable
 from datetime import datetime, timedelta
 from pathlib import Path
-import hashlib
+from typing import Any, Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class CacheManager:
             max_size_mb: Maximum cache size in MB
         """
         if cache_dir is None:
-            cache_dir = Path.home() / '.isaac' / 'cache'
+            cache_dir = Path.home() / ".isaac" / "cache"
 
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -71,16 +71,16 @@ class CacheManager:
         entry = self.cache[key]
 
         # Check TTL
-        if datetime.now() > entry['expires_at']:
+        if datetime.now() > entry["expires_at"]:
             del self.cache[key]
             self.misses += 1
             return None
 
         # Update access time for LRU
-        entry['accessed_at'] = datetime.now()
+        entry["accessed_at"] = datetime.now()
         self.hits += 1
 
-        return entry['value']
+        return entry["value"]
 
     def set(self, key: str, value: Any, ttl: Optional[timedelta] = None):
         """
@@ -95,11 +95,11 @@ class CacheManager:
             ttl = self.default_ttl
 
         entry = {
-            'value': value,
-            'created_at': datetime.now(),
-            'accessed_at': datetime.now(),
-            'expires_at': datetime.now() + ttl,
-            'size': len(str(value))  # Approximate size
+            "value": value,
+            "created_at": datetime.now(),
+            "accessed_at": datetime.now(),
+            "expires_at": datetime.now() + ttl,
+            "size": len(str(value)),  # Approximate size
         }
 
         self.cache[key] = entry
@@ -109,19 +109,16 @@ class CacheManager:
 
     def _check_eviction(self):
         """Check if cache size limit exceeded and evict if needed"""
-        total_size = sum(entry['size'] for entry in self.cache.values())
+        total_size = sum(entry["size"] for entry in self.cache.values())
 
         if total_size > self.max_size_bytes:
             # LRU eviction
-            sorted_entries = sorted(
-                self.cache.items(),
-                key=lambda x: x[1]['accessed_at']
-            )
+            sorted_entries = sorted(self.cache.items(), key=lambda x: x[1]["accessed_at"])
 
             # Remove oldest entries until under limit
             while total_size > self.max_size_bytes and sorted_entries:
                 key, entry = sorted_entries.pop(0)
-                total_size -= entry['size']
+                total_size -= entry["size"]
                 del self.cache[key]
                 self.evictions += 1
 
@@ -135,18 +132,18 @@ class CacheManager:
 
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
-        total_size = sum(entry['size'] for entry in self.cache.values())
+        total_size = sum(entry["size"] for entry in self.cache.values())
         total_requests = self.hits + self.misses
         hit_rate = (self.hits / total_requests * 100) if total_requests > 0 else 0
 
         return {
-            'entries': len(self.cache),
-            'total_size_bytes': total_size,
-            'total_size_mb': total_size / (1024 * 1024),
-            'hits': self.hits,
-            'misses': self.misses,
-            'evictions': self.evictions,
-            'hit_rate_percent': round(hit_rate, 2)
+            "entries": len(self.cache),
+            "total_size_bytes": total_size,
+            "total_size_mb": total_size / (1024 * 1024),
+            "hits": self.hits,
+            "misses": self.misses,
+            "evictions": self.evictions,
+            "hit_rate_percent": round(hit_rate, 2),
         }
 
 
@@ -188,19 +185,16 @@ class PerformanceMonitor:
 
             timings = self.metrics[operation]
             return {
-                'operation': operation,
-                'count': len(timings),
-                'avg_ms': round(sum(timings) / len(timings) * 1000, 2),
-                'min_ms': round(min(timings) * 1000, 2),
-                'max_ms': round(max(timings) * 1000, 2),
-                'total_s': round(sum(timings), 2)
+                "operation": operation,
+                "count": len(timings),
+                "avg_ms": round(sum(timings) / len(timings) * 1000, 2),
+                "min_ms": round(min(timings) * 1000, 2),
+                "max_ms": round(max(timings) * 1000, 2),
+                "total_s": round(sum(timings), 2),
             }
         else:
             # All operations
-            return {
-                op: self.get_stats(op)
-                for op in self.metrics.keys()
-            }
+            return {op: self.get_stats(op) for op in self.metrics.keys()}
 
 
 def cached(ttl_hours: int = 1):
@@ -215,6 +209,7 @@ def cached(ttl_hours: int = 1):
         def expensive_operation(arg1, arg2):
             return result
     """
+
     def decorator(func: Callable):
         cache = CacheManager()
 
@@ -225,9 +220,7 @@ def cached(ttl_hours: int = 1):
             key_parts.extend(str(arg) for arg in args)
             key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
 
-            cache_key = hashlib.sha256(
-                '|'.join(key_parts).encode()
-            ).hexdigest()[:16]
+            cache_key = hashlib.sha256("|".join(key_parts).encode()).hexdigest()[:16]
 
             # Check cache
             cached_value = cache.get(cache_key)
@@ -257,6 +250,7 @@ def timed(operation_name: Optional[str] = None):
         def query_database():
             return results
     """
+
     def decorator(func: Callable):
         monitor = PerformanceMonitor()
 
@@ -332,7 +326,7 @@ def get_perf_monitor() -> PerformanceMonitor:
     return _perf_monitor
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test performance utilities
     logging.basicConfig(level=logging.DEBUG)
 

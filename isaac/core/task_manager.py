@@ -6,22 +6,23 @@ Manages background task execution with notification support.
 Tasks run asynchronously and notify via message queue on completion.
 """
 
-import sys
 import json
-import time
-import threading
-import subprocess
 import shlex
 import sqlite3
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Callable
+import subprocess
+import sys
+import threading
+import time
+import uuid
 from datetime import datetime
 from enum import Enum
-import uuid
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
 
 class TaskStatus(Enum):
     """Task execution status"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -31,9 +32,10 @@ class TaskStatus(Enum):
 
 class ExecutionMode(Enum):
     """Command execution modes"""
-    VERBOSE = "verbose"      # Immediate output (default)
+
+    VERBOSE = "verbose"  # Immediate output (default)
     BACKGROUND = "background"  # Run in background, notify on completion
-    PIPED = "piped"         # Output to pipe for next command
+    PIPED = "piped"  # Output to pipe for next command
 
 
 class Task:
@@ -45,7 +47,7 @@ class Task:
         command: str,
         task_type: str = "code",
         priority: str = "normal",
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         self.task_id = task_id
         self.command = command
@@ -65,35 +67,37 @@ class Task:
     def to_dict(self) -> Dict[str, Any]:
         """Convert task to dictionary representation"""
         return {
-            'task_id': self.task_id,
-            'command': self.command,
-            'task_type': self.task_type,
-            'priority': self.priority,
-            'status': self.status.value,
-            'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
-            'exit_code': self.exit_code,
-            'stdout': self.stdout,
-            'stderr': self.stderr,
-            'metadata': self.metadata
+            "task_id": self.task_id,
+            "command": self.command,
+            "task_type": self.task_type,
+            "priority": self.priority,
+            "status": self.status.value,
+            "start_time": self.start_time.isoformat() if self.start_time else None,
+            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "exit_code": self.exit_code,
+            "stdout": self.stdout,
+            "stderr": self.stderr,
+            "metadata": self.metadata,
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> 'Task':
+    def from_dict(data: Dict[str, Any]) -> "Task":
         """Create task from dictionary representation"""
         task = Task(
-            task_id=data['task_id'],
-            command=data['command'],
-            task_type=data.get('task_type', 'code'),
-            priority=data.get('priority', 'normal'),
-            metadata=data.get('metadata', {})
+            task_id=data["task_id"],
+            command=data["command"],
+            task_type=data.get("task_type", "code"),
+            priority=data.get("priority", "normal"),
+            metadata=data.get("metadata", {}),
         )
-        task.status = TaskStatus(data['status'])
-        task.start_time = datetime.fromisoformat(data['start_time']) if data.get('start_time') else None
-        task.end_time = datetime.fromisoformat(data['end_time']) if data.get('end_time') else None
-        task.exit_code = data.get('exit_code')
-        task.stdout = data.get('stdout', '')
-        task.stderr = data.get('stderr', '')
+        task.status = TaskStatus(data["status"])
+        task.start_time = (
+            datetime.fromisoformat(data["start_time"]) if data.get("start_time") else None
+        )
+        task.end_time = datetime.fromisoformat(data["end_time"]) if data.get("end_time") else None
+        task.exit_code = data.get("exit_code")
+        task.stdout = data.get("stdout", "")
+        task.stderr = data.get("stderr", "")
         return task
 
 
@@ -125,7 +129,7 @@ class TaskManager:
 
         # Persistent storage
         if db_path is None:
-            db_path = Path.home() / '.isaac' / 'tasks.db'
+            db_path = Path.home() / ".isaac" / "tasks.db"
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
@@ -134,7 +138,8 @@ class TaskManager:
     def _init_db(self):
         """Initialize task database schema"""
         conn = sqlite3.connect(str(self.db_path))
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS tasks (
                 task_id TEXT PRIMARY KEY,
                 command TEXT NOT NULL,
@@ -149,15 +154,20 @@ class TaskManager:
                 metadata TEXT,
                 created_at TEXT NOT NULL
             )
-        """)
-        conn.execute("""
+        """
+        )
+        conn.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_tasks_status
             ON tasks(status)
-        """)
-        conn.execute("""
+        """
+        )
+        conn.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_tasks_created
             ON tasks(created_at DESC)
-        """)
+        """
+        )
         conn.commit()
         conn.close()
 
@@ -169,27 +179,29 @@ class TaskManager:
 
         # Only load tasks that are not completed/failed/cancelled
         # Or load recent completed tasks (last 24 hours) for reference
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM tasks
             WHERE status IN ('pending', 'running')
                OR (status IN ('completed', 'failed', 'cancelled')
                    AND datetime(created_at) > datetime('now', '-1 day'))
             ORDER BY created_at DESC
-        """)
+        """
+        )
 
         for row in cursor.fetchall():
             task_data = {
-                'task_id': row['task_id'],
-                'command': row['command'],
-                'task_type': row['task_type'],
-                'priority': row['priority'],
-                'status': row['status'],
-                'start_time': row['start_time'],
-                'end_time': row['end_time'],
-                'exit_code': row['exit_code'],
-                'stdout': row['stdout'] or '',
-                'stderr': row['stderr'] or '',
-                'metadata': json.loads(row['metadata']) if row['metadata'] else {}
+                "task_id": row["task_id"],
+                "command": row["command"],
+                "task_type": row["task_type"],
+                "priority": row["priority"],
+                "status": row["status"],
+                "start_time": row["start_time"],
+                "end_time": row["end_time"],
+                "exit_code": row["exit_code"],
+                "stdout": row["stdout"] or "",
+                "stderr": row["stderr"] or "",
+                "metadata": json.loads(row["metadata"]) if row["metadata"] else {},
             }
 
             task = Task.from_dict(task_data)
@@ -209,25 +221,28 @@ class TaskManager:
         """Save task to database"""
         conn = sqlite3.connect(str(self.db_path))
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO tasks
             (task_id, command, task_type, priority, status, start_time, end_time,
              exit_code, stdout, stderr, metadata, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            task.task_id,
-            task.command,
-            task.task_type,
-            task.priority,
-            task.status.value,
-            task.start_time.isoformat() if task.start_time else None,
-            task.end_time.isoformat() if task.end_time else None,
-            task.exit_code,
-            task.stdout,
-            task.stderr,
-            json.dumps(task.metadata),
-            task.start_time.isoformat() if task.start_time else datetime.now().isoformat()
-        ))
+        """,
+            (
+                task.task_id,
+                task.command,
+                task.task_type,
+                task.priority,
+                task.status.value,
+                task.start_time.isoformat() if task.start_time else None,
+                task.end_time.isoformat() if task.end_time else None,
+                task.exit_code,
+                task.stdout,
+                task.stderr,
+                json.dumps(task.metadata),
+                task.start_time.isoformat() if task.start_time else datetime.now().isoformat(),
+            ),
+        )
 
         conn.commit()
         conn.close()
@@ -236,20 +251,23 @@ class TaskManager:
         """Update task in database"""
         conn = sqlite3.connect(str(self.db_path))
 
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE tasks
             SET status = ?, start_time = ?, end_time = ?, exit_code = ?,
                 stdout = ?, stderr = ?
             WHERE task_id = ?
-        """, (
-            task.status.value,
-            task.start_time.isoformat() if task.start_time else None,
-            task.end_time.isoformat() if task.end_time else None,
-            task.exit_code,
-            task.stdout,
-            task.stderr,
-            task.task_id
-        ))
+        """,
+            (
+                task.status.value,
+                task.start_time.isoformat() if task.start_time else None,
+                task.end_time.isoformat() if task.end_time else None,
+                task.exit_code,
+                task.stdout,
+                task.stderr,
+                task.task_id,
+            ),
+        )
 
         conn.commit()
         conn.close()
@@ -260,7 +278,7 @@ class TaskManager:
         task_type: str = "code",
         priority: str = "normal",
         metadata: Optional[Dict[str, Any]] = None,
-        callback: Optional[Callable[[Task], None]] = None
+        callback: Optional[Callable[[Task], None]] = None,
     ) -> str:
         """
         Spawn a background task
@@ -284,15 +302,12 @@ class TaskManager:
             command=command,
             task_type=task_type,
             priority=priority,
-            metadata=metadata
+            metadata=metadata,
         )
 
         # Check concurrent task limit
         with self.lock:
-            running_count = sum(
-                1 for t in self.tasks.values()
-                if t.status == TaskStatus.RUNNING
-            )
+            running_count = sum(1 for t in self.tasks.values() if t.status == TaskStatus.RUNNING)
 
             if running_count >= self.max_concurrent_tasks:
                 task.status = TaskStatus.FAILED
@@ -307,11 +322,7 @@ class TaskManager:
             self._save_task_to_db(task)
 
         # Spawn execution thread
-        thread = threading.Thread(
-            target=self._execute_task,
-            args=(task, callback),
-            daemon=True
-        )
+        thread = threading.Thread(target=self._execute_task, args=(task, callback), daemon=True)
         task.thread = thread
         thread.start()
 
@@ -338,7 +349,7 @@ class TaskManager:
                 shell=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
             )
 
             task.process = process
@@ -384,9 +395,7 @@ class TaskManager:
             return self.tasks.get(task_id)
 
     def get_all_tasks(
-        self,
-        status: Optional[TaskStatus] = None,
-        task_type: Optional[str] = None
+        self, status: Optional[TaskStatus] = None, task_type: Optional[str] = None
     ) -> List[Task]:
         """
         Get all tasks with optional filtering
@@ -455,14 +464,15 @@ class TaskManager:
         """
         with self.lock:
             to_remove = [
-                tid for tid, task in self.tasks.items()
+                tid
+                for tid, task in self.tasks.items()
                 if task.status in [TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED]
             ]
 
             # Remove from database
             if to_remove:
                 conn = sqlite3.connect(str(self.db_path))
-                placeholders = ','.join('?' * len(to_remove))
+                placeholders = ",".join("?" * len(to_remove))
                 conn.execute(f"DELETE FROM tasks WHERE task_id IN ({placeholders})", to_remove)
                 conn.commit()
                 conn.close()
@@ -490,10 +500,10 @@ class TaskManager:
                 by_type[task_type] = by_type.get(task_type, 0) + 1
 
             return {
-                'total_tasks': total,
-                'by_status': by_status,
-                'by_type': by_type,
-                'max_concurrent': self.max_concurrent_tasks
+                "total_tasks": total,
+                "by_status": by_status,
+                "by_type": by_type,
+                "max_concurrent": self.max_concurrent_tasks,
             }
 
 
@@ -518,7 +528,7 @@ def integrate_with_message_queue():
     This should be called during ISAAC initialization to set up
     automatic notifications when background tasks complete.
     """
-    from isaac.core.message_queue import MessageQueue, MessageType, MessagePriority
+    from isaac.core.message_queue import MessagePriority, MessageQueue, MessageType
 
     task_manager = get_task_manager()
     message_queue = MessageQueue()
@@ -534,7 +544,7 @@ def integrate_with_message_queue():
             "urgent": MessagePriority.URGENT,
             "high": MessagePriority.HIGH,
             "normal": MessagePriority.NORMAL,
-            "low": MessagePriority.LOW
+            "low": MessagePriority.LOW,
         }
 
         if task.status == TaskStatus.FAILED:
@@ -568,15 +578,15 @@ def integrate_with_message_queue():
 
         # Create metadata
         metadata = {
-            'task_id': task.task_id,
-            'command': task.command,
-            'status': task.status.value,
-            'exit_code': task.exit_code,
-            'duration_seconds': (
+            "task_id": task.task_id,
+            "command": task.command,
+            "status": task.status.value,
+            "exit_code": task.exit_code,
+            "duration_seconds": (
                 (task.end_time - task.start_time).total_seconds()
                 if task.start_time and task.end_time
                 else None
-            )
+            ),
         }
         metadata.update(task.metadata)
 
@@ -586,14 +596,14 @@ def integrate_with_message_queue():
             title=title,
             content=content,
             priority=msg_priority,
-            metadata=metadata
+            metadata=metadata,
         )
 
     # Set global completion handler
     task_manager.on_task_complete = notify_on_completion
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test the task manager
     manager = get_task_manager()
 

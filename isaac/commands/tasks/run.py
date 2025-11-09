@@ -5,27 +5,28 @@
 Provides interface for monitoring and controlling background task execution.
 """
 
-import sys
 import json
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from isaac.core.task_manager import get_task_manager, TaskStatus
+from isaac.core.task_manager import TaskStatus, get_task_manager
 
 
 def main():
     """Main entry point for tasks command"""
     # Read payload from stdin
-    import select
     import os
+    import select
 
     # Check if stdin has data
-    if os.name == 'nt':
+    if os.name == "nt":
         import msvcrt
+
         has_stdin = msvcrt.kbhit() or not sys.stdin.isatty()
     else:
         has_stdin = select.select([sys.stdin], [], [], 0)[0]
@@ -57,23 +58,23 @@ def main():
     while i < len(args):
         arg = args[i]
 
-        if arg in ['--running', '-r']:
+        if arg in ["--running", "-r"]:
             show_running = True
-        elif arg in ['--completed', '-c']:
+        elif arg in ["--completed", "-c"]:
             show_completed = True
-        elif arg in ['--failed', '-f']:
+        elif arg in ["--failed", "-f"]:
             show_failed = True
-        elif arg in ['--stats', '-s']:
+        elif arg in ["--stats", "-s"]:
             show_stats = True
-        elif arg == '--show' and i + 1 < len(args):
+        elif arg == "--show" and i + 1 < len(args):
             show_id = args[i + 1]
             i += 1
-        elif arg == '--cancel' and i + 1 < len(args):
+        elif arg == "--cancel" and i + 1 < len(args):
             cancel_id = args[i + 1]
             i += 1
-        elif arg in ['--clear']:
+        elif arg in ["--clear"]:
             clear_tasks = True
-        elif arg in ['--list', '-l']:
+        elif arg in ["--list", "-l"]:
             pass  # Default behavior
         else:
             print(f"Unknown argument: {arg}", file=sys.stderr)
@@ -91,10 +92,10 @@ def main():
         print(f"Total tasks: {stats['total_tasks']}")
         print(f"Max concurrent: {stats['max_concurrent']}")
         print("\nBy Status:")
-        for status, count in stats.get('by_status', {}).items():
+        for status, count in stats.get("by_status", {}).items():
             print(f"  {status}: {count}")
         print("\nBy Type:")
-        for task_type, count in stats.get('by_type', {}).items():
+        for task_type, count in stats.get("by_type", {}).items():
             print(f"  {task_type}: {count}")
         return
 
@@ -141,10 +142,11 @@ def main():
         return
 
     # Display tasks
-    title = "Running Tasks" if show_running else \
-            "Completed Tasks" if show_completed else \
-            "Failed Tasks" if show_failed else \
-            "All Tasks"
+    title = (
+        "Running Tasks"
+        if show_running
+        else "Completed Tasks" if show_completed else "Failed Tasks" if show_failed else "All Tasks"
+    )
 
     print(f"\n{title} ({len(tasks)}):")
     print("─" * 80)
@@ -194,7 +196,7 @@ def display_task_summary(task):
 
     # Show error preview if present
     if task.stderr and len(task.stderr.strip()) > 0:
-        error_preview = task.stderr.strip().split('\n')[0]
+        error_preview = task.stderr.strip().split("\n")[0]
         if len(error_preview) > 70:
             error_preview = error_preview[:67] + "..."
         print(f"    Error: {error_preview}")

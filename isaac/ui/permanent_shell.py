@@ -4,19 +4,24 @@ Implements a simple prompt/output loop with meta-commands
 """
 
 import sys
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.styles import Style
-from prompt_toolkit.keys import Keys
 from prompt_toolkit.key_binding import KeyBindings
-from isaac.core.command_router import CommandRouter
-from isaac.core.session_manager import SessionManager
-from isaac.core.message_queue import MessageQueue
-from isaac.adapters.powershell_adapter import PowerShellAdapter
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.styles import Style
+
 from isaac.adapters.bash_adapter import BashAdapter
+from isaac.adapters.powershell_adapter import PowerShellAdapter
+from isaac.core.command_router import CommandRouter
+from isaac.core.message_queue import MessageQueue
+from isaac.core.session_manager import SessionManager
 from isaac.monitoring.monitor_manager import MonitorManager
-from isaac.ui.predictive_completer import PredictiveCompleter, PredictionContext
-from isaac.ui.inline_suggestions import InlineSuggestionCompleter, InlineSuggestionDisplay
+from isaac.ui.inline_suggestions import (
+    InlineSuggestionCompleter,
+    InlineSuggestionDisplay,
+)
+from isaac.ui.predictive_completer import PredictionContext, PredictiveCompleter
 
 
 class PermanentShell:
@@ -26,31 +31,31 @@ class PermanentShell:
         self.router = CommandRouter(self.session, self.shell)
         self.message_queue = MessageQueue()
         self.monitor_manager = MonitorManager()
-        
+
         # Initialize prompt_toolkit with history support
         self.history = InMemoryHistory()
-        
+
         # Initialize predictive completion
         self.predictive_completer = PredictiveCompleter()
-        self.inline_completer = InlineSuggestionCompleter(self.predictive_completer, self._get_prediction_context)
+        self.inline_completer = InlineSuggestionCompleter(
+            self.predictive_completer, self._get_prediction_context
+        )
         self.inline_display = InlineSuggestionDisplay(self.inline_completer)
-        
+
         # Create key bindings for tab completion
         self.key_bindings = self._create_key_bindings()
-        
+
         self.prompt_session = PromptSession(
-            history=self.history,
-            completer=self.inline_completer,
-            key_bindings=self.key_bindings
+            history=self.history, completer=self.inline_completer, key_bindings=self.key_bindings
         )
-        
+
         # Track session commands for learning
         self.session_commands = []
-        
+
         # Multi-step execution state
         self.multi_step_sequence = []
         self.multi_step_index = 0
-        
+
         # Load command history from session
         self._load_command_history()
 
@@ -63,19 +68,20 @@ class PermanentShell:
             commands = self.session.command_history.commands
             for cmd in commands[-100:]:  # Load last 100 commands
                 if isinstance(cmd, dict):
-                    command_text = cmd.get('command', '')
+                    command_text = cmd.get("command", "")
                 elif isinstance(cmd, str):
                     command_text = cmd
                 else:
                     continue
-                
+
                 if command_text:
                     self.history.append_string(command_text)
         except Exception:
             pass  # Ignore errors loading history
-    
+
     def _setup_sync_callback(self):
         """Register callback for sync completion notifications."""
+
         def on_sync_complete(count: int):
             # Print notification to terminal
             print(f"\n✅ {count} queued command(s) synced")
@@ -98,7 +104,7 @@ class PermanentShell:
                 # If no inline suggestion, try multi-step prediction
                 self._handle_multi_step_prediction(event)
 
-        @kb.add('c-tab')  # Ctrl+Tab
+        @kb.add("c-tab")  # Ctrl+Tab
         def _(event):
             """Execute next command in multi-step sequence."""
             self._execute_next_in_sequence()
@@ -175,8 +181,8 @@ class PermanentShell:
                 recent_commands=self.session_commands[-5:] if self.session_commands else [],
                 project_type=self._detect_project_type(),
                 time_of_day=self._get_time_of_day(),
-                day_of_week=datetime.now().strftime('%A'),
-                session_commands=self.session_commands.copy()
+                day_of_week=datetime.now().strftime("%A"),
+                session_commands=self.session_commands.copy(),
             )
 
             # Learn from the command
@@ -195,33 +201,37 @@ class PermanentShell:
         """Detect the type of project in current directory."""
         try:
             import os
+
             cwd = os.getcwd()
 
             # Check for common project files
-            if os.path.exists(os.path.join(cwd, 'package.json')):
-                return 'node'
-            elif os.path.exists(os.path.join(cwd, 'requirements.txt')) or os.path.exists(os.path.join(cwd, 'pyproject.toml')):
-                return 'python'
-            elif os.path.exists(os.path.join(cwd, '.git')):
-                return 'git'
+            if os.path.exists(os.path.join(cwd, "package.json")):
+                return "node"
+            elif os.path.exists(os.path.join(cwd, "requirements.txt")) or os.path.exists(
+                os.path.join(cwd, "pyproject.toml")
+            ):
+                return "python"
+            elif os.path.exists(os.path.join(cwd, ".git")):
+                return "git"
             else:
-                return 'unknown'
+                return "unknown"
         except:
-            return 'unknown'
+            return "unknown"
 
     def _get_time_of_day(self) -> str:
         """Get time of day category."""
         from datetime import datetime
+
         hour = datetime.now().hour
 
         if 6 <= hour < 12:
-            return 'morning'
+            return "morning"
         elif 12 <= hour < 18:
-            return 'afternoon'
+            return "afternoon"
         elif 18 <= hour < 22:
-            return 'evening'
+            return "evening"
         else:
-            return 'night'
+            return "night"
 
     def _get_prediction_context(self) -> PredictionContext:
         """Get current prediction context for the completer."""
@@ -233,8 +243,8 @@ class PermanentShell:
             recent_commands=self.session_commands[-5:] if self.session_commands else [],
             project_type=self._detect_project_type(),
             time_of_day=self._get_time_of_day(),
-            day_of_week=datetime.now().strftime('%A'),
-            session_commands=self.session_commands.copy()
+            day_of_week=datetime.now().strftime("%A"),
+            session_commands=self.session_commands.copy(),
         )
 
     def _learn_from_correction(self, command: str) -> None:
@@ -249,8 +259,8 @@ class PermanentShell:
                 recent_commands=self.session_commands[-5:] if self.session_commands else [],
                 project_type=self._detect_project_type(),
                 time_of_day=self._get_time_of_day(),
-                day_of_week=datetime.now().strftime('%A'),
-                session_commands=self.session_commands.copy()
+                day_of_week=datetime.now().strftime("%A"),
+                session_commands=self.session_commands.copy(),
             )
 
             # Learn from correction if a suggestion was shown
@@ -270,16 +280,18 @@ class PermanentShell:
     def _print_welcome(self):
         """Print startup banner with key info"""
         version = "2.0.0"  # Get from config
-        session_id = self.session.config.get('machine_id', 'unknown')[:6]
+        session_id = self.session.config.get("machine_id", "unknown")[:6]
 
         cloud_status = "✓" if self.session.cloud else "✗"
-        
+
         # Check for API keys in new nested structure or old flat structure
-        xai_config = self.session.config.get('xai', {})
-        chat_config = xai_config.get('chat', {})
-        collections_config = xai_config.get('collections', {})
-        has_chat_key = chat_config.get('api_key') or self.session.config.get('xai_api_key')
-        has_collections_key = collections_config.get('api_key') or self.session.config.get('xai_api_key')
+        xai_config = self.session.config.get("xai", {})
+        chat_config = xai_config.get("chat", {})
+        collections_config = xai_config.get("collections", {})
+        has_chat_key = chat_config.get("api_key") or self.session.config.get("xai_api_key")
+        has_collections_key = collections_config.get("api_key") or self.session.config.get(
+            "xai_api_key"
+        )
         ai_status = "✓" if (has_chat_key or has_collections_key) else "✗"
 
         print("=" * 60)
@@ -295,7 +307,7 @@ class PermanentShell:
 
         # Check queue status
         queue_status = self.session.get_queue_status()
-        pending_count = queue_status['pending']
+        pending_count = queue_status["pending"]
 
         if pending_count > 0:
             # Show offline indicator with count
@@ -309,7 +321,7 @@ class PermanentShell:
     def run(self):
         """Main shell loop - simplified"""
         self._print_welcome()
-        
+
         # Start autonomous monitoring agents
         self.monitor_manager.start_all()
 
@@ -317,11 +329,11 @@ class PermanentShell:
             try:
                 # Build prompt text with message indicators
                 queue_status = self.session.get_queue_status()
-                pending_count = queue_status['pending']
-                
+                pending_count = queue_status["pending"]
+
                 # Get message indicator from message queue
                 message_indicator = self.message_queue.get_prompt_indicator()
-                
+
                 if pending_count > 0:
                     # Show offline indicator with count and messages
                     prompt_text = f"{message_indicator[:-1]} [OFFLINE: {pending_count} queued]> "
@@ -330,8 +342,7 @@ class PermanentShell:
 
                 # Get user input with history support (arrow keys work!)
                 user_input = self.prompt_session.prompt(
-                    prompt_text,
-                    style=Style.from_dict({'prompt': '#ffff00'})  # Yellow prompt
+                    prompt_text, style=Style.from_dict({"prompt": "#ffff00"})  # Yellow prompt
                 ).strip()
 
                 # Skip empty input

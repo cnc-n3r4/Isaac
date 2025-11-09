@@ -5,14 +5,15 @@ Async tool execution with real-time feedback and progress tracking
 
 import asyncio
 import time
-from typing import Dict, Any, List, Callable, Optional, AsyncGenerator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 
 
 class ExecutionState(Enum):
     """Execution states for streaming feedback"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -23,6 +24,7 @@ class ExecutionState(Enum):
 @dataclass
 class ExecutionEvent:
     """Event emitted during tool execution"""
+
     event_type: str  # 'start', 'progress', 'result', 'error', 'cancel'
     tool_name: str
     tool_args: Dict[str, Any]
@@ -62,8 +64,9 @@ class StreamingExecutor:
             except Exception as e:
                 print(f"Warning: Event listener failed: {e}")
 
-    async def execute_tool_streaming(self, tool_name: str, tool_args: Dict[str, Any],
-                                   execution_id: Optional[str] = None) -> AsyncGenerator[ExecutionEvent, None]:
+    async def execute_tool_streaming(
+        self, tool_name: str, tool_args: Dict[str, Any], execution_id: Optional[str] = None
+    ) -> AsyncGenerator[ExecutionEvent, None]:
         """
         Execute a tool with streaming feedback.
 
@@ -78,7 +81,7 @@ class StreamingExecutor:
             tool_name=tool_name,
             tool_args=tool_args,
             timestamp=time.time(),
-            message=f"Starting {tool_name} execution"
+            message=f"Starting {tool_name} execution",
         )
         self._emit_event(start_event)
         yield start_event
@@ -92,7 +95,7 @@ class StreamingExecutor:
                     tool_args=tool_args,
                     timestamp=time.time(),
                     message=f"Invalid tool call: {tool_name}",
-                    data={"error": "validation_failed"}
+                    data={"error": "validation_failed"},
                 )
                 self._emit_event(error_event)
                 yield error_event
@@ -101,21 +104,18 @@ class StreamingExecutor:
             # Execute tool in thread pool
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
-                self.executor,
-                self.tool_registry.execute_tool,
-                tool_name,
-                tool_args
+                self.executor, self.tool_registry.execute_tool, tool_name, tool_args
             )
 
             # Emit result event
-            if result.get('success', False):
+            if result.get("success", False):
                 result_event = ExecutionEvent(
                     event_type="result",
                     tool_name=tool_name,
                     tool_args=tool_args,
                     timestamp=time.time(),
                     message=f"Successfully executed {tool_name}",
-                    data=result
+                    data=result,
                 )
             else:
                 result_event = ExecutionEvent(
@@ -124,7 +124,7 @@ class StreamingExecutor:
                     tool_args=tool_args,
                     timestamp=time.time(),
                     message=f"Tool execution failed: {result.get('error', 'Unknown error')}",
-                    data=result
+                    data=result,
                 )
 
             self._emit_event(result_event)
@@ -136,7 +136,7 @@ class StreamingExecutor:
                 tool_name=tool_name,
                 tool_args=tool_args,
                 timestamp=time.time(),
-                message=f"Execution cancelled: {tool_name}"
+                message=f"Execution cancelled: {tool_name}",
             )
             self._emit_event(cancel_event)
             yield cancel_event
@@ -149,13 +149,14 @@ class StreamingExecutor:
                 tool_args=tool_args,
                 timestamp=time.time(),
                 message=f"Unexpected error in {tool_name}: {str(e)}",
-                data={"error": str(e)}
+                data={"error": str(e)},
             )
             self._emit_event(error_event)
             yield error_event
 
-    async def execute_multiple_tools(self, tool_calls: List[Dict[str, Any]],
-                                   max_concurrent: Optional[int] = None) -> AsyncGenerator[ExecutionEvent, None]:
+    async def execute_multiple_tools(
+        self, tool_calls: List[Dict[str, Any]], max_concurrent: Optional[int] = None
+    ) -> AsyncGenerator[ExecutionEvent, None]:
         """
         Execute multiple tools concurrently with streaming feedback.
 
@@ -176,17 +177,17 @@ class StreamingExecutor:
                     yield event
 
         # Create tasks for all tool calls
-        tasks = [
-            execute_with_semaphore(tool_call)
-            for tool_call in tool_calls
-        ]
+        tasks = [execute_with_semaphore(tool_call) for tool_call in tool_calls]
 
         # Execute all tasks concurrently
         async for event in self._merge_async_generators(tasks):
             yield event
 
-    async def _merge_async_generators(self, generators: List[AsyncGenerator]) -> AsyncGenerator[ExecutionEvent, None]:
+    async def _merge_async_generators(
+        self, generators: List[AsyncGenerator]
+    ) -> AsyncGenerator[ExecutionEvent, None]:
         """Merge multiple async generators into one"""
+
         async def consume_generator(gen: AsyncGenerator) -> List[ExecutionEvent]:
             events = []
             async for event in gen:

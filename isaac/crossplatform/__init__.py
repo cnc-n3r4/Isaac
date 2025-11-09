@@ -12,56 +12,51 @@ Components:
 - Offline Mode: Local-first data synchronization
 """
 
-__version__ = '5.5.0'
+__version__ = "5.5.0"
+
+# API Layer
+from .api import APIAuth, RestAPI, WebhookManager, WebSocketAPI
 
 # Universal Bubbles
-from .bubbles import UniversalBubble, PlatformAdapter, StateManager
+from .bubbles import PlatformAdapter, StateManager, UniversalBubble
 
 # Cloud-Native Mode
 from .cloud import CloudExecutor, CloudStorage, RemoteWorkspace
 
-# API Layer
-from .api import RestAPI, WebSocketAPI, WebhookManager, APIAuth
-
-# Web Interface
-from .web import WebServer, WebTerminal, TerminalEmulator
-
 # Mobile Companion
-from .mobile import MobileAPI, NotificationService, MobileAuth
+from .mobile import MobileAPI, MobileAuth, NotificationService
 
 # Offline Mode
-from .offline import OfflineManager, SyncQueue, ConflictResolver, CacheManager
+from .offline import CacheManager, ConflictResolver, OfflineManager, SyncQueue
+
+# Web Interface
+from .web import TerminalEmulator, WebServer, WebTerminal
 
 __all__ = [
     # Bubbles
-    'UniversalBubble',
-    'PlatformAdapter',
-    'StateManager',
-
+    "UniversalBubble",
+    "PlatformAdapter",
+    "StateManager",
     # Cloud
-    'CloudExecutor',
-    'CloudStorage',
-    'RemoteWorkspace',
-
+    "CloudExecutor",
+    "CloudStorage",
+    "RemoteWorkspace",
     # API
-    'RestAPI',
-    'WebSocketAPI',
-    'WebhookManager',
-    'APIAuth',
-
+    "RestAPI",
+    "WebSocketAPI",
+    "WebhookManager",
+    "APIAuth",
     # Web
-    'WebServer',
-    'WebTerminal',
-    'TerminalEmulator',
-
+    "WebServer",
+    "WebTerminal",
+    "TerminalEmulator",
     # Mobile
-    'MobileAPI',
-    'NotificationService',
-    'MobileAuth',
-
+    "MobileAPI",
+    "NotificationService",
+    "MobileAuth",
     # Offline
-    'OfflineManager',
-    'SyncQueue',
-    'ConflictResolver',
-    'CacheManager'
+    "OfflineManager",
+    "SyncQueue",
+    "ConflictResolver",
+    "CacheManager",
 ]

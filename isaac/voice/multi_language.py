@@ -5,14 +5,15 @@ Isaac's internationalization system for voice commands and responses
 
 import json
 import time
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class LanguageConfig:
     """Configuration for a language."""
+
     code: str
     name: str
     native_name: str
@@ -27,6 +28,7 @@ class LanguageConfig:
 @dataclass
 class TranslationRequest:
     """Represents a translation request."""
+
     text: str
     from_lang: str
     to_lang: str
@@ -37,6 +39,7 @@ class TranslationRequest:
 @dataclass
 class TranslationResult:
     """Result of a translation operation."""
+
     original_text: str
     translated_text: str
     from_lang: str
@@ -59,16 +62,18 @@ class LanguageDetector:
         try:
             # Try to load langdetect
             import langdetect
-            self.models['langdetect'] = langdetect
+
+            self.models["langdetect"] = langdetect
         except ImportError:
             pass
 
         try:
             # Try to load fasttext
             import fasttext
+
             # Load pre-trained language identification model
             try:
-                self.models['fasttext'] = fasttext.load_model('lid.176.bin')
+                self.models["fasttext"] = fasttext.load_model("lid.176.bin")
             except:
                 pass
         except ImportError:
@@ -87,20 +92,21 @@ class LanguageDetector:
             return None
 
         # Try langdetect first (most accurate)
-        if 'langdetect' in self.models:
+        if "langdetect" in self.models:
             try:
                 from langdetect import detect
+
                 detected = detect(text)
                 return self._normalize_lang_code(detected)
             except:
                 pass
 
         # Try fasttext as fallback
-        if 'fasttext' in self.models:
+        if "fasttext" in self.models:
             try:
-                predictions = self.models['fasttext'].predict(text.replace('\n', ' '), k=1)
+                predictions = self.models["fasttext"].predict(text.replace("\n", " "), k=1)
                 if predictions and len(predictions) > 0:
-                    lang_code = predictions[0][0].replace('__label__', '')
+                    lang_code = predictions[0][0].replace("__label__", "")
                     return self._normalize_lang_code(lang_code)
             except:
                 pass
@@ -113,20 +119,20 @@ class LanguageDetector:
         # Convert common variations
         code = code.lower()
         mappings = {
-            'zh-cn': 'zh-CN',
-            'zh-tw': 'zh-TW',
-            'zh': 'zh-CN',
-            'en': 'en-US',
-            'es': 'es-ES',
-            'fr': 'fr-FR',
-            'de': 'de-DE',
-            'it': 'it-IT',
-            'pt': 'pt-BR',
-            'ja': 'ja-JP',
-            'ko': 'ko-KR',
-            'ru': 'ru-RU',
-            'ar': 'ar-SA',
-            'hi': 'hi-IN'
+            "zh-cn": "zh-CN",
+            "zh-tw": "zh-TW",
+            "zh": "zh-CN",
+            "en": "en-US",
+            "es": "es-ES",
+            "fr": "fr-FR",
+            "de": "de-DE",
+            "it": "it-IT",
+            "pt": "pt-BR",
+            "ja": "ja-JP",
+            "ko": "ko-KR",
+            "ru": "ru-RU",
+            "ar": "ar-SA",
+            "hi": "hi-IN",
         }
         return mappings.get(code, code)
 
@@ -135,19 +141,19 @@ class LanguageDetector:
         text = text.lower()
 
         # Spanish indicators
-        if any(word in text for word in ['el', 'la', 'los', 'las', 'es', 'son', 'está', 'muy']):
-            return 'es-ES'
+        if any(word in text for word in ["el", "la", "los", "las", "es", "son", "está", "muy"]):
+            return "es-ES"
 
         # French indicators
-        if any(word in text for word in ['le', 'la', 'les', 'et', 'est', 'sont', 'très']):
-            return 'fr-FR'
+        if any(word in text for word in ["le", "la", "les", "et", "est", "sont", "très"]):
+            return "fr-FR"
 
         # German indicators
-        if any(word in text for word in ['der', 'die', 'das', 'ist', 'sind', 'und', 'sehr']):
-            return 'de-DE'
+        if any(word in text for word in ["der", "die", "das", "ist", "sind", "und", "sehr"]):
+            return "de-DE"
 
         # Default to English
-        return 'en-US'
+        return "en-US"
 
 
 class Translator:
@@ -157,7 +163,7 @@ class Translator:
         """Initialize translator."""
         self.config = config or {}
         self.cache = {}
-        self.cache_file = Path.home() / '.isaac' / 'translation_cache.json'
+        self.cache_file = Path.home() / ".isaac" / "translation_cache.json"
         self._load_cache()
 
         # Initialize translation services
@@ -169,16 +175,18 @@ class Translator:
         # Try Google Translate
         try:
             from googletrans import Translator as GoogleTranslator
-            self.services['google'] = GoogleTranslator()
+
+            self.services["google"] = GoogleTranslator()
         except ImportError:
             pass
 
         # Try DeepL
         try:
             import deepl
-            api_key = self.config.get('deepl_api_key')
+
+            api_key = self.config.get("deepl_api_key")
             if api_key:
-                self.services['deepl'] = deepl.Translator(api_key)
+                self.services["deepl"] = deepl.Translator(api_key)
         except ImportError:
             pass
 
@@ -186,17 +194,24 @@ class Translator:
         try:
             from azure.ai.translation.text import TextTranslationClient
             from azure.core.credentials import AzureKeyCredential
-            api_key = self.config.get('azure_translator_key')
-            endpoint = self.config.get('azure_translator_endpoint')
+
+            api_key = self.config.get("azure_translator_key")
+            endpoint = self.config.get("azure_translator_endpoint")
             if api_key and endpoint:
                 credential = AzureKeyCredential(api_key)
-                self.services['azure'] = TextTranslationClient(
-                    endpoint=endpoint, credential=credential)
+                self.services["azure"] = TextTranslationClient(
+                    endpoint=endpoint, credential=credential
+                )
         except ImportError:
             pass
 
-    def translate(self, text: str, from_lang: Optional[str] = None, to_lang: str = 'en-US',
-                  context: str = 'general') -> Optional[TranslationResult]:
+    def translate(
+        self,
+        text: str,
+        from_lang: Optional[str] = None,
+        to_lang: str = "en-US",
+        context: str = "general",
+    ) -> Optional[TranslationResult]:
         """Translate text from one language to another.
 
         Args:
@@ -220,17 +235,17 @@ class Translator:
         # Detect language if not provided
         if not from_lang:
             detector = LanguageDetector()
-            from_lang = detector.detect_language(text) or 'en-US'
+            from_lang = detector.detect_language(text) or "en-US"
 
         # Skip translation if source and target are the same
-        if from_lang.split('-')[0] == to_lang.split('-')[0]:
+        if from_lang.split("-")[0] == to_lang.split("-")[0]:
             result = TranslationResult(
                 original_text=text,
                 translated_text=text,
                 from_lang=from_lang,
                 to_lang=to_lang,
                 confidence=1.0,
-                detected_lang=from_lang
+                detected_lang=from_lang,
             )
             self._cache_result(cache_key, result)
             return result
@@ -238,7 +253,9 @@ class Translator:
         # Try available translation services
         for service_name, service in self.services.items():
             try:
-                result = self._translate_with_service(service_name, service, text, from_lang, to_lang)
+                result = self._translate_with_service(
+                    service_name, service, text, from_lang, to_lang
+                )
                 if result:
                     self._cache_result(cache_key, result)
                     return result
@@ -248,34 +265,36 @@ class Translator:
 
         return None
 
-    def _translate_with_service(self, service_name: str, service, text: str,
-                               from_lang: str, to_lang: str) -> Optional[TranslationResult]:
+    def _translate_with_service(
+        self, service_name: str, service, text: str, from_lang: str, to_lang: str
+    ) -> Optional[TranslationResult]:
         """Translate using a specific service."""
         try:
-            if service_name == 'google':
-                result = service.translate(text, src=from_lang.split('-')[0],
-                                         dest=to_lang.split('-')[0])
+            if service_name == "google":
+                result = service.translate(
+                    text, src=from_lang.split("-")[0], dest=to_lang.split("-")[0]
+                )
                 return TranslationResult(
                     original_text=text,
                     translated_text=result.text,
                     from_lang=from_lang,
                     to_lang=to_lang,
                     confidence=0.8,
-                    detected_lang=result.src
+                    detected_lang=result.src,
                 )
 
-            elif service_name == 'deepl':
-                result = service.translate_text(text, target_lang=to_lang.split('-')[0].upper())
+            elif service_name == "deepl":
+                result = service.translate_text(text, target_lang=to_lang.split("-")[0].upper())
                 return TranslationResult(
                     original_text=text,
                     translated_text=result.text,
                     from_lang=from_lang,
                     to_lang=to_lang,
-                    confidence=0.9
+                    confidence=0.9,
                 )
 
-            elif service_name == 'azure':
-                response = service.translate(body=[text], to=[to_lang.split('-')[0]])
+            elif service_name == "azure":
+                response = service.translate(body=[text], to=[to_lang.split("-")[0]])
                 if response and len(response) > 0:
                     translation = response[0]
                     if translation.translations and len(translation.translations) > 0:
@@ -285,8 +304,14 @@ class Translator:
                             translated_text=translated.text,
                             from_lang=from_lang,
                             to_lang=to_lang,
-                            confidence=translated.confidence if hasattr(translated, 'confidence') else 0.8,
-                            detected_lang=translation.detected_language.language if translation.detected_language else None
+                            confidence=(
+                                translated.confidence if hasattr(translated, "confidence") else 0.8
+                            ),
+                            detected_lang=(
+                                translation.detected_language.language
+                                if translation.detected_language
+                                else None
+                            ),
                         )
 
         except Exception as e:
@@ -298,7 +323,7 @@ class Translator:
         """Load translation cache from file."""
         try:
             if self.cache_file.exists():
-                with open(self.cache_file, 'r', encoding='utf-8') as f:
+                with open(self.cache_file, "r", encoding="utf-8") as f:
                     self.cache = json.load(f)
         except Exception as e:
             print(f"Error loading translation cache: {e}")
@@ -308,7 +333,7 @@ class Translator:
         """Save translation cache to file."""
         try:
             self.cache_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.cache_file, 'w', encoding='utf-8') as f:
+            with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(self.cache, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"Error saving translation cache: {e}")
@@ -316,13 +341,13 @@ class Translator:
     def _cache_result(self, key: str, result: TranslationResult):
         """Cache a translation result."""
         self.cache[key] = {
-            'original_text': result.original_text,
-            'translated_text': result.translated_text,
-            'from_lang': result.from_lang,
-            'to_lang': result.to_lang,
-            'confidence': result.confidence,
-            'detected_lang': result.detected_lang,
-            'alternatives': result.alternatives
+            "original_text": result.original_text,
+            "translated_text": result.translated_text,
+            "from_lang": result.from_lang,
+            "to_lang": result.to_lang,
+            "confidence": result.confidence,
+            "detected_lang": result.detected_lang,
+            "alternatives": result.alternatives,
         }
 
         # Save cache periodically (every 10 translations)
@@ -337,8 +362,8 @@ class MultiLanguageManager:
         """Initialize multi-language manager."""
         self.config = config or {}
         self.languages = {}
-        self.current_language = 'en-US'
-        self.translator = Translator(self.config.get('translation', {}))
+        self.current_language = "en-US"
+        self.translator = Translator(self.config.get("translation", {}))
         self.detector = LanguageDetector()
 
         # Load language configurations
@@ -351,142 +376,137 @@ class MultiLanguageManager:
         """Load language configurations."""
         # Default language configurations
         default_configs = {
-            'en-US': LanguageConfig(
-                code='en-US',
-                name='English (US)',
-                native_name='English',
+            "en-US": LanguageConfig(
+                code="en-US",
+                name="English (US)",
+                native_name="English",
                 voice_commands={
-                    'help': ['help', 'assist', 'what can you do'],
-                    'status': ['status', 'how are you', 'system status'],
-                    'run_tests': ['run tests', 'execute tests', 'test'],
-                    'stop': ['stop', 'cancel', 'quit'],
-                    'workspace': ['workspace', 'project', 'folder']
+                    "help": ["help", "assist", "what can you do"],
+                    "status": ["status", "how are you", "system status"],
+                    "run_tests": ["run tests", "execute tests", "test"],
+                    "stop": ["stop", "cancel", "quit"],
+                    "workspace": ["workspace", "project", "folder"],
                 },
                 responses={
-                    'greeting': 'Hello! How can I help you?',
-                    'processing': 'Processing your request...',
-                    'error': 'Sorry, I encountered an error.',
-                    'success': 'Task completed successfully.'
+                    "greeting": "Hello! How can I help you?",
+                    "processing": "Processing your request...",
+                    "error": "Sorry, I encountered an error.",
+                    "success": "Task completed successfully.",
                 },
-                tts_voice='en-US',
-                stt_model='en-US'
+                tts_voice="en-US",
+                stt_model="en-US",
             ),
-
-            'es-ES': LanguageConfig(
-                code='es-ES',
-                name='Spanish (Spain)',
-                native_name='Español',
+            "es-ES": LanguageConfig(
+                code="es-ES",
+                name="Spanish (Spain)",
+                native_name="Español",
                 voice_commands={
-                    'help': ['ayuda', 'asistencia', 'qué puedes hacer'],
-                    'status': ['estado', 'cómo estás', 'estado del sistema'],
-                    'run_tests': ['ejecutar pruebas', 'correr tests', 'probar'],
-                    'stop': ['parar', 'cancelar', 'salir'],
-                    'workspace': ['espacio de trabajo', 'proyecto', 'carpeta']
+                    "help": ["ayuda", "asistencia", "qué puedes hacer"],
+                    "status": ["estado", "cómo estás", "estado del sistema"],
+                    "run_tests": ["ejecutar pruebas", "correr tests", "probar"],
+                    "stop": ["parar", "cancelar", "salir"],
+                    "workspace": ["espacio de trabajo", "proyecto", "carpeta"],
                 },
                 responses={
-                    'greeting': '¡Hola! ¿Cómo puedo ayudarte?',
-                    'processing': 'Procesando tu solicitud...',
-                    'error': 'Lo siento, encontré un error.',
-                    'success': 'Tarea completada exitosamente.'
+                    "greeting": "¡Hola! ¿Cómo puedo ayudarte?",
+                    "processing": "Procesando tu solicitud...",
+                    "error": "Lo siento, encontré un error.",
+                    "success": "Tarea completada exitosamente.",
                 },
-                tts_voice='es-ES',
-                stt_model='es-ES'
+                tts_voice="es-ES",
+                stt_model="es-ES",
             ),
-
-            'fr-FR': LanguageConfig(
-                code='fr-FR',
-                name='French (France)',
-                native_name='Français',
+            "fr-FR": LanguageConfig(
+                code="fr-FR",
+                name="French (France)",
+                native_name="Français",
                 voice_commands={
-                    'help': ['aide', 'assistance', 'que peux-tu faire'],
-                    'status': ['statut', 'comment ça va', 'état système'],
-                    'run_tests': ['lancer tests', 'exécuter tests', 'tester'],
-                    'stop': ['arrêter', 'annuler', 'quitter'],
-                    'workspace': ['espace de travail', 'projet', 'dossier']
+                    "help": ["aide", "assistance", "que peux-tu faire"],
+                    "status": ["statut", "comment ça va", "état système"],
+                    "run_tests": ["lancer tests", "exécuter tests", "tester"],
+                    "stop": ["arrêter", "annuler", "quitter"],
+                    "workspace": ["espace de travail", "projet", "dossier"],
                 },
                 responses={
-                    'greeting': 'Bonjour ! Comment puis-je vous aider ?',
-                    'processing': 'Traitement de votre demande...',
-                    'error': 'Désolé, j\'ai rencontré une erreur.',
-                    'success': 'Tâche terminée avec succès.'
+                    "greeting": "Bonjour ! Comment puis-je vous aider ?",
+                    "processing": "Traitement de votre demande...",
+                    "error": "Désolé, j'ai rencontré une erreur.",
+                    "success": "Tâche terminée avec succès.",
                 },
-                tts_voice='fr-FR',
-                stt_model='fr-FR'
+                tts_voice="fr-FR",
+                stt_model="fr-FR",
             ),
-
-            'de-DE': LanguageConfig(
-                code='de-DE',
-                name='German (Germany)',
-                native_name='Deutsch',
+            "de-DE": LanguageConfig(
+                code="de-DE",
+                name="German (Germany)",
+                native_name="Deutsch",
                 voice_commands={
-                    'help': ['hilfe', 'unterstützung', 'was kannst du'],
-                    'status': ['status', 'wie geht\'s', 'systemstatus'],
-                    'run_tests': ['tests ausführen', 'tests laufen', 'testen'],
-                    'stop': ['stopp', 'abbrechen', 'beenden'],
-                    'workspace': ['arbeitsbereich', 'projekt', 'ordner']
+                    "help": ["hilfe", "unterstützung", "was kannst du"],
+                    "status": ["status", "wie geht's", "systemstatus"],
+                    "run_tests": ["tests ausführen", "tests laufen", "testen"],
+                    "stop": ["stopp", "abbrechen", "beenden"],
+                    "workspace": ["arbeitsbereich", "projekt", "ordner"],
                 },
                 responses={
-                    'greeting': 'Hallo! Wie kann ich Ihnen helfen?',
-                    'processing': 'Bearbeite Ihre Anfrage...',
-                    'error': 'Entschuldigung, es ist ein Fehler aufgetreten.',
-                    'success': 'Aufgabe erfolgreich abgeschlossen.'
+                    "greeting": "Hallo! Wie kann ich Ihnen helfen?",
+                    "processing": "Bearbeite Ihre Anfrage...",
+                    "error": "Entschuldigung, es ist ein Fehler aufgetreten.",
+                    "success": "Aufgabe erfolgreich abgeschlossen.",
                 },
-                tts_voice='de-DE',
-                stt_model='de-DE'
+                tts_voice="de-DE",
+                stt_model="de-DE",
             ),
-
-            'zh-CN': LanguageConfig(
-                code='zh-CN',
-                name='Chinese (Simplified)',
-                native_name='中文',
+            "zh-CN": LanguageConfig(
+                code="zh-CN",
+                name="Chinese (Simplified)",
+                native_name="中文",
                 voice_commands={
-                    'help': ['帮助', '协助', '你能做什么'],
-                    'status': ['状态', '你怎么样', '系统状态'],
-                    'run_tests': ['运行测试', '执行测试', '测试'],
-                    'stop': ['停止', '取消', '退出'],
-                    'workspace': ['工作区', '项目', '文件夹']
+                    "help": ["帮助", "协助", "你能做什么"],
+                    "status": ["状态", "你怎么样", "系统状态"],
+                    "run_tests": ["运行测试", "执行测试", "测试"],
+                    "stop": ["停止", "取消", "退出"],
+                    "workspace": ["工作区", "项目", "文件夹"],
                 },
                 responses={
-                    'greeting': '你好！我可以怎么帮助你？',
-                    'processing': '正在处理您的请求...',
-                    'error': '抱歉，遇到错误。',
-                    'success': '任务成功完成。'
+                    "greeting": "你好！我可以怎么帮助你？",
+                    "processing": "正在处理您的请求...",
+                    "error": "抱歉，遇到错误。",
+                    "success": "任务成功完成。",
                 },
-                tts_voice='zh-CN',
-                stt_model='zh-CN',
-                text_direction='ltr'
+                tts_voice="zh-CN",
+                stt_model="zh-CN",
+                text_direction="ltr",
             ),
-
-            'ja-JP': LanguageConfig(
-                code='ja-JP',
-                name='Japanese',
-                native_name='日本語',
+            "ja-JP": LanguageConfig(
+                code="ja-JP",
+                name="Japanese",
+                native_name="日本語",
                 voice_commands={
-                    'help': ['ヘルプ', '助けて', '何ができる'],
-                    'status': ['ステータス', '調子はどう', 'システム状態'],
-                    'run_tests': ['テスト実行', 'テストを走らせる', 'テスト'],
-                    'stop': ['停止', 'キャンセル', '終了'],
-                    'workspace': ['ワークスペース', 'プロジェクト', 'フォルダ']
+                    "help": ["ヘルプ", "助けて", "何ができる"],
+                    "status": ["ステータス", "調子はどう", "システム状態"],
+                    "run_tests": ["テスト実行", "テストを走らせる", "テスト"],
+                    "stop": ["停止", "キャンセル", "終了"],
+                    "workspace": ["ワークスペース", "プロジェクト", "フォルダ"],
                 },
                 responses={
-                    'greeting': 'こんにちは！お手伝いできることはありますか？',
-                    'processing': 'リクエストを処理しています...',
-                    'error': '申し訳ありませんが、エラーが発生しました。',
-                    'success': 'タスクが正常に完了しました。'
+                    "greeting": "こんにちは！お手伝いできることはありますか？",
+                    "processing": "リクエストを処理しています...",
+                    "error": "申し訳ありませんが、エラーが発生しました。",
+                    "success": "タスクが正常に完了しました。",
                 },
-                tts_voice='ja-JP',
-                stt_model='ja-JP'
-            )
+                tts_voice="ja-JP",
+                stt_model="ja-JP",
+            ),
         }
 
         # Load custom configurations if available
-        config_dir = Path.home() / '.isaac' / 'languages'
+        config_dir = Path.home() / ".isaac" / "languages"
         if config_dir.exists():
-            for config_file in config_dir.glob('*.json'):
+            for config_file in config_dir.glob("*.json"):
                 try:
-                    with open(config_file, 'r', encoding='utf-8') as f:
+                    with open(config_file, "r", encoding="utf-8") as f:
                         custom_config = json.load(f)
-                        code = custom_config.get('code')
+                        code = custom_config.get("code")
                         if code:
                             default_configs[code] = LanguageConfig(**custom_config)
                 except Exception as e:
@@ -503,8 +523,9 @@ class MultiLanguageManager:
         """Detect the language of input text."""
         return self.detector.detect_language(text)
 
-    def translate_text(self, text: str, to_lang: Optional[str] = None,
-                      from_lang: Optional[str] = None) -> Optional[str]:
+    def translate_text(
+        self, text: str, to_lang: Optional[str] = None, from_lang: Optional[str] = None
+    ) -> Optional[str]:
         """Translate text to target language."""
         if not to_lang:
             to_lang = self.current_language
@@ -526,7 +547,7 @@ class MultiLanguageManager:
             return config.responses[response_key]
 
         # Fallback to English
-        en_config = self.languages.get('en-US')
+        en_config = self.languages.get("en-US")
         if en_config and response_key in en_config.responses:
             return en_config.responses[response_key]
 
@@ -548,8 +569,8 @@ class MultiLanguageManager:
 
         # Translate to English for processing if needed
         processing_text = command_text
-        if detected_lang != 'en-US':
-            translation = self.translate_text(command_text, 'en-US', detected_lang)
+        if detected_lang != "en-US":
+            translation = self.translate_text(command_text, "en-US", detected_lang)
             if translation:
                 processing_text = translation
 
@@ -557,7 +578,7 @@ class MultiLanguageManager:
         matched_command = None
         confidence = 0.0
 
-        voice_commands = self.get_voice_commands('en-US')  # Use English patterns for matching
+        voice_commands = self.get_voice_commands("en-US")  # Use English patterns for matching
 
         for cmd, patterns in voice_commands.items():
             for pattern in patterns:
@@ -570,12 +591,12 @@ class MultiLanguageManager:
                 break
 
         return {
-            'original_text': command_text,
-            'detected_language': detected_lang,
-            'processed_text': processing_text,
-            'matched_command': matched_command,
-            'confidence': confidence,
-            'needs_translation': detected_lang != self.current_language
+            "original_text": command_text,
+            "detected_language": detected_lang,
+            "processed_text": processing_text,
+            "matched_command": matched_command,
+            "confidence": confidence,
+            "needs_translation": detected_lang != self.current_language,
         }
 
     def set_current_language(self, language_code: str) -> bool:
@@ -593,10 +614,10 @@ class MultiLanguageManager:
         """Get list of available languages."""
         return [
             {
-                'code': config.code,
-                'name': config.name,
-                'native_name': config.native_name,
-                'enabled': config.enabled
+                "code": config.code,
+                "name": config.name,
+                "native_name": config.native_name,
+                "enabled": config.enabled,
             }
             for config in self.languages.values()
             if config.enabled
@@ -608,22 +629,27 @@ class MultiLanguageManager:
             self.languages[config.code] = config
 
             # Save to file
-            config_dir = Path.home() / '.isaac' / 'languages'
+            config_dir = Path.home() / ".isaac" / "languages"
             config_dir.mkdir(parents=True, exist_ok=True)
 
             config_file = config_dir / f"{config.code}.json"
-            with open(config_file, 'w', encoding='utf-8') as f:
-                json.dump({
-                    'code': config.code,
-                    'name': config.name,
-                    'native_name': config.native_name,
-                    'voice_commands': config.voice_commands,
-                    'responses': config.responses,
-                    'tts_voice': config.tts_voice,
-                    'stt_model': config.stt_model,
-                    'text_direction': config.text_direction,
-                    'enabled': config.enabled
-                }, f, ensure_ascii=False, indent=2)
+            with open(config_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "code": config.code,
+                        "name": config.name,
+                        "native_name": config.native_name,
+                        "voice_commands": config.voice_commands,
+                        "responses": config.responses,
+                        "tts_voice": config.tts_voice,
+                        "stt_model": config.stt_model,
+                        "text_direction": config.text_direction,
+                        "enabled": config.enabled,
+                    },
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
+                )
 
             return True
 
@@ -647,4 +673,4 @@ class MultiLanguageManager:
         """Check if a language uses right-to-left text direction."""
         lang_code = language or self.current_language
         config = self.languages.get(lang_code)
-        return config.text_direction == 'rtl' if config else False
+        return config.text_direction == "rtl" if config else False

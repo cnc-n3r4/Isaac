@@ -2,11 +2,11 @@
 
 import json
 import os
-from pathlib import Path
-from typing import Optional, List, Dict
 from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
 
-from .models import SharedResource, ResourceType
+from .models import ResourceType, SharedResource
 
 
 class TeamPatternSharing:
@@ -21,8 +21,14 @@ class TeamPatternSharing:
         self.base_dir = Path(base_dir or os.path.expanduser("~/.isaac/team_patterns"))
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
-    def share_pattern(self, team_id: str, pattern_data: Dict,
-                     shared_by: str, name: str = "", description: str = "") -> SharedResource:
+    def share_pattern(
+        self,
+        team_id: str,
+        pattern_data: Dict,
+        shared_by: str,
+        name: str = "",
+        description: str = "",
+    ) -> SharedResource:
         """Share a pattern with a team.
 
         Args:
@@ -37,12 +43,13 @@ class TeamPatternSharing:
         """
         # Generate resource ID
         import uuid
-        pattern_id = pattern_data.get('pattern_id', str(uuid.uuid4()))
+
+        pattern_id = pattern_data.get("pattern_id", str(uuid.uuid4()))
 
         # Save pattern data
         pattern_file = self.base_dir / team_id / f"{pattern_id}.json"
         pattern_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(pattern_file, 'w') as f:
+        with open(pattern_file, "w") as f:
             json.dump(pattern_data, f, indent=2)
 
         # Create shared resource
@@ -51,14 +58,14 @@ class TeamPatternSharing:
             resource_type=ResourceType.PATTERN,
             team_id=team_id,
             shared_by=shared_by,
-            name=name or pattern_data.get('name', 'Unnamed Pattern'),
-            description=description or pattern_data.get('description', ''),
+            name=name or pattern_data.get("name", "Unnamed Pattern"),
+            description=description or pattern_data.get("description", ""),
             metadata={
-                'pattern_type': pattern_data.get('pattern_type'),
-                'language': pattern_data.get('language'),
-                'usage_count': pattern_data.get('usage_count', 0),
-                'quality_score': pattern_data.get('quality_score', 0),
-            }
+                "pattern_type": pattern_data.get("pattern_type"),
+                "language": pattern_data.get("language"),
+                "usage_count": pattern_data.get("usage_count", 0),
+                "quality_score": pattern_data.get("quality_score", 0),
+            },
         )
 
         return resource
@@ -103,8 +110,9 @@ class TeamPatternSharing:
         except Exception:
             return False
 
-    def list_patterns(self, team_id: str, pattern_type: Optional[str] = None,
-                     language: Optional[str] = None) -> List[Dict]:
+    def list_patterns(
+        self, team_id: str, pattern_type: Optional[str] = None, language: Optional[str] = None
+    ) -> List[Dict]:
         """List patterns shared with a team.
 
         Args:
@@ -127,31 +135,32 @@ class TeamPatternSharing:
                     pattern_data = json.load(f)
 
                 # Apply filters
-                if pattern_type and pattern_data.get('pattern_type') != pattern_type:
+                if pattern_type and pattern_data.get("pattern_type") != pattern_type:
                     continue
-                if language and pattern_data.get('language') != language:
+                if language and pattern_data.get("language") != language:
                     continue
 
-                patterns.append({
-                    'pattern_id': pattern_file.stem,
-                    'name': pattern_data.get('name', 'Unnamed'),
-                    'description': pattern_data.get('description', ''),
-                    'pattern_type': pattern_data.get('pattern_type'),
-                    'language': pattern_data.get('language'),
-                    'quality_score': pattern_data.get('quality_score', 0),
-                    'usage_count': pattern_data.get('usage_count', 0),
-                    'shared_at': pattern_data.get('shared_at'),
-                })
+                patterns.append(
+                    {
+                        "pattern_id": pattern_file.stem,
+                        "name": pattern_data.get("name", "Unnamed"),
+                        "description": pattern_data.get("description", ""),
+                        "pattern_type": pattern_data.get("pattern_type"),
+                        "language": pattern_data.get("language"),
+                        "quality_score": pattern_data.get("quality_score", 0),
+                        "usage_count": pattern_data.get("usage_count", 0),
+                        "shared_at": pattern_data.get("shared_at"),
+                    }
+                )
             except Exception:
                 continue
 
         # Sort by quality score
-        patterns.sort(key=lambda p: p.get('quality_score', 0), reverse=True)
+        patterns.sort(key=lambda p: p.get("quality_score", 0), reverse=True)
 
         return patterns
 
-    def update_pattern_usage(self, team_id: str, pattern_id: str,
-                           used_by: str) -> bool:
+    def update_pattern_usage(self, team_id: str, pattern_id: str, used_by: str) -> bool:
         """Update pattern usage count and tracking.
 
         Args:
@@ -167,22 +176,24 @@ class TeamPatternSharing:
             return False
 
         # Update usage tracking
-        pattern_data['usage_count'] = pattern_data.get('usage_count', 0) + 1
-        pattern_data['last_used_at'] = datetime.now().isoformat()
-        pattern_data['last_used_by'] = used_by
+        pattern_data["usage_count"] = pattern_data.get("usage_count", 0) + 1
+        pattern_data["last_used_at"] = datetime.now().isoformat()
+        pattern_data["last_used_by"] = used_by
 
-        if 'usage_history' not in pattern_data:
-            pattern_data['usage_history'] = []
+        if "usage_history" not in pattern_data:
+            pattern_data["usage_history"] = []
 
-        pattern_data['usage_history'].append({
-            'used_by': used_by,
-            'used_at': datetime.now().isoformat(),
-        })
+        pattern_data["usage_history"].append(
+            {
+                "used_by": used_by,
+                "used_at": datetime.now().isoformat(),
+            }
+        )
 
         # Save updated pattern
         pattern_file = self.base_dir / team_id / f"{pattern_id}.json"
         try:
-            with open(pattern_file, 'w') as f:
+            with open(pattern_file, "w") as f:
                 json.dump(pattern_data, f, indent=2)
             return True
         except Exception:
@@ -219,19 +230,21 @@ class TeamPatternSharing:
                 ).lower()
 
                 if query_lower in searchable_text:
-                    results.append({
-                        'pattern_id': pattern_file.stem,
-                        'name': pattern_data.get('name', 'Unnamed'),
-                        'description': pattern_data.get('description', ''),
-                        'pattern_type': pattern_data.get('pattern_type'),
-                        'language': pattern_data.get('language'),
-                        'quality_score': pattern_data.get('quality_score', 0),
-                    })
+                    results.append(
+                        {
+                            "pattern_id": pattern_file.stem,
+                            "name": pattern_data.get("name", "Unnamed"),
+                            "description": pattern_data.get("description", ""),
+                            "pattern_type": pattern_data.get("pattern_type"),
+                            "language": pattern_data.get("language"),
+                            "quality_score": pattern_data.get("quality_score", 0),
+                        }
+                    )
             except Exception:
                 continue
 
         # Sort by quality score
-        results.sort(key=lambda p: p.get('quality_score', 0), reverse=True)
+        results.sort(key=lambda p: p.get("quality_score", 0), reverse=True)
 
         return results
 
@@ -263,12 +276,12 @@ class TeamPatternSharing:
         patterns = self.list_patterns(team_id)
 
         stats = {
-            'total_patterns': len(patterns),
-            'by_type': {},
-            'by_language': {},
-            'average_quality': 0,
-            'total_usage': 0,
-            'top_patterns': [],
+            "total_patterns": len(patterns),
+            "by_type": {},
+            "by_language": {},
+            "average_quality": 0,
+            "total_usage": 0,
+            "top_patterns": [],
         }
 
         if not patterns:
@@ -276,25 +289,23 @@ class TeamPatternSharing:
 
         for pattern in patterns:
             # Count by type
-            ptype = pattern.get('pattern_type', 'unknown')
-            stats['by_type'][ptype] = stats['by_type'].get(ptype, 0) + 1
+            ptype = pattern.get("pattern_type", "unknown")
+            stats["by_type"][ptype] = stats["by_type"].get(ptype, 0) + 1
 
             # Count by language
-            lang = pattern.get('language', 'unknown')
-            stats['by_language'][lang] = stats['by_language'].get(lang, 0) + 1
+            lang = pattern.get("language", "unknown")
+            stats["by_language"][lang] = stats["by_language"].get(lang, 0) + 1
 
             # Sum quality and usage
-            stats['total_usage'] += pattern.get('usage_count', 0)
+            stats["total_usage"] += pattern.get("usage_count", 0)
 
         # Calculate average quality
-        quality_sum = sum(p.get('quality_score', 0) for p in patterns)
-        stats['average_quality'] = quality_sum / len(patterns) if patterns else 0
+        quality_sum = sum(p.get("quality_score", 0) for p in patterns)
+        stats["average_quality"] = quality_sum / len(patterns) if patterns else 0
 
         # Get top patterns by usage
-        stats['top_patterns'] = sorted(
-            patterns,
-            key=lambda p: p.get('usage_count', 0),
-            reverse=True
+        stats["top_patterns"] = sorted(
+            patterns, key=lambda p: p.get("usage_count", 0), reverse=True
         )[:10]
 
         return stats

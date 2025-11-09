@@ -4,14 +4,15 @@ Handles multi-file detection, analysis, and intelligent routing.
 """
 
 import mimetypes
-from pathlib import Path
-from typing import List, Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional
 
 
 class FileCategory(Enum):
     """Categories for file classification"""
+
     IMAGE = "image"
     DOCUMENT = "document"
     CODE = "code"
@@ -27,6 +28,7 @@ class FileCategory(Enum):
 @dataclass
 class FileAnalysis:
     """Analysis result for a single file"""
+
     path: Path
     category: FileCategory
     mime_type: str
@@ -43,6 +45,7 @@ class FileAnalysis:
 @dataclass
 class BatchAnalysis:
     """Analysis result for multiple files"""
+
     files: List[FileAnalysis]
     total_size: int
     categories: Dict[FileCategory, int]
@@ -80,40 +83,82 @@ class MultiFileDetector:
     # Supported file extensions by category
     SUPPORTED_EXTENSIONS = {
         FileCategory.IMAGE: {
-            '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.tif', '.webp', '.svg', '.ico'
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".bmp",
+            ".tiff",
+            ".tif",
+            ".webp",
+            ".svg",
+            ".ico",
         },
         FileCategory.DOCUMENT: {
-            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.rtf', '.odt'
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx",
+            ".ppt",
+            ".pptx",
+            ".txt",
+            ".rtf",
+            ".odt",
         },
         FileCategory.CODE: {
-            '.py', '.js', '.ts', '.java', '.cpp', '.c', '.h', '.cs', '.php', '.rb', '.go', '.rs',
-            '.html', '.css', '.scss', '.sass', '.less', '.json', '.xml', '.yaml', '.yml', '.toml',
-            '.md', '.rst', '.sh', '.bash', '.ps1', '.sql', '.r', '.m', '.swift', '.kt', '.scala'
+            ".py",
+            ".js",
+            ".ts",
+            ".java",
+            ".cpp",
+            ".c",
+            ".h",
+            ".cs",
+            ".php",
+            ".rb",
+            ".go",
+            ".rs",
+            ".html",
+            ".css",
+            ".scss",
+            ".sass",
+            ".less",
+            ".json",
+            ".xml",
+            ".yaml",
+            ".yml",
+            ".toml",
+            ".md",
+            ".rst",
+            ".sh",
+            ".bash",
+            ".ps1",
+            ".sql",
+            ".r",
+            ".m",
+            ".swift",
+            ".kt",
+            ".scala",
         },
-        FileCategory.ARCHIVE: {
-            '.zip', '.tar', '.gz', '.bz2', '.xz', '.7z', '.rar', '.iso'
-        },
-        FileCategory.VIDEO: {
-            '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v'
-        },
-        FileCategory.AUDIO: {
-            '.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a'
-        },
-        FileCategory.EXECUTABLE: {
-            '.exe', '.msi', '.dmg', '.pkg', '.deb', '.rpm', '.appimage'
-        },
-        FileCategory.CONFIG: {
-            '.ini', '.cfg', '.conf', '.config', '.env', '.properties'
-        }
+        FileCategory.ARCHIVE: {".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".iso"},
+        FileCategory.VIDEO: {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"},
+        FileCategory.AUDIO: {".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a"},
+        FileCategory.EXECUTABLE: {".exe", ".msi", ".dmg", ".pkg", ".deb", ".rpm", ".appimage"},
+        FileCategory.CONFIG: {".ini", ".cfg", ".conf", ".config", ".env", ".properties"},
     }
 
     # MIME type prefixes for additional detection
     MIME_PREFIXES = {
-        FileCategory.IMAGE: ['image/'],
-        FileCategory.VIDEO: ['video/'],
-        FileCategory.AUDIO: ['audio/'],
-        FileCategory.DOCUMENT: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats'],
-        FileCategory.ARCHIVE: ['application/zip', 'application/x-tar', 'application/gzip'],
+        FileCategory.IMAGE: ["image/"],
+        FileCategory.VIDEO: ["video/"],
+        FileCategory.AUDIO: ["audio/"],
+        FileCategory.DOCUMENT: [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats",
+        ],
+        FileCategory.ARCHIVE: ["application/zip", "application/x-tar", "application/gzip"],
     }
 
     def __init__(self):
@@ -164,8 +209,8 @@ class MultiFileDetector:
                 supported_count += 1
 
             # Check for duplicates (same checksum)
-            if analysis.metadata and analysis.metadata.get('checksum'):
-                checksum = analysis.metadata['checksum']
+            if analysis.metadata and analysis.metadata.get("checksum"):
+                checksum = analysis.metadata["checksum"]
                 if checksum in checksums_seen:
                     # This is a duplicate
                     pass  # We'll collect duplicates later
@@ -175,8 +220,8 @@ class MultiFileDetector:
         duplicates = []
         checksum_to_paths = {}
         for analysis in analyses:
-            if analysis.metadata and analysis.metadata.get('checksum'):
-                checksum = analysis.metadata['checksum']
+            if analysis.metadata and analysis.metadata.get("checksum"):
+                checksum = analysis.metadata["checksum"]
                 if checksum not in checksum_to_paths:
                     checksum_to_paths[checksum] = []
                 checksum_to_paths[checksum].append(analysis.path)
@@ -193,7 +238,7 @@ class MultiFileDetector:
             categories=categories,
             supported_count=supported_count,
             unsupported_count=unsupported_count,
-            duplicates=duplicates
+            duplicates=duplicates,
         )
 
     def _analyze_single_file(self, path: Path) -> FileAnalysis:
@@ -232,7 +277,7 @@ class MultiFileDetector:
         if size_bytes > 0 and size_bytes < 100 * 1024 * 1024:  # < 100MB
             try:
                 checksum = self._calculate_checksum(path)
-                metadata['checksum'] = checksum
+                metadata["checksum"] = checksum
             except Exception:
                 pass
 
@@ -243,7 +288,7 @@ class MultiFileDetector:
             size_bytes=size_bytes,
             extension=extension,
             is_supported=is_supported,
-            metadata=metadata
+            metadata=metadata,
         )
 
     def _determine_category(self, extension: str, mime_type: str) -> FileCategory:
@@ -269,10 +314,10 @@ class MultiFileDetector:
                     return category
 
         # Special cases
-        if mime_type == 'text/plain':
+        if mime_type == "text/plain":
             return FileCategory.TEXT
 
-        if mime_type.startswith('text/'):
+        if mime_type.startswith("text/"):
             return FileCategory.CODE  # Treat as code if it's text-based
 
         # Default to OTHER
@@ -308,7 +353,7 @@ class MultiFileDetector:
 
         # Archives might be supported for extraction
         if category == FileCategory.ARCHIVE:
-            return extension in ['.zip', '.tar', '.gz']  # Common ones
+            return extension in [".zip", ".tar", ".gz"]  # Common ones
 
         # Config files are supported
         if category == FileCategory.CONFIG:

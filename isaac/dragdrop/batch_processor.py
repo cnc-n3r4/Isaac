@@ -3,16 +3,16 @@ Batch Operations for Smart Drag-Drop System
 Handles large-scale file processing with optimizations for 100+ files.
 """
 
-import time
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Optional, Callable
 from queue import Queue
+from typing import Callable, List, Optional
 
+from .interactive_decision import ActionType, DecisionResult
 from .multi_file_detector import BatchAnalysis
-from .interactive_decision import DecisionResult, ActionType
-from .types import RoutingResult, BatchConfig, BatchResult
 from .progress import BatchProgressManager, ProgressStyle
+from .types import BatchConfig, BatchResult, RoutingResult
 
 
 class BatchProcessor:
@@ -24,8 +24,12 @@ class BatchProcessor:
         self.config = config or BatchConfig()
         self._progress_manager = BatchProgressManager(ProgressStyle.PERCENTAGE)
 
-    def process_batch(self, decision: DecisionResult, analysis: BatchAnalysis,
-                     progress_callback: Optional[Callable[[str], None]] = None) -> RoutingResult:
+    def process_batch(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Optional[Callable[[str], None]] = None,
+    ) -> RoutingResult:
         """
         Process a large batch of files with optimizations.
 
@@ -43,6 +47,7 @@ class BatchProcessor:
         # For small batches, use regular processing
         if total_files <= self.config.batch_size:
             from .smart_router import SmartFileRouter
+
             router = SmartFileRouter()
             return router.route_files(decision, analysis, progress_callback)
 
@@ -51,7 +56,7 @@ class BatchProcessor:
 
         # Set up progress tracking
         if progress_callback is None:
-            operation_name = decision.selected_action.value.replace('_', ' ').title()
+            operation_name = decision.selected_action.value.replace("_", " ").title()
             progress_callback = self._progress_manager.start_batch(
                 f"{operation_name} (Batch)", total_files
             )
@@ -64,7 +69,7 @@ class BatchProcessor:
             duration = time.time() - start_time
             self._progress_manager.complete_batch(
                 result.success,
-                f"Processed {result.processed_files}/{total_files} files in {duration:.1f}s"
+                f"Processed {result.processed_files}/{total_files} files in {duration:.1f}s",
             )
 
             return result
@@ -76,11 +81,15 @@ class BatchProcessor:
                 success=False,
                 message=error_msg,
                 processed_files=[],
-                failed_files=[analysis.files[i].path for i in decision.selected_files]
+                failed_files=[analysis.files[i].path for i in decision.selected_files],
             )
 
-    def _process_large_batch(self, decision: DecisionResult, analysis: BatchAnalysis,
-                           progress_callback: Callable[[str], None]) -> RoutingResult:
+    def _process_large_batch(
+        self,
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Callable[[str], None],
+    ) -> RoutingResult:
         """
         Process large batch with parallel execution and error recovery.
         """
@@ -101,7 +110,11 @@ class BatchProcessor:
             for batch_idx, batch_files in enumerate(batches):
                 future = executor.submit(
                     self._process_batch_chunk,
-                    batch_idx, batch_files, decision, analysis, progress_callback
+                    batch_idx,
+                    batch_files,
+                    decision,
+                    analysis,
+                    progress_callback,
                 )
                 future_to_batch[future] = batch_files
 
@@ -113,8 +126,8 @@ class BatchProcessor:
                     all_processed.extend(batch_result.processed_files)
                     all_failed.extend(batch_result.failed_files)
 
-                    if batch_result.output and 'errors' in batch_result.output:
-                        all_errors.extend(batch_result.output['errors'])
+                    if batch_result.output and "errors" in batch_result.output:
+                        all_errors.extend(batch_result.output["errors"])
 
                 except Exception as e:
                     # Batch failed completely
@@ -138,12 +151,17 @@ class BatchProcessor:
             message=message,
             processed_files=all_processed,
             failed_files=all_failed,
-            output=output
+            output=output,
         )
 
-    def _process_batch_chunk(self, batch_idx: int, batch_files: List[int],
-                           decision: DecisionResult, analysis: BatchAnalysis,
-                           progress_callback: Callable[[str], None]) -> RoutingResult:
+    def _process_batch_chunk(
+        self,
+        batch_idx: int,
+        batch_files: List[int],
+        decision: DecisionResult,
+        analysis: BatchAnalysis,
+        progress_callback: Callable[[str], None],
+    ) -> RoutingResult:
         """
         Process a single batch chunk.
         """
@@ -151,11 +169,12 @@ class BatchProcessor:
         batch_decision = DecisionResult(
             selected_action=decision.selected_action,
             selected_files=batch_files,
-            custom_params=decision.custom_params
+            custom_params=decision.custom_params,
         )
 
         # Process with regular router (but with timeout and error handling)
         from .smart_router import SmartFileRouter
+
         router = SmartFileRouter()
 
         try:
@@ -175,7 +194,7 @@ class BatchProcessor:
                 message=f"Batch {batch_idx+1} failed: {e}",
                 processed_files=[],
                 failed_files=failed_paths,
-                output={"errors": [str(e)]}
+                output={"errors": [str(e)]},
             )
 
     def _create_batches(self, file_indices: List[int], batch_size: int) -> List[List[int]]:
@@ -191,7 +210,7 @@ class BatchProcessor:
         """
         batches = []
         for i in range(0, len(file_indices), batch_size):
-            batch = file_indices[i:i + batch_size]
+            batch = file_indices[i : i + batch_size]
             batches.append(batch)
         return batches
 
@@ -210,12 +229,12 @@ class BatchProcessor:
 
         # Base time per file (seconds)
         time_per_file = {
-            ActionType.UPLOAD_IMAGES: 2.0,      # Cloud upload
-            ActionType.ANALYZE_CODE: 0.1,       # Code analysis
+            ActionType.UPLOAD_IMAGES: 2.0,  # Cloud upload
+            ActionType.ANALYZE_CODE: 0.1,  # Code analysis
             ActionType.PROCESS_DOCUMENTS: 1.0,  # Document processing
-            ActionType.EXTRACT_ARCHIVE: 3.0,    # Archive extraction
-            ActionType.VIEW_TEXT: 0.05,         # Text reading
-            ActionType.CUSTOM_COMMAND: 1.0,     # Custom command
+            ActionType.EXTRACT_ARCHIVE: 3.0,  # Archive extraction
+            ActionType.VIEW_TEXT: 0.05,  # Text reading
+            ActionType.CUSTOM_COMMAND: 1.0,  # Custom command
         }.get(action, 1.0)
 
         # Adjust for file size
@@ -281,8 +300,12 @@ class StreamingBatchProcessor:
         self._queue = Queue(maxsize=1000)  # Buffer for streaming
         self._results_queue = Queue()
 
-    def process_streaming(self, file_generator, decision_factory: Callable,
-                         progress_callback: Optional[Callable] = None) -> BatchResult:
+    def process_streaming(
+        self,
+        file_generator,
+        decision_factory: Callable,
+        progress_callback: Optional[Callable] = None,
+    ) -> BatchResult:
         """
         Process files in a streaming fashion.
 
@@ -304,8 +327,7 @@ class StreamingBatchProcessor:
         workers = []
         for _ in range(self.config.max_workers):
             worker = threading.Thread(
-                target=self._worker_thread,
-                args=(decision_factory, progress_callback)
+                target=self._worker_thread, args=(decision_factory, progress_callback)
             )
             worker.daemon = True
             worker.start()
@@ -332,11 +354,11 @@ class StreamingBatchProcessor:
         # Collect results
         while not self._results_queue.empty():
             result = self._results_queue.get()
-            processed_count += result.get('processed', 0)
-            failed_count += result.get('failed', 0)
-            retry_count += result.get('retries', 0)
-            if result.get('errors'):
-                errors.extend(result['errors'])
+            processed_count += result.get("processed", 0)
+            failed_count += result.get("failed", 0)
+            retry_count += result.get("retries", 0)
+            if result.get("errors"):
+                errors.extend(result["errors"])
 
         duration = time.time() - start_time
 
@@ -348,11 +370,12 @@ class StreamingBatchProcessor:
             duration_seconds=duration,
             memory_peak_mb=0.0,  # Would need psutil to measure
             errors=errors,
-            success=processed_count > 0
+            success=processed_count > 0,
         )
 
-    def _worker_thread(self, decision_factory: Callable,
-                      progress_callback: Optional[Callable]) -> None:
+    def _worker_thread(
+        self, decision_factory: Callable, progress_callback: Optional[Callable]
+    ) -> None:
         """Worker thread for processing files from queue."""
         while True:
             file_path = self._queue.get()
@@ -361,13 +384,13 @@ class StreamingBatchProcessor:
 
             try:
                 # Process file (simplified - would need full analysis)
-                result = {'processed': 1, 'failed': 0, 'retries': 0, 'errors': []}
+                result = {"processed": 1, "failed": 0, "retries": 0, "errors": []}
 
                 if progress_callback:
                     progress_callback(f"Processed {file_path}")
 
             except Exception as e:
-                result = {'processed': 0, 'failed': 1, 'retries': 0, 'errors': [str(e)]}
+                result = {"processed": 0, "failed": 1, "retries": 0, "errors": [str(e)]}
 
             self._results_queue.put(result)
             self._queue.task_done()

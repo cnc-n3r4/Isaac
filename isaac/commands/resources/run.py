@@ -17,7 +17,7 @@ def main():
     command = ResourcesCommand()
 
     # Get arguments from command line (space-separated string)
-    args = ' '.join(sys.argv[1:]) if len(sys.argv) > 1 else ''
+    args = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else ""
 
     # Execute command
     try:

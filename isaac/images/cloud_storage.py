@@ -4,18 +4,19 @@ Handles uploading, storing, and managing images in cloud storage.
 """
 
 import hashlib
+import io
+import json
 import mimetypes
-from pathlib import Path
-from typing import Optional, Dict, List, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-import json
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 from PIL import Image
-import io
 
 try:
     import pytesseract
+
     HAS_TESSERACT = True
 except ImportError:
     HAS_TESSERACT = False
@@ -26,6 +27,7 @@ from ..core.unified_fs import UnifiedFileSystem
 @dataclass
 class ImageMetadata:
     """Metadata for uploaded images"""
+
     filename: str
     original_path: str
     cloud_url: str
@@ -57,8 +59,13 @@ class CloudImageStorage:
     """
 
     SUPPORTED_FORMATS = {
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'image/svg+xml', 'image/bmp', 'image/tiff'
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/svg+xml",
+        "image/bmp",
+        "image/tiff",
     }
 
     def __init__(self, config_path: Optional[str] = None):
@@ -78,10 +85,12 @@ class CloudImageStorage:
         """Load storage quota settings"""
         if self.quota_file.exists():
             try:
-                with open(self.quota_file, 'r') as f:
+                with open(self.quota_file, "r") as f:
                     quota_data = json.load(f)
-                    self.storage_quota = quota_data.get('quota_bytes', 1024 * 1024 * 1024)  # 1GB default
-                    self.quota_warning_threshold = quota_data.get('warning_percent', 80)
+                    self.storage_quota = quota_data.get(
+                        "quota_bytes", 1024 * 1024 * 1024
+                    )  # 1GB default
+                    self.quota_warning_threshold = quota_data.get("warning_percent", 80)
             except (json.JSONDecodeError, KeyError):
                 self.storage_quota = 1024 * 1024 * 1024  # 1GB default
                 self.quota_warning_threshold = 80
@@ -92,26 +101,26 @@ class CloudImageStorage:
     def _save_quota_settings(self) -> None:
         """Save storage quota settings"""
         quota_data = {
-            'quota_bytes': self.storage_quota,
-            'warning_percent': self.quota_warning_threshold
+            "quota_bytes": self.storage_quota,
+            "warning_percent": self.quota_warning_threshold,
         }
-        with open(self.quota_file, 'w') as f:
+        with open(self.quota_file, "w") as f:
             json.dump(quota_data, f, indent=2)
 
     def _load_metadata(self) -> None:
         """Load image metadata from local storage"""
         if self.metadata_file.exists():
             try:
-                with open(self.metadata_file, 'r') as f:
+                with open(self.metadata_file, "r") as f:
                     data = json.load(f)
                     self.metadata = {}
                     for k, v in data.items():
                         # Convert uploaded_at string to datetime if needed
-                        if 'uploaded_at' in v and isinstance(v['uploaded_at'], str):
+                        if "uploaded_at" in v and isinstance(v["uploaded_at"], str):
                             try:
-                                v['uploaded_at'] = datetime.fromisoformat(v['uploaded_at'])
+                                v["uploaded_at"] = datetime.fromisoformat(v["uploaded_at"])
                             except ValueError:
-                                v['uploaded_at'] = datetime.now()
+                                v["uploaded_at"] = datetime.now()
                         self.metadata[k] = ImageMetadata(**v)
             except (json.JSONDecodeError, KeyError):
                 self.metadata = {}
@@ -122,23 +131,25 @@ class CloudImageStorage:
         """Save image metadata to local storage"""
         data = {
             k: {
-                'filename': v.filename,
-                'original_path': v.original_path,
-                'cloud_url': v.cloud_url,
-                'thumbnail_url': v.thumbnail_url,
-                'file_size': v.file_size,
-                'mime_type': v.mime_type,
-                'width': v.width,
-                'height': v.height,
-                'uploaded_at': v.uploaded_at.isoformat() if v.uploaded_at else datetime.now().isoformat(),
-                'ocr_text': v.ocr_text,
-                'ocr_confidence': v.ocr_confidence,
-                'checksum': v.checksum
+                "filename": v.filename,
+                "original_path": v.original_path,
+                "cloud_url": v.cloud_url,
+                "thumbnail_url": v.thumbnail_url,
+                "file_size": v.file_size,
+                "mime_type": v.mime_type,
+                "width": v.width,
+                "height": v.height,
+                "uploaded_at": (
+                    v.uploaded_at.isoformat() if v.uploaded_at else datetime.now().isoformat()
+                ),
+                "ocr_text": v.ocr_text,
+                "ocr_confidence": v.ocr_confidence,
+                "checksum": v.checksum,
             }
             for k, v in self.metadata.items()
         }
 
-        with open(self.metadata_file, 'w') as f:
+        with open(self.metadata_file, "w") as f:
             json.dump(data, f, indent=2)
 
     def _calculate_checksum(self, file_path: Path) -> str:
@@ -217,7 +228,7 @@ class CloudImageStorage:
                 mime_type=mime_type,
                 file_size=file_size,
                 uploaded_at=datetime.now(),
-                thumbnail_url=None  # Will be generated separately
+                thumbnail_url=None,  # Will be generated separately
             )
 
             # Store metadata first
@@ -252,7 +263,9 @@ class CloudImageStorage:
         # For now, simulate successful upload
         return f"https://cloud.example.com/{cloud_path}"
 
-    def _generate_thumbnail(self, file_path: Path, checksum: str, max_size: Tuple[int, int] = (200, 200)) -> Optional[str]:
+    def _generate_thumbnail(
+        self, file_path: Path, checksum: str, max_size: Tuple[int, int] = (200, 200)
+    ) -> Optional[str]:
         """
         Generate thumbnail for image using PIL.
 
@@ -272,15 +285,15 @@ class CloudImageStorage:
                 self.metadata[checksum].height = img.height
 
                 # Convert to RGB if necessary (for JPEG compatibility)
-                if img.mode not in ('RGB', 'L'):
-                    img = img.convert('RGB')
+                if img.mode not in ("RGB", "L"):
+                    img = img.convert("RGB")
 
                 # Create thumbnail maintaining aspect ratio
                 img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
                 # Save thumbnail to memory buffer
                 buffer = io.BytesIO()
-                img.save(buffer, format='JPEG', quality=85)
+                img.save(buffer, format="JPEG", quality=85)
                 buffer.seek(0)
 
                 # Generate cloud path for thumbnail
@@ -356,6 +369,7 @@ class CloudImageStorage:
 
         # Generate a share token (simplified - in production use proper JWT/crypto)
         import secrets
+
         share_token = secrets.token_urlsafe(32)
 
         # Calculate expiration
@@ -363,10 +377,10 @@ class CloudImageStorage:
 
         # Store share information
         share_info = {
-            'checksum': checksum,
-            'token': share_token,
-            'expires_at': expiration.isoformat(),
-            'created_at': datetime.now().isoformat()
+            "checksum": checksum,
+            "token": share_token,
+            "expires_at": expiration.isoformat(),
+            "created_at": datetime.now().isoformat(),
         }
 
         # Load existing shares
@@ -374,7 +388,7 @@ class CloudImageStorage:
         shares = {}
         if shares_file.exists():
             try:
-                with open(shares_file, 'r') as f:
+                with open(shares_file, "r") as f:
                     shares = json.load(f)
             except json.JSONDecodeError:
                 shares = {}
@@ -383,7 +397,7 @@ class CloudImageStorage:
         shares[share_token] = share_info
 
         # Save shares
-        with open(shares_file, 'w') as f:
+        with open(shares_file, "w") as f:
             json.dump(shares, f, indent=2)
 
         # Generate shareable URL
@@ -404,7 +418,7 @@ class CloudImageStorage:
             return None
 
         try:
-            with open(shares_file, 'r') as f:
+            with open(shares_file, "r") as f:
                 shares = json.load(f)
         except json.JSONDecodeError:
             return None
@@ -415,27 +429,27 @@ class CloudImageStorage:
         share_info = shares[share_token]
 
         # Check expiration
-        expires_at = datetime.fromisoformat(share_info['expires_at'])
+        expires_at = datetime.fromisoformat(share_info["expires_at"])
         if datetime.now() > expires_at:
             # Remove expired share
             del shares[share_token]
-            with open(shares_file, 'w') as f:
+            with open(shares_file, "w") as f:
                 json.dump(shares, f, indent=2)
             return None
 
         # Get image metadata
-        checksum = share_info['checksum']
+        checksum = share_info["checksum"]
         if checksum not in self.metadata:
             return None
 
         metadata = self.metadata[checksum]
 
         return {
-            'filename': metadata.filename,
-            'url': metadata.cloud_url,
-            'thumbnail_url': metadata.thumbnail_url,
-            'mime_type': metadata.mime_type,
-            'expires_at': share_info['expires_at']
+            "filename": metadata.filename,
+            "url": metadata.cloud_url,
+            "thumbnail_url": metadata.thumbnail_url,
+            "mime_type": metadata.mime_type,
+            "expires_at": share_info["expires_at"],
         }
 
     def list_shared_links(self) -> List[Dict]:
@@ -450,7 +464,7 @@ class CloudImageStorage:
             return []
 
         try:
-            with open(shares_file, 'r') as f:
+            with open(shares_file, "r") as f:
                 shares = json.load(f)
         except json.JSONDecodeError:
             return []
@@ -459,22 +473,24 @@ class CloudImageStorage:
         current_time = datetime.now()
 
         for token, share_info in shares.items():
-            expires_at = datetime.fromisoformat(share_info['expires_at'])
+            expires_at = datetime.fromisoformat(share_info["expires_at"])
             if current_time > expires_at:
                 continue  # Skip expired shares
 
-            checksum = share_info['checksum']
+            checksum = share_info["checksum"]
             if checksum not in self.metadata:
                 continue  # Skip if image no longer exists
 
             metadata = self.metadata[checksum]
-            result.append({
-                'token': token,
-                'filename': metadata.filename,
-                'share_url': f"https://cloud.example.com/share/{token}",
-                'expires_at': share_info['expires_at'],
-                'created_at': share_info['created_at']
-            })
+            result.append(
+                {
+                    "token": token,
+                    "filename": metadata.filename,
+                    "share_url": f"https://cloud.example.com/share/{token}",
+                    "expires_at": share_info["expires_at"],
+                    "created_at": share_info["created_at"],
+                }
+            )
 
         return result
 
@@ -493,7 +509,7 @@ class CloudImageStorage:
             return False
 
         try:
-            with open(shares_file, 'r') as f:
+            with open(shares_file, "r") as f:
                 shares = json.load(f)
         except json.JSONDecodeError:
             return False
@@ -503,7 +519,7 @@ class CloudImageStorage:
 
         del shares[share_token]
 
-        with open(shares_file, 'w') as f:
+        with open(shares_file, "w") as f:
             json.dump(shares, f, indent=2)
 
         return True
@@ -525,8 +541,8 @@ class CloudImageStorage:
             # Open image with PIL
             with Image.open(file_path) as img:
                 # Convert to RGB if necessary for better OCR results
-                if img.mode not in ('RGB', 'L'):
-                    img = img.convert('RGB')
+                if img.mode not in ("RGB", "L"):
+                    img = img.convert("RGB")
 
                 # Extract text using pytesseract
                 # Get detailed data including confidence scores
@@ -536,9 +552,9 @@ class CloudImageStorage:
                 text_parts = []
                 confidences = []
 
-                for i, confidence in enumerate(data['conf']):
+                for i, confidence in enumerate(data["conf"]):
                     if int(confidence) > 0:  # Only include text with some confidence
-                        text = data['text'][i].strip()
+                        text = data["text"][i].strip()
                         if text:
                             text_parts.append(text)
                             confidences.append(int(confidence))
@@ -546,7 +562,7 @@ class CloudImageStorage:
                 if not text_parts:
                     return None, None
 
-                extracted_text = ' '.join(text_parts)
+                extracted_text = " ".join(text_parts)
                 avg_confidence = sum(confidences) / len(confidences) if confidences else 0
 
                 return extracted_text, avg_confidence
@@ -555,7 +571,9 @@ class CloudImageStorage:
             print(f"OCR failed for {file_path}: {e}")
             return None, None
 
-    def search_images_by_text(self, query: str, min_confidence: float = 30.0) -> List[ImageMetadata]:
+    def search_images_by_text(
+        self, query: str, min_confidence: float = 30.0
+    ) -> List[ImageMetadata]:
         """
         Search images by OCR text content.
 
@@ -570,7 +588,11 @@ class CloudImageStorage:
         results = []
 
         for metadata in self.metadata.values():
-            if metadata.ocr_text and metadata.ocr_confidence and metadata.ocr_confidence >= min_confidence:
+            if (
+                metadata.ocr_text
+                and metadata.ocr_confidence
+                and metadata.ocr_confidence >= min_confidence
+            ):
                 if query_lower in metadata.ocr_text.lower():
                     results.append(metadata)
 
@@ -588,7 +610,11 @@ class CloudImageStorage:
         """
         results = []
         for metadata in self.metadata.values():
-            if metadata.ocr_text and metadata.ocr_confidence and metadata.ocr_confidence >= min_confidence:
+            if (
+                metadata.ocr_text
+                and metadata.ocr_confidence
+                and metadata.ocr_confidence >= min_confidence
+            ):
                 results.append(metadata)
 
         # Sort by confidence (highest first)
@@ -619,13 +645,13 @@ class CloudImageStorage:
         usage_percent = (total_size / self.storage_quota) * 100 if self.storage_quota > 0 else 0
 
         return {
-            'total_bytes': total_size,
-            'total_images': image_count,
-            'quota_bytes': self.storage_quota,
-            'usage_percent': usage_percent,
-            'warning_threshold': self.quota_warning_threshold,
-            'is_over_quota': total_size > self.storage_quota,
-            'is_near_limit': usage_percent >= self.quota_warning_threshold
+            "total_bytes": total_size,
+            "total_images": image_count,
+            "quota_bytes": self.storage_quota,
+            "usage_percent": usage_percent,
+            "warning_threshold": self.quota_warning_threshold,
+            "is_over_quota": total_size > self.storage_quota,
+            "is_near_limit": usage_percent >= self.quota_warning_threshold,
         }
 
     def set_storage_quota(self, quota_bytes: int, warning_percent: int = 80) -> None:
@@ -651,11 +677,16 @@ class CloudImageStorage:
             Tuple of (can_upload, message)
         """
         current_usage = self.get_storage_usage()
-        projected_usage = current_usage['total_bytes'] + file_size
-        projected_percent = (projected_usage / self.storage_quota) * 100 if self.storage_quota > 0 else 0
+        projected_usage = current_usage["total_bytes"] + file_size
+        projected_percent = (
+            (projected_usage / self.storage_quota) * 100 if self.storage_quota > 0 else 0
+        )
 
         if projected_usage > self.storage_quota:
-            return False, f"Upload would exceed storage quota ({projected_percent:.1f}% of {self._format_bytes(self.storage_quota)})"
+            return (
+                False,
+                f"Upload would exceed storage quota ({projected_percent:.1f}% of {self._format_bytes(self.storage_quota)})",
+            )
 
         if projected_percent >= self.quota_warning_threshold:
             return True, f"Warning: Upload will use {projected_percent:.1f}% of storage quota"

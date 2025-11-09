@@ -4,10 +4,10 @@ Script Generator
 Generates complex bash scripts from natural language descriptions.
 """
 
-from typing import Dict, Any, List, Optional
-from pathlib import Path
 import json
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 class ScriptGenerator:
@@ -22,14 +22,14 @@ class ScriptGenerator:
         """
         self.ai_router = ai_router
         self.generated_scripts: List[Dict[str, Any]] = []
-        self.storage_path = Path.home() / '.isaac' / 'nlscripts'
+        self.storage_path = Path.home() / ".isaac" / "nlscripts"
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
     def generate(
         self,
         description: str,
         requirements: Optional[List[str]] = None,
-        output_file: Optional[Path] = None
+        output_file: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """
         Generate a complex bash script.
@@ -52,17 +52,15 @@ class ScriptGenerator:
         # Generate using AI
         if self.ai_router:
             response = self.ai_router.chat(
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.4,
-                max_tokens=4000
+                messages=[{"role": "user", "content": prompt}], temperature=0.4, max_tokens=4000
             )
             result = self._parse_generation_response(response.content)
         else:
             result = self._generate_basic_script(description, requirements)
 
         # Add metadata
-        result['generated_at'] = datetime.now().isoformat()
-        result['description'] = description
+        result["generated_at"] = datetime.now().isoformat()
+        result["description"] = description
 
         # Save if output file specified
         if output_file:
@@ -123,48 +121,46 @@ Guidelines:
         """Parse the AI response into structured data."""
         import re
 
-        result = {
-            'script': '',
-            'metadata': {},
-            'tests': [],
-            'documentation': ''
-        }
+        result = {"script": "", "metadata": {}, "tests": [], "documentation": ""}
 
         # Extract script
-        script_match = re.search(r'SCRIPT:\s*```bash\s*(.*?)\s*```', content, re.DOTALL)
+        script_match = re.search(r"SCRIPT:\s*```bash\s*(.*?)\s*```", content, re.DOTALL)
         if script_match:
-            result['script'] = script_match.group(1).strip()
+            result["script"] = script_match.group(1).strip()
 
         # Extract metadata
-        metadata_match = re.search(r'METADATA:\s*(.*?)(?=TESTS:|DOCUMENTATION:|$)', content, re.DOTALL)
+        metadata_match = re.search(
+            r"METADATA:\s*(.*?)(?=TESTS:|DOCUMENTATION:|$)", content, re.DOTALL
+        )
         if metadata_match:
             metadata_text = metadata_match.group(1).strip()
-            result['metadata'] = self._parse_metadata(metadata_text)
+            result["metadata"] = self._parse_metadata(metadata_text)
 
         # Extract tests
-        tests_match = re.search(r'TESTS:\s*(.*?)(?=DOCUMENTATION:|$)', content, re.DOTALL)
+        tests_match = re.search(r"TESTS:\s*(.*?)(?=DOCUMENTATION:|$)", content, re.DOTALL)
         if tests_match:
             tests_text = tests_match.group(1).strip()
-            result['tests'] = [t.strip() for t in tests_text.split('\n') if t.strip()]
+            result["tests"] = [t.strip() for t in tests_text.split("\n") if t.strip()]
 
         # Extract documentation
-        doc_match = re.search(r'DOCUMENTATION:\s*(.*?)$', content, re.DOTALL)
+        doc_match = re.search(r"DOCUMENTATION:\s*(.*?)$", content, re.DOTALL)
         if doc_match:
-            result['documentation'] = doc_match.group(1).strip()
+            result["documentation"] = doc_match.group(1).strip()
 
         return result
 
     def _parse_metadata(self, metadata_text: str) -> Dict[str, Any]:
         """Parse metadata section."""
         import re
+
         metadata = {}
 
         patterns = {
-            'functions': r'Functions:\s*(.*?)(?=\n-|\n\n|$)',
-            'dependencies': r'Dependencies:\s*(.*?)(?=\n-|\n\n|$)',
-            'input_parameters': r'Input parameters:\s*(.*?)(?=\n-|\n\n|$)',
-            'output': r'Output:\s*(.*?)(?=\n-|\n\n|$)',
-            'error_handling': r'Error handling:\s*(.*?)(?=\n-|\n\n|$)'
+            "functions": r"Functions:\s*(.*?)(?=\n-|\n\n|$)",
+            "dependencies": r"Dependencies:\s*(.*?)(?=\n-|\n\n|$)",
+            "input_parameters": r"Input parameters:\s*(.*?)(?=\n-|\n\n|$)",
+            "output": r"Output:\s*(.*?)(?=\n-|\n\n|$)",
+            "error_handling": r"Error handling:\s*(.*?)(?=\n-|\n\n|$)",
         }
 
         for key, pattern in patterns.items():
@@ -174,7 +170,9 @@ Guidelines:
 
         return metadata
 
-    def _generate_basic_script(self, description: str, requirements: Optional[List[str]]) -> Dict[str, Any]:
+    def _generate_basic_script(
+        self, description: str, requirements: Optional[List[str]]
+    ) -> Dict[str, Any]:
         """Generate a basic script template (fallback)."""
         script = f"""#!/bin/bash
 # Generated script: {description}
@@ -211,42 +209,42 @@ main "$@"
 """
 
         return {
-            'script': script,
-            'metadata': {
-                'functions': 'usage, main',
-                'dependencies': 'bash',
-                'input_parameters': 'None yet',
-                'output': 'Exit code',
-                'error_handling': 'set -e for early exit'
+            "script": script,
+            "metadata": {
+                "functions": "usage, main",
+                "dependencies": "bash",
+                "input_parameters": "None yet",
+                "output": "Exit code",
+                "error_handling": "set -e for early exit",
             },
-            'tests': ['Run script with no arguments', 'Check exit code'],
-            'documentation': f'Basic template for: {description}'
+            "tests": ["Run script with no arguments", "Check exit code"],
+            "documentation": f"Basic template for: {description}",
         }
 
     def _save_script(self, result: Dict[str, Any], output_file: Path):
         """Save the generated script to a file."""
-        with open(output_file, 'w') as f:
-            f.write(result['script'])
+        with open(output_file, "w") as f:
+            f.write(result["script"])
         output_file.chmod(0o755)  # Make executable
 
         # Save metadata alongside
-        metadata_file = output_file.with_suffix('.json')
+        metadata_file = output_file.with_suffix(".json")
         metadata = {
-            'description': result.get('description', ''),
-            'metadata': result.get('metadata', {}),
-            'tests': result.get('tests', []),
-            'documentation': result.get('documentation', ''),
-            'generated_at': result.get('generated_at', '')
+            "description": result.get("description", ""),
+            "metadata": result.get("metadata", {}),
+            "tests": result.get("tests", []),
+            "documentation": result.get("documentation", ""),
+            "generated_at": result.get("generated_at", ""),
         }
-        with open(metadata_file, 'w') as f:
+        with open(metadata_file, "w") as f:
             json.dump(metadata, f, indent=2)
 
     def _save_history(self):
         """Save generation history."""
-        history_file = self.storage_path / 'generation_history.json'
+        history_file = self.storage_path / "generation_history.json"
         # Keep only last 100 entries
         history = self.generated_scripts[-100:]
-        with open(history_file, 'w') as f:
+        with open(history_file, "w") as f:
             json.dump(history, f, indent=2)
 
     def list_generated_scripts(self) -> List[Dict[str, Any]]:

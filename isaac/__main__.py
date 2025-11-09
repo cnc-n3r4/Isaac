@@ -4,15 +4,16 @@ Isaac - AI-Enhanced Command-Line Assistant
 Entry point for permanent shell mode and direct command execution.
 """
 
-import sys
 import argparse
-from isaac.ui.permanent_shell import PermanentShell
-from isaac.core.session_manager import SessionManager
+import sys
+
+from isaac.adapters.bash_adapter import BashAdapter
+from isaac.adapters.powershell_adapter import PowerShellAdapter
+from isaac.core.boot_loader import boot
 from isaac.core.command_router import CommandRouter
 from isaac.core.key_manager import KeyManager
-from isaac.core.boot_loader import boot
-from isaac.adapters.powershell_adapter import PowerShellAdapter
-from isaac.adapters.bash_adapter import BashAdapter
+from isaac.core.session_manager import SessionManager
+from isaac.ui.permanent_shell import PermanentShell
 
 
 def main():
@@ -24,13 +25,27 @@ def main():
     """
     try:
         # Parse command line arguments
-        parser = argparse.ArgumentParser(description='Isaac - AI-Enhanced Command-Line Assistant')
-        parser.add_argument('-key', '--key', help='Authentication key for access')
-        parser.add_argument('-daemon', '--daemon', action='store_true', help='Run in daemon mode for webhooks')
-        parser.add_argument('-oneshot', '--oneshot', action='store_true', help='Execute command and exit (no session persistence)')
-        parser.add_argument('-start', '--start', action='store_true', help='Launch interactive shell (default behavior)')
-        parser.add_argument('-q', '--quiet', action='store_true', help='Suppress boot sequence display')
-        parser.add_argument('--no-boot', action='store_true', help='Skip boot loader (for testing)')
+        parser = argparse.ArgumentParser(description="Isaac - AI-Enhanced Command-Line Assistant")
+        parser.add_argument("-key", "--key", help="Authentication key for access")
+        parser.add_argument(
+            "-daemon", "--daemon", action="store_true", help="Run in daemon mode for webhooks"
+        )
+        parser.add_argument(
+            "-oneshot",
+            "--oneshot",
+            action="store_true",
+            help="Execute command and exit (no session persistence)",
+        )
+        parser.add_argument(
+            "-start",
+            "--start",
+            action="store_true",
+            help="Launch interactive shell (default behavior)",
+        )
+        parser.add_argument(
+            "-q", "--quiet", action="store_true", help="Suppress boot sequence display"
+        )
+        parser.add_argument("--no-boot", action="store_true", help="Skip boot loader (for testing)")
 
         # Parse known args first, leave the rest as command
         args, unknown = parser.parse_known_args()
@@ -83,7 +98,7 @@ def execute_direct_command(args, key_manager=None, oneshot=False):
     """
     try:
         # Initialize session manager
-        config = {'sync_enabled': False} if oneshot else None
+        config = {"sync_enabled": False} if oneshot else None
         session_mgr = SessionManager(config)
 
         # Get shell adapter (same logic as PermanentShell)
@@ -96,7 +111,7 @@ def execute_direct_command(args, key_manager=None, oneshot=False):
         router = CommandRouter(session_mgr, shell_adapter)
 
         # Join arguments back into a command string
-        command = ' '.join(args)
+        command = " ".join(args)
 
         # Route and execute the command
         result = router.route_command(command)
@@ -138,7 +153,7 @@ def repl_loop(router):
                 continue
 
             # Check for exit commands
-            if user_input.lower() in ['exit', 'quit', 'q']:
+            if user_input.lower() in ["exit", "quit", "q"]:
                 print("Isaac > Goodbye.")
                 break
 

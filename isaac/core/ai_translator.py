@@ -10,12 +10,13 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class TranslationResult:
     """Result of natural language translation."""
+
     original: str
     translated: str
     resolved_paths: List[str]
@@ -30,10 +31,10 @@ class AITranslator:
     def __init__(self):
         """Initialize translator with common patterns."""
         self.backup_patterns = [
-            r'backup\s+(?:my\s+)?(.+)',
-            r'save\s+(?:my\s+)?(.+)',
-            r'copy\s+(?:my\s+)?(.+)',
-            r'back\s+up\s+(?:my\s+)?(.+)',
+            r"backup\s+(?:my\s+)?(.+)",
+            r"save\s+(?:my\s+)?(.+)",
+            r"copy\s+(?:my\s+)?(.+)",
+            r"back\s+up\s+(?:my\s+)?(.+)",
         ]
 
         self.restore_patterns = [
@@ -120,7 +121,7 @@ class AITranslator:
                     resolved_paths=resolved,
                     confidence=0.8,
                     needs_confirmation=True,
-                    metadata={"operation": "backup", "source": source}
+                    metadata={"operation": "backup", "source": source},
                 )
 
         # Try restore patterns
@@ -136,7 +137,7 @@ class AITranslator:
                     resolved_paths=resolved,
                     confidence=0.7,
                     needs_confirmation=True,
-                    metadata={"operation": "restore", "target": target}
+                    metadata={"operation": "restore", "target": target},
                 )
 
         # Try list patterns
@@ -151,7 +152,7 @@ class AITranslator:
                         resolved_paths=[],
                         confidence=0.9,
                         needs_confirmation=False,
-                        metadata={"operation": "list", "subject": "backups"}
+                        metadata={"operation": "list", "subject": "backups"},
                     )
                 elif "history" in subject or "command" in subject:
                     return TranslationResult(
@@ -160,7 +161,7 @@ class AITranslator:
                         resolved_paths=[],
                         confidence=0.9,
                         needs_confirmation=False,
-                        metadata={"operation": "list", "subject": "history"}
+                        metadata={"operation": "list", "subject": "history"},
                     )
 
         # Try help patterns
@@ -168,14 +169,16 @@ class AITranslator:
             if re.search(pattern, text_lower):
                 # Additional check: make sure this is actually a help request, not just contains "help"
                 # For example, "can you help me" should not match help pattern
-                if "help" in text_lower and not any(word in text_lower for word in ["can", "could", "would", "how", "what"]):
+                if "help" in text_lower and not any(
+                    word in text_lower for word in ["can", "could", "would", "how", "what"]
+                ):
                     return TranslationResult(
                         original=text,
                         translated="help",
                         resolved_paths=[],
                         confidence=0.95,
                         needs_confirmation=False,
-                        metadata={"operation": "help"}
+                        metadata={"operation": "help"},
                     )
                 # For other help patterns, allow them
                 elif not "help" in text_lower:
@@ -185,7 +188,7 @@ class AITranslator:
                         resolved_paths=[],
                         confidence=0.95,
                         needs_confirmation=False,
-                        metadata={"operation": "help"}
+                        metadata={"operation": "help"},
                     )
 
         # Try question patterns
@@ -207,8 +210,8 @@ class AITranslator:
                         "operation": "query",
                         "type": "question",
                         "subject": subject,
-                        "intent": "information_request"
-                    }
+                        "intent": "information_request",
+                    },
                 )
 
         # Try casual conversation patterns
@@ -223,8 +226,8 @@ class AITranslator:
                     metadata={
                         "operation": "chat",
                         "type": "greeting",
-                        "intent": "casual_conversation"
-                    }
+                        "intent": "casual_conversation",
+                    },
                 )
 
         # Try time/weather patterns
@@ -241,8 +244,8 @@ class AITranslator:
                     metadata={
                         "operation": "info",
                         "info_type": pattern_type,
-                        "intent": "system_query"
-                    }
+                        "intent": "system_query",
+                    },
                 )
 
         return None
@@ -319,7 +322,11 @@ class AITranslator:
                 # Try to find a directory with similar name in current directory
                 else:
                     for item in current_dir.iterdir():
-                        if item.is_dir() and path_spec.lower().replace(' ', '').replace('folder', '') in item.name.lower():
+                        if (
+                            item.is_dir()
+                            and path_spec.lower().replace(" ", "").replace("folder", "")
+                            in item.name.lower()
+                        ):
                             resolved.append(str(item))
                             break
 

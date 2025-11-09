@@ -3,16 +3,18 @@
 Stores file change events in SQLite for background processing.
 This is a scaffold for Phase 0 auto-sync implementation.
 """
+
 import sqlite3
-from typing import List, Optional
 import threading
 import time
 from dataclasses import dataclass
+from typing import List, Optional
 
 
 @dataclass
 class ChangeEvent:
     """Represents a file change event."""
+
     path: str
     action: str  # 'modified', 'created', 'deleted'
     timestamp: float
@@ -29,13 +31,14 @@ class ChangeQueue:
         cq.mark_processed(event_ids)
     """
 
-    def __init__(self, db_path: str = ':memory:'):
+    def __init__(self, db_path: str = ":memory:"):
         self.db_path = db_path
         self._init_db()
 
     def _init_db(self):
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS changes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     path TEXT NOT NULL,
@@ -43,7 +46,8 @@ class ChangeQueue:
                     timestamp REAL NOT NULL,
                     processed INTEGER DEFAULT 0
                 )
-            ''')
+            """
+            )
             conn.commit()
 
     def enqueue(self, path: str, action: str) -> Optional[int]:
@@ -52,8 +56,8 @@ class ChangeQueue:
         with sqlite3.connect(self.db_path) as conn:
             self._init_db_on_conn(conn)  # Ensure table exists
             cursor = conn.execute(
-                'INSERT INTO changes (path, action, timestamp) VALUES (?, ?, ?)',
-                (path, action, timestamp)
+                "INSERT INTO changes (path, action, timestamp) VALUES (?, ?, ?)",
+                (path, action, timestamp),
             )
             conn.commit()
             return cursor.lastrowid
@@ -63,8 +67,8 @@ class ChangeQueue:
         with sqlite3.connect(self.db_path) as conn:
             self._init_db_on_conn(conn)  # Ensure table exists
             rows = conn.execute(
-                'SELECT id, path, action, timestamp FROM changes WHERE processed = 0 ORDER BY timestamp LIMIT ?',
-                (limit,)
+                "SELECT id, path, action, timestamp FROM changes WHERE processed = 0 ORDER BY timestamp LIMIT ?",
+                (limit,),
             ).fetchall()
 
             events = [ChangeEvent(path=r[1], action=r[2], timestamp=r[3], id=r[0]) for r in rows]
@@ -78,7 +82,7 @@ class ChangeQueue:
             self._init_db_on_conn(conn)  # Ensure table exists
             conn.execute(
                 f'UPDATE changes SET processed = 1 WHERE id IN ({",".join("?" * len(event_ids))})',
-                event_ids
+                event_ids,
             )
             conn.commit()
 
@@ -86,18 +90,19 @@ class ChangeQueue:
         """Count unprocessed events."""
         with sqlite3.connect(self.db_path) as conn:
             self._init_db_on_conn(conn)  # Ensure table exists
-            return conn.execute('SELECT COUNT(*) FROM changes WHERE processed = 0').fetchone()[0]
+            return conn.execute("SELECT COUNT(*) FROM changes WHERE processed = 0").fetchone()[0]
 
     def clear_all(self):
         """Clear all events (for testing)."""
         with sqlite3.connect(self.db_path) as conn:
             self._init_db_on_conn(conn)  # Ensure table exists
-            conn.execute('DELETE FROM changes')
+            conn.execute("DELETE FROM changes")
             conn.commit()
 
     def _init_db_on_conn(self, conn):
         """Initialize database on a specific connection."""
-        conn.execute('''
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS changes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path TEXT NOT NULL,
@@ -105,7 +110,8 @@ class ChangeQueue:
                 timestamp REAL NOT NULL,
                 processed INTEGER DEFAULT 0
             )
-        ''')
+        """
+        )
         conn.commit()
 
 

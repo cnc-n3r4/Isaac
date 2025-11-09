@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from .models import Team, TeamMember, PermissionLevel, SharedResource, ResourceType
+from .models import PermissionLevel, ResourceType, SharedResource, Team, TeamMember
 
 
 class TeamManager:
@@ -28,7 +28,8 @@ class TeamManager:
     def _init_db(self):
         """Initialize the database."""
         with sqlite3.connect(str(self.db_path)) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS teams (
                     team_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -38,8 +39,10 @@ class TeamManager:
                     settings TEXT,
                     tags TEXT
                 )
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS team_members (
                     team_id TEXT NOT NULL,
                     user_id TEXT NOT NULL,
@@ -52,8 +55,10 @@ class TeamManager:
                     PRIMARY KEY (team_id, user_id),
                     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
                 )
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS shared_resources (
                     resource_id TEXT NOT NULL,
                     resource_type TEXT NOT NULL,
@@ -67,19 +72,30 @@ class TeamManager:
                     PRIMARY KEY (resource_id, team_id),
                     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE
                 )
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_team_members_user
                 ON team_members(user_id)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_shared_resources_team
                 ON shared_resources(team_id)
-            """)
+            """
+            )
             conn.commit()
 
-    def create_team(self, name: str, description: str, owner_id: str,
-                   owner_username: str = "owner", owner_email: str = "") -> Team:
+    def create_team(
+        self,
+        name: str,
+        description: str,
+        owner_id: str,
+        owner_username: str = "owner",
+        owner_email: str = "",
+    ) -> Team:
         """Create a new team.
 
         Args:
@@ -99,9 +115,9 @@ class TeamManager:
             description=description,
             owner_id=owner_id,
             settings={
-                'owner_username': owner_username,
-                'owner_email': owner_email,
-            }
+                "owner_username": owner_username,
+                "owner_email": owner_email,
+            },
         )
 
         # Save to database
@@ -109,8 +125,15 @@ class TeamManager:
             conn.execute(
                 """INSERT INTO teams (team_id, name, description, owner_id, created_at, settings, tags)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (team_id, name, description, owner_id, team.created_at.isoformat(),
-                 json.dumps(team.settings), json.dumps(list(team.tags)))
+                (
+                    team_id,
+                    name,
+                    description,
+                    owner_id,
+                    team.created_at.isoformat(),
+                    json.dumps(team.settings),
+                    json.dumps(list(team.tags)),
+                ),
             )
 
             # Add owner as member
@@ -118,8 +141,15 @@ class TeamManager:
             conn.execute(
                 """INSERT INTO team_members (team_id, user_id, username, email, role, joined_at, invited_by)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (team_id, owner.user_id, owner.username, owner.email, owner.role.value,
-                 owner.joined_at.isoformat(), owner.invited_by)
+                (
+                    team_id,
+                    owner.user_id,
+                    owner.username,
+                    owner.email,
+                    owner.role.value,
+                    owner.joined_at.isoformat(),
+                    owner.invited_by,
+                ),
             )
             conn.commit()
 
@@ -136,9 +166,7 @@ class TeamManager:
         """
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.row_factory = sqlite3.Row
-            row = conn.execute(
-                "SELECT * FROM teams WHERE team_id = ?", (team_id,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM teams WHERE team_id = ?", (team_id,)).fetchone()
 
             if not row:
                 return None
@@ -150,26 +178,28 @@ class TeamManager:
 
             members = [
                 TeamMember(
-                    user_id=m['user_id'],
-                    username=m['username'],
-                    email=m['email'] or '',
-                    role=PermissionLevel(m['role']),
-                    joined_at=datetime.fromisoformat(m['joined_at']),
-                    invited_by=m['invited_by'],
-                    last_active=datetime.fromisoformat(m['last_active']) if m['last_active'] else None,
+                    user_id=m["user_id"],
+                    username=m["username"],
+                    email=m["email"] or "",
+                    role=PermissionLevel(m["role"]),
+                    joined_at=datetime.fromisoformat(m["joined_at"]),
+                    invited_by=m["invited_by"],
+                    last_active=(
+                        datetime.fromisoformat(m["last_active"]) if m["last_active"] else None
+                    ),
                 )
                 for m in member_rows
             ]
 
             team = Team(
-                team_id=row['team_id'],
-                name=row['name'],
-                description=row['description'] or '',
-                owner_id=row['owner_id'],
-                created_at=datetime.fromisoformat(row['created_at']),
+                team_id=row["team_id"],
+                name=row["name"],
+                description=row["description"] or "",
+                owner_id=row["owner_id"],
+                created_at=datetime.fromisoformat(row["created_at"]),
                 members=members,
-                settings=json.loads(row['settings']) if row['settings'] else {},
-                tags=set(json.loads(row['tags'])) if row['tags'] else set(),
+                settings=json.loads(row["settings"]) if row["settings"] else {},
+                tags=set(json.loads(row["tags"])) if row["tags"] else set(),
             )
 
             return team
@@ -187,20 +217,21 @@ class TeamManager:
             conn.row_factory = sqlite3.Row
 
             if user_id:
-                rows = conn.execute("""
+                rows = conn.execute(
+                    """
                     SELECT DISTINCT t.* FROM teams t
                     JOIN team_members tm ON t.team_id = tm.team_id
                     WHERE tm.user_id = ?
                     ORDER BY t.created_at DESC
-                """, (user_id,)).fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT * FROM teams ORDER BY created_at DESC"
+                """,
+                    (user_id,),
                 ).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM teams ORDER BY created_at DESC").fetchall()
 
             teams = []
             for row in rows:
-                team = self.get_team(row['team_id'])
+                team = self.get_team(row["team_id"])
                 if team:
                     teams.append(team)
 
@@ -235,8 +266,15 @@ class TeamManager:
                 conn.execute(
                     """INSERT INTO team_members (team_id, user_id, username, email, role, joined_at, invited_by)
                        VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                    (team_id, member.user_id, member.username, member.email, member.role.value,
-                     member.joined_at.isoformat(), member.invited_by)
+                    (
+                        team_id,
+                        member.user_id,
+                        member.username,
+                        member.email,
+                        member.role.value,
+                        member.joined_at.isoformat(),
+                        member.invited_by,
+                    ),
                 )
                 conn.commit()
                 return True
@@ -260,8 +298,7 @@ class TeamManager:
 
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.execute(
-                "DELETE FROM team_members WHERE team_id = ? AND user_id = ?",
-                (team_id, user_id)
+                "DELETE FROM team_members WHERE team_id = ? AND user_id = ?", (team_id, user_id)
             )
             conn.commit()
             return cursor.rowcount > 0
@@ -285,7 +322,7 @@ class TeamManager:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.execute(
                 "UPDATE team_members SET role = ? WHERE team_id = ? AND user_id = ?",
-                (role.value, team_id, user_id)
+                (role.value, team_id, user_id),
             )
             conn.commit()
             return cursor.rowcount > 0
@@ -305,9 +342,17 @@ class TeamManager:
                     """INSERT OR REPLACE INTO shared_resources
                        (resource_id, resource_type, team_id, shared_by, shared_at, name, description, metadata, version)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (resource.resource_id, resource.resource_type.value, resource.team_id,
-                     resource.shared_by, resource.shared_at.isoformat(), resource.name,
-                     resource.description, json.dumps(resource.metadata), resource.version)
+                    (
+                        resource.resource_id,
+                        resource.resource_type.value,
+                        resource.team_id,
+                        resource.shared_by,
+                        resource.shared_at.isoformat(),
+                        resource.name,
+                        resource.description,
+                        json.dumps(resource.metadata),
+                        resource.version,
+                    ),
                 )
                 conn.commit()
                 return True
@@ -327,13 +372,14 @@ class TeamManager:
         with sqlite3.connect(str(self.db_path)) as conn:
             cursor = conn.execute(
                 "DELETE FROM shared_resources WHERE resource_id = ? AND team_id = ?",
-                (resource_id, team_id)
+                (resource_id, team_id),
             )
             conn.commit()
             return cursor.rowcount > 0
 
-    def get_shared_resources(self, team_id: str,
-                            resource_type: Optional[ResourceType] = None) -> List[SharedResource]:
+    def get_shared_resources(
+        self, team_id: str, resource_type: Optional[ResourceType] = None
+    ) -> List[SharedResource]:
         """Get shared resources for a team.
 
         Args:
@@ -351,27 +397,29 @@ class TeamManager:
                     """SELECT * FROM shared_resources
                        WHERE team_id = ? AND resource_type = ?
                        ORDER BY shared_at DESC""",
-                    (team_id, resource_type.value)
+                    (team_id, resource_type.value),
                 ).fetchall()
             else:
                 rows = conn.execute(
                     "SELECT * FROM shared_resources WHERE team_id = ? ORDER BY shared_at DESC",
-                    (team_id,)
+                    (team_id,),
                 ).fetchall()
 
             resources = []
             for row in rows:
-                resources.append(SharedResource(
-                    resource_id=row['resource_id'],
-                    resource_type=ResourceType(row['resource_type']),
-                    team_id=row['team_id'],
-                    shared_by=row['shared_by'],
-                    shared_at=datetime.fromisoformat(row['shared_at']),
-                    name=row['name'] or '',
-                    description=row['description'] or '',
-                    metadata=json.loads(row['metadata']) if row['metadata'] else {},
-                    version=row['version'] or 1,
-                ))
+                resources.append(
+                    SharedResource(
+                        resource_id=row["resource_id"],
+                        resource_type=ResourceType(row["resource_type"]),
+                        team_id=row["team_id"],
+                        shared_by=row["shared_by"],
+                        shared_at=datetime.fromisoformat(row["shared_at"]),
+                        name=row["name"] or "",
+                        description=row["description"] or "",
+                        metadata=json.loads(row["metadata"]) if row["metadata"] else {},
+                        version=row["version"] or 1,
+                    )
+                )
 
             return resources
 
@@ -385,6 +433,6 @@ class TeamManager:
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.execute(
                 "UPDATE team_members SET last_active = ? WHERE team_id = ? AND user_id = ?",
-                (datetime.now().isoformat(), team_id, user_id)
+                (datetime.now().isoformat(), team_id, user_id),
             )
             conn.commit()

@@ -4,16 +4,17 @@ Resource Prediction System
 Predict future resource needs based on historical patterns.
 """
 
-import time
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, asdict
-from datetime import datetime
 import statistics
+import time
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
 class ResourcePrediction:
     """Prediction for future resource usage"""
+
     resource_type: str  # 'cpu', 'memory', 'disk'
     predicted_value: float
     predicted_time: float  # Unix timestamp
@@ -25,7 +26,7 @@ class ResourcePrediction:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
-        data['predicted_time_readable'] = datetime.fromtimestamp(self.predicted_time).isoformat()
+        data["predicted_time_readable"] = datetime.fromtimestamp(self.predicted_time).isoformat()
         return data
 
 
@@ -51,9 +52,7 @@ class ResourcePredictor:
         self.monitor = monitor
 
     def predict_resource_usage(
-        self,
-        resource_type: str,
-        minutes_ahead: int = 60
+        self, resource_type: str, minutes_ahead: int = 60
     ) -> Optional[ResourcePrediction]:
         """
         Predict resource usage N minutes into the future
@@ -75,13 +74,13 @@ class ResourcePredictor:
             return None  # Need at least 10 data points
 
         # Extract values based on resource type
-        if resource_type == 'cpu':
+        if resource_type == "cpu":
             values = [s.cpu_percent for s in history]
             limit = 100.0
-        elif resource_type == 'memory':
+        elif resource_type == "memory":
             values = [s.memory_percent for s in history]
             limit = 100.0
-        elif resource_type == 'disk':
+        elif resource_type == "disk":
             values = [s.disk_percent for s in history]
             limit = 100.0
         else:
@@ -105,23 +104,23 @@ class ResourcePredictor:
 
         # Determine trend direction
         if trend_value > 0.5:
-            trend = 'increasing'
+            trend = "increasing"
         elif trend_value < -0.5:
-            trend = 'decreasing'
+            trend = "decreasing"
         else:
-            trend = 'stable'
+            trend = "stable"
 
         # Determine warning level
         if predicted_value >= 95:
-            warning_level = 'critical'
+            warning_level = "critical"
         elif predicted_value >= 85:
-            warning_level = 'high'
+            warning_level = "high"
         elif predicted_value >= 75:
-            warning_level = 'medium'
+            warning_level = "medium"
         elif predicted_value >= 60:
-            warning_level = 'low'
+            warning_level = "low"
         else:
-            warning_level = 'none'
+            warning_level = "none"
 
         # Generate recommendation
         recommendation = self._generate_recommendation(
@@ -135,7 +134,7 @@ class ResourcePredictor:
             confidence=confidence,
             trend=trend,
             warning_level=warning_level,
-            recommendation=recommendation
+            recommendation=recommendation,
         )
 
     def _calculate_trend(self, timestamps: List[float], values: List[float]) -> Tuple[float, float]:
@@ -183,42 +182,36 @@ class ResourcePredictor:
         return (slope, confidence)
 
     def _generate_recommendation(
-        self,
-        resource_type: str,
-        predicted_value: float,
-        trend: str,
-        current_value: float
+        self, resource_type: str, predicted_value: float, trend: str, current_value: float
     ) -> str:
         """Generate recommendation based on prediction"""
         if predicted_value >= 95:
-            if resource_type == 'cpu':
+            if resource_type == "cpu":
                 return "Critical: CPU usage predicted to reach capacity. Consider scaling horizontally or optimizing code."
-            elif resource_type == 'memory':
+            elif resource_type == "memory":
                 return "Critical: Memory usage predicted to reach capacity. Check for memory leaks or add more RAM."
-            elif resource_type == 'disk':
+            elif resource_type == "disk":
                 return "Critical: Disk usage predicted to reach capacity. Clean up files or expand storage."
 
         elif predicted_value >= 85:
-            if resource_type == 'cpu':
+            if resource_type == "cpu":
                 return "Warning: High CPU usage predicted. Monitor performance and consider optimization."
-            elif resource_type == 'memory':
+            elif resource_type == "memory":
                 return "Warning: High memory usage predicted. Review memory-intensive processes."
-            elif resource_type == 'disk':
+            elif resource_type == "disk":
                 return "Warning: High disk usage predicted. Plan for cleanup or expansion."
 
-        elif trend == 'increasing':
+        elif trend == "increasing":
             return f"{resource_type.capitalize()} usage is steadily increasing. Monitor trends."
 
-        elif trend == 'decreasing':
+        elif trend == "decreasing":
             return f"{resource_type.capitalize()} usage is decreasing. No action needed."
 
         else:
             return f"{resource_type.capitalize()} usage is stable. No issues predicted."
 
     def predict_time_to_limit(
-        self,
-        resource_type: str,
-        limit_percent: float = 90.0
+        self, resource_type: str, limit_percent: float = 90.0
     ) -> Optional[Dict[str, Any]]:
         """
         Predict when a resource will reach a certain limit
@@ -239,11 +232,11 @@ class ResourcePredictor:
             return None
 
         # Get values
-        if resource_type == 'cpu':
+        if resource_type == "cpu":
             values = [s.cpu_percent for s in history]
-        elif resource_type == 'memory':
+        elif resource_type == "memory":
             values = [s.memory_percent for s in history]
-        elif resource_type == 'disk':
+        elif resource_type == "disk":
             values = [s.disk_percent for s in history]
         else:
             return None
@@ -258,10 +251,10 @@ class ResourcePredictor:
         # If trending down or stable, won't reach limit
         if trend_value <= 0:
             return {
-                'will_reach_limit': False,
-                'reason': 'Resource usage is stable or decreasing',
-                'current_value': current_value,
-                'limit': limit_percent
+                "will_reach_limit": False,
+                "reason": "Resource usage is stable or decreasing",
+                "current_value": current_value,
+                "limit": limit_percent,
             }
 
         # Calculate hours until limit
@@ -269,10 +262,10 @@ class ResourcePredictor:
 
         if hours_to_limit <= 0:
             return {
-                'will_reach_limit': True,
-                'already_at_limit': True,
-                'current_value': current_value,
-                'limit': limit_percent
+                "will_reach_limit": True,
+                "already_at_limit": True,
+                "current_value": current_value,
+                "limit": limit_percent,
             }
 
         # Convert to timestamp (handle overflow for very large values)
@@ -284,14 +277,14 @@ class ResourcePredictor:
             time_readable = f"More than {hours_to_limit:.0f} hours from now"
 
         return {
-            'will_reach_limit': True,
-            'hours_to_limit': hours_to_limit,
-            'time_to_limit': time_to_limit,
-            'time_to_limit_readable': time_readable,
-            'current_value': current_value,
-            'limit': limit_percent,
-            'trend': trend_value,
-            'confidence': confidence
+            "will_reach_limit": True,
+            "hours_to_limit": hours_to_limit,
+            "time_to_limit": time_to_limit,
+            "time_to_limit_readable": time_readable,
+            "current_value": current_value,
+            "limit": limit_percent,
+            "trend": trend_value,
+            "confidence": confidence,
         }
 
     def analyze_patterns(self, hours: int = 24) -> Dict[str, Any]:
@@ -305,14 +298,14 @@ class ResourcePredictor:
             Dictionary with pattern analysis
         """
         if not self.monitor or not self.monitor.history:
-            return {'error': 'No data available'}
+            return {"error": "No data available"}
 
         history = self.monitor.history
         cutoff_time = time.time() - (hours * 3600)
         recent = [s for s in history if s.timestamp >= cutoff_time]
 
         if not recent:
-            return {'error': 'Insufficient recent data'}
+            return {"error": "Insufficient recent data"}
 
         # Analyze CPU
         cpu_values = [s.cpu_percent for s in recent]
@@ -329,24 +322,28 @@ class ResourcePredictor:
         mem_anomalies = [v for v in mem_values if abs(v - mem_avg) > 2 * mem_stdev]
 
         return {
-            'period_hours': hours,
-            'samples': len(recent),
-            'cpu': {
-                'average': cpu_avg,
-                'std_dev': cpu_stdev,
-                'min': min(cpu_values),
-                'max': max(cpu_values),
-                'anomalies': len(cpu_anomalies),
-                'stability': 'stable' if cpu_stdev < 10 else 'variable' if cpu_stdev < 25 else 'volatile'
+            "period_hours": hours,
+            "samples": len(recent),
+            "cpu": {
+                "average": cpu_avg,
+                "std_dev": cpu_stdev,
+                "min": min(cpu_values),
+                "max": max(cpu_values),
+                "anomalies": len(cpu_anomalies),
+                "stability": (
+                    "stable" if cpu_stdev < 10 else "variable" if cpu_stdev < 25 else "volatile"
+                ),
             },
-            'memory': {
-                'average': mem_avg,
-                'std_dev': mem_stdev,
-                'min': min(mem_values),
-                'max': max(mem_values),
-                'anomalies': len(mem_anomalies),
-                'stability': 'stable' if mem_stdev < 5 else 'variable' if mem_stdev < 15 else 'volatile'
-            }
+            "memory": {
+                "average": mem_avg,
+                "std_dev": mem_stdev,
+                "min": min(mem_values),
+                "max": max(mem_values),
+                "anomalies": len(mem_anomalies),
+                "stability": (
+                    "stable" if mem_stdev < 5 else "variable" if mem_stdev < 15 else "volatile"
+                ),
+            },
         }
 
     def get_capacity_recommendations(self) -> List[str]:
@@ -354,24 +351,24 @@ class ResourcePredictor:
         recommendations = []
 
         # Predict 1 hour ahead for each resource
-        cpu_pred = self.predict_resource_usage('cpu', minutes_ahead=60)
-        mem_pred = self.predict_resource_usage('memory', minutes_ahead=60)
-        disk_pred = self.predict_resource_usage('disk', minutes_ahead=60)
+        cpu_pred = self.predict_resource_usage("cpu", minutes_ahead=60)
+        mem_pred = self.predict_resource_usage("memory", minutes_ahead=60)
+        disk_pred = self.predict_resource_usage("disk", minutes_ahead=60)
 
-        if cpu_pred and cpu_pred.warning_level in ['high', 'critical']:
+        if cpu_pred and cpu_pred.warning_level in ["high", "critical"]:
             recommendations.append(f"CPU: {cpu_pred.recommendation}")
 
-        if mem_pred and mem_pred.warning_level in ['high', 'critical']:
+        if mem_pred and mem_pred.warning_level in ["high", "critical"]:
             recommendations.append(f"Memory: {mem_pred.recommendation}")
 
-        if disk_pred and disk_pred.warning_level in ['high', 'critical']:
+        if disk_pred and disk_pred.warning_level in ["high", "critical"]:
             recommendations.append(f"Disk: {disk_pred.recommendation}")
 
         # Check time to limits
-        for resource in ['cpu', 'memory', 'disk']:
+        for resource in ["cpu", "memory", "disk"]:
             ttl = self.predict_time_to_limit(resource, limit_percent=90.0)
-            if ttl and ttl.get('will_reach_limit') and not ttl.get('already_at_limit'):
-                hours = ttl.get('hours_to_limit', 0)
+            if ttl and ttl.get("will_reach_limit") and not ttl.get("already_at_limit"):
+                hours = ttl.get("hours_to_limit", 0)
                 if hours < 24:
                     recommendations.append(
                         f"{resource.capitalize()}: Will reach 90% capacity in {hours:.1f} hours"

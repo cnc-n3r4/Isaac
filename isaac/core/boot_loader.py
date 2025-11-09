@@ -4,16 +4,18 @@ ISAAC Boot Loader
 Discovers, validates, and loads command plugins with visual feedback
 """
 
-import os
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
-import yaml
 import importlib.util
+import os
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import yaml
 
 
 class PluginStatus(Enum):
     """Plugin load status"""
+
     OK = "OK"
     STUB = "STUB"
     WARN = "WARN"
@@ -39,7 +41,7 @@ class BootLoader:
         if commands_dir is None:
             # Assume we're in isaac/core, go up to isaac, then to commands
             isaac_root = Path(__file__).parent.parent
-            commands_dir = isaac_root / 'commands'
+            commands_dir = isaac_root / "commands"
 
         self.commands_dir = commands_dir
         self.quiet = quiet
@@ -63,37 +65,39 @@ class BootLoader:
             if not item.is_dir():
                 continue
 
-            if item.name.startswith('_') or item.name.startswith('.'):
+            if item.name.startswith("_") or item.name.startswith("."):
                 continue
 
             # Look for command.yaml
-            yaml_file = item / 'command.yaml'
+            yaml_file = item / "command.yaml"
             if not yaml_file.exists():
                 continue
 
             # Load metadata
             try:
-                with open(yaml_file, 'r') as f:
+                with open(yaml_file, "r") as f:
                     metadata = yaml.safe_load(f)
 
                 if metadata:
                     plugins[item.name] = {
-                        'path': item,
-                        'metadata': metadata,
-                        'status': PluginStatus.OK,
-                        'message': ''
+                        "path": item,
+                        "metadata": metadata,
+                        "status": PluginStatus.OK,
+                        "message": "",
                     }
             except Exception as e:
                 plugins[item.name] = {
-                    'path': item,
-                    'metadata': {},
-                    'status': PluginStatus.FAIL,
-                    'message': f'Failed to load YAML: {e}'
+                    "path": item,
+                    "metadata": {},
+                    "status": PluginStatus.FAIL,
+                    "message": f"Failed to load YAML: {e}",
                 }
 
         return plugins
 
-    def check_dependencies(self, plugin_name: str, plugin: Dict[str, Any]) -> Tuple[PluginStatus, str]:
+    def check_dependencies(
+        self, plugin_name: str, plugin: Dict[str, Any]
+    ) -> Tuple[PluginStatus, str]:
         """
         Check if plugin dependencies are satisfied
 
@@ -104,34 +108,34 @@ class BootLoader:
         Returns:
             Tuple of (status, message)
         """
-        metadata = plugin['metadata']
+        metadata = plugin["metadata"]
 
         # Check if it's marked as stub
-        if metadata.get('status') == 'stub':
-            return PluginStatus.STUB, metadata.get('stub_reason', 'Not implemented')
+        if metadata.get("status") == "stub":
+            return PluginStatus.STUB, metadata.get("stub_reason", "Not implemented")
 
         # Check for required dependencies
-        dependencies = metadata.get('dependencies', {})
+        dependencies = metadata.get("dependencies", {})
 
         # Check API keys
-        required_keys = dependencies.get('api_keys', [])
+        required_keys = dependencies.get("api_keys", [])
         for key_name in required_keys:
             if not os.environ.get(key_name):
-                return PluginStatus.WARN, f'Missing API key: {key_name}'
+                return PluginStatus.WARN, f"Missing API key: {key_name}"
 
         # Check Python packages
-        required_packages = dependencies.get('packages', [])
+        required_packages = dependencies.get("packages", [])
         for package_name in required_packages:
             spec = importlib.util.find_spec(package_name)
             if spec is None:
-                return PluginStatus.WARN, f'Missing package: {package_name}'
+                return PluginStatus.WARN, f"Missing package: {package_name}"
 
         # Check for run.py
-        run_file = plugin['path'] / 'run.py'
+        run_file = plugin["path"] / "run.py"
         if not run_file.exists():
-            return PluginStatus.STUB, 'No run.py found'
+            return PluginStatus.STUB, "No run.py found"
 
-        return PluginStatus.OK, metadata.get('summary', '')
+        return PluginStatus.OK, metadata.get("summary", "")
 
     def load_all(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -145,8 +149,8 @@ class BootLoader:
 
         for name, plugin in sorted(self.plugins.items()):
             status, message = self.check_dependencies(name, plugin)
-            plugin['status'] = status
-            plugin['message'] = message
+            plugin["status"] = status
+            plugin["message"] = message
             self.load_results.append((name, status, message))
 
         return self.plugins
@@ -173,9 +177,9 @@ class BootLoader:
 
         # AI Providers
         print("AI Providers:")
-        self._check_ai_provider('Grok (xAI)', 'XAI_API_KEY', 'grok-beta')
-        self._check_ai_provider('Claude (Anthropic)', 'ANTHROPIC_API_KEY', 'claude-3-5-sonnet')
-        self._check_ai_provider('OpenAI', 'OPENAI_API_KEY', 'gpt-4o-mini')
+        self._check_ai_provider("Grok (xAI)", "XAI_API_KEY", "grok-beta")
+        self._check_ai_provider("Claude (Anthropic)", "ANTHROPIC_API_KEY", "claude-3-5-sonnet")
+        self._check_ai_provider("OpenAI", "OPENAI_API_KEY", "gpt-4o-mini")
 
         # Enhanced features
         self._print_status(PluginStatus.OK, "AIRouter - Multi-provider with fallback")
@@ -195,15 +199,19 @@ class BootLoader:
 
         for name, status, message in self.load_results:
             plugin = self.plugins[name]
-            metadata = plugin['metadata']
-            version = metadata.get('version', '1.0.0')
-            summary = metadata.get('summary', 'No description')
+            metadata = plugin["metadata"]
+            version = metadata.get("version", "1.0.0")
+            summary = metadata.get("summary", "No description")
 
             # Truncate long summaries
             if len(summary) > 40:
                 summary = summary[:37] + "..."
 
-            trigger = metadata.get('triggers', [f'/{name}'])[0] if metadata.get('triggers') else f'/{name}'
+            trigger = (
+                metadata.get("triggers", [f"/{name}"])[0]
+                if metadata.get("triggers")
+                else f"/{name}"
+            )
             display = f"{trigger} - {summary} v{version}"
 
             if status == PluginStatus.OK:
@@ -235,9 +243,7 @@ class BootLoader:
 
         # Phase 9: Consolidated Commands
         print("✨ Phase 9 - Consolidated Commands:")
-        consolidated = [
-            '/help', '/file', '/search', '/task', '/status', '/config'
-        ]
+        consolidated = ["/help", "/file", "/search", "/task", "/status", "/config"]
         for cmd in consolidated:
             if any(cmd in ok_cmd for ok_cmd in ok_cmds):
                 self._print_status(PluginStatus.OK, f"{cmd} - Unified command interface")
@@ -284,23 +290,23 @@ class BootLoader:
             Dict with counts by status
         """
         summary = {
-            'total': len(self.plugins),
-            'ok': 0,
-            'stub': 0,
-            'warn': 0,
-            'fail': 0,
-            'plugins': self.plugins
+            "total": len(self.plugins),
+            "ok": 0,
+            "stub": 0,
+            "warn": 0,
+            "fail": 0,
+            "plugins": self.plugins,
         }
 
         for _, status, _ in self.load_results:
             if status == PluginStatus.OK:
-                summary['ok'] += 1
+                summary["ok"] += 1
             elif status == PluginStatus.STUB:
-                summary['stub'] += 1
+                summary["stub"] += 1
             elif status == PluginStatus.WARN:
-                summary['warn'] += 1
+                summary["warn"] += 1
             else:
-                summary['fail'] += 1
+                summary["fail"] += 1
 
         return summary
 
@@ -320,32 +326,32 @@ class BootLoader:
         if not plugin:
             return [f"Plugin '{plugin_name}' not found"]
 
-        metadata = plugin.get('metadata', {})
-        path = plugin.get('path')
+        metadata = plugin.get("metadata", {})
+        path = plugin.get("path")
 
         # Required fields
-        required_fields = ['name', 'version', 'summary', 'description']
+        required_fields = ["name", "version", "summary", "description"]
         for field in required_fields:
             if not metadata.get(field):
                 issues.append(f"Missing required field: {field}")
 
         # Check triggers or aliases
-        if not metadata.get('triggers') and not metadata.get('aliases'):
+        if not metadata.get("triggers") and not metadata.get("aliases"):
             issues.append("Must have at least one trigger or alias")
 
         # Check for run.py
         if path:
-            run_file = path / 'run.py'
+            run_file = path / "run.py"
             if not run_file.exists():
                 issues.append("Missing run.py file")
 
         # Check security section
-        security = metadata.get('security', {})
-        if not security.get('scope'):
+        security = metadata.get("security", {})
+        if not security.get("scope"):
             issues.append("Missing security.scope")
 
         # Check examples
-        if not metadata.get('examples'):
+        if not metadata.get("examples"):
             issues.append("No examples provided (recommended)")
 
         return issues
@@ -386,6 +392,6 @@ def boot(quiet: bool = False) -> BootLoader:
     return loader
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test the boot loader
     boot(quiet=False)

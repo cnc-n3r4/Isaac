@@ -7,7 +7,8 @@ import importlib
 import inspect
 import pkgutil
 from pathlib import Path
-from typing import Dict, Any, List, Type, Optional
+from typing import Any, Dict, List, Optional, Type
+
 from .base import BaseTool
 
 
@@ -31,18 +32,16 @@ class ToolRegistry:
 
         # Import all tool modules
         for _, module_name, _ in pkgutil.iter_modules([str(tools_package)]):
-            if module_name in ['base', '__init__', 'registry']:  # Skip non-tool modules
+            if module_name in ["base", "__init__", "registry"]:  # Skip non-tool modules
                 continue
 
             try:
                 # Import the module
-                module = importlib.import_module(f'isaac.tools.{module_name}')
+                module = importlib.import_module(f"isaac.tools.{module_name}")
 
                 # Find all BaseTool subclasses in the module
                 for name, obj in inspect.getmembers(module):
-                    if (inspect.isclass(obj) and
-                        issubclass(obj, BaseTool) and
-                        obj != BaseTool):
+                    if inspect.isclass(obj) and issubclass(obj, BaseTool) and obj != BaseTool:
 
                         self._register_tool(obj)
 
@@ -74,25 +73,25 @@ class ToolRegistry:
 
         # Analyze description for keywords
         desc_lower = instance.description.lower()
-        if any(word in desc_lower for word in ['read', 'view', 'display']):
-            capabilities.append('read')
-        if any(word in desc_lower for word in ['write', 'create', 'edit', 'modify']):
-            capabilities.append('write')
-        if any(word in desc_lower for word in ['search', 'find', 'grep', 'query']):
-            capabilities.append('search')
-        if any(word in desc_lower for word in ['analyze', 'check', 'validate']):
-            capabilities.append('analyze')
+        if any(word in desc_lower for word in ["read", "view", "display"]):
+            capabilities.append("read")
+        if any(word in desc_lower for word in ["write", "create", "edit", "modify"]):
+            capabilities.append("write")
+        if any(word in desc_lower for word in ["search", "find", "grep", "query"]):
+            capabilities.append("search")
+        if any(word in desc_lower for word in ["analyze", "check", "validate"]):
+            capabilities.append("analyze")
 
         # Analyze parameters for additional capabilities
         schema = instance.get_parameters_schema()
-        if 'properties' in schema:
-            props = schema['properties']
-            if 'file_path' in props:
-                capabilities.append('file_operations')
-            if 'pattern' in props or 'query' in props:
-                capabilities.append('pattern_matching')
-            if 'directory' in props or 'path' in props:
-                capabilities.append('filesystem')
+        if "properties" in schema:
+            props = schema["properties"]
+            if "file_path" in props:
+                capabilities.append("file_operations")
+            if "pattern" in props or "query" in props:
+                capabilities.append("pattern_matching")
+            if "directory" in props or "path" in props:
+                capabilities.append("filesystem")
 
         self.capabilities[tool_name] = list(set(capabilities))  # Remove duplicates
 
@@ -115,19 +114,22 @@ class ToolRegistry:
     def get_tools_for_task(self, task_type: str) -> List[Dict[str, Any]]:
         """Return relevant tools for task type in OpenAI format"""
         if task_type == "coding":
-            relevant_tools = ['read', 'grep', 'glob']
+            relevant_tools = ["read", "grep", "glob"]
         elif task_type == "file_operations":
-            relevant_tools = ['read', 'grep', 'glob']
+            relevant_tools = ["read", "grep", "glob"]
         elif task_type == "analysis":
-            relevant_tools = ['grep', 'read']
+            relevant_tools = ["grep", "read"]
         elif task_type == "search":
-            relevant_tools = ['grep', 'glob']
+            relevant_tools = ["grep", "glob"]
         else:
             # Return all tools for unknown task types
             relevant_tools = list(self.tools.keys())
 
-        return [self.tool_instances[name].to_dict() for name in relevant_tools
-                if name in self.tool_instances]
+        return [
+            self.tool_instances[name].to_dict()
+            for name in relevant_tools
+            if name in self.tool_instances
+        ]
 
     def validate_tool_call(self, tool_name: str, args: Dict[str, Any]) -> bool:
         """Safety validation before tool execution"""
@@ -138,8 +140,8 @@ class ToolRegistry:
 
         # Basic parameter validation against schema
         schema = tool.get_parameters_schema()
-        if 'required' in schema:
-            for required_param in schema['required']:
+        if "required" in schema:
+            for required_param in schema["required"]:
                 if required_param not in args:
                     return False
 
@@ -154,10 +156,7 @@ class ToolRegistry:
     def execute_tool(self, tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool with given arguments"""
         if not self.validate_tool_call(tool_name, args):
-            return {
-                'success': False,
-                'error': f'Invalid tool call: {tool_name} with args {args}'
-            }
+            return {"success": False, "error": f"Invalid tool call: {tool_name} with args {args}"}
 
         tool = self.tool_instances[tool_name]
         try:
@@ -165,25 +164,22 @@ class ToolRegistry:
             # Validate result format
             if not tool.validate_result(result):
                 return {
-                    'success': False,
-                    'error': f'Tool {tool_name} returned invalid result format'
+                    "success": False,
+                    "error": f"Tool {tool_name} returned invalid result format",
                 }
             return result
         except Exception as e:
-            return {
-                'success': False,
-                'error': f'Tool execution failed: {str(e)}'
-            }
+            return {"success": False, "error": f"Tool execution failed: {str(e)}"}
 
     def get_tool_info(self) -> Dict[str, Any]:
         """Get information about all registered tools"""
         return {
-            'total_tools': len(self.tools),
-            'tools': {
+            "total_tools": len(self.tools),
+            "tools": {
                 name: {
-                    'description': instance.description,
-                    'capabilities': self.capabilities.get(name, [])
+                    "description": instance.description,
+                    "capabilities": self.capabilities.get(name, []),
                 }
                 for name, instance in self.tool_instances.items()
-            }
+            },
         }

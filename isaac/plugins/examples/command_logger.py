@@ -6,9 +6,9 @@ This plugin demonstrates hook usage and state management.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from isaac.plugins.plugin_api import Plugin, PluginMetadata, PluginContext, PluginHook
+from isaac.plugins.plugin_api import Plugin, PluginContext, PluginHook, PluginMetadata
 
 
 class CommandLoggerPlugin(Plugin):

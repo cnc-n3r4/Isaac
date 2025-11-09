@@ -7,12 +7,12 @@ Checks for linting errors, test failures, and other code quality issues
 that might require developer attention.
 """
 
-import subprocess
 import logging
+import subprocess
 from pathlib import Path
 
+from isaac.core.message_queue import MessagePriority, MessageType
 from isaac.monitoring.base_monitor import BaseMonitor
-from isaac.core.message_queue import MessageType, MessagePriority
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,11 @@ class CodeMonitor(BaseMonitor):
             # Try to find project root by looking for common indicators
             cwd = Path.cwd()
             for parent in [cwd] + list(cwd.parents):
-                if (parent / 'setup.py').exists() or (parent / 'pyproject.toml').exists() or (parent / '.git').exists():
+                if (
+                    (parent / "setup.py").exists()
+                    or (parent / "pyproject.toml").exists()
+                    or (parent / ".git").exists()
+                ):
                     self.project_root = parent
                     break
             else:
@@ -61,19 +65,31 @@ class CodeMonitor(BaseMonitor):
         """Check for Python linting issues using flake8 or pylint."""
         try:
             # Look for Python files
-            python_files = list(self.project_root.rglob('*.py'))
+            python_files = list(self.project_root.rglob("*.py"))
             if not python_files:
                 return
 
             # Try flake8 first
             try:
                 result = subprocess.run(
-                    ['flake8', '--count', '--select=E9,F63,F7,F82', '--show-source', '--statistics', str(self.project_root)],
-                    capture_output=True, text=True, timeout=60, cwd=self.project_root
+                    [
+                        "flake8",
+                        "--count",
+                        "--select=E9,F63,F7,F82",
+                        "--show-source",
+                        "--statistics",
+                        str(self.project_root),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    cwd=self.project_root,
                 )
 
                 if result.returncode > 0:
-                    error_count = int(result.stdout.strip().split('\n')[-1]) if result.stdout.strip() else 0
+                    error_count = (
+                        int(result.stdout.strip().split("\n")[-1]) if result.stdout.strip() else 0
+                    )
 
                     if error_count > 0:
                         self._send_message(
@@ -82,20 +98,23 @@ class CodeMonitor(BaseMonitor):
                             f"Found {error_count} critical Python linting errors. "
                             "Run 'flake8 .' to see details.",
                             MessagePriority.HIGH if error_count > 10 else MessagePriority.NORMAL,
-                            {"error_count": error_count, "tool": "flake8"}
+                            {"error_count": error_count, "tool": "flake8"},
                         )
 
             except FileNotFoundError:
                 # Try pylint if flake8 not available
                 try:
                     result = subprocess.run(
-                        ['pylint', '--errors-only', '--reports=no', str(self.project_root)],
-                        capture_output=True, text=True, timeout=60, cwd=self.project_root
+                        ["pylint", "--errors-only", "--reports=no", str(self.project_root)],
+                        capture_output=True,
+                        text=True,
+                        timeout=60,
+                        cwd=self.project_root,
                     )
 
                     if result.returncode > 0:
-                        lines = result.stdout.strip().split('\n')
-                        error_count = len([line for line in lines if line.strip() and ':' in line])
+                        lines = result.stdout.strip().split("\n")
+                        error_count = len([line for line in lines if line.strip() and ":" in line])
 
                         if error_count > 0:
                             self._send_message(
@@ -103,8 +122,12 @@ class CodeMonitor(BaseMonitor):
                                 f"Python Linting Errors ({error_count})",
                                 f"Found {error_count} Python linting errors. "
                                 "Run 'pylint .' to see details.",
-                                MessagePriority.HIGH if error_count > 10 else MessagePriority.NORMAL,
-                                {"error_count": error_count, "tool": "pylint"}
+                                (
+                                    MessagePriority.HIGH
+                                    if error_count > 10
+                                    else MessagePriority.NORMAL
+                                ),
+                                {"error_count": error_count, "tool": "pylint"},
                             )
 
                 except FileNotFoundError:
@@ -119,24 +142,27 @@ class CodeMonitor(BaseMonitor):
         """Check for test failures using pytest."""
         try:
             # Check if pytest is available and there are tests
-            test_files = list(self.project_root.rglob('test_*.py'))
+            test_files = list(self.project_root.rglob("test_*.py"))
             if not test_files:
                 return
 
             # Run pytest with minimal output
             result = subprocess.run(
-                ['pytest', '--tb=no', '-q', '--disable-warnings'],
-                capture_output=True, text=True, timeout=120, cwd=self.project_root
+                ["pytest", "--tb=no", "-q", "--disable-warnings"],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                cwd=self.project_root,
             )
 
             if result.returncode != 0:
                 # Parse output for failure counts
-                output_lines = result.stdout.strip().split('\n')
+                output_lines = result.stdout.strip().split("\n")
                 failed_count = 0
                 passed_count = 0
 
                 for line in output_lines:
-                    if 'failed' in line.lower():
+                    if "failed" in line.lower():
                         try:
                             # Extract number from something like "5 failed"
                             parts = line.split()
@@ -146,7 +172,7 @@ class CodeMonitor(BaseMonitor):
                                     break
                         except (ValueError, IndexError):
                             pass
-                    elif 'passed' in line.lower():
+                    elif "passed" in line.lower():
                         try:
                             parts = line.split()
                             for part in parts:
@@ -163,7 +189,7 @@ class CodeMonitor(BaseMonitor):
                         f"{failed_count} tests are failing, {passed_count} passed. "
                         "Run 'pytest' to see details.",
                         MessagePriority.HIGH,
-                        {"failed_count": failed_count, "passed_count": passed_count}
+                        {"failed_count": failed_count, "passed_count": passed_count},
                     )
 
         except subprocess.TimeoutExpired:
@@ -177,26 +203,34 @@ class CodeMonitor(BaseMonitor):
         """Check for outdated Python dependencies."""
         try:
             # Check if requirements.txt exists
-            req_file = self.project_root / 'requirements.txt'
+            req_file = self.project_root / "requirements.txt"
             if not req_file.exists():
                 return
 
             # Use pip list --outdated
             result = subprocess.run(
-                ['pip', 'list', '--outdated', '--format=json'],
-                capture_output=True, text=True, timeout=30, cwd=self.project_root
+                ["pip", "list", "--outdated", "--format=json"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                cwd=self.project_root,
             )
 
             if result.returncode == 0 and result.stdout.strip():
                 import json
+
                 try:
                     outdated = json.loads(result.stdout)
                     outdated_count = len(outdated)
 
                     if outdated_count > 0:
                         # Get major version updates
-                        major_updates = [pkg for pkg in outdated
-                                       if pkg.get('latest_version', '').split('.')[0] != pkg.get('version', '').split('.')[0]]
+                        major_updates = [
+                            pkg
+                            for pkg in outdated
+                            if pkg.get("latest_version", "").split(".")[0]
+                            != pkg.get("version", "").split(".")[0]
+                        ]
 
                         priority = MessagePriority.NORMAL
                         if len(major_updates) > 0:
@@ -209,7 +243,7 @@ class CodeMonitor(BaseMonitor):
                             f"{len(major_updates)} are major version updates. "
                             "Run 'pip list --outdated' to see details.",
                             priority,
-                            {"outdated_count": outdated_count, "major_updates": len(major_updates)}
+                            {"outdated_count": outdated_count, "major_updates": len(major_updates)},
                         )
 
                 except json.JSONDecodeError:

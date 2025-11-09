@@ -3,14 +3,16 @@ Interactive Decision Maker for Smart Drag-Drop System
 Handles user interaction for file processing decisions.
 """
 
-from typing import List, Optional, Dict, Any
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 from .multi_file_detector import BatchAnalysis, FileCategory
 
 
 class ActionType(Enum):
     """Types of actions that can be taken on files"""
+
     UPLOAD_IMAGES = "upload_images"
     ANALYZE_CODE = "analyze_code"
     PROCESS_DOCUMENTS = "process_documents"
@@ -24,6 +26,7 @@ class ActionType(Enum):
 @dataclass
 class ActionOption:
     """An action option presented to the user"""
+
     action_type: ActionType
     title: str
     description: str
@@ -39,6 +42,7 @@ class ActionOption:
 @dataclass
 class DecisionResult:
     """Result of user decision making"""
+
     selected_action: ActionType
     selected_files: List[int]  # Indices of selected files
     custom_params: Optional[Dict[str, Any]] = None
@@ -71,95 +75,120 @@ class InteractiveDecisionMaker:
         options = []
 
         # Always offer cancel
-        options.append(ActionOption(
-            action_type=ActionType.CANCEL,
-            title="Cancel",
-            description="Cancel this operation",
-            shortcut="c",
-            applicable_files=[]
-        ))
+        options.append(
+            ActionOption(
+                action_type=ActionType.CANCEL,
+                title="Cancel",
+                description="Cancel this operation",
+                shortcut="c",
+                applicable_files=[],
+            )
+        )
 
         # Image upload option
         if analysis.has_images:
-            image_indices = [i for i, f in enumerate(analysis.files)
-                           if f.category == FileCategory.IMAGE]
-            options.append(ActionOption(
-                action_type=ActionType.UPLOAD_IMAGES,
-                title="Upload Images",
-                description=f"Upload {len(image_indices)} image(s) to cloud storage",
-                shortcut="u",
-                applicable_files=image_indices
-            ))
+            image_indices = [
+                i for i, f in enumerate(analysis.files) if f.category == FileCategory.IMAGE
+            ]
+            options.append(
+                ActionOption(
+                    action_type=ActionType.UPLOAD_IMAGES,
+                    title="Upload Images",
+                    description=f"Upload {len(image_indices)} image(s) to cloud storage",
+                    shortcut="u",
+                    applicable_files=image_indices,
+                )
+            )
 
         # Code analysis option
         if analysis.has_code:
-            code_indices = [i for i, f in enumerate(analysis.files)
-                          if f.category == FileCategory.CODE]
-            options.append(ActionOption(
-                action_type=ActionType.ANALYZE_CODE,
-                title="Analyze Code",
-                description=f"Analyze {len(code_indices)} code file(s)",
-                shortcut="a",
-                applicable_files=code_indices
-            ))
+            code_indices = [
+                i for i, f in enumerate(analysis.files) if f.category == FileCategory.CODE
+            ]
+            options.append(
+                ActionOption(
+                    action_type=ActionType.ANALYZE_CODE,
+                    title="Analyze Code",
+                    description=f"Analyze {len(code_indices)} code file(s)",
+                    shortcut="a",
+                    applicable_files=code_indices,
+                )
+            )
 
         # Document processing option
         if analysis.has_documents:
-            doc_indices = [i for i, f in enumerate(analysis.files)
-                         if f.category == FileCategory.DOCUMENT]
-            options.append(ActionOption(
-                action_type=ActionType.PROCESS_DOCUMENTS,
-                title="Process Documents",
-                description=f"Process {len(doc_indices)} document(s)",
-                shortcut="d",
-                applicable_files=doc_indices
-            ))
+            doc_indices = [
+                i for i, f in enumerate(analysis.files) if f.category == FileCategory.DOCUMENT
+            ]
+            options.append(
+                ActionOption(
+                    action_type=ActionType.PROCESS_DOCUMENTS,
+                    title="Process Documents",
+                    description=f"Process {len(doc_indices)} document(s)",
+                    shortcut="d",
+                    applicable_files=doc_indices,
+                )
+            )
 
         # Archive extraction (if supported archives present)
-        archive_files = [f for f in analysis.files if f.category == FileCategory.ARCHIVE and f.is_supported]
+        archive_files = [
+            f for f in analysis.files if f.category == FileCategory.ARCHIVE and f.is_supported
+        ]
         if archive_files:
-            archive_indices = [i for i, f in enumerate(analysis.files)
-                             if f.category == FileCategory.ARCHIVE and f.is_supported]
-            options.append(ActionOption(
-                action_type=ActionType.EXTRACT_ARCHIVE,
-                title="Extract Archive",
-                description=f"Extract {len(archive_files)} archive(s)",
-                shortcut="e",
-                applicable_files=archive_indices
-            ))
+            archive_indices = [
+                i
+                for i, f in enumerate(analysis.files)
+                if f.category == FileCategory.ARCHIVE and f.is_supported
+            ]
+            options.append(
+                ActionOption(
+                    action_type=ActionType.EXTRACT_ARCHIVE,
+                    title="Extract Archive",
+                    description=f"Extract {len(archive_files)} archive(s)",
+                    shortcut="e",
+                    applicable_files=archive_indices,
+                )
+            )
 
         # Text viewing (for text files)
         text_files = [f for f in analysis.files if f.category == FileCategory.TEXT]
         if text_files:
-            text_indices = [i for i, f in enumerate(analysis.files)
-                          if f.category == FileCategory.TEXT]
-            options.append(ActionOption(
-                action_type=ActionType.VIEW_TEXT,
-                title="View Text Files",
-                description=f"View contents of {len(text_files)} text file(s)",
-                shortcut="v",
-                applicable_files=text_indices
-            ))
+            text_indices = [
+                i for i, f in enumerate(analysis.files) if f.category == FileCategory.TEXT
+            ]
+            options.append(
+                ActionOption(
+                    action_type=ActionType.VIEW_TEXT,
+                    title="View Text Files",
+                    description=f"View contents of {len(text_files)} text file(s)",
+                    shortcut="v",
+                    applicable_files=text_indices,
+                )
+            )
 
         # Custom command option (always available)
-        options.append(ActionOption(
-            action_type=ActionType.CUSTOM_COMMAND,
-            title="Custom Command",
-            description="Run a custom command on selected files",
-            shortcut="x",
-            applicable_files=list(range(len(analysis.files)))  # All files
-        ))
+        options.append(
+            ActionOption(
+                action_type=ActionType.CUSTOM_COMMAND,
+                title="Custom Command",
+                description="Run a custom command on selected files",
+                shortcut="x",
+                applicable_files=list(range(len(analysis.files))),  # All files
+            )
+        )
 
         # Skip option (for unsupported files)
         if analysis.unsupported_count > 0:
             unsupported_indices = [i for i, f in enumerate(analysis.files) if not f.is_supported]
-            options.append(ActionOption(
-                action_type=ActionType.SKIP,
-                title="Skip Unsupported",
-                description=f"Skip {analysis.unsupported_count} unsupported file(s)",
-                shortcut="s",
-                applicable_files=unsupported_indices
-            ))
+            options.append(
+                ActionOption(
+                    action_type=ActionType.SKIP,
+                    title="Skip Unsupported",
+                    description=f"Skip {analysis.unsupported_count} unsupported file(s)",
+                    shortcut="s",
+                    applicable_files=unsupported_indices,
+                )
+            )
 
         return options
 
@@ -171,7 +200,9 @@ class InteractiveDecisionMaker:
             analysis: BatchAnalysis result
         """
         print(f"\n📁 Detected {analysis.file_count} file(s) ({analysis.total_size} bytes total)")
-        print(f"📊 Categories: {', '.join(f'{count} {cat.value}' for cat, count in analysis.categories.items())}")
+        print(
+            f"📊 Categories: {', '.join(f'{count} {cat.value}' for cat, count in analysis.categories.items())}"
+        )
 
         if analysis.duplicates:
             print(f"⚠️  {len(analysis.duplicates)} duplicate file(s) detected")
@@ -246,8 +277,7 @@ class InteractiveDecisionMaker:
                 else:
                     # Standard action with pre-selected files
                     return DecisionResult(
-                        selected_option.action_type,
-                        selected_option.applicable_files
+                        selected_option.action_type, selected_option.applicable_files
                     )
 
             except KeyboardInterrupt:
@@ -283,11 +313,7 @@ class InteractiveDecisionMaker:
             print("No command entered.")
             return DecisionResult(ActionType.CANCEL, [])
 
-        return DecisionResult(
-            ActionType.CUSTOM_COMMAND,
-            selected_files,
-            {"command": command}
-        )
+        return DecisionResult(ActionType.CUSTOM_COMMAND, selected_files, {"command": command})
 
     def _select_files_interactively(self, analysis: BatchAnalysis) -> List[int]:
         """
@@ -309,7 +335,7 @@ class InteractiveDecisionMaker:
         while True:
             choice = input("Files: ").strip().lower()
 
-            if choice == 'all':
+            if choice == "all":
                 return list(range(len(analysis.files)))
 
             if not choice:
@@ -317,7 +343,7 @@ class InteractiveDecisionMaker:
 
             try:
                 indices = []
-                for part in choice.split(','):
+                for part in choice.split(","):
                     part = part.strip()
                     if part.isdigit():
                         index = int(part) - 1
@@ -349,22 +375,20 @@ class InteractiveDecisionMaker:
             DecisionResult if automatic decision possible, None otherwise
         """
         # If all files are images, auto-upload
-        if (analysis.file_count > 0 and
-            analysis.categories.get(FileCategory.IMAGE, 0) == analysis.file_count and
-            analysis.unsupported_count == 0):
-            return DecisionResult(
-                ActionType.UPLOAD_IMAGES,
-                list(range(analysis.file_count))
-            )
+        if (
+            analysis.file_count > 0
+            and analysis.categories.get(FileCategory.IMAGE, 0) == analysis.file_count
+            and analysis.unsupported_count == 0
+        ):
+            return DecisionResult(ActionType.UPLOAD_IMAGES, list(range(analysis.file_count)))
 
         # If all files are code, auto-analyze
-        if (analysis.file_count > 0 and
-            analysis.categories.get(FileCategory.CODE, 0) == analysis.file_count and
-            analysis.unsupported_count == 0):
-            return DecisionResult(
-                ActionType.ANALYZE_CODE,
-                list(range(analysis.file_count))
-            )
+        if (
+            analysis.file_count > 0
+            and analysis.categories.get(FileCategory.CODE, 0) == analysis.file_count
+            and analysis.unsupported_count == 0
+        ):
+            return DecisionResult(ActionType.ANALYZE_CODE, list(range(analysis.file_count)))
 
         # If mixed or unsupported files, require interaction
         return None

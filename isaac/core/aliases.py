@@ -3,14 +3,15 @@ Command Aliases System - User-defined command shortcuts
 """
 
 import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class CommandAlias:
     """A command alias definition"""
+
     name: str
     command: str
     description: Optional[str] = None
@@ -21,6 +22,7 @@ class CommandAlias:
     def __post_init__(self):
         if self.created_at is None:
             import time
+
             self.created_at = time.time()
 
     def to_dict(self) -> Dict[str, Any]:
@@ -28,7 +30,7 @@ class CommandAlias:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'CommandAlias':
+    def from_dict(cls, data: Dict[str, Any]) -> "CommandAlias":
         """Create from dictionary"""
         return cls(**data)
 
@@ -40,9 +42,10 @@ class AliasManager:
         if aliases_file is None:
             # Default to user's Isaac directory
             from pathlib import Path
-            isaac_dir = Path.home() / '.isaac'
+
+            isaac_dir = Path.home() / ".isaac"
             isaac_dir.mkdir(exist_ok=True)
-            aliases_file = isaac_dir / 'aliases.json'
+            aliases_file = isaac_dir / "aliases.json"
 
         self.aliases_file = aliases_file
         self.aliases: Dict[str, CommandAlias] = {}
@@ -52,10 +55,10 @@ class AliasManager:
         """Load aliases from file"""
         if self.aliases_file.exists():
             try:
-                with open(self.aliases_file, 'r', encoding='utf-8') as f:
+                with open(self.aliases_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
-                for alias_data in data.get('aliases', []):
+                for alias_data in data.get("aliases", []):
                     alias = CommandAlias.from_dict(alias_data)
                     self.aliases[alias.name] = alias
 
@@ -65,11 +68,9 @@ class AliasManager:
     def _save_aliases(self):
         """Save aliases to file"""
         try:
-            data = {
-                'aliases': [alias.to_dict() for alias in self.aliases.values()]
-            }
+            data = {"aliases": [alias.to_dict() for alias in self.aliases.values()]}
 
-            with open(self.aliases_file, 'w', encoding='utf-8') as f:
+            with open(self.aliases_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
         except Exception as e:
@@ -84,11 +85,7 @@ class AliasManager:
         if not command.strip():
             return False
 
-        alias = CommandAlias(
-            name=name,
-            command=command.strip(),
-            description=description
-        )
+        alias = CommandAlias(name=name, command=command.strip(), description=description)
 
         self.aliases[name] = alias
         self._save_aliases()
@@ -131,11 +128,7 @@ class AliasManager:
         matches = []
 
         for alias in self.aliases.values():
-            searchable = [
-                alias.name,
-                alias.command,
-                alias.description or ""
-            ]
+            searchable = [alias.name, alias.command, alias.description or ""]
 
             if any(query_lower in text.lower() for text in searchable):
                 matches.append(alias)
@@ -153,7 +146,7 @@ class AliasManager:
 
         for alias_data in aliases_data:
             try:
-                name = alias_data['name']
+                name = alias_data["name"]
                 if not merge and name in self.aliases:
                     continue  # Skip existing
 
@@ -183,10 +176,10 @@ class AliasManager:
             categories[alias.category] = categories.get(alias.category, 0) + 1
 
         return {
-            'total_aliases': total_aliases,
-            'total_usage': total_usage,
-            'categories': categories,
-            'most_used': [alias.name for alias in self.get_popular_aliases(5)]
+            "total_aliases": total_aliases,
+            "total_usage": total_usage,
+            "categories": categories,
+            "most_used": [alias.name for alias in self.get_popular_aliases(5)],
         }
 
 

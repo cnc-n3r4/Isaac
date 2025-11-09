@@ -1,7 +1,8 @@
 # isaac/commands/config.py
 
-from isaac.core.session_manager import SessionManager
 from isaac.ai.xai_client import XaiClient
+from isaac.core.session_manager import SessionManager
+
 
 class ConfigCommand:
     def __init__(self, session: SessionManager):
@@ -25,17 +26,17 @@ class ConfigCommand:
 
         subcommand = args[0].lower()
 
-        if subcommand == 'status':
+        if subcommand == "status":
             return self._show_status()
-        elif subcommand == 'ai':
+        elif subcommand == "ai":
             return self._show_ai_details()
-        elif subcommand == 'cloud':
+        elif subcommand == "cloud":
             return self._show_cloud_details()
-        elif subcommand == 'plugins':
+        elif subcommand == "plugins":
             return self._show_plugins()
-        elif subcommand == 'console':
+        elif subcommand == "console":
             return self._launch_console()
-        elif subcommand == 'set':
+        elif subcommand == "set":
             if len(args) < 3:
                 return "Usage: /config set <key> <value>"
             return self._set_config(args[1], args[2])
@@ -75,6 +76,7 @@ class ConfigCommand:
 
         # Network info
         import socket
+
         hostname = socket.gethostname()
         try:
             ip = socket.gethostbyname(hostname)
@@ -93,8 +95,8 @@ class ConfigCommand:
         lines = []
         lines.append("=== AI Provider Details ===")
 
-        provider = self.session.config.get('ai_provider', 'xai')
-        model = self.session.config.get('ai_model', 'grok-beta')
+        provider = self.session.config.get("ai_provider", "xai")
+        model = self.session.config.get("ai_model", "grok-beta")
 
         lines.append(f"Provider: {provider}")
         lines.append(f"Model: {model}")
@@ -102,16 +104,12 @@ class ConfigCommand:
         # Try to ping the API
         try:
             # This is pseudocode - adapt to your actual client
-            xai_config = self.session.config.get('xai', {})
-            chat_config = xai_config.get('chat', {})
-            api_key = chat_config.get('api_key') or self.session.config.get('xai_api_key')
-            api_url = self.session.config.get('xai_api_url')
+            xai_config = self.session.config.get("xai", {})
+            chat_config = xai_config.get("chat", {})
+            api_key = chat_config.get("api_key") or self.session.config.get("xai_api_key")
+            api_url = self.session.config.get("xai_api_url")
             if api_key and api_url:
-                client = XaiClient(
-                    api_key=api_key,
-                    api_url=api_url,
-                    model=model
-                )
+                client = XaiClient(api_key=api_key, api_url=api_url, model=model)
                 # Add a simple health check method to your client
                 status = "✓ Connected"
             else:
@@ -128,7 +126,7 @@ class ConfigCommand:
         lines = []
         lines.append("=== Cloud Sync Status ===")
 
-        if not self.session.config.get('sync_enabled', False):
+        if not self.session.config.get("sync_enabled", False):
             lines.append("Cloud sync: Disabled")
             lines.append("Enable in config: /config set sync_enabled true")
             return "\n".join(lines)
@@ -175,9 +173,12 @@ class ConfigCommand:
         """Launch the /mine settings console"""
         try:
             from isaac.ui.config_console import show_config_console
+
             return show_config_console(self.session)
         except ImportError:
-            return "✗ Config console not available. Install prompt_toolkit: pip install prompt_toolkit"
+            return (
+                "✗ Config console not available. Install prompt_toolkit: pip install prompt_toolkit"
+            )
         except Exception as e:
             return f"✗ Error launching config console: {e}"
 
@@ -185,10 +186,10 @@ class ConfigCommand:
         """Set a configuration value"""
         # Define allowed config keys
         allowed_keys = {
-            'default_tier': int,
-            'sync_enabled': lambda v: v.lower() in ['true', '1', 'yes'],
-            'ai_provider': str,
-            'ai_model': str,
+            "default_tier": int,
+            "sync_enabled": lambda v: v.lower() in ["true", "1", "yes"],
+            "ai_provider": str,
+            "ai_model": str,
         }
 
         if key not in allowed_keys:
@@ -214,11 +215,11 @@ class ConfigCommand:
 
     def _check_ai_status(self) -> str:
         """Quick AI status check"""
-        provider = self.session.config.get('ai_provider', 'xai')
-        model = self.session.config.get('ai_model', 'grok-beta')
+        provider = self.session.config.get("ai_provider", "xai")
+        model = self.session.config.get("ai_model", "grok-beta")
 
         try:
-            if self.session.config.get('xai_api_key'):
+            if self.session.config.get("xai_api_key"):
                 return f"\u2713 {provider} ({model})"
             else:
                 return f"\u2717 {provider} (no key)"
@@ -227,7 +228,7 @@ class ConfigCommand:
 
     def _check_cloud_status(self) -> str:
         """Quick cloud status check"""
-        if not self.session.config.get('sync_enabled', False):
+        if not self.session.config.get("sync_enabled", False):
             return "\u2717 Disabled"
 
         try:

@@ -5,18 +5,21 @@ Isaac's time-travel feature for seamless context switching
 
 import json
 import os
-import psutil
 import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
+import psutil
+
 from isaac.core.session_manager import SessionManager
 
 
 @dataclass
 class BubbleState:
     """Complete workspace state snapshot."""
+
     bubble_id: str
     name: str
     description: str = ""
@@ -40,6 +43,7 @@ class BubbleState:
 @dataclass
 class BubbleMetadata:
     """Metadata for bubble management."""
+
     total_bubbles: int = 0
     last_backup: Optional[datetime] = None
     auto_save_enabled: bool = True
@@ -56,10 +60,10 @@ class BubbleManager:
             session_manager: Session manager for persistence
         """
         self.session = session_manager
-        self.bubbles_dir = Path.home() / '.isaac' / 'bubbles'
+        self.bubbles_dir = Path.home() / ".isaac" / "bubbles"
         self.bubbles_dir.mkdir(exist_ok=True)
 
-        self.metadata_file = self.bubbles_dir / 'metadata.json'
+        self.metadata_file = self.bubbles_dir / "metadata.json"
         self.metadata = self._load_metadata()
 
         # Current bubble tracking
@@ -70,7 +74,7 @@ class BubbleManager:
         """Load bubble metadata from disk."""
         if self.metadata_file.exists():
             try:
-                with open(self.metadata_file, 'r') as f:
+                with open(self.metadata_file, "r") as f:
                     data = json.load(f)
                 return BubbleMetadata(**data)
             except (json.JSONDecodeError, KeyError):
@@ -80,19 +84,23 @@ class BubbleManager:
     def _save_metadata(self) -> None:
         """Save bubble metadata to disk."""
         data = {
-            'total_bubbles': self.metadata.total_bubbles,
-            'last_backup': self.metadata.last_backup.isoformat() if self.metadata.last_backup else None,
-            'auto_save_enabled': self.metadata.auto_save_enabled,
-            'max_bubbles': self.metadata.max_bubbles
+            "total_bubbles": self.metadata.total_bubbles,
+            "last_backup": (
+                self.metadata.last_backup.isoformat() if self.metadata.last_backup else None
+            ),
+            "auto_save_enabled": self.metadata.auto_save_enabled,
+            "max_bubbles": self.metadata.max_bubbles,
         }
 
         try:
-            with open(self.metadata_file, 'w') as f:
+            with open(self.metadata_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception:
             pass  # Don't fail if we can't save metadata
 
-    def create_bubble(self, name: str, description: str = "", tags: List[str] = None) -> BubbleState:
+    def create_bubble(
+        self, name: str, description: str = "", tags: List[str] = None
+    ) -> BubbleState:
         """Create a new bubble capturing current workspace state.
 
         Args:
@@ -110,7 +118,7 @@ class BubbleManager:
             name=name,
             description=description,
             workspace_path=os.getcwd(),
-            tags=tags or []
+            tags=tags or [],
         )
 
         # Capture all state components
@@ -194,13 +202,13 @@ class BubbleManager:
         bubbles = []
 
         # Load all bubble files
-        for bubble_file in self.bubbles_dir.glob('*.json'):
-            if bubble_file.name != 'metadata.json':
+        for bubble_file in self.bubbles_dir.glob("*.json"):
+            if bubble_file.name != "metadata.json":
                 try:
-                    with open(bubble_file, 'r') as f:
+                    with open(bubble_file, "r") as f:
                         data = json.load(f)
                     bubble = BubbleState(**data)
-                    bubble.created_at = datetime.fromisoformat(data['created_at'])
+                    bubble.created_at = datetime.fromisoformat(data["created_at"])
 
                     if tag_filter is None or tag_filter in bubble.tags:
                         bubbles.append(bubble)
@@ -218,7 +226,7 @@ class BubbleManager:
         Returns:
             True if deleted successfully
         """
-        bubble_file = self.bubbles_dir / f'{bubble_id}.json'
+        bubble_file = self.bubbles_dir / f"{bubble_id}.json"
         if bubble_file.exists():
             bubble_file.unlink()
             self.metadata.total_bubbles = max(0, self.metadata.total_bubbles - 1)
@@ -241,22 +249,22 @@ class BubbleManager:
             return False
 
         try:
-            with open(export_path, 'w') as f:
+            with open(export_path, "w") as f:
                 data = {
-                    'bubble_id': bubble.bubble_id,
-                    'name': bubble.name,
-                    'description': bubble.description,
-                    'created_at': bubble.created_at.isoformat(),
-                    'workspace_path': bubble.workspace_path,
-                    'git_state': bubble.git_state,
-                    'environment_vars': bubble.environment_vars,
-                    'running_processes': bubble.running_processes,
-                    'open_files': bubble.open_files,
-                    'shell_history': bubble.shell_history,
-                    'terminal_state': bubble.terminal_state,
-                    'tags': bubble.tags,
-                    'version': bubble.version,
-                    'parent_bubble': bubble.parent_bubble
+                    "bubble_id": bubble.bubble_id,
+                    "name": bubble.name,
+                    "description": bubble.description,
+                    "created_at": bubble.created_at.isoformat(),
+                    "workspace_path": bubble.workspace_path,
+                    "git_state": bubble.git_state,
+                    "environment_vars": bubble.environment_vars,
+                    "running_processes": bubble.running_processes,
+                    "open_files": bubble.open_files,
+                    "shell_history": bubble.shell_history,
+                    "terminal_state": bubble.terminal_state,
+                    "tags": bubble.tags,
+                    "version": bubble.version,
+                    "parent_bubble": bubble.parent_bubble,
                 }
                 json.dump(data, f, indent=2)
             return True
@@ -273,11 +281,11 @@ class BubbleManager:
             Imported bubble or None if failed
         """
         try:
-            with open(import_path, 'r') as f:
+            with open(import_path, "r") as f:
                 data = json.load(f)
 
             bubble = BubbleState(**data)
-            bubble.created_at = datetime.fromisoformat(data['created_at'])
+            bubble.created_at = datetime.fromisoformat(data["created_at"])
 
             # Save imported bubble
             self._save_bubble(bubble)
@@ -292,34 +300,46 @@ class BubbleManager:
         """Capture current git repository state."""
         try:
             # Get current branch
-            result = subprocess.run(['git', 'branch', '--show-current'],
-                                  capture_output=True, text=True, cwd=os.getcwd())
+            result = subprocess.run(
+                ["git", "branch", "--show-current"], capture_output=True, text=True, cwd=os.getcwd()
+            )
             current_branch = result.stdout.strip() if result.returncode == 0 else None
 
             # Get status
-            result = subprocess.run(['git', 'status', '--porcelain'],
-                                  capture_output=True, text=True, cwd=os.getcwd())
+            result = subprocess.run(
+                ["git", "status", "--porcelain"], capture_output=True, text=True, cwd=os.getcwd()
+            )
             status = result.stdout.strip() if result.returncode == 0 else ""
 
             # Get recent commits
-            result = subprocess.run(['git', 'log', '--oneline', '-5'],
-                                  capture_output=True, text=True, cwd=os.getcwd())
+            result = subprocess.run(
+                ["git", "log", "--oneline", "-5"], capture_output=True, text=True, cwd=os.getcwd()
+            )
             recent_commits = result.stdout.strip() if result.returncode == 0 else ""
 
             return {
-                'current_branch': current_branch,
-                'status': status,
-                'recent_commits': recent_commits,
-                'is_git_repo': True
+                "current_branch": current_branch,
+                "status": status,
+                "recent_commits": recent_commits,
+                "is_git_repo": True,
             }
         except (subprocess.CalledProcessError, FileNotFoundError):
-            return {'is_git_repo': False}
+            return {"is_git_repo": False}
 
     def _capture_environment(self) -> Dict[str, str]:
         """Capture relevant environment variables."""
         relevant_vars = [
-            'PATH', 'PYTHONPATH', 'NODE_PATH', 'JAVA_HOME', 'HOME', 'USER',
-            'SHELL', 'TERM', 'EDITOR', 'VISUAL', 'PAGER'
+            "PATH",
+            "PYTHONPATH",
+            "NODE_PATH",
+            "JAVA_HOME",
+            "HOME",
+            "USER",
+            "SHELL",
+            "TERM",
+            "EDITOR",
+            "VISUAL",
+            "PAGER",
         ]
 
         env = {}
@@ -336,16 +356,18 @@ class BubbleManager:
         workspace_path = os.getcwd()
 
         try:
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline', 'cwd']):
+            for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 try:
                     info = proc.info
-                    if info['cwd'] and workspace_path in info['cwd']:
-                        processes.append({
-                            'pid': info['pid'],
-                            'name': info['name'],
-                            'cmdline': info['cmdline'],
-                            'cwd': info['cwd']
-                        })
+                    if info["cwd"] and workspace_path in info["cwd"]:
+                        processes.append(
+                            {
+                                "pid": info["pid"],
+                                "name": info["name"],
+                                "cmdline": info["cmdline"],
+                                "cwd": info["cwd"],
+                            }
+                        )
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
         except Exception:
@@ -380,9 +402,9 @@ class BubbleManager:
     def _capture_terminal_state(self) -> Dict[str, Any]:
         """Capture terminal-specific state."""
         return {
-            'current_directory': os.getcwd(),
-            'terminal_type': os.environ.get('TERM', 'unknown'),
-            'shell': os.environ.get('SHELL', 'unknown')
+            "current_directory": os.getcwd(),
+            "terminal_type": os.environ.get("TERM", "unknown"),
+            "shell": os.environ.get("SHELL", "unknown"),
         }
 
     def _restore_bubble_state(self, bubble: BubbleState) -> bool:
@@ -415,44 +437,44 @@ class BubbleManager:
 
     def _save_bubble(self, bubble: BubbleState) -> None:
         """Save bubble to disk."""
-        bubble_file = self.bubbles_dir / f'{bubble.bubble_id}.json'
+        bubble_file = self.bubbles_dir / f"{bubble.bubble_id}.json"
 
         data = {
-            'bubble_id': bubble.bubble_id,
-            'name': bubble.name,
-            'description': bubble.description,
-            'created_at': bubble.created_at.isoformat(),
-            'workspace_path': bubble.workspace_path,
-            'git_state': bubble.git_state,
-            'environment_vars': bubble.environment_vars,
-            'running_processes': bubble.running_processes,
-            'open_files': bubble.open_files,
-            'shell_history': bubble.shell_history,
-            'terminal_state': bubble.terminal_state,
-            'tags': bubble.tags,
-            'version': bubble.version,
-            'parent_bubble': bubble.parent_bubble
+            "bubble_id": bubble.bubble_id,
+            "name": bubble.name,
+            "description": bubble.description,
+            "created_at": bubble.created_at.isoformat(),
+            "workspace_path": bubble.workspace_path,
+            "git_state": bubble.git_state,
+            "environment_vars": bubble.environment_vars,
+            "running_processes": bubble.running_processes,
+            "open_files": bubble.open_files,
+            "shell_history": bubble.shell_history,
+            "terminal_state": bubble.terminal_state,
+            "tags": bubble.tags,
+            "version": bubble.version,
+            "parent_bubble": bubble.parent_bubble,
         }
 
         try:
-            with open(bubble_file, 'w') as f:
+            with open(bubble_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             print(f"Failed to save bubble: {e}")
 
     def _load_bubble(self, bubble_id: str) -> Optional[BubbleState]:
         """Load bubble from disk."""
-        bubble_file = self.bubbles_dir / f'{bubble_id}.json'
+        bubble_file = self.bubbles_dir / f"{bubble_id}.json"
 
         if not bubble_file.exists():
             return None
 
         try:
-            with open(bubble_file, 'r') as f:
+            with open(bubble_file, "r") as f:
                 data = json.load(f)
 
             bubble = BubbleState(**data)
-            bubble.created_at = datetime.fromisoformat(data['created_at'])
+            bubble.created_at = datetime.fromisoformat(data["created_at"])
             return bubble
         except Exception:
             return None

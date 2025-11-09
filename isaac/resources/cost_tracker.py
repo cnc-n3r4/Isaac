@@ -6,15 +6,16 @@ Track and estimate cloud resource costs.
 
 import json
 import os
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, asdict, field
-from datetime import datetime
 import time
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class CostEntry:
     """A cost tracking entry"""
+
     timestamp: float
     service: str  # 'compute', 'storage', 'network', 'database', etc.
     provider: str  # 'aws', 'gcp', 'azure', 'local', etc.
@@ -28,13 +29,14 @@ class CostEntry:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
-        data['timestamp_readable'] = datetime.fromtimestamp(self.timestamp).isoformat()
+        data["timestamp_readable"] = datetime.fromtimestamp(self.timestamp).isoformat()
         return data
 
 
 @dataclass
 class Budget:
     """Budget for cost tracking"""
+
     name: str
     limit_usd: float
     period: str  # 'daily', 'weekly', 'monthly'
@@ -60,39 +62,39 @@ class CostTracker:
 
     # Pricing estimates (USD per unit) - These are rough estimates
     PRICING = {
-        'aws': {
-            'compute': {
-                't2.micro': 0.0116,  # per hour
-                't2.small': 0.023,
-                't2.medium': 0.0464,
-                'm5.large': 0.096,
+        "aws": {
+            "compute": {
+                "t2.micro": 0.0116,  # per hour
+                "t2.small": 0.023,
+                "t2.medium": 0.0464,
+                "m5.large": 0.096,
             },
-            'storage': {
-                's3': 0.023,  # per GB/month
-                'ebs': 0.10,  # per GB/month
+            "storage": {
+                "s3": 0.023,  # per GB/month
+                "ebs": 0.10,  # per GB/month
             },
-            'network': {
-                'data_transfer': 0.09,  # per GB out
-            }
+            "network": {
+                "data_transfer": 0.09,  # per GB out
+            },
         },
-        'gcp': {
-            'compute': {
-                'n1-standard-1': 0.0475,  # per hour
-                'n1-standard-2': 0.095,
+        "gcp": {
+            "compute": {
+                "n1-standard-1": 0.0475,  # per hour
+                "n1-standard-2": 0.095,
             },
-            'storage': {
-                'standard': 0.020,  # per GB/month
-            }
+            "storage": {
+                "standard": 0.020,  # per GB/month
+            },
         },
-        'azure': {
-            'compute': {
-                'B1S': 0.0104,  # per hour
-                'B2S': 0.0416,
+        "azure": {
+            "compute": {
+                "B1S": 0.0104,  # per hour
+                "B2S": 0.0416,
             },
-            'storage': {
-                'standard': 0.0184,  # per GB/month
-            }
-        }
+            "storage": {
+                "standard": 0.0184,  # per GB/month
+            },
+        },
     }
 
     def __init__(self, data_file: Optional[str] = None):
@@ -103,7 +105,7 @@ class CostTracker:
             data_file: Path to JSON file for storing cost data
         """
         if data_file is None:
-            data_file = os.path.expanduser('~/.isaac/resources/cost_data.json')
+            data_file = os.path.expanduser("~/.isaac/resources/cost_data.json")
 
         self.data_file = data_file
         self.entries: List[CostEntry] = []
@@ -114,18 +116,14 @@ class CostTracker:
         """Load cost data from file"""
         if os.path.exists(self.data_file):
             try:
-                with open(self.data_file, 'r') as f:
+                with open(self.data_file, "r") as f:
                     data = json.load(f)
 
                     # Load entries
-                    self.entries = [
-                        CostEntry(**entry) for entry in data.get('entries', [])
-                    ]
+                    self.entries = [CostEntry(**entry) for entry in data.get("entries", [])]
 
                     # Load budgets
-                    self.budgets = [
-                        Budget(**budget) for budget in data.get('budgets', [])
-                    ]
+                    self.budgets = [Budget(**budget) for budget in data.get("budgets", [])]
             except (json.JSONDecodeError, TypeError, KeyError):
                 self.entries = []
                 self.budgets = []
@@ -135,12 +133,12 @@ class CostTracker:
         os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
 
         data = {
-            'last_updated': datetime.now().isoformat(),
-            'entries': [e.to_dict() for e in self.entries],
-            'budgets': [b.to_dict() for b in self.budgets]
+            "last_updated": datetime.now().isoformat(),
+            "entries": [e.to_dict() for e in self.entries],
+            "budgets": [b.to_dict() for b in self.budgets],
         }
 
-        with open(self.data_file, 'w') as f:
+        with open(self.data_file, "w") as f:
             json.dump(data, f, indent=2)
 
     def add_cost(
@@ -152,7 +150,7 @@ class CostTracker:
         cost_usd: float,
         units: str,
         quantity: float,
-        tags: Optional[Dict[str, str]] = None
+        tags: Optional[Dict[str, str]] = None,
     ):
         """Add a cost entry"""
         entry = CostEntry(
@@ -164,18 +162,14 @@ class CostTracker:
             cost_usd=cost_usd,
             units=units,
             quantity=quantity,
-            tags=tags or {}
+            tags=tags or {},
         )
 
         self.entries.append(entry)
         self._save_data()
 
     def estimate_cost(
-        self,
-        provider: str,
-        service: str,
-        resource_type: str,
-        quantity: float
+        self, provider: str, service: str, resource_type: str, quantity: float
     ) -> Optional[float]:
         """
         Estimate cost for a resource
@@ -199,9 +193,9 @@ class CostTracker:
         self,
         name: str,
         limit_usd: float,
-        period: str = 'monthly',
+        period: str = "monthly",
         alert_threshold: float = 80.0,
-        services: Optional[List[str]] = None
+        services: Optional[List[str]] = None,
     ):
         """Add a budget"""
         budget = Budget(
@@ -209,17 +203,14 @@ class CostTracker:
             limit_usd=limit_usd,
             period=period,
             alert_threshold=alert_threshold,
-            services=services or []
+            services=services or [],
         )
 
         self.budgets.append(budget)
         self._save_data()
 
     def get_costs(
-        self,
-        days: int = 30,
-        service: Optional[str] = None,
-        provider: Optional[str] = None
+        self, days: int = 30, service: Optional[str] = None, provider: Optional[str] = None
     ) -> List[CostEntry]:
         """
         Get cost entries for a time period
@@ -234,10 +225,7 @@ class CostTracker:
         """
         cutoff_time = time.time() - (days * 24 * 3600)
 
-        filtered = [
-            e for e in self.entries
-            if e.timestamp >= cutoff_time
-        ]
+        filtered = [e for e in self.entries if e.timestamp >= cutoff_time]
 
         if service:
             filtered = [e for e in filtered if e.service == service]
@@ -248,10 +236,7 @@ class CostTracker:
         return filtered
 
     def get_total_cost(
-        self,
-        days: int = 30,
-        service: Optional[str] = None,
-        provider: Optional[str] = None
+        self, days: int = 30, service: Optional[str] = None, provider: Optional[str] = None
     ) -> float:
         """Get total cost for a period"""
         entries = self.get_costs(days, service, provider)
@@ -274,16 +259,16 @@ class CostTracker:
         # Daily costs
         daily_costs: Dict[str, float] = {}
         for entry in entries:
-            date = datetime.fromtimestamp(entry.timestamp).strftime('%Y-%m-%d')
+            date = datetime.fromtimestamp(entry.timestamp).strftime("%Y-%m-%d")
             daily_costs[date] = daily_costs.get(date, 0) + entry.cost_usd
 
         return {
-            'period_days': days,
-            'total_cost': sum(e.cost_usd for e in entries),
-            'by_service': by_service,
-            'by_provider': by_provider,
-            'daily_costs': daily_costs,
-            'entry_count': len(entries)
+            "period_days": days,
+            "total_cost": sum(e.cost_usd for e in entries),
+            "by_service": by_service,
+            "by_provider": by_provider,
+            "daily_costs": daily_costs,
+            "entry_count": len(entries),
         }
 
     def check_budgets(self) -> List[Dict[str, Any]]:
@@ -292,17 +277,17 @@ class CostTracker:
 
         for budget in self.budgets:
             # Calculate period
-            if budget.period == 'daily':
+            if budget.period == "daily":
                 days = 1
-            elif budget.period == 'weekly':
+            elif budget.period == "weekly":
                 days = 7
             else:  # monthly
                 days = 30
 
             # Get costs for services in budget
             total_cost = 0
-            for service in (budget.services or ['all']):
-                if service == 'all':
+            for service in budget.services or ["all"]:
+                if service == "all":
                     total_cost = self.get_total_cost(days)
                     break
                 else:
@@ -313,16 +298,18 @@ class CostTracker:
 
             # Check if over threshold
             if percent_used >= budget.alert_threshold:
-                alerts.append({
-                    'budget_name': budget.name,
-                    'period': budget.period,
-                    'limit_usd': budget.limit_usd,
-                    'current_cost': total_cost,
-                    'percent_used': percent_used,
-                    'alert_threshold': budget.alert_threshold,
-                    'over_budget': total_cost > budget.limit_usd,
-                    'severity': 'critical' if total_cost > budget.limit_usd else 'warning'
-                })
+                alerts.append(
+                    {
+                        "budget_name": budget.name,
+                        "period": budget.period,
+                        "limit_usd": budget.limit_usd,
+                        "current_cost": total_cost,
+                        "percent_used": percent_used,
+                        "alert_threshold": budget.alert_threshold,
+                        "over_budget": total_cost > budget.limit_usd,
+                        "severity": "critical" if total_cost > budget.limit_usd else "warning",
+                    }
+                )
 
         return alerts
 
@@ -340,15 +327,12 @@ class CostTracker:
         historical_entries = self.get_costs(days=30)
 
         if not historical_entries:
-            return {
-                'error': 'No historical data available',
-                'forecast': 0
-            }
+            return {"error": "No historical data available", "forecast": 0}
 
         # Calculate daily average
         daily_costs: Dict[str, float] = {}
         for entry in historical_entries:
-            date = datetime.fromtimestamp(entry.timestamp).strftime('%Y-%m-%d')
+            date = datetime.fromtimestamp(entry.timestamp).strftime("%Y-%m-%d")
             daily_costs[date] = daily_costs.get(date, 0) + entry.cost_usd
 
         if not daily_costs:
@@ -360,11 +344,11 @@ class CostTracker:
         forecast_total = avg_daily_cost * days_ahead
 
         return {
-            'days_ahead': days_ahead,
-            'historical_days': 30,
-            'avg_daily_cost': avg_daily_cost,
-            'forecast_total': forecast_total,
-            'forecast_per_day': avg_daily_cost
+            "days_ahead": days_ahead,
+            "historical_days": 30,
+            "avg_daily_cost": avg_daily_cost,
+            "forecast_total": forecast_total,
+            "forecast_per_day": avg_daily_cost,
         }
 
     def get_cost_trends(self) -> Dict[str, Any]:
@@ -382,24 +366,28 @@ class CostTracker:
         last_30 = self.get_total_cost(days=30)
 
         return {
-            'last_7_days': last_7,
-            'previous_7_days': prev_7,
-            'change_percent': change_percent,
-            'trend': 'increasing' if change_percent > 5 else 'decreasing' if change_percent < -5 else 'stable',
-            'last_30_days': last_30
+            "last_7_days": last_7,
+            "previous_7_days": prev_7,
+            "change_percent": change_percent,
+            "trend": (
+                "increasing"
+                if change_percent > 5
+                else "decreasing" if change_percent < -5 else "stable"
+            ),
+            "last_30_days": last_30,
         }
 
     def export_report(self, filepath: str, days: int = 30):
         """Export cost report to JSON"""
         data = {
-            'generated_at': datetime.now().isoformat(),
-            'period_days': days,
-            'breakdown': self.get_cost_breakdown(days),
-            'trends': self.get_cost_trends(),
-            'budget_alerts': self.check_budgets(),
-            'forecast_30_days': self.forecast_costs(30)
+            "generated_at": datetime.now().isoformat(),
+            "period_days": days,
+            "breakdown": self.get_cost_breakdown(days),
+            "trends": self.get_cost_trends(),
+            "budget_alerts": self.check_budgets(),
+            "forecast_30_days": self.forecast_costs(30),
         }
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(data, f, indent=2)

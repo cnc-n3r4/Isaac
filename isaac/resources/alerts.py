@@ -4,18 +4,19 @@ Resource Alert Manager
 Monitor resources and trigger alerts when thresholds are exceeded.
 """
 
-import time
-import threading
-from typing import Dict, List, Any, Optional, Callable
-from dataclasses import dataclass, asdict
-from datetime import datetime
 import json
 import os
+import threading
+import time
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 
 @dataclass
 class Alert:
     """Resource alert"""
+
     alert_id: str
     timestamp: float
     severity: str  # 'info', 'warning', 'critical'
@@ -31,15 +32,16 @@ class Alert:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
-        data['timestamp_readable'] = datetime.fromtimestamp(self.timestamp).isoformat()
+        data["timestamp_readable"] = datetime.fromtimestamp(self.timestamp).isoformat()
         if self.resolved_at:
-            data['resolved_at_readable'] = datetime.fromtimestamp(self.resolved_at).isoformat()
+            data["resolved_at_readable"] = datetime.fromtimestamp(self.resolved_at).isoformat()
         return data
 
 
 @dataclass
 class AlertRule:
     """Rule for triggering alerts"""
+
     rule_id: str
     category: str
     metric: str  # 'cpu_percent', 'memory_percent', 'disk_percent', etc.
@@ -78,7 +80,7 @@ class AlertManager:
             monitor: ResourceMonitor instance to monitor
         """
         if data_file is None:
-            data_file = os.path.expanduser('~/.isaac/resources/alerts.json')
+            data_file = os.path.expanduser("~/.isaac/resources/alerts.json")
 
         self.data_file = data_file
         self.monitor = monitor
@@ -96,18 +98,14 @@ class AlertManager:
         """Load alert data from file"""
         if os.path.exists(self.data_file):
             try:
-                with open(self.data_file, 'r') as f:
+                with open(self.data_file, "r") as f:
                     data = json.load(f)
 
                     # Load alerts
-                    self.alerts = [
-                        Alert(**alert) for alert in data.get('alerts', [])
-                    ]
+                    self.alerts = [Alert(**alert) for alert in data.get("alerts", [])]
 
                     # Load rules
-                    self.rules = [
-                        AlertRule(**rule) for rule in data.get('rules', [])
-                    ]
+                    self.rules = [AlertRule(**rule) for rule in data.get("rules", [])]
             except (json.JSONDecodeError, TypeError, KeyError):
                 self.alerts = []
                 self.rules = []
@@ -117,12 +115,12 @@ class AlertManager:
         os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
 
         data = {
-            'last_updated': datetime.now().isoformat(),
-            'alerts': [a.to_dict() for a in self.alerts],
-            'rules': [r.to_dict() for r in self.rules]
+            "last_updated": datetime.now().isoformat(),
+            "alerts": [a.to_dict() for a in self.alerts],
+            "rules": [r.to_dict() for r in self.rules],
         }
 
-        with open(self.data_file, 'w') as f:
+        with open(self.data_file, "w") as f:
             json.dump(data, f, indent=2)
 
     def _create_default_rules(self):
@@ -132,64 +130,64 @@ class AlertManager:
 
         default_rules = [
             AlertRule(
-                rule_id='cpu_high',
-                category='cpu',
-                metric='cpu_percent',
+                rule_id="cpu_high",
+                category="cpu",
+                metric="cpu_percent",
                 threshold=80.0,
-                comparison='greater',
-                severity='warning',
-                title_template='High CPU Usage',
-                message_template='CPU usage is at {current_value:.1f}% (threshold: {threshold}%)'
+                comparison="greater",
+                severity="warning",
+                title_template="High CPU Usage",
+                message_template="CPU usage is at {current_value:.1f}% (threshold: {threshold}%)",
             ),
             AlertRule(
-                rule_id='cpu_critical',
-                category='cpu',
-                metric='cpu_percent',
+                rule_id="cpu_critical",
+                category="cpu",
+                metric="cpu_percent",
                 threshold=95.0,
-                comparison='greater',
-                severity='critical',
-                title_template='Critical CPU Usage',
-                message_template='CPU usage is at {current_value:.1f}% (threshold: {threshold}%)'
+                comparison="greater",
+                severity="critical",
+                title_template="Critical CPU Usage",
+                message_template="CPU usage is at {current_value:.1f}% (threshold: {threshold}%)",
             ),
             AlertRule(
-                rule_id='memory_high',
-                category='memory',
-                metric='memory_percent',
+                rule_id="memory_high",
+                category="memory",
+                metric="memory_percent",
                 threshold=80.0,
-                comparison='greater',
-                severity='warning',
-                title_template='High Memory Usage',
-                message_template='Memory usage is at {current_value:.1f}% (threshold: {threshold}%)'
+                comparison="greater",
+                severity="warning",
+                title_template="High Memory Usage",
+                message_template="Memory usage is at {current_value:.1f}% (threshold: {threshold}%)",
             ),
             AlertRule(
-                rule_id='memory_critical',
-                category='memory',
-                metric='memory_percent',
+                rule_id="memory_critical",
+                category="memory",
+                metric="memory_percent",
                 threshold=95.0,
-                comparison='greater',
-                severity='critical',
-                title_template='Critical Memory Usage',
-                message_template='Memory usage is at {current_value:.1f}% (threshold: {threshold}%)'
+                comparison="greater",
+                severity="critical",
+                title_template="Critical Memory Usage",
+                message_template="Memory usage is at {current_value:.1f}% (threshold: {threshold}%)",
             ),
             AlertRule(
-                rule_id='disk_high',
-                category='disk',
-                metric='disk_percent',
+                rule_id="disk_high",
+                category="disk",
+                metric="disk_percent",
                 threshold=85.0,
-                comparison='greater',
-                severity='warning',
-                title_template='High Disk Usage',
-                message_template='Disk usage is at {current_value:.1f}% (threshold: {threshold}%)'
+                comparison="greater",
+                severity="warning",
+                title_template="High Disk Usage",
+                message_template="Disk usage is at {current_value:.1f}% (threshold: {threshold}%)",
             ),
             AlertRule(
-                rule_id='disk_critical',
-                category='disk',
-                metric='disk_percent',
+                rule_id="disk_critical",
+                category="disk",
+                metric="disk_percent",
                 threshold=95.0,
-                comparison='greater',
-                severity='critical',
-                title_template='Critical Disk Usage',
-                message_template='Disk usage is at {current_value:.1f}% (threshold: {threshold}%)'
+                comparison="greater",
+                severity="critical",
+                title_template="Critical Disk Usage",
+                message_template="Disk usage is at {current_value:.1f}% (threshold: {threshold}%)",
             ),
         ]
 
@@ -205,8 +203,8 @@ class AlertManager:
         severity: str,
         title_template: str,
         message_template: str,
-        comparison: str = 'greater',
-        cooldown_minutes: int = 5
+        comparison: str = "greater",
+        cooldown_minutes: int = 5,
     ):
         """Add a new alert rule"""
         rule = AlertRule(
@@ -218,7 +216,7 @@ class AlertManager:
             severity=severity,
             title_template=title_template,
             message_template=message_template,
-            cooldown_minutes=cooldown_minutes
+            cooldown_minutes=cooldown_minutes,
         )
 
         self.rules.append(rule)
@@ -272,11 +270,11 @@ class AlertManager:
 
             # Check if rule is triggered
             triggered = False
-            if rule.comparison == 'greater':
+            if rule.comparison == "greater":
                 triggered = current_value > rule.threshold
-            elif rule.comparison == 'less':
+            elif rule.comparison == "less":
                 triggered = current_value < rule.threshold
-            elif rule.comparison == 'equal':
+            elif rule.comparison == "equal":
                 triggered = abs(current_value - rule.threshold) < 0.01
 
             if triggered:
@@ -293,11 +291,10 @@ class AlertManager:
                     category=rule.category,
                     title=rule.title_template,
                     message=rule.message_template.format(
-                        current_value=current_value,
-                        threshold=rule.threshold
+                        current_value=current_value, threshold=rule.threshold
                     ),
                     threshold=rule.threshold,
-                    current_value=current_value
+                    current_value=current_value,
                 )
 
                 self.alerts.append(alert)
@@ -314,10 +311,12 @@ class AlertManager:
             else:
                 # Check if we should auto-resolve previous alerts
                 for alert in self.alerts:
-                    if (alert.category == rule.category and
-                        not alert.resolved and
-                        alert.current_value > rule.threshold and
-                        current_value <= rule.threshold):
+                    if (
+                        alert.category == rule.category
+                        and not alert.resolved
+                        and alert.current_value > rule.threshold
+                        and current_value <= rule.threshold
+                    ):
 
                         alert.resolved = True
                         alert.resolved_at = time.time()
@@ -356,7 +355,7 @@ class AlertManager:
         hours: int = 24,
         severity: Optional[str] = None,
         category: Optional[str] = None,
-        include_resolved: bool = True
+        include_resolved: bool = True,
     ) -> List[Alert]:
         """Get alerts from recent history"""
         cutoff_time = time.time() - (hours * 3600)
@@ -379,9 +378,9 @@ class AlertManager:
         active_alerts = self.get_active_alerts()
 
         by_severity = {
-            'critical': len([a for a in active_alerts if a.severity == 'critical']),
-            'warning': len([a for a in active_alerts if a.severity == 'warning']),
-            'info': len([a for a in active_alerts if a.severity == 'info']),
+            "critical": len([a for a in active_alerts if a.severity == "critical"]),
+            "warning": len([a for a in active_alerts if a.severity == "warning"]),
+            "info": len([a for a in active_alerts if a.severity == "info"]),
         }
 
         by_category: Dict[str, int] = {}
@@ -389,10 +388,10 @@ class AlertManager:
             by_category[alert.category] = by_category.get(alert.category, 0) + 1
 
         return {
-            'total_active': len(active_alerts),
-            'by_severity': by_severity,
-            'by_category': by_category,
-            'unacknowledged': len([a for a in active_alerts if not a.acknowledged])
+            "total_active": len(active_alerts),
+            "by_severity": by_severity,
+            "by_category": by_category,
+            "unacknowledged": len([a for a in active_alerts if not a.acknowledged]),
         }
 
     def register_callback(self, callback: Callable[[Alert], None]):
@@ -416,9 +415,7 @@ class AlertManager:
 
         self._monitoring = True
         self._monitor_thread = threading.Thread(
-            target=self._monitor_loop,
-            args=(interval,),
-            daemon=True
+            target=self._monitor_loop, args=(interval,), daemon=True
         )
         self._monitor_thread.start()
 
@@ -443,10 +440,7 @@ class AlertManager:
         cutoff_time = time.time() - (days * 24 * 3600)
 
         original_len = len(self.alerts)
-        self.alerts = [
-            a for a in self.alerts
-            if not a.resolved or a.timestamp >= cutoff_time
-        ]
+        self.alerts = [a for a in self.alerts if not a.resolved or a.timestamp >= cutoff_time]
 
         if len(self.alerts) < original_len:
             self._save_data()

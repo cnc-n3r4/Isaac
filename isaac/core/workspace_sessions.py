@@ -8,9 +8,9 @@ Enables seamless switching between projects with preserved context.
 
 import json
 import logging
-from pathlib import Path
-from typing import Dict, Optional, Any, Tuple
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +29,16 @@ class WorkspaceSessionManager:
 
     # Files that indicate a project root
     PROJECT_MARKERS = {
-        '.git',
-        '.isaac',
-        'package.json',
-        'pyproject.toml',
-        'Cargo.toml',
-        'go.mod',
-        'pom.xml',
-        'build.gradle',
-        'Makefile',
-        'CMakeLists.txt'
+        ".git",
+        ".isaac",
+        "package.json",
+        "pyproject.toml",
+        "Cargo.toml",
+        "go.mod",
+        "pom.xml",
+        "build.gradle",
+        "Makefile",
+        "CMakeLists.txt",
     }
 
     def __init__(self, config_path: Optional[Path] = None):
@@ -49,7 +49,7 @@ class WorkspaceSessionManager:
             config_path: Path to workspace configuration file
         """
         if config_path is None:
-            config_path = Path.home() / '.isaac' / 'workspaces.json'
+            config_path = Path.home() / ".isaac" / "workspaces.json"
 
         self.config_path = config_path
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,11 +72,11 @@ class WorkspaceSessionManager:
             return
 
         try:
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path, "r") as f:
                 data = json.load(f)
 
-            self.workspaces = data.get('workspaces', {})
-            self.current_workspace = data.get('current_workspace')
+            self.workspaces = data.get("workspaces", {})
+            self.current_workspace = data.get("current_workspace")
 
             logger.info(f"Loaded {len(self.workspaces)} workspace(s)")
 
@@ -88,12 +88,12 @@ class WorkspaceSessionManager:
         """Persist workspace metadata to disk"""
         try:
             data = {
-                'workspaces': self.workspaces,
-                'current_workspace': self.current_workspace,
-                'last_updated': datetime.now().isoformat()
+                "workspaces": self.workspaces,
+                "current_workspace": self.current_workspace,
+                "last_updated": datetime.now().isoformat(),
             }
 
-            with open(self.config_path, 'w') as f:
+            with open(self.config_path, "w") as f:
                 json.dump(data, f, indent=2)
 
             logger.debug(f"Saved {len(self.workspaces)} workspace(s)")
@@ -155,9 +155,12 @@ class WorkspaceSessionManager:
 
         return name
 
-    def register_workspace(self, workspace_path: Path,
-                          session_id: Optional[str] = None,
-                          collection_id: Optional[str] = None) -> str:
+    def register_workspace(
+        self,
+        workspace_path: Path,
+        session_id: Optional[str] = None,
+        collection_id: Optional[str] = None,
+    ) -> str:
         """
         Register a workspace with optional session/collection binding
 
@@ -178,24 +181,24 @@ class WorkspaceSessionManager:
         # Create or update metadata
         if workspace_key not in self.workspaces:
             self.workspaces[workspace_key] = {
-                'name': workspace_name,
-                'path': workspace_key,
-                'created_at': datetime.now().isoformat(),
-                'last_accessed': datetime.now().isoformat(),
-                'session_id': session_id,
-                'collection_id': collection_id
+                "name": workspace_name,
+                "path": workspace_key,
+                "created_at": datetime.now().isoformat(),
+                "last_accessed": datetime.now().isoformat(),
+                "session_id": session_id,
+                "collection_id": collection_id,
             }
             logger.info(f"Registered new workspace: {workspace_name} at {workspace_path}")
         else:
             # Update existing
             workspace_data = self.workspaces[workspace_key]
-            workspace_data['last_accessed'] = datetime.now().isoformat()
+            workspace_data["last_accessed"] = datetime.now().isoformat()
 
             if session_id:
-                workspace_data['session_id'] = session_id
+                workspace_data["session_id"] = session_id
 
             if collection_id:
-                workspace_data['collection_id'] = collection_id
+                workspace_data["collection_id"] = collection_id
 
             logger.debug(f"Updated workspace: {workspace_name}")
 
@@ -245,14 +248,18 @@ class WorkspaceSessionManager:
         self.current_workspace = workspace_key
 
         # Update last accessed
-        self.workspaces[workspace_key]['last_accessed'] = datetime.now().isoformat()
+        self.workspaces[workspace_key]["last_accessed"] = datetime.now().isoformat()
 
         self._save_workspaces()
 
-        workspace_name = self.workspaces[workspace_key]['name']
+        workspace_name = self.workspaces[workspace_key]["name"]
 
         if old_workspace:
-            old_name = self.workspaces[old_workspace]['name'] if old_workspace in self.workspaces else 'unknown'
+            old_name = (
+                self.workspaces[old_workspace]["name"]
+                if old_workspace in self.workspaces
+                else "unknown"
+            )
             logger.info(f"Switched workspace: {old_name} → {workspace_name}")
             return True, f"Switched from '{old_name}' to '{workspace_name}'"
         else:
@@ -287,7 +294,7 @@ class WorkspaceSessionManager:
         if workspace_key not in self.workspaces:
             self.register_workspace(workspace_path, session_id=session_id)
         else:
-            self.workspaces[workspace_key]['session_id'] = session_id
+            self.workspaces[workspace_key]["session_id"] = session_id
             self._save_workspaces()
 
         logger.info(f"Bound session {session_id} to workspace {workspace_path.name}")
@@ -305,7 +312,7 @@ class WorkspaceSessionManager:
         if workspace_key not in self.workspaces:
             self.register_workspace(workspace_path, collection_id=collection_id)
         else:
-            self.workspaces[workspace_key]['collection_id'] = collection_id
+            self.workspaces[workspace_key]["collection_id"] = collection_id
             self._save_workspaces()
 
         logger.info(f"Bound collection {collection_id} to workspace {workspace_path.name}")
@@ -325,7 +332,7 @@ class WorkspaceSessionManager:
         if workspace_key not in self.workspaces:
             return None
 
-        return self.workspaces[workspace_key].get('session_id')
+        return self.workspaces[workspace_key].get("session_id")
 
     def get_collection_for_workspace(self, workspace_path: Path) -> Optional[str]:
         """
@@ -342,7 +349,7 @@ class WorkspaceSessionManager:
         if workspace_key not in self.workspaces:
             return None
 
-        return self.workspaces[workspace_key].get('collection_id')
+        return self.workspaces[workspace_key].get("collection_id")
 
     def list_workspaces(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -394,7 +401,7 @@ class WorkspaceSessionManager:
         success, message = self.switch_workspace(workspace_path)
 
         if success:
-            workspace_name = self.workspaces[str(workspace_path)]['name']
+            workspace_name = self.workspaces[str(workspace_path)]["name"]
             return True, workspace_name
 
         return False, None
@@ -414,7 +421,7 @@ def get_workspace_manager() -> WorkspaceSessionManager:
     return _workspace_manager
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test the workspace manager
     logging.basicConfig(level=logging.DEBUG)
 
@@ -429,9 +436,7 @@ if __name__ == '__main__':
 
         # Register it
         name = manager.register_workspace(
-            workspace,
-            session_id="test_session_123",
-            collection_id="test_collection_456"
+            workspace, session_id="test_session_123", collection_id="test_collection_456"
         )
         print(f"Registered as: {name}")
 

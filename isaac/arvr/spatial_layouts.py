@@ -8,14 +8,15 @@ code windows, and tools in 3D space for optimal VR/AR workflows.
 import json
 import math
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
-from isaac.arvr.spatial_api import Vector3D, SpatialObject, SpatialWorkspace
+from isaac.arvr.spatial_api import SpatialObject, SpatialWorkspace, Vector3D
 
 
 class LayoutType(Enum):
     """Predefined layout types"""
+
     CIRCULAR = "circular"  # Objects arranged in a circle
     GRID = "grid"  # 3D grid arrangement
     SPHERE = "sphere"  # Objects on sphere surface
@@ -28,6 +29,7 @@ class LayoutType(Enum):
 
 class LayoutAlignment(Enum):
     """Alignment options for layouts"""
+
     CENTER = "center"
     TOP = "top"
     BOTTOM = "bottom"
@@ -40,6 +42,7 @@ class LayoutAlignment(Enum):
 @dataclass
 class LayoutConstraints:
     """Constraints for layout generation"""
+
     min_distance: float = 0.5  # meters
     max_distance: float = 3.0  # meters
     optimal_viewing_distance: float = 1.5  # meters
@@ -52,6 +55,7 @@ class LayoutConstraints:
 @dataclass
 class LayoutNode:
     """Single node in a layout"""
+
     id: str
     name: str
     position: Vector3D
@@ -62,27 +66,29 @@ class LayoutNode:
     def to_spatial_object(self) -> SpatialObject:
         """Convert to SpatialObject"""
         from isaac.arvr.spatial_api import Transform3D
+
         return SpatialObject(
             id=self.id,
             name=self.name,
             transform=Transform3D(position=self.position),
-            metadata={**self.metadata, 'size': self.size.to_dict()}
+            metadata={**self.metadata, "size": self.size.to_dict()},
         )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'id': self.id,
-            'name': self.name,
-            'position': self.position.to_dict(),
-            'size': self.size.to_dict(),
-            'priority': self.priority,
-            'metadata': self.metadata
+            "id": self.id,
+            "name": self.name,
+            "position": self.position.to_dict(),
+            "size": self.size.to_dict(),
+            "priority": self.priority,
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class Layout:
     """Complete spatial layout"""
+
     name: str
     type: LayoutType
     nodes: List[LayoutNode] = field(default_factory=list)
@@ -117,50 +123,50 @@ class Layout:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'name': self.name,
-            'type': self.type.value,
-            'nodes': [node.to_dict() for node in self.nodes],
-            'center': self.center.to_dict(),
-            'constraints': {
-                'min_distance': self.constraints.min_distance,
-                'max_distance': self.constraints.max_distance,
-                'optimal_viewing_distance': self.constraints.optimal_viewing_distance,
-                'field_of_view': self.constraints.field_of_view,
-                'maintain_aspect_ratio': self.constraints.maintain_aspect_ratio,
-                'allow_overlap': self.constraints.allow_overlap,
-                'face_center': self.constraints.face_center
+            "name": self.name,
+            "type": self.type.value,
+            "nodes": [node.to_dict() for node in self.nodes],
+            "center": self.center.to_dict(),
+            "constraints": {
+                "min_distance": self.constraints.min_distance,
+                "max_distance": self.constraints.max_distance,
+                "optimal_viewing_distance": self.constraints.optimal_viewing_distance,
+                "field_of_view": self.constraints.field_of_view,
+                "maintain_aspect_ratio": self.constraints.maintain_aspect_ratio,
+                "allow_overlap": self.constraints.allow_overlap,
+                "face_center": self.constraints.face_center,
             },
-            'metadata': self.metadata
+            "metadata": self.metadata,
         }
 
     def save(self, filepath: str) -> None:
         """Save layout to JSON file"""
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(self.to_dict(), f, indent=2)
 
     @classmethod
-    def load(cls, filepath: str) -> 'Layout':
+    def load(cls, filepath: str) -> "Layout":
         """Load layout from JSON file"""
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             data = json.load(f)
 
-        constraints = LayoutConstraints(**data['constraints'])
+        constraints = LayoutConstraints(**data["constraints"])
         layout = cls(
-            name=data['name'],
-            type=LayoutType(data['type']),
-            center=Vector3D.from_dict(data['center']),
+            name=data["name"],
+            type=LayoutType(data["type"]),
+            center=Vector3D.from_dict(data["center"]),
             constraints=constraints,
-            metadata=data['metadata']
+            metadata=data["metadata"],
         )
 
-        for node_data in data['nodes']:
+        for node_data in data["nodes"]:
             node = LayoutNode(
-                id=node_data['id'],
-                name=node_data['name'],
-                position=Vector3D.from_dict(node_data['position']),
-                size=Vector3D.from_dict(node_data['size']),
-                priority=node_data['priority'],
-                metadata=node_data['metadata']
+                id=node_data["id"],
+                name=node_data["name"],
+                position=Vector3D.from_dict(node_data["position"]),
+                size=Vector3D.from_dict(node_data["size"]),
+                priority=node_data["priority"],
+                metadata=node_data["metadata"],
             )
             layout.add_node(node)
 
@@ -192,11 +198,7 @@ class CircularLayout(LayoutAlgorithm):
             y = center.y
             z = center.z + radius * math.sin(angle)
 
-            node = LayoutNode(
-                id=f"node_{i}",
-                name=item,
-                position=Vector3D(x, y, z)
-            )
+            node = LayoutNode(id=f"node_{i}", name=item, position=Vector3D(x, y, z))
             nodes.append(node)
 
         return nodes
@@ -205,7 +207,11 @@ class CircularLayout(LayoutAlgorithm):
 class GridLayout(LayoutAlgorithm):
     """Arrange items in a 3D grid"""
 
-    def __init__(self, constraints: Optional[LayoutConstraints] = None, grid_size: Tuple[int, int, int] = (3, 3, 1)):
+    def __init__(
+        self,
+        constraints: Optional[LayoutConstraints] = None,
+        grid_size: Tuple[int, int, int] = (3, 3, 1),
+    ):
         super().__init__(constraints)
         self.grid_size = grid_size
 
@@ -229,11 +235,7 @@ class GridLayout(LayoutAlgorithm):
                     y = y_start + row * spacing
                     z = z_start + layer * spacing
 
-                    node = LayoutNode(
-                        id=f"node_{idx}",
-                        name=items[idx],
-                        position=Vector3D(x, y, z)
-                    )
+                    node = LayoutNode(id=f"node_{idx}", name=items[idx], position=Vector3D(x, y, z))
                     nodes.append(node)
                     idx += 1
 
@@ -261,11 +263,7 @@ class SphereLayout(LayoutAlgorithm):
             y = center.y + radius * math.sin(inclination) * math.sin(azimuth)
             z = center.z + radius * math.cos(inclination)
 
-            node = LayoutNode(
-                id=f"node_{i}",
-                name=item,
-                position=Vector3D(x, y, z)
-            )
+            node = LayoutNode(id=f"node_{i}", name=item, position=Vector3D(x, y, z))
             nodes.append(node)
 
         return nodes
@@ -292,11 +290,7 @@ class HemisphereLayout(LayoutAlgorithm):
             y = center.y + radius * math.cos(inclination)  # Always positive
             z = center.z + radius * math.sin(inclination) * math.sin(azimuth)
 
-            node = LayoutNode(
-                id=f"node_{i}",
-                name=item,
-                position=Vector3D(x, y, z)
-            )
+            node = LayoutNode(id=f"node_{i}", name=item, position=Vector3D(x, y, z))
             nodes.append(node)
 
         return nodes
@@ -317,7 +311,7 @@ class FocusContextLayout(LayoutAlgorithm):
             name=items[0],
             position=center,
             priority=10,
-            size=Vector3D(0.5, 0.5, 0.1)  # Larger focus item
+            size=Vector3D(0.5, 0.5, 0.1),  # Larger focus item
         )
         nodes.append(focus_node)
 
@@ -338,7 +332,7 @@ class FocusContextLayout(LayoutAlgorithm):
                     name=item,
                     position=Vector3D(x, y, z),
                     priority=1,
-                    size=Vector3D(0.25, 0.25, 0.05)  # Smaller context items
+                    size=Vector3D(0.25, 0.25, 0.05),  # Smaller context items
                 )
                 nodes.append(node)
 
@@ -355,7 +349,7 @@ class LayoutManager:
             LayoutType.GRID: GridLayout(),
             LayoutType.SPHERE: SphereLayout(),
             LayoutType.HEMISPHERE: HemisphereLayout(),
-            LayoutType.FOCUS_CONTEXT: FocusContextLayout()
+            LayoutType.FOCUS_CONTEXT: FocusContextLayout(),
         }
 
     def create_layout(
@@ -364,7 +358,7 @@ class LayoutManager:
         layout_type: LayoutType,
         items: List[str],
         center: Optional[Vector3D] = None,
-        constraints: Optional[LayoutConstraints] = None
+        constraints: Optional[LayoutConstraints] = None,
     ) -> Layout:
         """Create a new layout"""
         center = center or Vector3D(0, 1.5, -2)  # Default viewing position
@@ -378,11 +372,7 @@ class LayoutManager:
         nodes = algorithm.generate(items, center)
 
         layout = Layout(
-            name=name,
-            type=layout_type,
-            nodes=nodes,
-            center=center,
-            constraints=constraints
+            name=name, type=layout_type, nodes=nodes, center=center, constraints=constraints
         )
 
         self.layouts[name] = layout
@@ -408,7 +398,7 @@ class LayoutManager:
             iterations += 1
 
             for i, node1 in enumerate(layout.nodes):
-                for node2 in layout.nodes[i+1:]:
+                for node2 in layout.nodes[i + 1 :]:
                     dist = node1.position.distance_to(node2.position)
                     min_dist = layout.constraints.min_distance
 

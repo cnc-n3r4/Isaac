@@ -2,8 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any, List
-
+from typing import Any, Dict, List, Optional
 
 PLUGIN_TEMPLATE = '''"""{{name}} - {{description}}
 
@@ -58,7 +57,7 @@ HOOK_HANDLER_TEMPLATE = '''
         pass
 '''
 
-README_TEMPLATE = '''# {{name}}
+README_TEMPLATE = """# {{name}}
 
 {{description}}
 
@@ -93,9 +92,9 @@ This plugin requires the following permissions:
 ## Author
 
 {{author}}
-'''
+"""
 
-MANIFEST_TEMPLATE = '''{
+MANIFEST_TEMPLATE = """{
     "name": "{{name}}",
     "version": "{{version}}",
     "author": "{{author}}",
@@ -110,7 +109,7 @@ MANIFEST_TEMPLATE = '''{
     "commands": {{commands}},
     "permissions": {{permissions}}
 }
-'''
+"""
 
 TEST_TEMPLATE = '''"""Tests for {{name}} plugin."""
 
@@ -214,9 +213,11 @@ class PluginDevKit:
         for hook in hooks:
             handler_name = f"on_{hook.lower()}"
             hook_registrations.append(
-                f'        self.register_hook(PluginHook.{hook.upper()}, self.{handler_name})'
+                f"        self.register_hook(PluginHook.{hook.upper()}, self.{handler_name})"
             )
-        hook_registrations_str = "\n".join(hook_registrations) if hook_registrations else "        pass"
+        hook_registrations_str = (
+            "\n".join(hook_registrations) if hook_registrations else "        pass"
+        )
 
         # Generate hook handlers
         hook_handlers = []
@@ -446,15 +447,15 @@ class PluginDevKit:
 ## Hooks
 
 """
-        for hook in manifest.get('hooks', []):
+        for hook in manifest.get("hooks", []):
             api_doc += f"- `{hook}`\n"
 
         api_doc += "\n## Commands\n\n"
-        for cmd in manifest.get('commands', []):
+        for cmd in manifest.get("commands", []):
             api_doc += f"- `{cmd}`\n"
 
         api_doc += "\n## Permissions\n\n"
-        for perm in manifest.get('permissions', []):
+        for perm in manifest.get("permissions", []):
             api_doc += f"- `{perm}`\n"
 
         # Write API doc

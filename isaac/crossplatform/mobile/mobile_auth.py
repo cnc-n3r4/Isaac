@@ -3,8 +3,8 @@ Mobile Authentication - Authentication for mobile devices
 """
 
 import secrets
-from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 
 class MobileAuth:
@@ -27,15 +27,15 @@ class MobileAuth:
             6-digit pairing code
         """
         # Generate 6-digit code
-        code = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
+        code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
 
         # Store with expiration
         self.pairing_codes[code] = {
-            'code': code,
-            'instance_id': instance_id,
-            'created_at': datetime.utcnow().isoformat(),
-            'expires_at': (datetime.utcnow() + timedelta(minutes=10)).isoformat(),
-            'used': False
+            "code": code,
+            "instance_id": instance_id,
+            "created_at": datetime.utcnow().isoformat(),
+            "expires_at": (datetime.utcnow() + timedelta(minutes=10)).isoformat(),
+            "used": False,
         }
 
         return code
@@ -57,30 +57,23 @@ class MobileAuth:
         pairing = self.pairing_codes[code]
 
         # Check if already used
-        if pairing['used']:
+        if pairing["used"]:
             return None
 
         # Check if expired
-        expires_at = datetime.fromisoformat(pairing['expires_at'])
+        expires_at = datetime.fromisoformat(pairing["expires_at"])
         if datetime.utcnow() > expires_at:
             return None
 
         # Mark as used
-        pairing['used'] = True
+        pairing["used"] = True
 
         # Create session token
-        token = self.create_mobile_session(
-            pairing['instance_id'],
-            device_id
-        )
+        token = self.create_mobile_session(pairing["instance_id"], device_id)
 
         return token
 
-    def create_mobile_session(
-        self,
-        instance_id: str,
-        device_id: str
-    ) -> str:
+    def create_mobile_session(self, instance_id: str, device_id: str) -> str:
         """
         Create a mobile session
 
@@ -95,12 +88,12 @@ class MobileAuth:
         token = secrets.token_urlsafe(32)
 
         self.mobile_sessions[token] = {
-            'token': token,
-            'instance_id': instance_id,
-            'device_id': device_id,
-            'created_at': datetime.utcnow().isoformat(),
-            'last_used': datetime.utcnow().isoformat(),
-            'active': True
+            "token": token,
+            "instance_id": instance_id,
+            "device_id": device_id,
+            "created_at": datetime.utcnow().isoformat(),
+            "last_used": datetime.utcnow().isoformat(),
+            "active": True,
         }
 
         return token
@@ -117,11 +110,11 @@ class MobileAuth:
         """
         session = self.mobile_sessions.get(token)
 
-        if not session or not session['active']:
+        if not session or not session["active"]:
             return None
 
         # Update last used
-        session['last_used'] = datetime.utcnow().isoformat()
+        session["last_used"] = datetime.utcnow().isoformat()
 
         return session
 
@@ -130,7 +123,7 @@ class MobileAuth:
         session = self.mobile_sessions.get(token)
 
         if session:
-            session['active'] = False
+            session["active"] = False
             return True
 
         return False
@@ -139,17 +132,17 @@ class MobileAuth:
         """List active mobile sessions"""
         sessions = [
             {
-                'instance_id': session['instance_id'],
-                'device_id': session['device_id'],
-                'created_at': session['created_at'],
-                'last_used': session['last_used']
+                "instance_id": session["instance_id"],
+                "device_id": session["device_id"],
+                "created_at": session["created_at"],
+                "last_used": session["last_used"],
             }
             for session in self.mobile_sessions.values()
-            if session['active']
+            if session["active"]
         ]
 
         if instance_id:
-            sessions = [s for s in sessions if s['instance_id'] == instance_id]
+            sessions = [s for s in sessions if s["instance_id"] == instance_id]
 
         return sessions
 
@@ -159,7 +152,7 @@ class MobileAuth:
         expired = []
 
         for code, data in self.pairing_codes.items():
-            expires_at = datetime.fromisoformat(data['expires_at'])
+            expires_at = datetime.fromisoformat(data["expires_at"])
             if now > expires_at:
                 expired.append(code)
 
@@ -169,12 +162,13 @@ class MobileAuth:
     def get_stats(self) -> Dict[str, Any]:
         """Get authentication statistics"""
         active_codes = sum(
-            1 for p in self.pairing_codes.values()
-            if not p['used'] and datetime.utcnow() < datetime.fromisoformat(p['expires_at'])
+            1
+            for p in self.pairing_codes.values()
+            if not p["used"] and datetime.utcnow() < datetime.fromisoformat(p["expires_at"])
         )
 
         return {
-            'active_pairing_codes': active_codes,
-            'total_sessions': len(self.mobile_sessions),
-            'active_sessions': sum(1 for s in self.mobile_sessions.values() if s['active'])
+            "active_pairing_codes": active_codes,
+            "total_sessions": len(self.mobile_sessions),
+            "active_sessions": sum(1 for s in self.mobile_sessions.values() if s["active"]),
         }

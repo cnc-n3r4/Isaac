@@ -4,29 +4,27 @@ Provides standard interface for all AI providers
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class ToolCall:
     """Represents a tool/function call from AI"""
+
     id: str
     name: str
     arguments: Dict[str, Any]
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            'id': self.id,
-            'name': self.name,
-            'arguments': self.arguments
-        }
+        return {"id": self.id, "name": self.name, "arguments": self.arguments}
 
 
 @dataclass
 class AIResponse:
     """Standard AI response format"""
+
     content: str
     tool_calls: List[ToolCall] = field(default_factory=list)
     model: str = ""
@@ -47,20 +45,20 @@ class AIResponse:
 
     def to_dict(self) -> Dict[str, Any]:
         result = {
-            'content': self.content,
-            'tool_calls': [tc.to_dict() for tc in self.tool_calls],
-            'model': self.model,
-            'provider': self.provider,
-            'usage': self.usage,
-            'finish_reason': self.finish_reason,
-            'error': self.error,
-            'timestamp': self.timestamp.isoformat(),
-            'success': self.success
+            "content": self.content,
+            "tool_calls": [tc.to_dict() for tc in self.tool_calls],
+            "model": self.model,
+            "provider": self.provider,
+            "usage": self.usage,
+            "finish_reason": self.finish_reason,
+            "error": self.error,
+            "timestamp": self.timestamp.isoformat(),
+            "success": self.success,
         }
 
         # Phase 3: Include metadata if present
         if self.metadata:
-            result['metadata'] = self.metadata
+            result["metadata"] = self.metadata
 
         return result
 
@@ -146,8 +144,8 @@ class BaseAIClient(ABC):
             Message dict to append to conversation
         """
         return {
-            'role': 'tool',
-            'tool_call_id': tool_call.id,
-            'name': tool_call.name,
-            'content': str(result)
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "name": tool_call.name,
+            "content": str(result),
         }

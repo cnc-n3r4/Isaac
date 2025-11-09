@@ -3,19 +3,21 @@ Workspace Bubbles - Complete workspace state capture and restoration
 """
 
 import json
+import os
+import subprocess
 import time
 import uuid
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, asdict
-import os
+from typing import Any, Dict, List, Optional
+
 import psutil
-import subprocess
 
 
 @dataclass
 class WorkspaceState:
     """Complete workspace state snapshot"""
+
     bubble_id: str
     timestamp: float
     name: str
@@ -57,15 +59,16 @@ class BubbleManager:
 
     def __init__(self, storage_path: Optional[Path] = None):
         if storage_path is None:
-            isaac_dir = Path.home() / '.isaac'
+            isaac_dir = Path.home() / ".isaac"
             isaac_dir.mkdir(exist_ok=True)
-            storage_path = isaac_dir / 'bubbles'
+            storage_path = isaac_dir / "bubbles"
 
         self.storage_path = storage_path
         self.storage_path.mkdir(exist_ok=True)
 
-    def create_bubble(self, name: str = "", description: str = "",
-                     tags: Optional[List[str]] = None) -> WorkspaceState:
+    def create_bubble(
+        self, name: str = "", description: str = "", tags: Optional[List[str]] = None
+    ) -> WorkspaceState:
         """Create a new workspace bubble capturing current state"""
 
         # Generate unique ID
@@ -86,7 +89,7 @@ class BubbleManager:
             recent_commands=self._get_recent_commands(),
             background_jobs=self._get_background_jobs(),
             system_info=self._get_system_info(),
-            tags=tags or []
+            tags=tags or [],
         )
 
         # Save the bubble
@@ -99,7 +102,7 @@ class BubbleManager:
         bubbles = []
         for bubble_file in self.storage_path.glob("*.json"):
             try:
-                with open(bubble_file, 'r') as f:
+                with open(bubble_file, "r") as f:
                     data = json.load(f)
                     bubbles.append(WorkspaceState(**data))
             except Exception as e:
@@ -114,7 +117,7 @@ class BubbleManager:
         bubble_file = self.storage_path / f"{bubble_id}.json"
         if bubble_file.exists():
             try:
-                with open(bubble_file, 'r') as f:
+                with open(bubble_file, "r") as f:
                     data = json.load(f)
                     return WorkspaceState(**data)
             except Exception as e:
@@ -156,15 +159,14 @@ class BubbleManager:
     def _save_bubble(self, state: WorkspaceState):
         """Save bubble to disk"""
         bubble_file = self.storage_path / f"{state.bubble_id}.json"
-        with open(bubble_file, 'w') as f:
+        with open(bubble_file, "w") as f:
             json.dump(asdict(state), f, indent=2)
 
     def _get_git_branch(self) -> Optional[str]:
         """Get current git branch"""
         try:
             result = subprocess.run(
-                ['git', 'branch', '--show-current'],
-                capture_output=True, text=True, cwd=os.getcwd()
+                ["git", "branch", "--show-current"], capture_output=True, text=True, cwd=os.getcwd()
             )
             if result.returncode == 0:
                 return result.stdout.strip()
@@ -175,29 +177,28 @@ class BubbleManager:
     def _get_git_status(self) -> Dict[str, Any]:
         """Get git status information"""
         status = {
-            'is_git_repo': False,
-            'modified_files': [],
-            'untracked_files': [],
-            'staged_files': []
+            "is_git_repo": False,
+            "modified_files": [],
+            "untracked_files": [],
+            "staged_files": [],
         }
 
         try:
             # Check if we're in a git repo
             result = subprocess.run(
-                ['git', 'status', '--porcelain'],
-                capture_output=True, text=True, cwd=os.getcwd()
+                ["git", "status", "--porcelain"], capture_output=True, text=True, cwd=os.getcwd()
             )
 
             if result.returncode == 0:
-                status['is_git_repo'] = True
+                status["is_git_repo"] = True
 
                 for line in result.stdout.splitlines():
-                    if line.startswith('M ') or line.startswith('MM '):
-                        status['modified_files'].append(line[3:])
-                    elif line.startswith('?? '):
-                        status['untracked_files'].append(line[3:])
-                    elif line.startswith('A ') or line.startswith('AM '):
-                        status['staged_files'].append(line[3:])
+                    if line.startswith("M ") or line.startswith("MM "):
+                        status["modified_files"].append(line[3:])
+                    elif line.startswith("?? "):
+                        status["untracked_files"].append(line[3:])
+                    elif line.startswith("A ") or line.startswith("AM "):
+                        status["staged_files"].append(line[3:])
 
         except:
             pass
@@ -208,8 +209,15 @@ class BubbleManager:
         """Get relevant environment variables"""
         # Only capture important environment variables
         important_vars = [
-            'PATH', 'PYTHONPATH', 'VIRTUAL_ENV', 'CONDA_DEFAULT_ENV',
-            'NODE_ENV', 'JAVA_HOME', 'HOME', 'USER', 'SHELL'
+            "PATH",
+            "PYTHONPATH",
+            "VIRTUAL_ENV",
+            "CONDA_DEFAULT_ENV",
+            "NODE_ENV",
+            "JAVA_HOME",
+            "HOME",
+            "USER",
+            "SHELL",
         ]
 
         env = {}
@@ -225,17 +233,19 @@ class BubbleManager:
         processes = []
 
         try:
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline', 'cwd']):
+            for proc in psutil.process_iter(["pid", "name", "cmdline", "cwd"]):
                 try:
                     info = proc.info
                     # Only include processes that might be relevant to development
-                    if info['cwd'] and os.getcwd() in info['cwd']:
-                        processes.append({
-                            'pid': info['pid'],
-                            'name': info['name'],
-                            'cmdline': info['cmdline'] or [],
-                            'cwd': info['cwd']
-                        })
+                    if info["cwd"] and os.getcwd() in info["cwd"]:
+                        processes.append(
+                            {
+                                "pid": info["pid"],
+                                "name": info["name"],
+                                "cmdline": info["cmdline"] or [],
+                                "cwd": info["cwd"],
+                            }
+                        )
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
         except:
@@ -251,10 +261,11 @@ class BubbleManager:
         try:
             # Look for recently modified files (last 30 minutes)
             import glob
+
             recent_files = []
             cutoff_time = time.time() - (30 * 60)  # 30 minutes ago
 
-            for pattern in ['**/*.py', '**/*.md', '**/*.txt', '**/*.json', '**/*.yaml', '**/*.yml']:
+            for pattern in ["**/*.py", "**/*.md", "**/*.txt", "**/*.json", "**/*.yaml", "**/*.yml"]:
                 for file_path in glob.glob(pattern, recursive=True):
                     if os.path.isfile(file_path):
                         mtime = os.path.getmtime(file_path)
@@ -267,11 +278,11 @@ class BubbleManager:
 
             # Look for editor-specific indicators
             editor_indicators = [
-                '.vscode/settings.json',
-                '.vscode/workspace.code-workspace',
-                '.idea/workspace.xml',
-                '*.swp',  # vim swap files
-                '*.tmp',  # temporary files
+                ".vscode/settings.json",
+                ".vscode/workspace.code-workspace",
+                ".idea/workspace.xml",
+                "*.swp",  # vim swap files
+                "*.tmp",  # temporary files
             ]
 
             for indicator in editor_indicators:
@@ -292,16 +303,18 @@ class BubbleManager:
         try:
             # Try to read shell history files
             history_files = [
-                os.path.expanduser('~/.bash_history'),
-                os.path.expanduser('~/.zsh_history'),
-                os.path.expanduser('~/.fish_history'),
-                os.path.expanduser('~/AppData/Roaming/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt'),  # PowerShell
+                os.path.expanduser("~/.bash_history"),
+                os.path.expanduser("~/.zsh_history"),
+                os.path.expanduser("~/.fish_history"),
+                os.path.expanduser(
+                    "~/AppData/Roaming/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt"
+                ),  # PowerShell
             ]
 
             for history_file in history_files:
                 if os.path.exists(history_file):
                     try:
-                        with open(history_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        with open(history_file, "r", encoding="utf-8", errors="ignore") as f:
                             lines = f.readlines()
                             # Get last 10 commands
                             recent_commands = [line.strip() for line in lines[-10:] if line.strip()]
@@ -319,20 +332,25 @@ class BubbleManager:
         background_jobs = []
 
         try:
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline', 'status']):
+            for proc in psutil.process_iter(["pid", "name", "cmdline", "status"]):
                 try:
                     info = proc.info
                     # Look for background processes (not interactive shells)
-                    if info['status'] in ['running', 'sleeping'] and info['cwd']:
+                    if info["status"] in ["running", "sleeping"] and info["cwd"]:
                         # Simple heuristic: processes that might be background jobs
-                        cmdline = info.get('cmdline', [])
-                        if cmdline and not any(term in ' '.join(cmdline).lower() for term in ['powershell', 'bash', 'zsh', 'fish', 'cmd']):
-                            background_jobs.append({
-                                'pid': info['pid'],
-                                'name': info['name'],
-                                'cmdline': cmdline,
-                                'cwd': info['cwd']
-                            })
+                        cmdline = info.get("cmdline", [])
+                        if cmdline and not any(
+                            term in " ".join(cmdline).lower()
+                            for term in ["powershell", "bash", "zsh", "fish", "cmd"]
+                        ):
+                            background_jobs.append(
+                                {
+                                    "pid": info["pid"],
+                                    "name": info["name"],
+                                    "cmdline": cmdline,
+                                    "cwd": info["cwd"],
+                                }
+                            )
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
         except:
@@ -346,24 +364,24 @@ class BubbleManager:
 
         try:
             # CPU and memory info
-            system_info['cpu_percent'] = psutil.cpu_percent(interval=1)
+            system_info["cpu_percent"] = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
-            system_info['memory_percent'] = memory.percent
-            system_info['memory_used_gb'] = round(memory.used / (1024**3), 2)
-            system_info['memory_total_gb'] = round(memory.total / (1024**3), 2)
+            system_info["memory_percent"] = memory.percent
+            system_info["memory_used_gb"] = round(memory.used / (1024**3), 2)
+            system_info["memory_total_gb"] = round(memory.total / (1024**3), 2)
 
             # Disk usage for current drive
             try:
                 disk = psutil.disk_usage(os.getcwd())
-                system_info['disk_percent'] = disk.percent
-                system_info['disk_free_gb'] = round(disk.free / (1024**3), 2)
+                system_info["disk_percent"] = disk.percent
+                system_info["disk_free_gb"] = round(disk.free / (1024**3), 2)
             except:
                 pass
 
             # Network connections (simplified)
             try:
                 connections = psutil.net_connections()
-                system_info['network_connections'] = len(connections)
+                system_info["network_connections"] = len(connections)
             except:
                 pass
 
@@ -384,18 +402,18 @@ class BubbleManager:
                 bubble.tags = []
 
             # Mark bubble as suspended by adding metadata
-            bubble.tags.append('suspended')
-            bubble.description += ' [SUSPENDED]'
+            bubble.tags.append("suspended")
+            bubble.description += " [SUSPENDED]"
 
             if suspend_processes:
                 # Attempt to suspend relevant processes
                 suspended_pids = []
                 for proc_info in bubble.running_processes:
-                    pid = proc_info.get('pid')
+                    pid = proc_info.get("pid")
                     if pid:
                         try:
                             proc = psutil.Process(pid)
-                            if proc.status() == 'running':
+                            if proc.status() == "running":
                                 proc.suspend()
                                 suspended_pids.append(pid)
                         except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -416,11 +434,11 @@ class BubbleManager:
                 # Attempt to suspend relevant processes
                 suspended_pids = []
                 for proc_info in bubble.running_processes:
-                    pid = proc_info.get('pid')
+                    pid = proc_info.get("pid")
                     if pid:
                         try:
                             proc = psutil.Process(pid)
-                            if proc.status() == 'running':
+                            if proc.status() == "running":
                                 proc.suspend()
                                 suspended_pids.append(pid)
                         except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -449,31 +467,31 @@ class BubbleManager:
                 bubble.tags = []
 
             # Check if bubble is suspended
-            if 'suspended' not in bubble.tags:
+            if "suspended" not in bubble.tags:
                 return False
 
             # Resume suspended processes
             suspended_pid_tag = None
             for tag in bubble.tags:
-                if tag.startswith('suspended_pids:'):
+                if tag.startswith("suspended_pids:"):
                     suspended_pid_tag = tag
                     break
 
             if suspended_pid_tag:
-                pid_str = suspended_pid_tag.split(':', 1)[1]
-                suspended_pids = [int(pid) for pid in pid_str.split(',') if pid]
+                pid_str = suspended_pid_tag.split(":", 1)[1]
+                suspended_pids = [int(pid) for pid in pid_str.split(",") if pid]
 
                 for pid in suspended_pids:
                     try:
                         proc = psutil.Process(pid)
-                        if proc.status() == 'stopped':
+                        if proc.status() == "stopped":
                             proc.resume()
                     except (psutil.NoSuchProcess, psutil.AccessDenied):
                         continue
 
             # Remove suspension tags
-            bubble.tags = [tag for tag in bubble.tags if not tag.startswith('suspended')]
-            bubble.description = bubble.description.replace(' [SUSPENDED]', '')
+            bubble.tags = [tag for tag in bubble.tags if not tag.startswith("suspended")]
+            bubble.description = bubble.description.replace(" [SUSPENDED]", "")
 
             # Save the updated bubble
             self._save_bubble(bubble)
@@ -483,8 +501,9 @@ class BubbleManager:
             print(f"Error resuming bubble: {e}")
             return False
 
-    def create_bubble_version(self, parent_bubble_id: str, name: Optional[str] = None,
-                             description: Optional[str] = None) -> Optional[WorkspaceState]:
+    def create_bubble_version(
+        self, parent_bubble_id: str, name: Optional[str] = None, description: Optional[str] = None
+    ) -> Optional[WorkspaceState]:
         """Create a new version of an existing bubble"""
         parent_bubble = self.get_bubble(parent_bubble_id)
         if not parent_bubble:
@@ -493,13 +512,18 @@ class BubbleManager:
         # Create new bubble with updated state
         new_bubble = self.create_bubble(
             name=name or f"{parent_bubble.name} v{parent_bubble.version + 1}",
-            description=description or f"Version {parent_bubble.version + 1} of {parent_bubble.name}",
-            tags=parent_bubble.tags.copy() if parent_bubble.tags else []
+            description=description
+            or f"Version {parent_bubble.version + 1} of {parent_bubble.name}",
+            tags=parent_bubble.tags.copy() if parent_bubble.tags else [],
         )
 
         # Set versioning info
         try:
-            parent_version = int(parent_bubble.version) if isinstance(parent_bubble.version, str) else parent_bubble.version
+            parent_version = (
+                int(parent_bubble.version)
+                if isinstance(parent_bubble.version, str)
+                else parent_bubble.version
+            )
         except (ValueError, TypeError):
             parent_version = 1
 

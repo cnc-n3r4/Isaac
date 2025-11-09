@@ -6,12 +6,12 @@ Machine Registry Command - Multi-machine orchestration
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Add the isaac package to the path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from isaac.orchestration import MachineRegistry, Machine, MachineStatus
+from isaac.orchestration import Machine, MachineRegistry, MachineStatus
 
 
 class MachineCommand:
@@ -26,47 +26,48 @@ class MachineCommand:
         # Normalize argument names (convert dashes to underscores)
         normalized_args = {}
         for key, value in args.items():
-            normalized_key = key.replace('-', '_')
+            normalized_key = key.replace("-", "_")
             normalized_args[normalized_key] = value
 
-        action = normalized_args.get('action')
+        action = normalized_args.get("action")
 
-        if action == 'register':
+        if action == "register":
             return self._register_machine(normalized_args)
-        elif action == 'unregister':
+        elif action == "unregister":
             return self._unregister_machine(normalized_args)
-        elif action == 'list':
+        elif action == "list":
             return self._list_machines()
-        elif action == 'show':
+        elif action == "show":
             return self._show_machine(normalized_args)
-        elif action == 'status':
+        elif action == "status":
             return self._update_status(normalized_args)
-        elif action == 'group':
+        elif action == "group":
             return self._create_group(normalized_args)
-        elif action == 'groups':
+        elif action == "groups":
             return self._list_groups()
-        elif action == 'discover':
+        elif action == "discover":
             return self._discover_machines()
-        elif action == 'find':
+        elif action == "find":
             return self._find_machines(normalized_args)
         else:
             return "❌ Invalid action. Use: register, unregister, list, show, status, group, groups, discover, find"
 
     def _register_machine(self, args: Dict[str, Any]) -> str:
         """Register a new machine"""
-        hostname = args.get('hostname')
-        ip_address = args.get('ip_address')
-        port = args.get('port', 8080)
-        tags_str = args.get('tags', '')
+        hostname = args.get("hostname")
+        ip_address = args.get("ip_address")
+        port = args.get("port", 8080)
+        tags_str = args.get("tags", "")
 
         # Parse tags
-        tags = [tag.strip() for tag in tags_str.split(',')] if tags_str else []
+        tags = [tag.strip() for tag in tags_str.split(",")] if tags_str else []
 
         if not hostname or not ip_address:
             return "❌ Hostname and IP address required. Use: /machine register --hostname <host> --ip-address <ip> [--port <port>] [--tags <tags>]"
 
         # Create machine instance
         import uuid
+
         from isaac.orchestration.registry import MachineCapabilities, MachineStatus
 
         machine_id = str(uuid.uuid4())[:8]
@@ -80,7 +81,7 @@ class MachineCommand:
             port=port,
             capabilities=capabilities,
             status=status,
-            tags=tags
+            tags=tags,
         )
 
         if self.registry.register_machine(machine):
@@ -90,7 +91,7 @@ class MachineCommand:
 
     def _unregister_machine(self, args: Dict[str, Any]) -> str:
         """Unregister a machine"""
-        machine_id = args.get('machine_id')
+        machine_id = args.get("machine_id")
         if not machine_id:
             return "❌ Machine ID required. Use: /machine unregister --machine-id <id>"
 
@@ -124,7 +125,7 @@ class MachineCommand:
 
     def _show_machine(self, args: Dict[str, Any]) -> str:
         """Show detailed machine information"""
-        machine_id = args.get('machine_id')
+        machine_id = args.get("machine_id")
         if not machine_id:
             return "❌ Machine ID required. Use: /machine show --machine-id <id>"
 
@@ -170,7 +171,7 @@ class MachineCommand:
 
     def _update_status(self, args: Dict[str, Any]) -> str:
         """Update machine status"""
-        machine_id = args.get('machine_id')
+        machine_id = args.get("machine_id")
         if not machine_id:
             return "❌ Machine ID required. Use: /machine status --machine-id <id>"
 
@@ -180,12 +181,13 @@ class MachineCommand:
 
         # Update with current system status
         import psutil
+
         status = MachineStatus(
             is_online=True,
             last_seen=time.time(),
             current_load=psutil.cpu_percent(),
             memory_usage=psutil.virtual_memory().percent,
-            status_message="Status updated"
+            status_message="Status updated",
         )
 
         if self.registry.update_machine_status(machine_id, status):
@@ -195,13 +197,13 @@ class MachineCommand:
 
     def _create_group(self, args: Dict[str, Any]) -> str:
         """Create a machine group"""
-        group_name = args.get('group_name')
-        members_str = args.get('group_members', '')
+        group_name = args.get("group_name")
+        members_str = args.get("group_members", "")
 
         if not group_name or not members_str:
             return "❌ Group name and members required. Use: /machine group --group-name <name> --group-members <id1,id2,id3>"
 
-        members = [mid.strip() for mid in members_str.split(',') if mid.strip()]
+        members = [mid.strip() for mid in members_str.split(",") if mid.strip()]
 
         if self.registry.create_group(group_name, members):
             return f"✅ Created group '{group_name}' with {len(members)} machines"
@@ -240,12 +242,12 @@ class MachineCommand:
 
     def _find_machines(self, args: Dict[str, Any]) -> str:
         """Find machines by criteria"""
-        filter_tags_str = args.get('filter_tags', '')
-        min_cpu = args.get('min_cpu', 0)
-        min_memory = args.get('min_memory', 0.0)
+        filter_tags_str = args.get("filter_tags", "")
+        min_cpu = args.get("min_cpu", 0)
+        min_memory = args.get("min_memory", 0.0)
 
         # Parse filter tags
-        filter_tags = [tag.strip() for tag in filter_tags_str.split(',')] if filter_tags_str else []
+        filter_tags = [tag.strip() for tag in filter_tags_str.split(",")] if filter_tags_str else []
 
         # Find machines by tags
         if filter_tags:
@@ -254,9 +256,11 @@ class MachineCommand:
             machines = self.registry.list_machines(filter_online=True)
 
         # Filter by capabilities
-        machines = [m for m in machines
-                   if m.capabilities.cpu_cores >= min_cpu
-                   and m.capabilities.memory_gb >= min_memory]
+        machines = [
+            m
+            for m in machines
+            if m.capabilities.cpu_cores >= min_cpu and m.capabilities.memory_gb >= min_memory
+        ]
 
         if not machines:
             criteria = []
@@ -289,6 +293,7 @@ class MachineCommand:
     def _format_timestamp(self, timestamp: float) -> str:
         """Format timestamp for display"""
         import datetime
+
         dt = datetime.datetime.fromtimestamp(timestamp)
         return dt.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -315,15 +320,15 @@ def main():
         return
 
     action = sys.argv[1]
-    args = {'action': action}
+    args = {"action": action}
 
     # Parse additional arguments
     i = 2
     while i < len(sys.argv):
         arg = sys.argv[i]
-        if arg.startswith('--'):
+        if arg.startswith("--"):
             key = arg[2:]  # Remove --
-            if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith('--'):
+            if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith("--"):
                 value = sys.argv[i + 1]
                 args[key] = value
                 i += 2

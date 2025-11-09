@@ -3,8 +3,8 @@
 Restore Command Handler - Plugin format
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 
@@ -18,10 +18,10 @@ def parse_flags(args_list):
         arg = args_list[i]
 
         # Check if it's a flag (starts with -)
-        if arg.startswith('--'):
+        if arg.startswith("--"):
             flag = arg[2:]  # Remove --
             # Check if next arg is the value
-            if i + 1 < len(args_list) and not args_list[i + 1].startswith('-'):
+            if i + 1 < len(args_list) and not args_list[i + 1].startswith("-"):
                 flags[flag] = args_list[i + 1]
                 i += 1  # Skip the value
             else:
@@ -43,16 +43,16 @@ def main():
     # Parse flags from args
     flags, positional = parse_flags(args_raw)
 
-    backup_file = flags.get('file')
+    backup_file = flags.get("file")
     if not backup_file:
         output = "Usage: /restore --file <backup_file>\n\n"
         output += "Available backups in ~/.isaac/backups/:\n"
 
         # List available backups
-        isaac_dir = Path.home() / '.isaac'
-        backup_dir = isaac_dir / 'backups'
+        isaac_dir = Path.home() / ".isaac"
+        backup_dir = isaac_dir / "backups"
         if backup_dir.exists():
-            backups = list(backup_dir.glob('*.zip'))
+            backups = list(backup_dir.glob("*.zip"))
             if backups:
                 for backup in sorted(backups, key=lambda x: x.stat().st_mtime, reverse=True):
                     size = backup.stat().st_size / (1024 * 1024)  # MB
@@ -62,11 +62,7 @@ def main():
         else:
             output += "  Backup directory not found\n"
 
-        print(json.dumps({
-            "ok": False,
-            "stdout": output,
-            "meta": {}
-        }))
+        print(json.dumps({"ok": False, "stdout": output, "meta": {}}))
         return
 
     # Simulate restore operation
@@ -77,8 +73,8 @@ def main():
     backup_path = Path(backup_file)
     if not backup_path.exists():
         # Try relative to backup directory
-        isaac_dir = Path.home() / '.isaac'
-        backup_dir = isaac_dir / 'backups'
+        isaac_dir = Path.home() / ".isaac"
+        backup_dir = isaac_dir / "backups"
         alt_path = backup_dir / backup_file
         if alt_path.exists():
             backup_path = alt_path
@@ -86,11 +82,7 @@ def main():
             output += "Status: ✗ Backup file not found\n"
             output += f"Checked: {backup_file}\n"
             output += f"Checked: {alt_path}\n"
-            print(json.dumps({
-                "ok": False,
-                "stdout": output,
-                "meta": {}
-            }))
+            print(json.dumps({"ok": False, "stdout": output, "meta": {}}))
             return
 
     output += "Status: ✓ Restore completed successfully\n"
@@ -99,12 +91,7 @@ def main():
     output += f"Source: {backup_path}\n"
 
     # Return envelope
-    print(json.dumps({
-        "ok": True,
-        "kind": "text",
-        "stdout": output,
-        "meta": {}
-    }))
+    print(json.dumps({"ok": True, "kind": "text", "stdout": output, "meta": {}}))
 
 
 if __name__ == "__main__":

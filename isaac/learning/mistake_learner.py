@@ -5,11 +5,11 @@ Learn from user corrections, failures, and feedback to continuously improve.
 
 import json
 import sqlite3
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
-from pathlib import Path
 import threading
 import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 
@@ -17,6 +17,7 @@ from isaac.core.session_manager import SessionManager
 @dataclass
 class MistakeRecord:
     """A record of a mistake and its correction."""
+
     id: str
     timestamp: float
     mistake_type: str  # 'command_error', 'ai_response', 'pattern_failure', etc.
@@ -32,6 +33,7 @@ class MistakeRecord:
 @dataclass
 class LearningPattern:
     """A pattern learned from mistakes."""
+
     id: str
     mistake_type: str
     pattern_description: str
@@ -49,15 +51,15 @@ class MistakeLearner:
 
     def __init__(self, session_manager: SessionManager, start_background_learning: bool = True):
         self.session_manager = session_manager
-        self.data_dir = Path.home() / '.isaac' / 'learning'
+        self.data_dir = Path.home() / ".isaac" / "learning"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Database for mistake storage
-        self.db_path = self.data_dir / 'mistakes.db'
+        self.db_path = self.data_dir / "mistakes.db"
         self._init_database()
 
         # Learning patterns
-        self.patterns_file = self.data_dir / 'learning_patterns.json'
+        self.patterns_file = self.data_dir / "learning_patterns.json"
         self.learning_patterns: Dict[str, LearningPattern] = {}
         self._load_patterns()
 
@@ -72,7 +74,8 @@ class MistakeLearner:
     def _init_database(self):
         """Initialize SQLite database for mistake storage."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS mistakes (
                     id TEXT PRIMARY KEY,
                     timestamp REAL,
@@ -85,15 +88,16 @@ class MistakeLearner:
                     learned BOOLEAN DEFAULT 0,
                     recurrence_count INTEGER DEFAULT 1
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_type ON mistakes(mistake_type)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON mistakes(timestamp)')
+            """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_type ON mistakes(mistake_type)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON mistakes(timestamp)")
 
     def _load_patterns(self):
         """Load learning patterns from disk."""
         if self.patterns_file.exists():
             try:
-                with open(self.patterns_file, 'r') as f:
+                with open(self.patterns_file, "r") as f:
                     data = json.load(f)
                     for pattern_id, pattern_data in data.items():
                         self.learning_patterns[pattern_id] = LearningPattern(**pattern_data)
@@ -104,7 +108,7 @@ class MistakeLearner:
         """Save learning patterns to disk."""
         try:
             data = {pid: asdict(pattern) for pid, pattern in self.learning_patterns.items()}
-            with open(self.patterns_file, 'w') as f:
+            with open(self.patterns_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             print(f"Error saving learning patterns: {e}")
@@ -112,50 +116,59 @@ class MistakeLearner:
     def record_mistake(self, mistake: MistakeRecord):
         """Record a new mistake for learning."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO mistakes
                 (id, timestamp, mistake_type, original_input, mistake_description,
                  user_correction, context, severity, learned, recurrence_count)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                mistake.id,
-                mistake.timestamp,
-                mistake.mistake_type,
-                mistake.original_input,
-                mistake.mistake_description,
-                mistake.user_correction,
-                json.dumps(mistake.context),
-                mistake.severity,
-                mistake.learned,
-                mistake.recurrence_count
-            ))
+            """,
+                (
+                    mistake.id,
+                    mistake.timestamp,
+                    mistake.mistake_type,
+                    mistake.original_input,
+                    mistake.mistake_description,
+                    mistake.user_correction,
+                    json.dumps(mistake.context),
+                    mistake.severity,
+                    mistake.learned,
+                    mistake.recurrence_count,
+                ),
+            )
 
-    def get_similar_mistakes(self, mistake_type: str, context: Dict[str, Any],
-                           limit: int = 10) -> List[MistakeRecord]:
+    def get_similar_mistakes(
+        self, mistake_type: str, context: Dict[str, Any], limit: int = 10
+    ) -> List[MistakeRecord]:
         """Find similar mistakes for pattern learning."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT * FROM mistakes
                 WHERE mistake_type = ?
                 ORDER BY timestamp DESC
                 LIMIT ?
-            ''', (mistake_type, limit))
+            """,
+                (mistake_type, limit),
+            )
 
             mistakes = []
             for row in cursor:
                 context_data = json.loads(row[6]) if row[6] else {}
-                mistakes.append(MistakeRecord(
-                    id=row[0],
-                    timestamp=row[1],
-                    mistake_type=row[2],
-                    original_input=row[3],
-                    mistake_description=row[4],
-                    user_correction=row[5],
-                    context=context_data,
-                    severity=row[7],
-                    learned=bool(row[8]),
-                    recurrence_count=row[9]
-                ))
+                mistakes.append(
+                    MistakeRecord(
+                        id=row[0],
+                        timestamp=row[1],
+                        mistake_type=row[2],
+                        original_input=row[3],
+                        mistake_description=row[4],
+                        user_correction=row[5],
+                        context=context_data,
+                        severity=row[7],
+                        learned=bool(row[8]),
+                        recurrence_count=row[9],
+                    )
+                )
             return mistakes
 
     def learn_from_mistakes(self, mistake_type: str) -> Optional[LearningPattern]:
@@ -189,7 +202,7 @@ class MistakeLearner:
             trigger_conditions=self._extract_trigger_conditions(contexts),
             correction_action=most_common_correction[0],
             confidence=min(0.9, most_common_correction[1] / len(mistakes)),
-            created_at=time.time()
+            created_at=time.time(),
         )
 
         self.learning_patterns[pattern_id] = pattern
@@ -232,10 +245,7 @@ class MistakeLearner:
         """Mark mistakes as having been learned from."""
         with sqlite3.connect(self.db_path) as conn:
             for mistake_id in mistake_ids:
-                conn.execute(
-                    'UPDATE mistakes SET learned = 1 WHERE id = ?',
-                    (mistake_id,)
-                )
+                conn.execute("UPDATE mistakes SET learned = 1 WHERE id = ?", (mistake_id,))
 
     def apply_learning(self, mistake_type: str, context: Dict[str, Any]) -> Optional[str]:
         """Apply learned patterns to suggest corrections."""
@@ -268,21 +278,23 @@ class MistakeLearner:
     def get_learning_stats(self) -> Dict[str, Any]:
         """Get statistics about the learning system."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute('SELECT COUNT(*) FROM mistakes')
+            cursor = conn.execute("SELECT COUNT(*) FROM mistakes")
             total_mistakes = cursor.fetchone()[0]
 
-            cursor = conn.execute('SELECT COUNT(*) FROM mistakes WHERE learned = 1')
+            cursor = conn.execute("SELECT COUNT(*) FROM mistakes WHERE learned = 1")
             learned_mistakes = cursor.fetchone()[0]
 
-            cursor = conn.execute('SELECT mistake_type, COUNT(*) FROM mistakes GROUP BY mistake_type')
+            cursor = conn.execute(
+                "SELECT mistake_type, COUNT(*) FROM mistakes GROUP BY mistake_type"
+            )
             type_counts = {row[0]: row[1] for row in cursor}
 
         return {
-            'total_mistakes': total_mistakes,
-            'learned_mistakes': learned_mistakes,
-            'learning_patterns': len(self.learning_patterns),
-            'mistake_types': type_counts,
-            'learning_rate': learned_mistakes / max(total_mistakes, 1)
+            "total_mistakes": total_mistakes,
+            "learned_mistakes": learned_mistakes,
+            "learning_patterns": len(self.learning_patterns),
+            "mistake_types": type_counts,
+            "learning_rate": learned_mistakes / max(total_mistakes, 1),
         }
 
     def stop_learning(self):
@@ -299,7 +311,7 @@ class MistakeLearner:
                 time.sleep(300)
 
                 # Learn from different mistake types
-                mistake_types = ['command_error', 'ai_response', 'pattern_failure']
+                mistake_types = ["command_error", "ai_response", "pattern_failure"]
 
                 for mistake_type in mistake_types:
                     if self._stop_learning:

@@ -10,13 +10,13 @@ xAI native sessions last 24 hours - this manager handles:
 - Session bridging for continuity beyond 24h
 """
 
-import json
-import time
-from pathlib import Path
-from typing import Dict, Optional, Any
-from datetime import datetime, timedelta
 import hashlib
+import json
 import logging
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class XAISessionManager:
             config_path: Path to sessions.json storage file
         """
         if config_path is None:
-            config_path = Path.home() / '.isaac' / 'sessions.json'
+            config_path = Path.home() / ".isaac" / "sessions.json"
 
         self.config_path = config_path
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -65,12 +65,12 @@ class XAISessionManager:
             return
 
         try:
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path, "r") as f:
                 data = json.load(f)
 
             # Load and validate each session
             for workspace, session_data in data.items():
-                created_at = datetime.fromisoformat(session_data['created_at'])
+                created_at = datetime.fromisoformat(session_data["created_at"])
                 age = datetime.now() - created_at
 
                 # Only load sessions younger than 24h
@@ -89,7 +89,7 @@ class XAISessionManager:
     def _save_sessions(self):
         """Persist sessions to storage"""
         try:
-            with open(self.config_path, 'w') as f:
+            with open(self.config_path, "w") as f:
                 json.dump(self.sessions, f, indent=2)
             logger.debug(f"Saved {len(self.sessions)} session(s)")
         except Exception as e:
@@ -114,7 +114,7 @@ class XAISessionManager:
 
         return f"isaac_ws_{workspace}_{workspace_hash}_{timestamp}"
 
-    def get_or_create_session(self, workspace: str = 'default') -> str:
+    def get_or_create_session(self, workspace: str = "default") -> str:
         """
         Get existing session or create new one for workspace
 
@@ -133,15 +133,15 @@ class XAISessionManager:
         # Check if session exists and is valid
         if workspace in self.sessions:
             session_data = self.sessions[workspace]
-            created_at = datetime.fromisoformat(session_data['created_at'])
+            created_at = datetime.fromisoformat(session_data["created_at"])
             age = datetime.now() - created_at
 
             # Check if rotation needed (20h threshold)
             if age < self.SESSION_ROTATION_TIME:
                 logger.debug(f"Using existing session for '{workspace}' (age: {age})")
-                session_data['last_used'] = datetime.now().isoformat()
+                session_data["last_used"] = datetime.now().isoformat()
                 self._save_sessions()
-                return session_data['session_id']
+                return session_data["session_id"]
 
             # Rotation needed - create new session with bridging
             logger.info(f"Rotating session for '{workspace}' (age: {age})")
@@ -164,12 +164,12 @@ class XAISessionManager:
         session_id = self._generate_session_id(workspace)
 
         session_data = {
-            'session_id': session_id,
-            'workspace': workspace,
-            'created_at': datetime.now().isoformat(),
-            'last_used': datetime.now().isoformat(),
-            'rotation_count': 0,
-            'previous_session': None
+            "session_id": session_id,
+            "workspace": workspace,
+            "created_at": datetime.now().isoformat(),
+            "last_used": datetime.now().isoformat(),
+            "rotation_count": 0,
+            "previous_session": None,
         }
 
         self.sessions[workspace] = session_data
@@ -196,22 +196,24 @@ class XAISessionManager:
 
         # Create new session with bridge to old
         session_data = {
-            'session_id': new_session_id,
-            'workspace': workspace,
-            'created_at': datetime.now().isoformat(),
-            'last_used': datetime.now().isoformat(),
-            'rotation_count': old_session.get('rotation_count', 0) + 1,
-            'previous_session': old_session['session_id'],  # Bridge
-            'bridge_created_at': datetime.now().isoformat()
+            "session_id": new_session_id,
+            "workspace": workspace,
+            "created_at": datetime.now().isoformat(),
+            "last_used": datetime.now().isoformat(),
+            "rotation_count": old_session.get("rotation_count", 0) + 1,
+            "previous_session": old_session["session_id"],  # Bridge
+            "bridge_created_at": datetime.now().isoformat(),
         }
 
         self.sessions[workspace] = session_data
         self._save_sessions()
 
-        logger.info(f"Rotated session for '{workspace}': {old_session['session_id']} → {new_session_id}")
+        logger.info(
+            f"Rotated session for '{workspace}': {old_session['session_id']} → {new_session_id}"
+        )
         return new_session_id
 
-    def get_session_info(self, workspace: str = 'default') -> Optional[Dict[str, Any]]:
+    def get_session_info(self, workspace: str = "default") -> Optional[Dict[str, Any]]:
         """
         Get session metadata for workspace
 
@@ -225,18 +227,18 @@ class XAISessionManager:
             return None
 
         session_data = self.sessions[workspace]
-        created_at = datetime.fromisoformat(session_data['created_at'])
+        created_at = datetime.fromisoformat(session_data["created_at"])
         age = datetime.now() - created_at
         remaining = self.SESSION_MAX_AGE - age
 
         return {
-            'session_id': session_data['session_id'],
-            'workspace': workspace,
-            'age': str(age).split('.')[0],  # Remove microseconds
-            'remaining': str(remaining).split('.')[0],
-            'rotation_count': session_data.get('rotation_count', 0),
-            'needs_rotation': age >= self.SESSION_ROTATION_TIME,
-            'has_bridge': session_data.get('previous_session') is not None
+            "session_id": session_data["session_id"],
+            "workspace": workspace,
+            "age": str(age).split(".")[0],  # Remove microseconds
+            "remaining": str(remaining).split(".")[0],
+            "rotation_count": session_data.get("rotation_count", 0),
+            "needs_rotation": age >= self.SESSION_ROTATION_TIME,
+            "has_bridge": session_data.get("previous_session") is not None,
         }
 
     def get_all_sessions(self) -> Dict[str, Dict[str, Any]]:
@@ -280,7 +282,7 @@ class XAISessionManager:
         expired = []
 
         for workspace, session_data in self.sessions.items():
-            created_at = datetime.fromisoformat(session_data['created_at'])
+            created_at = datetime.fromisoformat(session_data["created_at"])
             age = datetime.now() - created_at
 
             if age >= self.SESSION_MAX_AGE:
@@ -312,11 +314,13 @@ class XAISessionManager:
             return None
 
         session_data = self.sessions[workspace]
-        previous = session_data.get('previous_session')
+        previous = session_data.get("previous_session")
 
         if previous:
             # Check if bridge is still within overlap window
-            bridge_time = datetime.fromisoformat(session_data.get('bridge_created_at', '2000-01-01'))
+            bridge_time = datetime.fromisoformat(
+                session_data.get("bridge_created_at", "2000-01-01")
+            )
             bridge_age = datetime.now() - bridge_time
 
             if bridge_age < self.SESSION_BRIDGE_OVERLAP:
@@ -339,7 +343,7 @@ def get_session_manager() -> XAISessionManager:
     return _session_manager
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test the session manager
     logging.basicConfig(level=logging.DEBUG)
 
@@ -348,7 +352,7 @@ if __name__ == '__main__':
     print("=== Session Manager Test ===\n")
 
     # Create sessions for different workspaces
-    workspaces = ['default', 'project-alpha', 'api-refactor']
+    workspaces = ["default", "project-alpha", "api-refactor"]
 
     for ws in workspaces:
         session_id = manager.get_or_create_session(ws)

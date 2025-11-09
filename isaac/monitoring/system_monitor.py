@@ -7,14 +7,15 @@ Checks for system updates, disk space, memory usage, and other system-level
 conditions that might require user attention.
 """
 
-import platform
-import psutil
-import subprocess
 import logging
+import platform
+import subprocess
 from datetime import datetime, timedelta
 
+import psutil
+
+from isaac.core.message_queue import MessagePriority, MessageType
 from isaac.monitoring.base_monitor import BaseMonitor
-from isaac.core.message_queue import MessageType, MessagePriority
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,9 @@ class SystemMonitor(BaseMonitor):
         try:
             # Get disk usage for system drive
             if platform.system() == "Windows":
-                disk = psutil.disk_usage('C:\\')
+                disk = psutil.disk_usage("C:\\")
             else:
-                disk = psutil.disk_usage('/')
+                disk = psutil.disk_usage("/")
 
             usage_percent = disk.percent
 
@@ -65,7 +66,7 @@ class SystemMonitor(BaseMonitor):
                     f"System disk is {usage_percent:.1f}% full ({disk.free / (1024**3):.1f} GB free). "
                     "Consider cleaning up files or expanding storage.",
                     MessagePriority.URGENT,
-                    {"disk_percent": usage_percent, "free_gb": disk.free / (1024**3)}
+                    {"disk_percent": usage_percent, "free_gb": disk.free / (1024**3)},
                 )
             elif usage_percent > 80:
                 self._send_message(
@@ -73,7 +74,7 @@ class SystemMonitor(BaseMonitor):
                     "Warning: Low Disk Space",
                     f"System disk is {usage_percent:.1f}% full ({disk.free / (1024**3):.1f} GB free).",
                     MessagePriority.HIGH,
-                    {"disk_percent": usage_percent, "free_gb": disk.free / (1024**3)}
+                    {"disk_percent": usage_percent, "free_gb": disk.free / (1024**3)},
                 )
 
         except Exception as e:
@@ -92,7 +93,7 @@ class SystemMonitor(BaseMonitor):
                     f"System memory is {usage_percent:.1f}% used. "
                     "Consider closing some applications.",
                     MessagePriority.URGENT,
-                    {"memory_percent": usage_percent}
+                    {"memory_percent": usage_percent},
                 )
             elif usage_percent > 85:
                 self._send_message(
@@ -100,7 +101,7 @@ class SystemMonitor(BaseMonitor):
                     "Warning: High Memory Usage",
                     f"System memory is {usage_percent:.1f}% used.",
                     MessagePriority.HIGH,
-                    {"memory_percent": usage_percent}
+                    {"memory_percent": usage_percent},
                 )
 
         except Exception as e:
@@ -113,13 +114,17 @@ class SystemMonitor(BaseMonitor):
                 # Use winget or check Windows Update
                 result = subprocess.run(
                     ["winget", "upgrade", "--include-unknown"],
-                    capture_output=True, text=True, timeout=30
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
                 )
 
                 if result.returncode == 0 and "No packages found" not in result.stdout:
                     # Parse available updates
-                    lines = result.stdout.strip().split('\n')
-                    update_count = len([line for line in lines if line.strip() and not line.startswith('-')])
+                    lines = result.stdout.strip().split("\n")
+                    update_count = len(
+                        [line for line in lines if line.strip() and not line.startswith("-")]
+                    )
 
                     if update_count > 0:
                         self._send_message(
@@ -128,19 +133,18 @@ class SystemMonitor(BaseMonitor):
                             f"There are {update_count} system updates available. "
                             "Run 'winget upgrade --all' to install them.",
                             MessagePriority.NORMAL,
-                            {"update_count": update_count, "platform": "windows"}
+                            {"update_count": update_count, "platform": "windows"},
                         )
 
             elif platform.system() == "Linux":
                 # Use apt for Debian/Ubuntu
                 result = subprocess.run(
-                    ["apt", "list", "--upgradable"],
-                    capture_output=True, text=True, timeout=30
+                    ["apt", "list", "--upgradable"], capture_output=True, text=True, timeout=30
                 )
 
                 if result.returncode == 0:
-                    lines = result.stdout.strip().split('\n')
-                    update_count = len([line for line in lines if line.strip() and '/' in line])
+                    lines = result.stdout.strip().split("\n")
+                    update_count = len([line for line in lines if line.strip() and "/" in line])
 
                     if update_count > 0:
                         self._send_message(
@@ -149,7 +153,7 @@ class SystemMonitor(BaseMonitor):
                             f"There are {update_count} system updates available. "
                             "Run 'sudo apt update && sudo apt upgrade' to install them.",
                             MessagePriority.NORMAL,
-                            {"update_count": update_count, "platform": "linux"}
+                            {"update_count": update_count, "platform": "linux"},
                         )
 
         except subprocess.TimeoutExpired:

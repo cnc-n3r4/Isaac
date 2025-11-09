@@ -7,14 +7,15 @@ spatial input methods like hand tracking and controller gestures.
 
 import time
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Callable
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 from isaac.arvr.spatial_api import Vector3D
 
 
 class GestureType(Enum):
     """Types of recognized gestures"""
+
     # Hand gestures
     PINCH = "pinch"
     GRAB = "grab"
@@ -47,6 +48,7 @@ class GestureType(Enum):
 
 class HandType(Enum):
     """Hand/controller identification"""
+
     LEFT = "left"
     RIGHT = "right"
     BOTH = "both"
@@ -56,6 +58,7 @@ class HandType(Enum):
 @dataclass
 class GesturePoint:
     """Single point in a gesture sequence"""
+
     position: Vector3D
     timestamp: float
     velocity: Optional[Vector3D] = None
@@ -63,16 +66,17 @@ class GesturePoint:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'position': self.position.to_dict(),
-            'timestamp': self.timestamp,
-            'velocity': self.velocity.to_dict() if self.velocity else None,
-            'pressure': self.pressure
+            "position": self.position.to_dict(),
+            "timestamp": self.timestamp,
+            "velocity": self.velocity.to_dict() if self.velocity else None,
+            "pressure": self.pressure,
         }
 
 
 @dataclass
 class Gesture:
     """Complete gesture definition"""
+
     type: GestureType
     hand: HandType
     start_time: float
@@ -102,7 +106,7 @@ class Gesture:
 
         total = 0.0
         for i in range(1, len(self.points)):
-            total += self.points[i-1].position.distance_to(self.points[i].position)
+            total += self.points[i - 1].position.distance_to(self.points[i].position)
         return total
 
     def get_average_velocity(self) -> Optional[Vector3D]:
@@ -119,19 +123,20 @@ class Gesture:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'type': self.type.value,
-            'hand': self.hand.value,
-            'start_time': self.start_time,
-            'end_time': self.end_time,
-            'points': [p.to_dict() for p in self.points],
-            'confidence': self.confidence,
-            'metadata': self.metadata
+            "type": self.type.value,
+            "hand": self.hand.value,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "points": [p.to_dict() for p in self.points],
+            "confidence": self.confidence,
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class GesturePattern:
     """Pattern definition for gesture recognition"""
+
     gesture_type: GestureType
     min_points: int = 2
     max_duration: float = 3.0  # seconds
@@ -186,36 +191,40 @@ class GestureRecognizer:
     def _initialize_default_patterns(self) -> None:
         """Initialize default gesture patterns"""
         # Pinch gesture
-        self.add_pattern("pinch", GesturePattern(
-            gesture_type=GestureType.PINCH,
-            min_points=1,
-            max_duration=2.0,
-            pressure_threshold=0.5
-        ))
+        self.add_pattern(
+            "pinch",
+            GesturePattern(
+                gesture_type=GestureType.PINCH,
+                min_points=1,
+                max_duration=2.0,
+                pressure_threshold=0.5,
+            ),
+        )
 
         # Swipe gesture
-        self.add_pattern("swipe", GesturePattern(
-            gesture_type=GestureType.SWIPE,
-            min_points=3,
-            max_duration=1.0,
-            min_distance=0.1,
-            velocity_threshold=0.3
-        ))
+        self.add_pattern(
+            "swipe",
+            GesturePattern(
+                gesture_type=GestureType.SWIPE,
+                min_points=3,
+                max_duration=1.0,
+                min_distance=0.1,
+                velocity_threshold=0.3,
+            ),
+        )
 
         # Tap gesture
-        self.add_pattern("tap", GesturePattern(
-            gesture_type=GestureType.TAP,
-            min_points=2,
-            max_duration=0.3
-        ))
+        self.add_pattern(
+            "tap", GesturePattern(gesture_type=GestureType.TAP, min_points=2, max_duration=0.3)
+        )
 
         # Wave gesture
-        self.add_pattern("wave", GesturePattern(
-            gesture_type=GestureType.WAVE,
-            min_points=5,
-            max_duration=2.0,
-            min_distance=0.2
-        ))
+        self.add_pattern(
+            "wave",
+            GesturePattern(
+                gesture_type=GestureType.WAVE, min_points=5, max_duration=2.0, min_distance=0.2
+            ),
+        )
 
     def add_pattern(self, name: str, pattern: GesturePattern) -> None:
         """Add a gesture pattern"""
@@ -228,18 +237,14 @@ class GestureRecognizer:
         self.handlers[gesture_type].append(handler)
 
     def start_gesture(
-        self,
-        gesture_id: str,
-        gesture_type: GestureType,
-        hand: HandType,
-        initial_position: Vector3D
+        self, gesture_id: str, gesture_type: GestureType, hand: HandType, initial_position: Vector3D
     ) -> Gesture:
         """Start tracking a new gesture"""
         gesture = Gesture(
             type=gesture_type,
             hand=hand,
             start_time=time.time(),
-            points=[GesturePoint(position=initial_position, timestamp=time.time())]
+            points=[GesturePoint(position=initial_position, timestamp=time.time())],
         )
         self.active_gestures[gesture_id] = gesture
         return gesture
@@ -249,7 +254,7 @@ class GestureRecognizer:
         gesture_id: str,
         position: Vector3D,
         velocity: Optional[Vector3D] = None,
-        pressure: float = 0.0
+        pressure: float = 0.0,
     ) -> Optional[Gesture]:
         """Update an active gesture with new point"""
         if gesture_id not in self.active_gestures:
@@ -257,10 +262,7 @@ class GestureRecognizer:
 
         gesture = self.active_gestures[gesture_id]
         point = GesturePoint(
-            position=position,
-            timestamp=time.time(),
-            velocity=velocity,
-            pressure=pressure
+            position=position, timestamp=time.time(), velocity=velocity, pressure=pressure
         )
         gesture.points.append(point)
         return gesture
@@ -314,6 +316,7 @@ class GestureRecognizer:
         velocities = [p.velocity.magnitude() for p in gesture.points if p.velocity]
         if len(velocities) > 1:
             import statistics
+
             variance = statistics.variance(velocities)
             if variance < 0.1:
                 confidence *= 1.1
@@ -343,10 +346,7 @@ class GestureAPI:
         self.max_history = 100
 
     def create_custom_gesture(
-        self,
-        name: str,
-        gesture_type: GestureType = GestureType.CUSTOM,
-        **pattern_params
+        self, name: str, gesture_type: GestureType = GestureType.CUSTOM, **pattern_params
     ) -> str:
         """Create a custom gesture pattern"""
         pattern = GesturePattern(gesture_type=gesture_type, **pattern_params)
@@ -355,9 +355,11 @@ class GestureAPI:
 
     def on_gesture(self, gesture_type: GestureType) -> Callable:
         """Decorator for registering gesture handlers"""
+
         def decorator(func: GestureHandler) -> GestureHandler:
             self.recognizer.register_handler(gesture_type, func)
             return func
+
         return decorator
 
     def simulate_gesture(
@@ -365,21 +367,19 @@ class GestureAPI:
         gesture_type: GestureType,
         hand: HandType,
         trajectory: List[Vector3D],
-        duration: float = 1.0
+        duration: float = 1.0,
     ) -> Optional[Gesture]:
         """Simulate a gesture for testing"""
         gesture_id = f"sim_{time.time()}"
 
         # Start gesture
-        gesture = self.recognizer.start_gesture(
-            gesture_id, gesture_type, hand, trajectory[0]
-        )
+        gesture = self.recognizer.start_gesture(gesture_id, gesture_type, hand, trajectory[0])
 
         # Add trajectory points
         time_per_point = duration / len(trajectory)
         for i, position in enumerate(trajectory[1:], 1):
             time.sleep(time_per_point)
-            velocity = (position - trajectory[i-1]) * (1.0 / time_per_point)
+            velocity = (position - trajectory[i - 1]) * (1.0 / time_per_point)
             self.recognizer.update_gesture(gesture_id, position, velocity)
 
         # Complete the gesture
@@ -400,15 +400,14 @@ class GestureAPI:
 
         total = len(self.gesture_history)
         avg_confidence = (
-            sum(g.confidence for g in self.gesture_history) / total
-            if total > 0 else 0.0
+            sum(g.confidence for g in self.gesture_history) / total if total > 0 else 0.0
         )
 
         return {
-            'total_gestures': total,
-            'type_counts': type_counts,
-            'average_confidence': avg_confidence,
-            'active_gestures': len(self.recognizer.active_gestures)
+            "total_gestures": total,
+            "type_counts": type_counts,
+            "average_confidence": avg_confidence,
+            "active_gestures": len(self.recognizer.active_gestures),
         }
 
     def clear_history(self) -> None:

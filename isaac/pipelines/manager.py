@@ -6,7 +6,7 @@ Isaac's pipeline registry and storage system
 import json
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from isaac.pipelines.models import Pipeline
 
@@ -21,9 +21,9 @@ class PipelineManager:
             storage_path: Directory to store pipeline definitions
         """
         if storage_path is None:
-            isaac_dir = Path.home() / '.isaac'
+            isaac_dir = Path.home() / ".isaac"
             isaac_dir.mkdir(exist_ok=True)
-            storage_path = isaac_dir / 'pipelines'
+            storage_path = isaac_dir / "pipelines"
 
         self.storage_path = storage_path
         self.storage_path.mkdir(exist_ok=True)
@@ -111,7 +111,8 @@ class PipelineManager:
         """
         query_lower = query.lower()
         return [
-            pipeline for pipeline in self._pipelines.values()
+            pipeline
+            for pipeline in self._pipelines.values()
             if query_lower in pipeline.name.lower() or query_lower in pipeline.description.lower()
         ]
 
@@ -123,43 +124,96 @@ class PipelineManager:
         """
         return [
             {
-                'id': 'build',
-                'name': 'Build Pipeline',
-                'description': 'Compile and build project',
-                'category': 'development',
-                'steps': [
-                    {'id': 'install_deps', 'name': 'Install Dependencies', 'type': 'command', 'config': {'command': 'pip install -r requirements.txt'}},
-                    {'id': 'run_tests', 'name': 'Run Tests', 'type': 'command', 'config': {'command': 'pytest'}},
-                    {'id': 'build', 'name': 'Build', 'type': 'command', 'config': {'command': 'python setup.py build'}}
-                ]
+                "id": "build",
+                "name": "Build Pipeline",
+                "description": "Compile and build project",
+                "category": "development",
+                "steps": [
+                    {
+                        "id": "install_deps",
+                        "name": "Install Dependencies",
+                        "type": "command",
+                        "config": {"command": "pip install -r requirements.txt"},
+                    },
+                    {
+                        "id": "run_tests",
+                        "name": "Run Tests",
+                        "type": "command",
+                        "config": {"command": "pytest"},
+                    },
+                    {
+                        "id": "build",
+                        "name": "Build",
+                        "type": "command",
+                        "config": {"command": "python setup.py build"},
+                    },
+                ],
             },
             {
-                'id': 'deploy',
-                'name': 'Deploy Pipeline',
-                'description': 'Build and deploy application',
-                'category': 'deployment',
-                'steps': [
-                    {'id': 'build', 'name': 'Build', 'type': 'command', 'config': {'command': 'docker build -t myapp .'}},
-                    {'id': 'test', 'name': 'Test', 'type': 'command', 'config': {'command': 'docker run myapp pytest'}},
-                    {'id': 'deploy', 'name': 'Deploy', 'type': 'command', 'config': {'command': 'docker push myapp && kubectl apply -f deployment.yaml'}}
-                ]
+                "id": "deploy",
+                "name": "Deploy Pipeline",
+                "description": "Build and deploy application",
+                "category": "deployment",
+                "steps": [
+                    {
+                        "id": "build",
+                        "name": "Build",
+                        "type": "command",
+                        "config": {"command": "docker build -t myapp ."},
+                    },
+                    {
+                        "id": "test",
+                        "name": "Test",
+                        "type": "command",
+                        "config": {"command": "docker run myapp pytest"},
+                    },
+                    {
+                        "id": "deploy",
+                        "name": "Deploy",
+                        "type": "command",
+                        "config": {
+                            "command": "docker push myapp && kubectl apply -f deployment.yaml"
+                        },
+                    },
+                ],
             },
             {
-                'id': 'ci_cd',
-                'name': 'CI/CD Pipeline',
-                'description': 'Complete CI/CD workflow',
-                'category': 'ci_cd',
-                'steps': [
-                    {'id': 'lint', 'name': 'Lint Code', 'type': 'command', 'config': {'command': 'flake8 src/'}},
-                    {'id': 'test', 'name': 'Run Tests', 'type': 'command', 'config': {'command': 'pytest --cov=src'}},
-                    {'id': 'build', 'name': 'Build Package', 'type': 'command', 'config': {'command': 'python -m build'}},
-                    {'id': 'publish', 'name': 'Publish', 'type': 'command', 'config': {'command': 'twine upload dist/*'}}
-                ]
-            }
+                "id": "ci_cd",
+                "name": "CI/CD Pipeline",
+                "description": "Complete CI/CD workflow",
+                "category": "ci_cd",
+                "steps": [
+                    {
+                        "id": "lint",
+                        "name": "Lint Code",
+                        "type": "command",
+                        "config": {"command": "flake8 src/"},
+                    },
+                    {
+                        "id": "test",
+                        "name": "Run Tests",
+                        "type": "command",
+                        "config": {"command": "pytest --cov=src"},
+                    },
+                    {
+                        "id": "build",
+                        "name": "Build Package",
+                        "type": "command",
+                        "config": {"command": "python -m build"},
+                    },
+                    {
+                        "id": "publish",
+                        "name": "Publish",
+                        "type": "command",
+                        "config": {"command": "twine upload dist/*"},
+                    },
+                ],
+            },
         ]
 
-    def create_pipeline_from_template(self, template_id: str, name: str,
-                                    description: str = "") -> Pipeline:
+    def create_pipeline_from_template(
+        self, template_id: str, name: str, description: str = ""
+    ) -> Pipeline:
         """Create a pipeline from a template.
 
         Args:
@@ -174,29 +228,30 @@ class PipelineManager:
             ValueError: If template not found
         """
         templates = self.get_pipeline_templates()
-        template = next((t for t in templates if t['id'] == template_id), None)
+        template = next((t for t in templates if t["id"] == template_id), None)
 
         if not template:
             raise ValueError(f"Template {template_id} not found")
 
         # Convert template steps to PipelineStep objects
         from isaac.pipelines.models import PipelineStep, StepType
+
         steps = []
-        for step_data in template['steps']:
+        for step_data in template["steps"]:
             step = PipelineStep(
-                id=step_data['id'],
-                name=step_data['name'],
-                type=StepType(step_data['type']),
-                config=step_data.get('config', {})
+                id=step_data["id"],
+                name=step_data["name"],
+                type=StepType(step_data["type"]),
+                config=step_data.get("config", {}),
             )
             steps.append(step)
 
         pipeline = Pipeline(
-            id=name.lower().replace(' ', '_'),
+            id=name.lower().replace(" ", "_"),
             name=name,
-            description=description or template['description'],
+            description=description or template["description"],
             steps=steps,
-            metadata={'template': template_id}
+            metadata={"template": template_id},
         )
 
         self.create_pipeline(pipeline)
@@ -205,14 +260,14 @@ class PipelineManager:
     def _save_pipeline(self, pipeline: Pipeline) -> None:
         """Save pipeline to disk."""
         pipeline_file = self.storage_path / f"{pipeline.id}.json"
-        with open(pipeline_file, 'w') as f:
+        with open(pipeline_file, "w") as f:
             json.dump(pipeline.to_dict(), f, indent=2)
 
     def _load_all_pipelines(self) -> None:
         """Load all pipelines from disk."""
         for pipeline_file in self.storage_path.glob("*.json"):
             try:
-                with open(pipeline_file, 'r') as f:
+                with open(pipeline_file, "r") as f:
                     data = json.load(f)
                     pipeline = Pipeline.from_dict(data)
                     self._pipelines[pipeline.id] = pipeline
@@ -233,7 +288,7 @@ class PipelineManager:
         if not pipeline:
             return False
 
-        with open(export_path, 'w') as f:
+        with open(export_path, "w") as f:
             json.dump(pipeline.to_dict(), f, indent=2)
         return True
 
@@ -247,7 +302,7 @@ class PipelineManager:
             Imported pipeline or None if failed
         """
         try:
-            with open(import_path, 'r') as f:
+            with open(import_path, "r") as f:
                 data = json.load(f)
                 pipeline = Pipeline.from_dict(data)
 

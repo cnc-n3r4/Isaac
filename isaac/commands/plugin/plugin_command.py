@@ -481,7 +481,9 @@ For more information, visit: https://isaac.dev/docs/plugins
         print("5. file_changed   - When files change")
         print()
 
-        hooks_input = input("Enter hook numbers (comma-separated, or press Enter to skip): ").strip()
+        hooks_input = input(
+            "Enter hook numbers (comma-separated, or press Enter to skip): "
+        ).strip()
         hooks = []
         if hooks_input:
             hook_map = {

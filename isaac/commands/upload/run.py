@@ -3,8 +3,8 @@
 Upload command for Isaac - Phase 1 Cloud Image Storage
 """
 
-import sys
 import glob
+import sys
 from pathlib import Path
 
 # Add the project root to Python path
@@ -22,7 +22,7 @@ def main():
 
     # Get file paths from command line
     paths_arg = sys.argv[1]
-    path_strings = [p.strip() for p in paths_arg.split(',') if p.strip()]
+    path_strings = [p.strip() for p in paths_arg.split(",") if p.strip()]
 
     if not path_strings:
         print("Error: No file paths provided")

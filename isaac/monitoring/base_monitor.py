@@ -7,14 +7,14 @@ Provides the base framework for creating monitoring agents that run in the backg
 and generate notifications for the message queue system.
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+import logging
 import threading
 import time
-import logging
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
-from isaac.core.message_queue import MessageQueue, MessageType, MessagePriority
+from isaac.core.message_queue import MessagePriority, MessageQueue, MessageType
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,9 @@ class BaseMonitor(ABC):
             return
 
         self.running = True
-        self.thread = threading.Thread(target=self._run_loop, daemon=True, name=f"Monitor-{self.name}")
+        self.thread = threading.Thread(
+            target=self._run_loop, daemon=True, name=f"Monitor-{self.name}"
+        )
         self.thread.start()
         logger.info(f"Started monitor: {self.name}")
 
@@ -86,9 +88,14 @@ class BaseMonitor(ABC):
         the specific monitoring logic and generate messages as needed.
         """
 
-    def _send_message(self, message_type: MessageType, title: str,
-                     content: str = "", priority: MessagePriority = MessagePriority.NORMAL,
-                     metadata: Optional[Dict[str, Any]] = None):
+    def _send_message(
+        self,
+        message_type: MessageType,
+        title: str,
+        content: str = "",
+        priority: MessagePriority = MessagePriority.NORMAL,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
         """
         Send a message to the message queue.
 

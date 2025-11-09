@@ -4,14 +4,15 @@ Command History System - Enhanced command history with search
 
 import json
 import time
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, asdict
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
 class CommandHistoryEntry:
     """A command history entry"""
+
     command: str
     timestamp: float
     success: bool
@@ -30,7 +31,7 @@ class CommandHistoryEntry:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'CommandHistoryEntry':
+    def from_dict(cls, data: Dict[str, Any]) -> "CommandHistoryEntry":
         """Create from dictionary"""
         return cls(**data)
 
@@ -61,9 +62,10 @@ class CommandHistory:
         if history_file is None:
             # Default to user's Isaac directory
             from pathlib import Path
-            isaac_dir = Path.home() / '.isaac'
+
+            isaac_dir = Path.home() / ".isaac"
             isaac_dir.mkdir(exist_ok=True)
-            history_file = isaac_dir / 'command_history.json'
+            history_file = isaac_dir / "command_history.json"
 
         self.history_file = history_file
         self.max_entries = max_entries
@@ -74,10 +76,10 @@ class CommandHistory:
         """Load history from file"""
         if self.history_file.exists():
             try:
-                with open(self.history_file, 'r', encoding='utf-8') as f:
+                with open(self.history_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
-                for entry_data in data.get('entries', []):
+                for entry_data in data.get("entries", []):
                     try:
                         entry = CommandHistoryEntry.from_dict(entry_data)
                         self.entries.append(entry)
@@ -95,25 +97,29 @@ class CommandHistory:
         try:
             # Keep only recent entries
             if len(self.entries) > self.max_entries:
-                self.entries = self.entries[:self.max_entries]
+                self.entries = self.entries[: self.max_entries]
 
             data = {
-                'entries': [entry.to_dict() for entry in self.entries],
-                'last_updated': time.time()
+                "entries": [entry.to_dict() for entry in self.entries],
+                "last_updated": time.time(),
             }
 
-            with open(self.history_file, 'w', encoding='utf-8') as f:
+            with open(self.history_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
         except Exception as e:
             print(f"Error saving command history: {e}")
 
-    def add_entry(self, command: str, success: bool = True,
-                  execution_time: Optional[float] = None,
-                  output_length: Optional[int] = None,
-                  working_directory: Optional[str] = None,
-                  session_id: Optional[str] = None,
-                  tags: Optional[List[str]] = None):
+    def add_entry(
+        self,
+        command: str,
+        success: bool = True,
+        execution_time: Optional[float] = None,
+        output_length: Optional[int] = None,
+        working_directory: Optional[str] = None,
+        session_id: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ):
         """Add a command to history"""
         entry = CommandHistoryEntry(
             command=command,
@@ -123,7 +129,7 @@ class CommandHistory:
             output_length=output_length,
             working_directory=working_directory,
             session_id=session_id,
-            tags=tags or []
+            tags=tags or [],
         )
 
         self.entries.insert(0, entry)  # Add to beginning
@@ -167,6 +173,7 @@ class CommandHistory:
     def get_commands_by_pattern(self, pattern: str, limit: int = 20) -> List[CommandHistoryEntry]:
         """Get commands matching a pattern"""
         import re
+
         try:
             regex = re.compile(pattern, re.IGNORECASE)
             matches = [entry for entry in self.entries if regex.search(entry.command)]
@@ -199,11 +206,11 @@ class CommandHistory:
             export_entries = self.entries[:limit] if limit else self.entries
 
             data = {
-                'exported_at': time.time(),
-                'entries': [entry.to_dict() for entry in export_entries]
+                "exported_at": time.time(),
+                "entries": [entry.to_dict() for entry in export_entries],
             }
 
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
             return True
@@ -213,11 +220,11 @@ class CommandHistory:
     def import_history(self, file_path: Path, merge: bool = True) -> int:
         """Import history from file"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             imported = 0
-            for entry_data in data.get('entries', []):
+            for entry_data in data.get("entries", []):
                 try:
                     entry = CommandHistoryEntry.from_dict(entry_data)
 
@@ -245,7 +252,7 @@ class CommandHistory:
     def get_stats(self) -> Dict[str, Any]:
         """Get history statistics"""
         if not self.entries:
-            return {'total_commands': 0}
+            return {"total_commands": 0}
 
         total_commands = len(self.entries)
         successful_commands = sum(1 for entry in self.entries if entry.success)
@@ -263,16 +270,16 @@ class CommandHistory:
         sessions = set(entry.session_id for entry in self.entries if entry.session_id)
 
         return {
-            'total_commands': total_commands,
-            'successful_commands': successful_commands,
-            'failed_commands': failed_commands,
-            'success_rate': successful_commands / total_commands if total_commands > 0 else 0,
-            'oldest_command': oldest,
-            'newest_command': newest,
-            'time_span_days': (newest - oldest) / (24 * 60 * 60),
-            'avg_execution_time': avg_exec_time,
-            'unique_sessions': len(sessions),
-            'most_used_commands': self.get_commands_by_frequency(5)
+            "total_commands": total_commands,
+            "successful_commands": successful_commands,
+            "failed_commands": failed_commands,
+            "success_rate": successful_commands / total_commands if total_commands > 0 else 0,
+            "oldest_command": oldest,
+            "newest_command": newest,
+            "time_span_days": (newest - oldest) / (24 * 60 * 60),
+            "avg_execution_time": avg_exec_time,
+            "unique_sessions": len(sessions),
+            "most_used_commands": self.get_commands_by_frequency(5),
         }
 
 

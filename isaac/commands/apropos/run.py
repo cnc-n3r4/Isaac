@@ -3,8 +3,8 @@
 Apropos Command - Search Manual Pages
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add Isaac to path
@@ -42,9 +42,9 @@ def main():
     print()
 
     for result in results:
-        trigger = result['trigger']
-        version = result['version']
-        summary = result['summary']
+        trigger = result["trigger"]
+        version = result["version"]
+        summary = result["summary"]
 
         # Truncate long summaries
         if len(summary) > 50:
@@ -57,5 +57,5 @@ def main():
     print(f"Use '/man <command>' for detailed information")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

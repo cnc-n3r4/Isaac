@@ -5,7 +5,8 @@ Generates Unix-style manual pages from command metadata
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 import yaml
 
 
@@ -28,7 +29,7 @@ class ManPageGenerator:
         """
         if commands_dir is None:
             isaac_root = Path(__file__).parent.parent
-            commands_dir = isaac_root / 'commands'
+            commands_dir = isaac_root / "commands"
 
         self.commands_dir = commands_dir
         self.commands: Dict[str, Dict[str, Any]] = {}
@@ -40,15 +41,15 @@ class ManPageGenerator:
             return
 
         for item in self.commands_dir.iterdir():
-            if not item.is_dir() or item.name.startswith(('_', '.')):
+            if not item.is_dir() or item.name.startswith(("_", ".")):
                 continue
 
-            yaml_file = item / 'command.yaml'
+            yaml_file = item / "command.yaml"
             if not yaml_file.exists():
                 continue
 
             try:
-                with open(yaml_file, 'r') as f:
+                with open(yaml_file, "r") as f:
                     metadata = yaml.safe_load(f)
                     if metadata:
                         self.commands[item.name] = metadata
@@ -66,13 +67,13 @@ class ManPageGenerator:
             Formatted man page or None if not found
         """
         # Remove leading slash if present
-        cmd_name = command.lstrip('/')
+        cmd_name = command.lstrip("/")
 
         # Check if command exists
         if cmd_name not in self.commands:
             # Try to find by trigger
             for name, metadata in self.commands.items():
-                triggers = metadata.get('triggers', [])
+                triggers = metadata.get("triggers", [])
                 if f"/{cmd_name}" in triggers or command in triggers:
                     cmd_name = name
                     break
@@ -87,15 +88,15 @@ class ManPageGenerator:
         lines = []
 
         # Header
-        version = meta.get('version', '1.0.0')
-        trigger = meta.get('triggers', [f'/{name}'])[0]
+        version = meta.get("version", "1.0.0")
+        trigger = meta.get("triggers", [f"/{name}"])[0]
 
         lines.append(f"{trigger.upper()}({version})".center(70))
         lines.append("")
 
         # NAME section
         lines.append("NAME")
-        summary = meta.get('summary', 'No description')
+        summary = meta.get("summary", "No description")
         lines.append(f"    {trigger} - {summary}")
         lines.append("")
 
@@ -107,11 +108,11 @@ class ManPageGenerator:
         lines.append("")
 
         # DESCRIPTION section
-        description = meta.get('description', summary)
+        description = meta.get("description", summary)
         if description:
             lines.append("DESCRIPTION")
             # Format description with indentation
-            for line in description.strip().split('\n'):
+            for line in description.strip().split("\n"):
                 if line.strip():
                     lines.append(f"    {line}")
                 else:
@@ -119,14 +120,14 @@ class ManPageGenerator:
             lines.append("")
 
         # OPTIONS section
-        args = meta.get('args', [])
+        args = meta.get("args", [])
         if args:
             lines.append("OPTIONS")
             for arg in args:
-                arg_name = arg.get('name', 'arg')
-                arg_help = arg.get('help', '')
-                arg_required = arg.get('required', False)
-                arg_enum = arg.get('enum', [])
+                arg_name = arg.get("name", "arg")
+                arg_help = arg.get("help", "")
+                arg_required = arg.get("required", False)
+                arg_enum = arg.get("enum", [])
 
                 if arg_required:
                     lines.append(f"    --{arg_name} <value>  (required)")
@@ -137,19 +138,19 @@ class ManPageGenerator:
                     lines.append(f"        {arg_help}")
 
                 if arg_enum:
-                    enum_str = ', '.join(arg_enum)
+                    enum_str = ", ".join(arg_enum)
                     lines.append(f"        Choices: {enum_str}")
 
                 lines.append("")
 
         # EXAMPLES section
-        examples = meta.get('examples', [])
+        examples = meta.get("examples", [])
         if examples:
             lines.append("EXAMPLES")
             for example in examples:
                 # Remove comments from example
-                example_clean = example.split('#')[0].strip()
-                comment = example.split('#')[1].strip() if '#' in example else ''
+                example_clean = example.split("#")[0].strip()
+                comment = example.split("#")[1].strip() if "#" in example else ""
 
                 lines.append(f"    {example_clean}")
                 if comment:
@@ -157,33 +158,33 @@ class ManPageGenerator:
             lines.append("")
 
         # ALIASES section
-        aliases = meta.get('aliases', [])
+        aliases = meta.get("aliases", [])
         if aliases:
             lines.append("ALIASES")
-            alias_str = ', '.join(aliases)
+            alias_str = ", ".join(aliases)
             lines.append(f"    {alias_str}")
             lines.append("")
 
         # DEPENDENCIES section
-        deps = meta.get('dependencies', {})
-        if deps.get('api_keys') or deps.get('packages'):
+        deps = meta.get("dependencies", {})
+        if deps.get("api_keys") or deps.get("packages"):
             lines.append("DEPENDENCIES")
-            if deps.get('api_keys'):
+            if deps.get("api_keys"):
                 lines.append("    API Keys:")
-                for key in deps['api_keys']:
+                for key in deps["api_keys"]:
                     lines.append(f"        {key}")
-            if deps.get('packages'):
+            if deps.get("packages"):
                 lines.append("    Python Packages:")
-                for pkg in deps['packages']:
+                for pkg in deps["packages"]:
                     lines.append(f"        {pkg}")
             lines.append("")
 
         # STATUS section
-        status = meta.get('status', 'stable')
-        if status != 'stable':
+        status = meta.get("status", "stable")
+        if status != "stable":
             lines.append("STATUS")
             lines.append(f"    {status.upper()}")
-            stub_reason = meta.get('stub_reason')
+            stub_reason = meta.get("stub_reason")
             if stub_reason:
                 lines.append(f"    {stub_reason}")
             lines.append("")
@@ -199,16 +200,16 @@ class ManPageGenerator:
         lines.append(f"ISAAC v2.0.0".center(70))
         lines.append(f"{name} version {version}".center(70))
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _generate_synopsis(self, trigger: str, meta: Dict[str, Any]) -> List[str]:
         """Generate synopsis lines"""
         lines = [trigger]
 
-        args = meta.get('args', [])
+        args = meta.get("args", [])
         for arg in args:
-            arg_name = arg.get('name', 'arg')
-            if arg.get('required'):
+            arg_name = arg.get("name", "arg")
+            if arg.get("required"):
                 lines.append(f"    --{arg_name} <value>")
             else:
                 lines.append(f"    [--{arg_name} <value>]")
@@ -232,26 +233,28 @@ class ManPageGenerator:
             # Search in name, summary, description, and tags
             searchable = [
                 name,
-                metadata.get('summary', ''),
-                metadata.get('description', ''),
-                ' '.join(metadata.get('triggers', [])),
-                ' '.join(metadata.get('aliases', []))
+                metadata.get("summary", ""),
+                metadata.get("description", ""),
+                " ".join(metadata.get("triggers", [])),
+                " ".join(metadata.get("aliases", [])),
             ]
 
-            searchable_text = ' '.join(searchable).lower()
+            searchable_text = " ".join(searchable).lower()
 
             if keyword_lower in searchable_text:
-                trigger = metadata.get('triggers', [f'/{name}'])[0]
-                summary = metadata.get('summary', 'No description')
+                trigger = metadata.get("triggers", [f"/{name}"])[0]
+                summary = metadata.get("summary", "No description")
 
-                results.append({
-                    'name': name,
-                    'trigger': trigger,
-                    'summary': summary,
-                    'version': metadata.get('version', '1.0.0')
-                })
+                results.append(
+                    {
+                        "name": name,
+                        "trigger": trigger,
+                        "summary": summary,
+                        "version": metadata.get("version", "1.0.0"),
+                    }
+                )
 
-        return sorted(results, key=lambda x: x['name'])
+        return sorted(results, key=lambda x: x["name"])
 
     def whatis(self, command: str) -> Optional[str]:
         """
@@ -263,12 +266,12 @@ class ManPageGenerator:
         Returns:
             One-line summary or None
         """
-        cmd_name = command.lstrip('/')
+        cmd_name = command.lstrip("/")
 
         if cmd_name not in self.commands:
             # Try triggers
             for name, metadata in self.commands.items():
-                triggers = metadata.get('triggers', [])
+                triggers = metadata.get("triggers", [])
                 if f"/{cmd_name}" in triggers or command in triggers:
                     cmd_name = name
                     break
@@ -276,9 +279,9 @@ class ManPageGenerator:
                 return None
 
         metadata = self.commands[cmd_name]
-        trigger = metadata.get('triggers', [f'/{cmd_name}'])[0]
-        summary = metadata.get('summary', 'No description')
-        version = metadata.get('version', '1.0.0')
+        trigger = metadata.get("triggers", [f"/{cmd_name}"])[0]
+        summary = metadata.get("summary", "No description")
+        version = metadata.get("version", "1.0.0")
 
         return f"{trigger} ({version}) - {summary}"
 
@@ -287,16 +290,13 @@ class ManPageGenerator:
         results = []
 
         for name, metadata in sorted(self.commands.items()):
-            trigger = metadata.get('triggers', [f'/{name}'])[0]
-            summary = metadata.get('summary', 'No description')
-            version = metadata.get('version', '1.0.0')
+            trigger = metadata.get("triggers", [f"/{name}"])[0]
+            summary = metadata.get("summary", "No description")
+            version = metadata.get("version", "1.0.0")
 
-            results.append({
-                'name': name,
-                'trigger': trigger,
-                'summary': summary,
-                'version': version
-            })
+            results.append(
+                {"name": name, "trigger": trigger, "summary": summary, "version": version}
+            )
 
         return results
 

@@ -5,15 +5,15 @@ Provides a minimal TUI for tweaking collections search parameters during testing
 
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from prompt_toolkit import Application
-from prompt_toolkit.layout import Layout, HSplit, VSplit, Window
-from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.widgets import TextArea, Checkbox, Button
-from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import get_app
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.layout import HSplit, Layout, VSplit, Window
+from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.styles import Style
+from prompt_toolkit.widgets import Button, Checkbox, TextArea
 
 
 class ConfigConsole:
@@ -21,7 +21,7 @@ class ConfigConsole:
 
     def __init__(self, session_manager=None):
         self.session_manager = session_manager
-        self.config_file = Path.home() / '.isaac' / 'mine_config.json'
+        self.config_file = Path.home() / ".isaac" / "mine_config.json"
         self.settings = self._load_settings()
         self.saved = False
         self.cancelled = False
@@ -31,12 +31,12 @@ class ConfigConsole:
     def _get_defaults(self) -> Dict[str, Any]:
         """Get default settings"""
         return {
-            'max_chunk_size': 1000,
-            'match_preview_length': 200,
-            'multi_match_count': 5,
-            'piping_threshold': 0.7,
-            'piping_max_context': 3,
-            'show_scores': True
+            "max_chunk_size": 1000,
+            "match_preview_length": 200,
+            "multi_match_count": 5,
+            "piping_threshold": 0.7,
+            "piping_max_context": 3,
+            "show_scores": True,
         }
 
     def _load_settings(self) -> Dict[str, Any]:
@@ -45,7 +45,7 @@ class ConfigConsole:
 
         if self.config_file.exists():
             try:
-                with open(self.config_file, 'r') as f:
+                with open(self.config_file, "r") as f:
                     loaded = json.load(f)
                     # Merge loaded settings with defaults
                     defaults.update(loaded)
@@ -61,7 +61,7 @@ class ConfigConsole:
             self.config_file.parent.mkdir(parents=True, exist_ok=True)
 
             # Save settings
-            with open(self.config_file, 'w') as f:
+            with open(self.config_file, "w") as f:
                 json.dump(self.settings, f, indent=2)
 
             return True
@@ -83,48 +83,47 @@ class ConfigConsole:
 
         # Settings fields with pale background styling
         self.max_chunk_size_field = TextArea(
-            text=str(self.settings['max_chunk_size']),
+            text=str(self.settings["max_chunk_size"]),
             multiline=False,
             height=1,
             width=10,
-            style='class:input-field'
+            style="class:input-field",
         )
 
         self.match_preview_length_field = TextArea(
-            text=str(self.settings['match_preview_length']),
+            text=str(self.settings["match_preview_length"]),
             multiline=False,
             height=1,
             width=10,
-            style='class:input-field'
+            style="class:input-field",
         )
 
         self.multi_match_count_field = TextArea(
-            text=str(self.settings['multi_match_count']),
+            text=str(self.settings["multi_match_count"]),
             multiline=False,
             height=1,
             width=10,
-            style='class:input-field'
+            style="class:input-field",
         )
 
         self.piping_threshold_field = TextArea(
-            text=str(self.settings['piping_threshold']),
+            text=str(self.settings["piping_threshold"]),
             multiline=False,
             height=1,
             width=10,
-            style='class:input-field'
+            style="class:input-field",
         )
 
         self.piping_max_context_field = TextArea(
-            text=str(self.settings['piping_max_context']),
+            text=str(self.settings["piping_max_context"]),
             multiline=False,
             height=1,
             width=10,
-            style='class:input-field'
+            style="class:input-field",
         )
 
         self.show_scores_checkbox = Checkbox(
-            text="Show match scores",
-            checked=self.settings['show_scores']
+            text="Show match scores", checked=self.settings["show_scores"]
         )
 
         # Status and buttons
@@ -134,97 +133,145 @@ class ConfigConsole:
         # Layout - Fixed width for consistent display
         header_window = Window(
             content=FormattedTextControl(header_text.strip()),
-            height=len(header_text.split('\n')),
+            height=len(header_text.split("\n")),
             width=80,  # Fixed width
-            dont_extend_width=True
+            dont_extend_width=True,
         )
 
-        settings_layout = HSplit([
-            Window(height=1),  # Spacing
-            
-            # Output Settings Section
-            Window(content=FormattedTextControl("  Output Settings:"), height=1, width=76),
-            
-            # Max Chunk Size
-            VSplit([
-                Window(content=FormattedTextControl("    max_chunk_size:       "), width=28, dont_extend_width=True),
-                self.max_chunk_size_field,
-                Window(content=FormattedTextControl(" chars (single match output)"), width=35, dont_extend_width=True)
-            ]),
-
-            # Match Preview Length
-            VSplit([
-                Window(content=FormattedTextControl("    match_preview_length: "), width=28, dont_extend_width=True),
-                self.match_preview_length_field,
-                Window(content=FormattedTextControl(" chars (preview per match)"), width=35, dont_extend_width=True)
-            ]),
-
-            # Multi Match Count
-            VSplit([
-                Window(content=FormattedTextControl("    multi_match_count:    "), width=28, dont_extend_width=True),
-                self.multi_match_count_field,
-                Window(content=FormattedTextControl(" matches (how many to show)"), width=35, dont_extend_width=True)
-            ]),
-
-            Window(height=1),  # Spacing
-            
-            # Piping Settings Section
-            Window(content=FormattedTextControl("  Piping Settings:"), height=1, width=76),
-            
-            # Piping Threshold
-            VSplit([
-                Window(content=FormattedTextControl("    piping_threshold:     "), width=28, dont_extend_width=True),
-                self.piping_threshold_field,
-                Window(content=FormattedTextControl(" chars (when /ask truncates)"), width=35, dont_extend_width=True)
-            ]),
-
-            # Piping Max Context
-            VSplit([
-                Window(content=FormattedTextControl("    piping_max_context:   "), width=28, dont_extend_width=True),
-                self.piping_max_context_field,
-                Window(content=FormattedTextControl(" chars (max context to /ask)"), width=35, dont_extend_width=True)
-            ]),
-
-            Window(height=1),  # Spacing
-            
-            # Display Options Section
-            Window(content=FormattedTextControl("  Display Options:"), height=1, width=76),
-            
-            # Show Scores
-            VSplit([
-                Window(content=FormattedTextControl("    "), width=4, dont_extend_width=True),
-                self.show_scores_checkbox,
-                Window(content=FormattedTextControl("    Show relevance scores with matches"), width=45, dont_extend_width=True)
-            ]),
-
-            Window(height=2),  # Spacing
-            
-            # Status
-            Window(content=FormattedTextControl(lambda: "  " + self.status_text), height=2, width=76),
-
-            # Buttons
-            VSplit([
-                Window(width=30),  # Left padding for centering
-                save_button,
-                Window(width=2),
-                cancel_button
-            ]),
-            
-            Window(height=1)  # Bottom spacing
-        ])
+        settings_layout = HSplit(
+            [
+                Window(height=1),  # Spacing
+                # Output Settings Section
+                Window(content=FormattedTextControl("  Output Settings:"), height=1, width=76),
+                # Max Chunk Size
+                VSplit(
+                    [
+                        Window(
+                            content=FormattedTextControl("    max_chunk_size:       "),
+                            width=28,
+                            dont_extend_width=True,
+                        ),
+                        self.max_chunk_size_field,
+                        Window(
+                            content=FormattedTextControl(" chars (single match output)"),
+                            width=35,
+                            dont_extend_width=True,
+                        ),
+                    ]
+                ),
+                # Match Preview Length
+                VSplit(
+                    [
+                        Window(
+                            content=FormattedTextControl("    match_preview_length: "),
+                            width=28,
+                            dont_extend_width=True,
+                        ),
+                        self.match_preview_length_field,
+                        Window(
+                            content=FormattedTextControl(" chars (preview per match)"),
+                            width=35,
+                            dont_extend_width=True,
+                        ),
+                    ]
+                ),
+                # Multi Match Count
+                VSplit(
+                    [
+                        Window(
+                            content=FormattedTextControl("    multi_match_count:    "),
+                            width=28,
+                            dont_extend_width=True,
+                        ),
+                        self.multi_match_count_field,
+                        Window(
+                            content=FormattedTextControl(" matches (how many to show)"),
+                            width=35,
+                            dont_extend_width=True,
+                        ),
+                    ]
+                ),
+                Window(height=1),  # Spacing
+                # Piping Settings Section
+                Window(content=FormattedTextControl("  Piping Settings:"), height=1, width=76),
+                # Piping Threshold
+                VSplit(
+                    [
+                        Window(
+                            content=FormattedTextControl("    piping_threshold:     "),
+                            width=28,
+                            dont_extend_width=True,
+                        ),
+                        self.piping_threshold_field,
+                        Window(
+                            content=FormattedTextControl(" chars (when /ask truncates)"),
+                            width=35,
+                            dont_extend_width=True,
+                        ),
+                    ]
+                ),
+                # Piping Max Context
+                VSplit(
+                    [
+                        Window(
+                            content=FormattedTextControl("    piping_max_context:   "),
+                            width=28,
+                            dont_extend_width=True,
+                        ),
+                        self.piping_max_context_field,
+                        Window(
+                            content=FormattedTextControl(" chars (max context to /ask)"),
+                            width=35,
+                            dont_extend_width=True,
+                        ),
+                    ]
+                ),
+                Window(height=1),  # Spacing
+                # Display Options Section
+                Window(content=FormattedTextControl("  Display Options:"), height=1, width=76),
+                # Show Scores
+                VSplit(
+                    [
+                        Window(
+                            content=FormattedTextControl("    "), width=4, dont_extend_width=True
+                        ),
+                        self.show_scores_checkbox,
+                        Window(
+                            content=FormattedTextControl("    Show relevance scores with matches"),
+                            width=45,
+                            dont_extend_width=True,
+                        ),
+                    ]
+                ),
+                Window(height=2),  # Spacing
+                # Status
+                Window(
+                    content=FormattedTextControl(lambda: "  " + self.status_text),
+                    height=2,
+                    width=76,
+                ),
+                # Buttons
+                VSplit(
+                    [
+                        Window(width=30),  # Left padding for centering
+                        save_button,
+                        Window(width=2),
+                        cancel_button,
+                    ]
+                ),
+                Window(height=1),  # Bottom spacing
+            ]
+        )
 
         # Create main container with fixed width
-        main_container = HSplit([
-            header_window,
-            settings_layout
-        ], width=80)
-        
+        main_container = HSplit([header_window, settings_layout], width=80)
+
         self.layout = Layout(main_container)
 
         # Key bindings
         self.kb = KeyBindings()
 
-        @self.kb.add('tab')
+        @self.kb.add("tab")
         def _(event):
             # Tab navigation between fields
             current_focus = get_app().layout.current_window
@@ -241,12 +288,12 @@ class ConfigConsole:
             else:
                 get_app().layout.focus(self.max_chunk_size_field.window)
 
-        @self.kb.add('enter')
+        @self.kb.add("enter")
         def _(event):
             self._handle_save()
             get_app().exit()
 
-        @self.kb.add('escape')
+        @self.kb.add("escape")
         def _(event):
             self._handle_cancel()
             get_app().exit()
@@ -257,7 +304,7 @@ class ConfigConsole:
             max_chunk_size = int(self.max_chunk_size_field.text)
             if max_chunk_size <= 0:
                 return "Max Chunk Size must be positive"
-            self.settings['max_chunk_size'] = max_chunk_size
+            self.settings["max_chunk_size"] = max_chunk_size
         except ValueError:
             return "Max Chunk Size must be a valid integer"
 
@@ -265,7 +312,7 @@ class ConfigConsole:
             match_preview_length = int(self.match_preview_length_field.text)
             if match_preview_length <= 0:
                 return "Match Preview Length must be positive"
-            self.settings['match_preview_length'] = match_preview_length
+            self.settings["match_preview_length"] = match_preview_length
         except ValueError:
             return "Match Preview Length must be a valid integer"
 
@@ -273,7 +320,7 @@ class ConfigConsole:
             multi_match_count = int(self.multi_match_count_field.text)
             if multi_match_count <= 0:
                 return "Multi Match Count must be positive"
-            self.settings['multi_match_count'] = multi_match_count
+            self.settings["multi_match_count"] = multi_match_count
         except ValueError:
             return "Multi Match Count must be a valid integer"
 
@@ -281,7 +328,7 @@ class ConfigConsole:
             piping_threshold = float(self.piping_threshold_field.text)
             if not 0.0 <= piping_threshold <= 1.0:
                 return "Piping Threshold must be between 0.0 and 1.0"
-            self.settings['piping_threshold'] = piping_threshold
+            self.settings["piping_threshold"] = piping_threshold
         except ValueError:
             return "Piping Threshold must be a valid number"
 
@@ -289,11 +336,11 @@ class ConfigConsole:
             piping_max_context = int(self.piping_max_context_field.text)
             if piping_max_context < 0:
                 return "Piping Max Context must be non-negative"
-            self.settings['piping_max_context'] = piping_max_context
+            self.settings["piping_max_context"] = piping_max_context
         except ValueError:
             return "Piping Max Context must be a valid integer"
 
-        self.settings['show_scores'] = self.show_scores_checkbox.checked
+        self.settings["show_scores"] = self.show_scores_checkbox.checked
 
         return None  # No errors
 
@@ -324,8 +371,9 @@ class ConfigConsole:
         try:
             # Try to use asyncio event loop policy for better Windows support
             import asyncio
+
             # Try different event loop policies for Windows compatibility
-            for policy_name in ['WindowsSelectorEventLoopPolicy', 'WindowsProactorEventLoopPolicy']:
+            for policy_name in ["WindowsSelectorEventLoopPolicy", "WindowsProactorEventLoopPolicy"]:
                 if hasattr(asyncio, policy_name):
                     policy_class = getattr(asyncio, policy_name)
                     asyncio.set_event_loop_policy(policy_class())
@@ -335,10 +383,12 @@ class ConfigConsole:
             pass
 
         # Define style with pale input field backgrounds
-        style = Style.from_dict({
-            'input-field': 'bg:#f5f5f5 #000000',  # Very pale gray background, black text
-            'input-field.focused': 'bg:#ffffff #000000',  # White when focused
-        })
+        style = Style.from_dict(
+            {
+                "input-field": "bg:#f5f5f5 #000000",  # Very pale gray background, black text
+                "input-field.focused": "bg:#ffffff #000000",  # White when focused
+            }
+        )
 
         try:
             app = Application(
@@ -348,7 +398,7 @@ class ConfigConsole:
                 style=style,
                 # Use standard input/output for better Windows compatibility
                 input=None,
-                output=None
+                output=None,
             )
 
             # Initial focus
@@ -368,10 +418,12 @@ class ConfigConsole:
         """Run a simple text-based fallback interface"""
         # Check if we're in an interactive context
         import sys
+
         try:
             # Try to peek at stdin to see if there's input available
             import select
-            if hasattr(sys.stdin, 'fileno'):
+
+            if hasattr(sys.stdin, "fileno"):
                 # On Unix-like systems
                 ready, _, _ = select.select([sys.stdin], [], [], 0)
                 if not ready:
@@ -380,7 +432,7 @@ class ConfigConsole:
         except (ImportError, AttributeError, OSError):
             # select not available or stdin not suitable, assume non-interactive
             return self._run_non_interactive_fallback()
-        
+
         print("\n=== ISAAC /mine CONFIG CONSOLE (Text Mode) ===")
         print("Configure collections search parameters\n")
 
@@ -397,12 +449,12 @@ class ConfigConsole:
 
         # Get user input for each setting
         prompts = {
-            'max_chunk_size': 'Max Chunk Size (current: {}): ',
-            'match_preview_length': 'Match Preview Length (current: {}): ',
-            'multi_match_count': 'Multi Match Count (current: {}): ',
-            'piping_threshold': 'Piping Threshold (current: {}): ',
-            'piping_max_context': 'Piping Max Context (current: {}): ',
-            'show_scores': 'Show Scores (true/false, current: {}): '
+            "max_chunk_size": "Max Chunk Size (current: {}): ",
+            "match_preview_length": "Match Preview Length (current: {}): ",
+            "multi_match_count": "Multi Match Count (current: {}): ",
+            "piping_threshold": "Piping Threshold (current: {}): ",
+            "piping_max_context": "Piping Max Context (current: {}): ",
+            "show_scores": "Show Scores (true/false, current: {}): ",
         }
 
         for key, prompt in prompts.items():
@@ -410,13 +462,13 @@ class ConfigConsole:
                 current = new_settings[key]
                 user_input = input(prompt.format(current)).strip()
 
-                if user_input.lower() == 'q':
+                if user_input.lower() == "q":
                     print("Cancelled.")
                     return False
 
                 if user_input:  # Only update if user entered something
-                    if key == 'show_scores':
-                        new_settings[key] = user_input.lower() in ['true', '1', 'yes', 'y']
+                    if key == "show_scores":
+                        new_settings[key] = user_input.lower() in ["true", "1", "yes", "y"]
                     elif isinstance(current, int):
                         new_settings[key] = int(user_input)
                     elif isinstance(current, float):
@@ -450,49 +502,51 @@ class ConfigConsole:
             "=== ISAAC /mine CONFIG CONSOLE (Non-Interactive) ===",
             "Configure collections search parameters",
             "",
-            "Current settings:"
+            "Current settings:",
         ]
-        
+
         for key, value in self.settings.items():
             output_lines.append(f"  {key}: {value}")
-        
-        output_lines.extend([
-            "",
-            "Note: Use interactive mode for configuration changes.",
-            "Settings loaded successfully."
-        ])
-        
+
+        output_lines.extend(
+            [
+                "",
+                "Note: Use interactive mode for configuration changes.",
+                "Settings loaded successfully.",
+            ]
+        )
+
         print("\n".join(output_lines))
         return True
 
     def _validate_settings_from_dict(self, settings_dict: Dict[str, Any]) -> Optional[str]:
         """Validate settings from a dictionary"""
         try:
-            if settings_dict['max_chunk_size'] <= 0:
+            if settings_dict["max_chunk_size"] <= 0:
                 return "Max Chunk Size must be positive"
         except (KeyError, TypeError):
             return "Invalid max_chunk_size"
 
         try:
-            if settings_dict['match_preview_length'] <= 0:
+            if settings_dict["match_preview_length"] <= 0:
                 return "Match Preview Length must be positive"
         except (KeyError, TypeError):
             return "Invalid match_preview_length"
 
         try:
-            if settings_dict['multi_match_count'] <= 0:
+            if settings_dict["multi_match_count"] <= 0:
                 return "Multi Match Count must be positive"
         except (KeyError, TypeError):
             return "Invalid multi_match_count"
 
         try:
-            if not 0.0 <= settings_dict['piping_threshold'] <= 1.0:
+            if not 0.0 <= settings_dict["piping_threshold"] <= 1.0:
                 return "Piping Threshold must be between 0.0 and 1.0"
         except (KeyError, TypeError):
             return "Invalid piping_threshold"
 
         try:
-            if settings_dict['piping_max_context'] < 0:
+            if settings_dict["piping_max_context"] < 0:
                 return "Piping Max Context must be non-negative"
         except (KeyError, TypeError):
             return "Invalid piping_max_context"
@@ -511,4 +565,4 @@ def show_config_console(session_manager=None) -> str:
         else:
             return "✗ /mine settings not saved"
     except Exception as e:
-        return f"✗ Error running config console: {e}"              
+        return f"✗ Error running config console: {e}"

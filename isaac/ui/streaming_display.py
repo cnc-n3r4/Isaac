@@ -3,15 +3,16 @@ Streaming Display System
 Real-time UI updates for agentic execution and tool feedback
 """
 
-import time
 import threading
-from typing import Dict, Any, List, Optional, Callable
+import time
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 
 class DisplayMode(Enum):
     """Display modes for different UI states"""
+
     IDLE = "idle"
     THINKING = "thinking"
     EXECUTING = "executing"
@@ -22,6 +23,7 @@ class DisplayMode(Enum):
 @dataclass
 class DisplayEvent:
     """Event for UI updates"""
+
     event_type: str  # 'status', 'progress', 'message', 'tool_start', 'tool_result', etc.
     content: str
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -65,7 +67,7 @@ class StreamingDisplay:
         event = DisplayEvent(
             event_type="mode_change",
             content=str(mode.value),
-            metadata={"mode": mode.value, "message": message}
+            metadata={"mode": mode.value, "message": message},
         )
         self._emit_event(event)
 
@@ -89,12 +91,12 @@ class StreamingDisplay:
 
         # Keep only recent messages
         if len(self.status_messages) > self.max_status_messages:
-            self.status_messages = self.status_messages[-self.max_status_messages:]
+            self.status_messages = self.status_messages[-self.max_status_messages :]
 
         event = DisplayEvent(
             event_type="status_message",
             content=formatted,
-            metadata={"level": level, "raw_message": message}
+            metadata={"level": level, "raw_message": message},
         )
         self._emit_event(event)
 
@@ -106,7 +108,7 @@ class StreamingDisplay:
             "tool_name": tool_name,
             "tool_args": tool_args,
             "start_time": time.time(),
-            "status": "running"
+            "status": "running",
         }
 
         self.update_mode(DisplayMode.EXECUTING, f"Executing {tool_name}...")
@@ -114,11 +116,7 @@ class StreamingDisplay:
         event = DisplayEvent(
             event_type="tool_start",
             content=f"Starting {tool_name}",
-            metadata={
-                "execution_id": execution_id,
-                "tool_name": tool_name,
-                "tool_args": tool_args
-            }
+            metadata={"execution_id": execution_id, "tool_name": tool_name, "tool_args": tool_args},
         )
         self._emit_event(event)
 
@@ -136,8 +134,8 @@ class StreamingDisplay:
                 metadata={
                     "execution_id": execution_id,
                     "progress": progress,
-                    "tool_name": self.active_tools[execution_id]["tool_name"]
-                }
+                    "tool_name": self.active_tools[execution_id]["tool_name"],
+                },
             )
             self._emit_event(event)
 
@@ -165,8 +163,8 @@ class StreamingDisplay:
                     "tool_name": tool_info["tool_name"],
                     "duration": duration,
                     "result": result,
-                    "success": success
-                }
+                    "success": success,
+                },
             )
             self._emit_event(event)
 
@@ -198,8 +196,8 @@ class StreamingDisplay:
                     "execution_id": execution_id,
                     "tool_name": tool_info["tool_name"],
                     "duration": duration,
-                    "error": error
-                }
+                    "error": error,
+                },
             )
             self._emit_event(event)
 
@@ -214,9 +212,7 @@ class StreamingDisplay:
         # For streaming, we could break this into chunks
         # For now, show the full response
         event = DisplayEvent(
-            event_type="ai_response",
-            content=response,
-            metadata={"provider": provider}
+            event_type="ai_response", content=response, metadata={"provider": provider}
         )
         self._emit_event(event)
 
@@ -225,7 +221,7 @@ class StreamingDisplay:
         event = DisplayEvent(
             event_type="task_progress",
             content=f"{task_description}: {progress:.1%}",
-            metadata={"progress": progress, "description": task_description}
+            metadata={"progress": progress, "description": task_description},
         )
         self._emit_event(event)
 
@@ -242,18 +238,15 @@ class StreamingDisplay:
             "status_messages": self.status_messages.copy(),
             "stats": {
                 "active_tool_count": len(self.active_tools),
-                "total_messages": len(self.status_messages)
-            }
+                "total_messages": len(self.status_messages),
+            },
         }
 
     def clear_status_messages(self):
         """Clear all status messages"""
         self.status_messages.clear()
 
-        event = DisplayEvent(
-            event_type="status_cleared",
-            content="Status messages cleared"
-        )
+        event = DisplayEvent(event_type="status_cleared", content="Status messages cleared")
         self._emit_event(event)
 
     def reset(self):
@@ -262,8 +255,5 @@ class StreamingDisplay:
         self.active_tools.clear()
         self.clear_status_messages()
 
-        event = DisplayEvent(
-            event_type="reset",
-            content="Display reset to idle state"
-        )
+        event = DisplayEvent(event_type="reset", content="Display reset to idle state")
         self._emit_event(event)

@@ -4,11 +4,11 @@ Automatically adjusts Isaac's behavior based on user feedback patterns.
 """
 
 import json
-import time
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
-from pathlib import Path
 import statistics
+import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 from isaac.learning.mistake_learner import MistakeLearner
@@ -17,6 +17,7 @@ from isaac.learning.mistake_learner import MistakeLearner
 @dataclass
 class UserFeedback:
     """A piece of user feedback about Isaac's behavior."""
+
     id: str
     timestamp: float
     feedback_type: str  # 'positive', 'negative', 'correction', 'preference'
@@ -30,6 +31,7 @@ class UserFeedback:
 @dataclass
 class BehaviorAdjustment:
     """An adjustment to Isaac's behavior based on feedback."""
+
     id: str
     behavior_category: str
     current_value: Any
@@ -43,6 +45,7 @@ class BehaviorAdjustment:
 @dataclass
 class BehaviorProfile:
     """Profile of user's preferred behavior patterns."""
+
     user_id: str
     response_style: str  # 'concise', 'detailed', 'balanced'
     suggestion_frequency: str  # 'low', 'medium', 'high'
@@ -65,13 +68,13 @@ class BehaviorAdjustmentEngine:
         self.session_manager = session_manager
         self.mistake_learner = mistake_learner
 
-        self.data_dir = Path.home() / '.isaac' / 'behavior'
+        self.data_dir = Path.home() / ".isaac" / "behavior"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Data files
-        self.feedback_file = self.data_dir / 'user_feedback.json'
-        self.adjustments_file = self.data_dir / 'behavior_adjustments.json'
-        self.profile_file = self.data_dir / 'behavior_profile.json'
+        self.feedback_file = self.data_dir / "user_feedback.json"
+        self.adjustments_file = self.data_dir / "behavior_adjustments.json"
+        self.profile_file = self.data_dir / "behavior_profile.json"
 
         # Data structures
         self.feedback_history: List[UserFeedback] = []
@@ -93,7 +96,7 @@ class BehaviorAdjustmentEngine:
                 humor_level="subtle",
                 technical_depth="intermediate",
                 interaction_pace="moderate",
-                last_updated=time.time()
+                last_updated=time.time(),
             )
             self._save_behavior_profile()
 
@@ -107,7 +110,9 @@ class BehaviorAdjustmentEngine:
         if adjustment:
             self.apply_behavior_adjustment(adjustment)
 
-    def _analyze_feedback_for_adjustment(self, feedback: UserFeedback) -> Optional[BehaviorAdjustment]:
+    def _analyze_feedback_for_adjustment(
+        self, feedback: UserFeedback
+    ) -> Optional[BehaviorAdjustment]:
         """Analyze feedback to determine if behavior adjustment is needed."""
         # Analyze recent feedback for patterns
         recent_feedback = self._get_recent_feedback(feedback.behavior_category, hours=24)
@@ -135,12 +140,14 @@ class BehaviorAdjustmentEngine:
         """Get recent feedback for a specific category."""
         cutoff_time = time.time() - (hours * 3600)
         return [
-            f for f in self.feedback_history
+            f
+            for f in self.feedback_history
             if f.behavior_category == category and f.timestamp > cutoff_time
         ]
 
-    def _create_adjustment_for_negative_feedback(self, feedback: UserFeedback,
-                                               avg_sentiment: float) -> BehaviorAdjustment:
+    def _create_adjustment_for_negative_feedback(
+        self, feedback: UserFeedback, avg_sentiment: float
+    ) -> BehaviorAdjustment:
         """Create adjustment based on negative feedback pattern."""
         adjustment_id = f"adj_negative_{feedback.behavior_category}_{int(time.time())}"
 
@@ -158,7 +165,9 @@ class BehaviorAdjustmentEngine:
         elif feedback.behavior_category == "detail_level":
             current = self.behavior_profile.detail_level
             target = "brief" if current in ["moderate", "comprehensive"] else "moderate"
-            reason = f"Reducing detail level due to user feedback (avg sentiment: {avg_sentiment:.2f})"
+            reason = (
+                f"Reducing detail level due to user feedback (avg sentiment: {avg_sentiment:.2f})"
+            )
 
         else:
             target = "balanced"  # Default fallback
@@ -170,11 +179,12 @@ class BehaviorAdjustmentEngine:
             current_value=current,
             target_value=target,
             confidence=min(0.8, abs(avg_sentiment)),
-            reason=reason
+            reason=reason,
         )
 
-    def _create_adjustment_for_positive_feedback(self, feedback: UserFeedback,
-                                               avg_sentiment: float) -> BehaviorAdjustment:
+    def _create_adjustment_for_positive_feedback(
+        self, feedback: UserFeedback, avg_sentiment: float
+    ) -> BehaviorAdjustment:
         """Create adjustment to reinforce positive feedback patterns."""
         adjustment_id = f"adj_positive_{feedback.behavior_category}_{int(time.time())}"
 
@@ -189,7 +199,7 @@ class BehaviorAdjustmentEngine:
             current_value=current,
             target_value=target,
             confidence=min(0.9, avg_sentiment),
-            reason=reason
+            reason=reason,
         )
 
     def apply_behavior_adjustment(self, adjustment: BehaviorAdjustment):
@@ -200,7 +210,9 @@ class BehaviorAdjustmentEngine:
             self.behavior_profile.last_updated = time.time()
 
             # Update confidence score
-            self.behavior_profile.confidence_scores[adjustment.behavior_category] = adjustment.confidence
+            self.behavior_profile.confidence_scores[adjustment.behavior_category] = (
+                adjustment.confidence
+            )
 
             self._save_behavior_profile()
 
@@ -213,8 +225,9 @@ class BehaviorAdjustmentEngine:
         """Get the current behavior profile."""
         return self.behavior_profile
 
-    def get_behavior_adjustments(self, category: Optional[str] = None,
-                               limit: int = 10) -> List[BehaviorAdjustment]:
+    def get_behavior_adjustments(
+        self, category: Optional[str] = None, limit: int = 10
+    ) -> List[BehaviorAdjustment]:
         """Get behavior adjustments, optionally filtered by category."""
         adjustments = list(self.behavior_adjustments.values())
 
@@ -243,35 +256,37 @@ class BehaviorAdjustmentEngine:
             cat = adjustment.behavior_category
             if cat not in category_effectiveness:
                 category_effectiveness[cat] = {
-                    'total_adjustments': 0,
-                    'avg_confidence': 0,
-                    'recent_adjustments': 0
+                    "total_adjustments": 0,
+                    "avg_confidence": 0,
+                    "recent_adjustments": 0,
                 }
 
-            category_effectiveness[cat]['total_adjustments'] += 1
-            category_effectiveness[cat]['avg_confidence'] += adjustment.confidence
+            category_effectiveness[cat]["total_adjustments"] += 1
+            category_effectiveness[cat]["avg_confidence"] += adjustment.confidence
 
             # Count recent adjustments (last 7 days)
             if adjustment.applied_at and (time.time() - adjustment.applied_at) < (7 * 24 * 3600):
-                category_effectiveness[cat]['recent_adjustments'] += 1
+                category_effectiveness[cat]["recent_adjustments"] += 1
 
         # Calculate averages
         for cat_data in category_effectiveness.values():
-            if cat_data['total_adjustments'] > 0:
-                cat_data['avg_confidence'] /= cat_data['total_adjustments']
+            if cat_data["total_adjustments"] > 0:
+                cat_data["avg_confidence"] /= cat_data["total_adjustments"]
 
         return {
-            'total_adjustments': len(applied_adjustments),
-            'category_effectiveness': category_effectiveness,
-            'most_adjusted_category': max(category_effectiveness.keys(),
-                                        key=lambda k: category_effectiveness[k]['total_adjustments'])
+            "total_adjustments": len(applied_adjustments),
+            "category_effectiveness": category_effectiveness,
+            "most_adjusted_category": max(
+                category_effectiveness.keys(),
+                key=lambda k: category_effectiveness[k]["total_adjustments"],
+            ),
         }
 
     def _load_feedback_history(self):
         """Load feedback history from disk."""
         if self.feedback_file.exists():
             try:
-                with open(self.feedback_file, 'r') as f:
+                with open(self.feedback_file, "r") as f:
                     data = json.load(f)
                     self.feedback_history = [UserFeedback(**item) for item in data]
             except Exception as e:
@@ -281,7 +296,7 @@ class BehaviorAdjustmentEngine:
         """Save feedback history to disk."""
         try:
             data = [asdict(f) for f in self.feedback_history[-1000:]]  # Keep last 1000
-            with open(self.feedback_file, 'w') as f:
+            with open(self.feedback_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             print(f"Error saving feedback history: {e}")
@@ -290,7 +305,7 @@ class BehaviorAdjustmentEngine:
         """Load behavior adjustments from disk."""
         if self.adjustments_file.exists():
             try:
-                with open(self.adjustments_file, 'r') as f:
+                with open(self.adjustments_file, "r") as f:
                     data = json.load(f)
                     for adj_id, adj_data in data.items():
                         self.behavior_adjustments[adj_id] = BehaviorAdjustment(**adj_data)
@@ -301,7 +316,7 @@ class BehaviorAdjustmentEngine:
         """Save behavior adjustments to disk."""
         try:
             data = {aid: asdict(adj) for aid, adj in self.behavior_adjustments.items()}
-            with open(self.adjustments_file, 'w') as f:
+            with open(self.adjustments_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             print(f"Error saving behavior adjustments: {e}")
@@ -310,7 +325,7 @@ class BehaviorAdjustmentEngine:
         """Load behavior profile from disk."""
         if self.profile_file.exists():
             try:
-                with open(self.profile_file, 'r') as f:
+                with open(self.profile_file, "r") as f:
                     data = json.load(f)
                     self.behavior_profile = BehaviorProfile(**data)
             except Exception as e:
@@ -319,7 +334,7 @@ class BehaviorAdjustmentEngine:
     def _save_behavior_profile(self):
         """Save behavior profile to disk."""
         try:
-            with open(self.profile_file, 'w') as f:
+            with open(self.profile_file, "w") as f:
                 json.dump(asdict(self.behavior_profile), f, indent=2)
         except Exception as e:
             print(f"Error saving behavior profile: {e}")

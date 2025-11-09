@@ -5,9 +5,10 @@ Isaac's system for quick voice commands and macros
 
 import json
 import time
-from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
 try:
     import fuzzywuzzy
     from fuzzywuzzy import fuzz
@@ -19,6 +20,7 @@ except ImportError:
 @dataclass
 class VoiceShortcut:
     """Represents a voice shortcut configuration."""
+
     id: str
     name: str
     phrases: List[str]  # Multiple ways to trigger the shortcut
@@ -37,6 +39,7 @@ class VoiceShortcut:
 @dataclass
 class ShortcutMatch:
     """Result of matching a voice input against shortcuts."""
+
     shortcut: VoiceShortcut
     confidence: float
     matched_phrase: str
@@ -51,13 +54,13 @@ class VoiceShortcutManager:
         """Initialize voice shortcut manager."""
         self.config = config or {}
         self.shortcuts: Dict[str, VoiceShortcut] = {}
-        self.shortcuts_file = Path.home() / '.isaac' / 'voice_shortcuts.json'
+        self.shortcuts_file = Path.home() / ".isaac" / "voice_shortcuts.json"
         self.context_stack: List[str] = []
         self.is_active = True
 
         # Fuzzy matching settings
-        self.fuzzy_threshold = self.config.get('fuzzy_threshold', 80)
-        self.confidence_threshold = self.config.get('confidence_threshold', 0.7)
+        self.fuzzy_threshold = self.config.get("fuzzy_threshold", 80)
+        self.confidence_threshold = self.config.get("confidence_threshold", 0.7)
 
         # Load default shortcuts
         self._load_default_shortcuts()
@@ -74,170 +77,152 @@ class VoiceShortcutManager:
                 phrases=["help", "what can you do", "assist me", "show commands"],
                 command="/help",
                 description="Show available commands and help",
-                category="system"
+                category="system",
             ),
-
             VoiceShortcut(
                 id="status",
                 name="System Status",
                 phrases=["status", "how are you", "system status", "check status"],
                 command="/status",
                 description="Check system status",
-                category="system"
+                category="system",
             ),
-
             VoiceShortcut(
                 id="run_tests",
                 name="Run Tests",
                 phrases=["run tests", "execute tests", "test", "run the tests"],
                 command="/run_tests",
                 description="Run test suite",
-                category="development"
+                category="development",
             ),
-
             VoiceShortcut(
                 id="stop",
                 name="Stop Current Task",
                 phrases=["stop", "cancel", "quit", "abort"],
                 command="/stop",
                 description="Stop current operation",
-                category="system"
+                category="system",
             ),
-
             VoiceShortcut(
                 id="workspace_list",
                 name="List Workspaces",
                 phrases=["list workspaces", "show workspaces", "what workspaces"],
                 command="/workspace list",
                 description="List available workspaces",
-                category="workspace"
+                category="workspace",
             ),
-
             VoiceShortcut(
                 id="workspace_create",
                 name="Create Workspace",
                 phrases=["create workspace", "new workspace", "make workspace"],
                 command="/workspace create",
                 description="Create a new workspace",
-                category="workspace"
+                category="workspace",
             ),
-
             VoiceShortcut(
                 id="workspace_switch",
                 name="Switch Workspace",
                 phrases=["switch to workspace", "change workspace", "go to workspace"],
                 command="/workspace switch",
                 description="Switch to a different workspace",
-                category="workspace"
+                category="workspace",
             ),
-
             VoiceShortcut(
                 id="debug_start",
                 name="Start Debugging",
                 phrases=["start debugging", "debug", "begin debug", "debug mode"],
                 command="/debug start",
                 description="Start debugging session",
-                category="debug"
+                category="debug",
             ),
-
             VoiceShortcut(
                 id="debug_stop",
                 name="Stop Debugging",
                 phrases=["stop debugging", "end debug", "exit debug"],
                 command="/debug stop",
                 description="Stop debugging session",
-                category="debug"
+                category="debug",
             ),
-
             VoiceShortcut(
                 id="voice_transcribe",
                 name="Transcribe Audio",
                 phrases=["transcribe", "transcribe audio", "convert to text"],
                 command="/voice transcribe",
                 description="Transcribe audio file to text",
-                category="voice"
+                category="voice",
             ),
-
             VoiceShortcut(
                 id="voice_listen",
                 name="Start Voice Listening",
                 phrases=["listen", "start listening", "voice mode", "listen to me"],
                 command="/voice listen",
                 description="Start voice command listening",
-                category="voice"
+                category="voice",
             ),
-
             VoiceShortcut(
                 id="voice_stop",
                 name="Stop Voice Listening",
                 phrases=["stop listening", "quiet", "be quiet", "shut up"],
                 command="/voice stop",
                 description="Stop voice command listening",
-                category="voice"
+                category="voice",
             ),
-
             VoiceShortcut(
                 id="language_switch",
                 name="Switch Language",
                 phrases=["switch language", "change language", "speak spanish", "habla español"],
                 command="/language switch",
                 description="Switch system language",
-                category="language"
+                category="language",
             ),
-
             VoiceShortcut(
                 id="save_work",
                 name="Save Work",
                 phrases=["save", "save work", "save changes", "commit"],
                 command="/save",
                 description="Save current work",
-                category="file"
+                category="file",
             ),
-
             VoiceShortcut(
                 id="open_file",
                 name="Open File",
                 phrases=["open file", "edit file", "show file"],
                 command="/open",
                 description="Open a file for editing",
-                category="file"
+                category="file",
             ),
-
             VoiceShortcut(
                 id="search_code",
                 name="Search Code",
                 phrases=["search code", "find code", "grep", "search"],
                 command="/search",
                 description="Search through codebase",
-                category="search"
+                category="search",
             ),
-
             VoiceShortcut(
                 id="run_command",
                 name="Run Command",
                 phrases=["run command", "execute command", "shell command"],
                 command="/run",
                 description="Execute a shell command",
-                category="system"
+                category="system",
             ),
-
             VoiceShortcut(
                 id="show_logs",
                 name="Show Logs",
                 phrases=["show logs", "logs", "view logs", "check logs"],
                 command="/logs",
                 description="Show system logs",
-                category="system"
+                category="system",
             ),
-
             VoiceShortcut(
                 id="performance_check",
                 name="Performance Check",
                 phrases=["performance", "check performance", "system performance"],
                 command="/performance",
                 description="Check system performance",
-                category="system"
-            )
+                category="system",
+            ),
         ]
 
         for shortcut in default_shortcuts:
@@ -247,7 +232,7 @@ class VoiceShortcutManager:
         """Load user-defined shortcuts from file."""
         try:
             if self.shortcuts_file.exists():
-                with open(self.shortcuts_file, 'r', encoding='utf-8') as f:
+                with open(self.shortcuts_file, "r", encoding="utf-8") as f:
                     user_shortcuts_data = json.load(f)
 
                 for shortcut_data in user_shortcuts_data:
@@ -264,26 +249,35 @@ class VoiceShortcutManager:
 
             # Only save user-defined shortcuts (not defaults)
             user_shortcuts = [
-                shortcut for shortcut in self.shortcuts.values()
-                if not shortcut.id.startswith('default_')
+                shortcut
+                for shortcut in self.shortcuts.values()
+                if not shortcut.id.startswith("default_")
             ]
 
-            with open(self.shortcuts_file, 'w', encoding='utf-8') as f:
-                json.dump([{
-                    'id': s.id,
-                    'name': s.name,
-                    'phrases': s.phrases,
-                    'command': s.command,
-                    'description': s.description,
-                    'category': s.category,
-                    'priority': s.priority,
-                    'enabled': s.enabled,
-                    'context': s.context,
-                    'cooldown': s.cooldown,
-                    'last_used': s.last_used,
-                    'usage_count': s.usage_count,
-                    'success_rate': s.success_rate
-                } for s in user_shortcuts], f, indent=2, ensure_ascii=False)
+            with open(self.shortcuts_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    [
+                        {
+                            "id": s.id,
+                            "name": s.name,
+                            "phrases": s.phrases,
+                            "command": s.command,
+                            "description": s.description,
+                            "category": s.category,
+                            "priority": s.priority,
+                            "enabled": s.enabled,
+                            "context": s.context,
+                            "cooldown": s.cooldown,
+                            "last_used": s.last_used,
+                            "usage_count": s.usage_count,
+                            "success_rate": s.success_rate,
+                        }
+                        for s in user_shortcuts
+                    ],
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
 
         except Exception as e:
             print(f"Error saving user shortcuts: {e}")
@@ -311,7 +305,7 @@ class VoiceShortcutManager:
         """Remove a voice shortcut."""
         if shortcut_id in self.shortcuts:
             # Don't allow removal of default shortcuts
-            if shortcut_id.startswith('default_'):
+            if shortcut_id.startswith("default_"):
                 return False
 
             del self.shortcuts[shortcut_id]
@@ -327,8 +321,8 @@ class VoiceShortcutManager:
         shortcut = self.shortcuts[shortcut_id]
 
         # Don't allow updates to default shortcuts except for usage stats
-        if shortcut_id.startswith('default_'):
-            allowed_fields = {'last_used', 'usage_count', 'success_rate'}
+        if shortcut_id.startswith("default_"):
+            allowed_fields = {"last_used", "usage_count", "success_rate"}
             updates = {k: v for k, v in updates.items() if k in allowed_fields}
 
         for key, value in updates.items():
@@ -338,7 +332,9 @@ class VoiceShortcutManager:
         self._save_user_shortcuts()
         return True
 
-    def match_shortcut(self, voice_text: str, context: Optional[str] = None) -> Optional[ShortcutMatch]:
+    def match_shortcut(
+        self, voice_text: str, context: Optional[str] = None
+    ) -> Optional[ShortcutMatch]:
         """Match voice input against available shortcuts.
 
         Args:
@@ -357,8 +353,7 @@ class VoiceShortcutManager:
 
         # Get active shortcuts (enabled and matching context)
         active_shortcuts = [
-            s for s in self.shortcuts.values()
-            if s.enabled and self._is_context_match(s, context)
+            s for s in self.shortcuts.values() if s.enabled and self._is_context_match(s, context)
         ]
 
         # Sort by priority (higher first)
@@ -371,20 +366,22 @@ class VoiceShortcutManager:
 
             match_result = self._match_shortcut_phrases(shortcut, voice_text)
             if match_result:
-                score = match_result['confidence'] * (1 + shortcut.priority * 0.1)
+                score = match_result["confidence"] * (1 + shortcut.priority * 0.1)
                 if score > best_score and score >= self.confidence_threshold:
                     best_score = score
                     best_match = ShortcutMatch(
                         shortcut=shortcut,
                         confidence=score,
-                        matched_phrase=match_result['matched_phrase'],
-                        fuzzy_score=match_result['fuzzy_score'],
-                        context_match=True
+                        matched_phrase=match_result["matched_phrase"],
+                        fuzzy_score=match_result["fuzzy_score"],
+                        context_match=True,
                     )
 
         return best_match
 
-    def _match_shortcut_phrases(self, shortcut: VoiceShortcut, voice_text: str) -> Optional[Dict[str, Any]]:
+    def _match_shortcut_phrases(
+        self, shortcut: VoiceShortcut, voice_text: str
+    ) -> Optional[Dict[str, Any]]:
         """Match voice text against a shortcut's phrases."""
         best_match = None
         best_score = 0
@@ -394,11 +391,7 @@ class VoiceShortcutManager:
 
             # Exact match
             if phrase_lower in voice_text:
-                return {
-                    'matched_phrase': phrase,
-                    'confidence': 1.0,
-                    'fuzzy_score': 100
-                }
+                return {"matched_phrase": phrase, "confidence": 1.0, "fuzzy_score": 100}
 
             # Fuzzy match (if available)
             if fuzz:
@@ -408,9 +401,9 @@ class VoiceShortcutManager:
                     if confidence > best_score:
                         best_score = confidence
                         best_match = {
-                            'matched_phrase': phrase,
-                            'confidence': confidence,
-                            'fuzzy_score': fuzzy_score
+                            "matched_phrase": phrase,
+                            "confidence": confidence,
+                            "fuzzy_score": fuzzy_score,
                         }
             else:
                 # Simple substring match if fuzzywuzzy not available
@@ -419,9 +412,9 @@ class VoiceShortcutManager:
                     if confidence > best_score:
                         best_score = confidence
                         best_match = {
-                            'matched_phrase': phrase,
-                            'confidence': confidence,
-                            'fuzzy_score': 80
+                            "matched_phrase": phrase,
+                            "confidence": confidence,
+                            "fuzzy_score": 80,
                         }
 
             # Word-based matching
@@ -433,9 +426,9 @@ class VoiceShortcutManager:
                 if word_confidence > 0.7 and word_confidence > best_score:
                     best_score = word_confidence
                     best_match = {
-                        'matched_phrase': phrase,
-                        'confidence': word_confidence,
-                        'fuzzy_score': int(word_confidence * 100)
+                        "matched_phrase": phrase,
+                        "confidence": word_confidence,
+                        "fuzzy_score": int(word_confidence * 100),
                     }
 
         return best_match
@@ -449,7 +442,7 @@ class VoiceShortcutManager:
             return False  # Shortcut requires context but none provided
 
         # Check context stack
-        return any(ctx in self.context_stack for ctx in shortcut.context.split(','))
+        return any(ctx in self.context_stack for ctx in shortcut.context.split(","))
 
     def execute_shortcut(self, match: ShortcutMatch, executor: Callable[[str], Any]) -> bool:
         """Execute a matched shortcut.
@@ -471,15 +464,18 @@ class VoiceShortcutManager:
             result = executor(shortcut.command)
 
             # Update success rate (simple moving average)
-            success = result is not None and getattr(result, 'success', True)
+            success = result is not None and getattr(result, "success", True)
             shortcut.success_rate = (shortcut.success_rate * 0.9) + (1.0 if success else 0.0)
 
             # Save updated statistics
-            self.update_shortcut(shortcut.id, {
-                'last_used': shortcut.last_used,
-                'usage_count': shortcut.usage_count,
-                'success_rate': shortcut.success_rate
-            })
+            self.update_shortcut(
+                shortcut.id,
+                {
+                    "last_used": shortcut.last_used,
+                    "usage_count": shortcut.usage_count,
+                    "success_rate": shortcut.success_rate,
+                },
+            )
 
             return success
 
@@ -505,8 +501,9 @@ class VoiceShortcutManager:
         """Get current context stack."""
         return self.context_stack.copy()
 
-    def get_shortcuts(self, category: Optional[str] = None,
-                      enabled_only: bool = True) -> List[VoiceShortcut]:
+    def get_shortcuts(
+        self, category: Optional[str] = None, enabled_only: bool = True
+    ) -> List[VoiceShortcut]:
         """Get list of shortcuts, optionally filtered by category."""
         shortcuts = list(self.shortcuts.values())
 
@@ -526,42 +523,47 @@ class VoiceShortcutManager:
         total_shortcuts = len(self.shortcuts)
         enabled_shortcuts = len([s for s in self.shortcuts.values() if s.enabled])
         total_usage = sum(s.usage_count for s in self.shortcuts.values())
-        avg_success_rate = sum(s.success_rate for s in self.shortcuts.values()) / max(total_shortcuts, 1)
+        avg_success_rate = sum(s.success_rate for s in self.shortcuts.values()) / max(
+            total_shortcuts, 1
+        )
 
         category_stats = {}
         for shortcut in self.shortcuts.values():
             if shortcut.category not in category_stats:
-                category_stats[shortcut.category] = {
-                    'count': 0,
-                    'usage': 0,
-                    'avg_success': 0.0
-                }
-            category_stats[shortcut.category]['count'] += 1
-            category_stats[shortcut.category]['usage'] += shortcut.usage_count
+                category_stats[shortcut.category] = {"count": 0, "usage": 0, "avg_success": 0.0}
+            category_stats[shortcut.category]["count"] += 1
+            category_stats[shortcut.category]["usage"] += shortcut.usage_count
 
         for cat_stats in category_stats.values():
-            if cat_stats['count'] > 0:
-                cat_stats['avg_success'] = sum(
-                    s.success_rate for s in self.shortcuts.values()
-                    if s.category == list(category_stats.keys())[list(category_stats.values()).index(cat_stats)]
-                ) / cat_stats['count']
+            if cat_stats["count"] > 0:
+                cat_stats["avg_success"] = (
+                    sum(
+                        s.success_rate
+                        for s in self.shortcuts.values()
+                        if s.category
+                        == list(category_stats.keys())[
+                            list(category_stats.values()).index(cat_stats)
+                        ]
+                    )
+                    / cat_stats["count"]
+                )
 
         return {
-            'total_shortcuts': total_shortcuts,
-            'enabled_shortcuts': enabled_shortcuts,
-            'total_usage': total_usage,
-            'average_success_rate': avg_success_rate,
-            'category_stats': category_stats,
-            'most_used': max(self.shortcuts.values(), key=lambda s: s.usage_count, default=None)
+            "total_shortcuts": total_shortcuts,
+            "enabled_shortcuts": enabled_shortcuts,
+            "total_usage": total_usage,
+            "average_success_rate": avg_success_rate,
+            "category_stats": category_stats,
+            "most_used": max(self.shortcuts.values(), key=lambda s: s.usage_count, default=None),
         }
 
     def enable_shortcut(self, shortcut_id: str) -> bool:
         """Enable a shortcut."""
-        return self.update_shortcut(shortcut_id, {'enabled': True})
+        return self.update_shortcut(shortcut_id, {"enabled": True})
 
     def disable_shortcut(self, shortcut_id: str) -> bool:
         """Disable a shortcut."""
-        return self.update_shortcut(shortcut_id, {'enabled': False})
+        return self.update_shortcut(shortcut_id, {"enabled": False})
 
     def import_shortcuts(self, shortcuts_data: List[Dict[str, Any]]) -> int:
         """Import shortcuts from data."""
@@ -578,21 +580,24 @@ class VoiceShortcutManager:
     def export_shortcuts(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
         """Export shortcuts to data."""
         shortcuts = self.get_shortcuts(category, enabled_only=False)
-        return [{
-            'id': s.id,
-            'name': s.name,
-            'phrases': s.phrases,
-            'command': s.command,
-            'description': s.description,
-            'category': s.category,
-            'priority': s.priority,
-            'enabled': s.enabled,
-            'context': s.context,
-            'cooldown': s.cooldown,
-            'last_used': s.last_used,
-            'usage_count': s.usage_count,
-            'success_rate': s.success_rate
-        } for s in shortcuts]
+        return [
+            {
+                "id": s.id,
+                "name": s.name,
+                "phrases": s.phrases,
+                "command": s.command,
+                "description": s.description,
+                "category": s.category,
+                "priority": s.priority,
+                "enabled": s.enabled,
+                "context": s.context,
+                "cooldown": s.cooldown,
+                "last_used": s.last_used,
+                "usage_count": s.usage_count,
+                "success_rate": s.success_rate,
+            }
+            for s in shortcuts
+        ]
 
     def set_fuzzy_threshold(self, threshold: int):
         """Set fuzzy matching threshold (0-100)."""
@@ -617,9 +622,11 @@ class VoiceShortcutManager:
         to_remove = []
 
         for shortcut_id, shortcut in self.shortcuts.items():
-            if (not shortcut_id.startswith('default_') and
-                shortcut.last_used < cutoff_time and
-                shortcut.usage_count == 0):
+            if (
+                not shortcut_id.startswith("default_")
+                and shortcut.last_used < cutoff_time
+                and shortcut.usage_count == 0
+            ):
                 to_remove.append(shortcut_id)
 
         for shortcut_id in to_remove:

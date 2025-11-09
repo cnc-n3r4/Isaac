@@ -1,20 +1,21 @@
 """Team collaboration command implementation."""
 
+import os
 from typing import List
+
 from isaac.core.flag_parser import FlagParser
 from isaac.team import (
-    TeamManager,
-    WorkspaceSharer,
+    PermissionLevel,
+    PermissionSystem,
+    ResourceType,
     TeamCollections,
+    TeamManager,
+    TeamMember,
+    TeamMemory,
     TeamPatternSharing,
     TeamPipelineSharing,
-    TeamMemory,
-    PermissionSystem,
-    TeamMember,
-    PermissionLevel,
-    ResourceType,
+    WorkspaceSharer,
 )
-import os
 
 
 class TeamCommand:
@@ -22,9 +23,9 @@ class TeamCommand:
 
     def __init__(self):
         """Initialize team command."""
-        self.user_id = os.environ.get('USER', 'default_user')
-        self.username = os.environ.get('USER', 'default_user')
-        self.email = os.environ.get('EMAIL', f'{self.user_id}@example.com')
+        self.user_id = os.environ.get("USER", "default_user")
+        self.username = os.environ.get("USER", "default_user")
+        self.email = os.environ.get("EMAIL", f"{self.user_id}@example.com")
 
         self.team_manager = TeamManager()
         self.workspace_sharer = WorkspaceSharer()
@@ -50,57 +51,57 @@ class TeamCommand:
         subargs = args[1:]
 
         # Team management commands
-        if subcommand == 'create':
+        if subcommand == "create":
             return self._create_team(subargs)
-        elif subcommand == 'list':
+        elif subcommand == "list":
             return self._list_teams(subargs)
-        elif subcommand == 'info':
+        elif subcommand == "info":
             return self._team_info(subargs)
-        elif subcommand == 'delete':
+        elif subcommand == "delete":
             return self._delete_team(subargs)
 
         # Member management
-        elif subcommand == 'invite':
+        elif subcommand == "invite":
             return self._invite_member(subargs)
-        elif subcommand == 'remove':
+        elif subcommand == "remove":
             return self._remove_member(subargs)
-        elif subcommand == 'members':
+        elif subcommand == "members":
             return self._list_members(subargs)
-        elif subcommand == 'role':
+        elif subcommand == "role":
             return self._update_role(subargs)
 
         # Resource sharing
-        elif subcommand == 'share':
+        elif subcommand == "share":
             return self._share_resource(subargs)
-        elif subcommand == 'unshare':
+        elif subcommand == "unshare":
             return self._unshare_resource(subargs)
-        elif subcommand == 'resources':
+        elif subcommand == "resources":
             return self._list_resources(subargs)
 
         # Workspace sharing
-        elif subcommand == 'share-workspace':
+        elif subcommand == "share-workspace":
             return self._share_workspace(subargs)
-        elif subcommand == 'import-workspace':
+        elif subcommand == "import-workspace":
             return self._import_workspace(subargs)
 
         # Collections
-        elif subcommand == 'collections':
+        elif subcommand == "collections":
             return self._manage_collections(subargs)
 
         # Patterns
-        elif subcommand == 'patterns':
+        elif subcommand == "patterns":
             return self._manage_patterns(subargs)
 
         # Pipelines
-        elif subcommand == 'pipelines':
+        elif subcommand == "pipelines":
             return self._manage_pipelines(subargs)
 
         # Memory
-        elif subcommand == 'memory':
+        elif subcommand == "memory":
             return self._manage_memory(subargs)
 
         # Permissions
-        elif subcommand == 'permissions':
+        elif subcommand == "permissions":
             return self._manage_permissions(subargs)
 
         else:
@@ -179,14 +180,14 @@ RESOURCE TYPES: workspace, collection, pattern, pipeline, memory
             return "Usage: /team create <name> <description>"
 
         name = args[0]
-        description = ' '.join(args[1:])
+        description = " ".join(args[1:])
 
         team = self.team_manager.create_team(
             name=name,
             description=description,
             owner_id=self.user_id,
             owner_username=self.username,
-            owner_email=self.email
+            owner_email=self.email,
         )
 
         return f"""✓ Team created successfully!
@@ -219,7 +220,7 @@ Share the Team ID with others to invite them to join!
             output.append(f"    Created: {team.created_at.strftime('%Y-%m-%d')}")
             output.append("")
 
-        return '\n'.join(output)
+        return "\n".join(output)
 
     def _team_info(self, args: List[str]) -> str:
         """Show team information."""
@@ -242,18 +243,22 @@ Share the Team ID with others to invite them to join!
         output.append(f"\nMembers ({len(team.members)}):")
 
         for member in team.members:
-            last_active = member.last_active.strftime('%Y-%m-%d') if member.last_active else 'Never'
-            output.append(f"  • {member.username} ({member.role.value}) - Last active: {last_active}")
+            last_active = member.last_active.strftime("%Y-%m-%d") if member.last_active else "Never"
+            output.append(
+                f"  • {member.username} ({member.role.value}) - Last active: {last_active}"
+            )
 
         output.append(f"\nShared Resources ({len(resources)}):")
         resource_counts = {}
         for res in resources:
-            resource_counts[res.resource_type.value] = resource_counts.get(res.resource_type.value, 0) + 1
+            resource_counts[res.resource_type.value] = (
+                resource_counts.get(res.resource_type.value, 0) + 1
+            )
 
         for rtype, count in resource_counts.items():
             output.append(f"  • {rtype}: {count}")
 
-        return '\n'.join(output)
+        return "\n".join(output)
 
     def _delete_team(self, args: List[str]) -> str:
         """Delete a team."""
@@ -286,7 +291,7 @@ Share the Team ID with others to invite them to join!
         team_id = parsed.positional[0]
         new_user_id = parsed.positional[1]
         new_email = parsed.positional[2]
-        role = PermissionLevel(parsed.flags.get('role', 'read'))
+        role = PermissionLevel(parsed.flags.get("role", "read"))
 
         team = self.team_manager.get_team(team_id)
         if not team:
@@ -294,7 +299,10 @@ Share the Team ID with others to invite them to join!
 
         # Check if current user is admin or owner
         current_member = team.get_member(self.user_id)
-        if not current_member or current_member.role not in [PermissionLevel.OWNER, PermissionLevel.ADMIN]:
+        if not current_member or current_member.role not in [
+            PermissionLevel.OWNER,
+            PermissionLevel.ADMIN,
+        ]:
             return "Only team owners and admins can invite members."
 
         # Create new member
@@ -303,7 +311,7 @@ Share the Team ID with others to invite them to join!
             username=new_user_id,  # Could be enhanced with actual username lookup
             email=new_email,
             role=role,
-            invited_by=self.user_id
+            invited_by=self.user_id,
         )
 
         if self.team_manager.add_member(team_id, new_member):
@@ -325,7 +333,10 @@ Share the Team ID with others to invite them to join!
 
         # Check if current user is admin or owner
         current_member = team.get_member(self.user_id)
-        if not current_member or current_member.role not in [PermissionLevel.OWNER, PermissionLevel.ADMIN]:
+        if not current_member or current_member.role not in [
+            PermissionLevel.OWNER,
+            PermissionLevel.ADMIN,
+        ]:
             return "Only team owners and admins can remove members."
 
         if self.team_manager.remove_member(team_id, user_id):
@@ -347,8 +358,8 @@ Share the Team ID with others to invite them to join!
         output = [f"Members of '{team.name}' ({len(team.members)}):\n"]
 
         for member in sorted(team.members, key=lambda m: m.joined_at):
-            joined = member.joined_at.strftime('%Y-%m-%d')
-            last_active = member.last_active.strftime('%Y-%m-%d') if member.last_active else 'Never'
+            joined = member.joined_at.strftime("%Y-%m-%d")
+            last_active = member.last_active.strftime("%Y-%m-%d") if member.last_active else "Never"
 
             output.append(f"  {member.username}")
             output.append(f"    Role: {member.role.value}")
@@ -359,7 +370,7 @@ Share the Team ID with others to invite them to join!
                 output.append(f"    Invited by: {member.invited_by}")
             output.append("")
 
-        return '\n'.join(output)
+        return "\n".join(output)
 
     def _update_role(self, args: List[str]) -> str:
         """Update a member's role."""
@@ -406,8 +417,7 @@ Share the Team ID with others to invite them to join!
         if self.team_manager.share_resource(resource):
             # Grant permissions to all team members
             self.permissions.grant_team_permissions(
-                self.team_manager, team_id, resource_id,
-                resource_type, self.user_id
+                self.team_manager, team_id, resource_id, resource_type, self.user_id
             )
             return f"✓ Shared {resource_type.value} with team."
         else:
@@ -436,7 +446,7 @@ Share the Team ID with others to invite them to join!
             return "Usage: /team resources <team_id> [--type TYPE]"
 
         team_id = parsed.positional[0]
-        resource_type = ResourceType(parsed.flags.get('type')) if 'type' in parsed.flags else None
+        resource_type = ResourceType(parsed.flags.get("type")) if "type" in parsed.flags else None
 
         resources = self.team_manager.get_shared_resources(team_id, resource_type)
 
@@ -455,7 +465,7 @@ Share the Team ID with others to invite them to join!
                 output.append(f"    Description: {res.description}")
             output.append("")
 
-        return '\n'.join(output)
+        return "\n".join(output)
 
     def _share_workspace(self, args: List[str]) -> str:
         """Share a workspace/bubble."""
@@ -467,11 +477,12 @@ Share the Team ID with others to invite them to join!
 
         team_id = parsed.positional[0]
         bubble_id = parsed.positional[1]
-        name = parsed.flags.get('name', '')
+        name = parsed.flags.get("name", "")
 
         # Would integrate with actual bubble manager
         try:
             from isaac.bubbles.manager import BubbleManager
+
             bubble_manager = BubbleManager()
 
             resource = self.workspace_sharer.share_bubble(
@@ -496,10 +507,11 @@ Share the Team ID with others to invite them to join!
 
         parsed.positional[0]
         resource_id = parsed.positional[1]
-        name = parsed.flags.get('name')
+        name = parsed.flags.get("name")
 
         try:
             from isaac.bubbles.manager import BubbleManager
+
             bubble_manager = BubbleManager()
 
             bubble_id = self.workspace_sharer.import_workspace(
@@ -520,7 +532,7 @@ Share the Team ID with others to invite them to join!
 
         subcommand = args[0]
 
-        if subcommand == 'list':
+        if subcommand == "list":
             if len(args) < 2:
                 return "Usage: /team collections list <team_id>"
             collections = self.collections.list_collections(args[1])
@@ -532,12 +544,12 @@ Share the Team ID with others to invite them to join!
                 output.append(f"    ID: {coll['collection_id']}")
                 output.append(f"    Items: {coll['item_count']}")
                 output.append("")
-            return '\n'.join(output)
+            return "\n".join(output)
 
-        elif subcommand == 'search':
+        elif subcommand == "search":
             if len(args) < 3:
                 return "Usage: /team collections search <team_id> <query>"
-            results = self.collections.search_collections(args[1], ' '.join(args[2:]))
+            results = self.collections.search_collections(args[1], " ".join(args[2:]))
             return f"Found {len(results)} results."
 
         else:
@@ -550,7 +562,7 @@ Share the Team ID with others to invite them to join!
 
         subcommand = args[0]
 
-        if subcommand == 'list':
+        if subcommand == "list":
             if len(args) < 2:
                 return "Usage: /team patterns list <team_id>"
             patterns = self.patterns.list_patterns(args[1])
@@ -563,9 +575,9 @@ Share the Team ID with others to invite them to join!
                 output.append(f"    Quality: {pat.get('quality_score', 0):.1f}")
                 output.append(f"    Usage: {pat.get('usage_count', 0)}")
                 output.append("")
-            return '\n'.join(output)
+            return "\n".join(output)
 
-        elif subcommand == 'stats':
+        elif subcommand == "stats":
             if len(args) < 2:
                 return "Usage: /team patterns stats <team_id>"
             stats = self.patterns.get_pattern_stats(args[1])
@@ -573,7 +585,7 @@ Share the Team ID with others to invite them to join!
             output.append(f"Total patterns: {stats['total_patterns']}")
             output.append(f"Average quality: {stats['average_quality']:.1f}")
             output.append(f"Total usage: {stats['total_usage']}")
-            return '\n'.join(output)
+            return "\n".join(output)
 
         else:
             return "Unknown patterns subcommand."
@@ -585,7 +597,7 @@ Share the Team ID with others to invite them to join!
 
         subcommand = args[0]
 
-        if subcommand == 'list':
+        if subcommand == "list":
             if len(args) < 2:
                 return "Usage: /team pipelines list <team_id>"
             pipelines = self.pipelines.list_pipelines(args[1])
@@ -597,9 +609,9 @@ Share the Team ID with others to invite them to join!
                 output.append(f"    Steps: {pipe['step_count']}")
                 output.append(f"    Executions: {pipe.get('execution_count', 0)}")
                 output.append("")
-            return '\n'.join(output)
+            return "\n".join(output)
 
-        elif subcommand == 'stats':
+        elif subcommand == "stats":
             if len(args) < 2:
                 return "Usage: /team pipelines stats <team_id>"
             stats = self.pipelines.get_pipeline_stats(args[1])
@@ -607,7 +619,7 @@ Share the Team ID with others to invite them to join!
             output.append(f"Total pipelines: {stats['total_pipelines']}")
             output.append(f"Total executions: {stats['total_executions']}")
             output.append(f"Average steps: {stats['average_steps']:.1f}")
-            return '\n'.join(output)
+            return "\n".join(output)
 
         else:
             return "Unknown pipelines subcommand."
@@ -619,28 +631,28 @@ Share the Team ID with others to invite them to join!
 
         subcommand = args[0]
 
-        if subcommand == 'add':
+        if subcommand == "add":
             if len(args) < 4:
                 return "Usage: /team memory add <team_id> <type> <content>"
             team_id = args[1]
             memory_type = args[2]
-            content = ' '.join(args[3:])
+            content = " ".join(args[3:])
             memory_id = self.memory.add_memory(team_id, self.user_id, memory_type, content)
             return f"✓ Added to team memory: {memory_id}"
 
-        elif subcommand == 'search':
+        elif subcommand == "search":
             if len(args) < 3:
                 return "Usage: /team memory search <team_id> <query>"
-            results = self.memory.search_memories(args[1], ' '.join(args[2:]))
+            results = self.memory.search_memories(args[1], " ".join(args[2:]))
             output = [f"Found {len(results)} memories:\n"]
             for mem in results[:10]:  # Show first 10
                 output.append(f"  {mem['content'][:100]}...")
                 output.append(f"    Type: {mem['memory_type']}")
                 output.append(f"    By: {mem['user_id']}")
                 output.append("")
-            return '\n'.join(output)
+            return "\n".join(output)
 
-        elif subcommand == 'conversations':
+        elif subcommand == "conversations":
             if len(args) < 2:
                 return "Usage: /team memory conversations <team_id>"
             conversations = self.memory.list_conversations(args[1])
@@ -652,7 +664,7 @@ Share the Team ID with others to invite them to join!
                 output.append(f"    Messages: {conv['message_count']}")
                 output.append(f"    Participants: {len(conv['participants'])}")
                 output.append("")
-            return '\n'.join(output)
+            return "\n".join(output)
 
         else:
             return "Unknown memory subcommand."
@@ -664,23 +676,24 @@ Share the Team ID with others to invite them to join!
 
         subcommand = args[0]
 
-        if subcommand == 'grant':
+        if subcommand == "grant":
             if len(args) < 4:
                 return "Usage: /team permissions grant <resource_id> <user_id> <level>"
             from isaac.team.models import Permission
+
             permission = Permission(
                 resource_id=args[1],
                 resource_type=ResourceType.WORKSPACE,  # Could be parameterized
                 user_id=args[2],
                 level=PermissionLevel(args[3]),
-                granted_by=self.user_id
+                granted_by=self.user_id,
             )
             if self.permissions.grant_permission(permission):
                 return f"✓ Granted {args[3]} permission to {args[2]}."
             else:
                 return "Failed to grant permission."
 
-        elif subcommand == 'revoke':
+        elif subcommand == "revoke":
             if len(args) < 3:
                 return "Usage: /team permissions revoke <resource_id> <user_id>"
             if self.permissions.revoke_permission(args[1], args[2]):
@@ -688,7 +701,7 @@ Share the Team ID with others to invite them to join!
             else:
                 return "Failed to revoke permission."
 
-        elif subcommand == 'list':
+        elif subcommand == "list":
             if len(args) < 2:
                 return "Usage: /team permissions list <resource_id>"
             perms = self.permissions.get_resource_permissions(args[1])
@@ -697,7 +710,7 @@ Share the Team ID with others to invite them to join!
             output = ["Resource Permissions:\n"]
             for user_id, level in perms.items():
                 output.append(f"  {user_id}: {level.value}")
-            return '\n'.join(output)
+            return "\n".join(output)
 
         else:
             return "Unknown permissions subcommand."

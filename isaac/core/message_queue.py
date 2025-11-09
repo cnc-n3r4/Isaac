@@ -7,25 +7,27 @@ Handles queuing and management of system and code-related notifications
 with persistent storage and priority-based retrieval.
 """
 
-from pathlib import Path
-import sqlite3
 import json
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
-from enum import Enum
 import logging
+import sqlite3
+from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class MessageType(Enum):
     """Types of messages in the queue."""
+
     SYSTEM = "system"  # ! - System operations, updates, monitoring
-    CODE = "code"      # ¢ - Code operations, linting, testing, debugging
+    CODE = "code"  # ¢ - Code operations, linting, testing, debugging
 
 
 class MessagePriority(Enum):
     """Message priority levels."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
@@ -48,7 +50,7 @@ class MessageQueue:
             db_path: Path to SQLite database file. If None, uses default location.
         """
         if db_path is None:
-            db_path = Path.home() / '.isaac' / 'message_queue.db'
+            db_path = Path.home() / ".isaac" / "message_queue.db"
 
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -58,7 +60,8 @@ class MessageQueue:
     def _init_db(self):
         """Create message queue table and indexes."""
         conn = sqlite3.connect(str(self.db_path))
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at TEXT NOT NULL,
@@ -70,24 +73,34 @@ class MessageQueue:
                 acknowledged_at TEXT,
                 status TEXT NOT NULL DEFAULT 'pending'
             )
-        """)
+        """
+        )
 
         # Create indexes for efficient queries
-        conn.execute("""
+        conn.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_messages_type_status
             ON messages(message_type, status)
-        """)
-        conn.execute("""
+        """
+        )
+        conn.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_messages_created
             ON messages(created_at)
-        """)
+        """
+        )
 
         conn.commit()
         conn.close()
 
-    def add_message(self, message_type: MessageType, title: str,
-                   content: str = "", priority: MessagePriority = MessagePriority.NORMAL,
-                   metadata: Optional[Dict[str, Any]] = None) -> int:
+    def add_message(
+        self,
+        message_type: MessageType,
+        title: str,
+        content: str = "",
+        priority: MessagePriority = MessagePriority.NORMAL,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> int:
         """
         Add a new message to the queue.
 
@@ -104,17 +117,20 @@ class MessageQueue:
         conn = sqlite3.connect(str(self.db_path))
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO messages (created_at, message_type, priority, title, content, metadata, status)
                 VALUES (?, ?, ?, ?, ?, ?, 'pending')
-            """, (
-                datetime.now().isoformat(),
-                message_type.value,
-                priority.value,
-                title,
-                content,
-                json.dumps(metadata) if metadata else None
-            ))
+            """,
+                (
+                    datetime.now().isoformat(),
+                    message_type.value,
+                    priority.value,
+                    title,
+                    content,
+                    json.dumps(metadata) if metadata else None,
+                ),
+            )
             message_id = cursor.lastrowid
             conn.commit()
             logger.info(f"Added {message_type.value} message: {title}")
@@ -132,14 +148,16 @@ class MessageQueue:
         conn = sqlite3.connect(str(self.db_path))
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT message_type, COUNT(*)
                 FROM messages
                 WHERE status = 'pending'
                 GROUP BY message_type
-            """)
+            """
+            )
 
-            counts = {'system': 0, 'code': 0}
+            counts = {"system": 0, "code": 0}
             for msg_type, count in cursor.fetchall():
                 counts[msg_type] = count
 
@@ -147,8 +165,9 @@ class MessageQueue:
         finally:
             conn.close()
 
-    def get_messages(self, message_type: Optional[MessageType] = None,
-                    status: str = 'pending', limit: int = 50) -> List[Dict[str, Any]]:
+    def get_messages(
+        self, message_type: Optional[MessageType] = None, status: str = "pending", limit: int = 50
+    ) -> List[Dict[str, Any]]:
         """
         Retrieve messages from the queue.
 
@@ -175,7 +194,7 @@ class MessageQueue:
                 conditions.append("message_type = ?")
                 params.append(message_type.value)
 
-            if status != 'all':
+            if status != "all":
                 conditions.append("status = ?")
                 params.append(status)
 
@@ -190,15 +209,15 @@ class MessageQueue:
             messages = []
             for row in cursor.fetchall():
                 msg = {
-                    'id': row[0],
-                    'created_at': row[1],
-                    'message_type': row[2],
-                    'priority': row[3],
-                    'title': row[4],
-                    'content': row[5],
-                    'metadata': json.loads(row[6]) if row[6] else None,
-                    'acknowledged_at': row[7],
-                    'status': row[8]
+                    "id": row[0],
+                    "created_at": row[1],
+                    "message_type": row[2],
+                    "priority": row[3],
+                    "title": row[4],
+                    "content": row[5],
+                    "metadata": json.loads(row[6]) if row[6] else None,
+                    "acknowledged_at": row[7],
+                    "status": row[8],
                 }
                 messages.append(msg)
 
@@ -219,11 +238,14 @@ class MessageQueue:
         conn = sqlite3.connect(str(self.db_path))
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE messages
                 SET status = 'acknowledged', acknowledged_at = ?
                 WHERE id = ? AND status = 'pending'
-            """, (datetime.now().isoformat(), message_id))
+            """,
+                (datetime.now().isoformat(), message_id),
+            )
 
             success = cursor.rowcount > 0
             conn.commit()
@@ -250,17 +272,23 @@ class MessageQueue:
             cursor = conn.cursor()
 
             if message_type:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE messages
                     SET status = 'acknowledged', acknowledged_at = ?
                     WHERE status = 'pending' AND message_type = ?
-                """, (datetime.now().isoformat(), message_type.value))
+                """,
+                    (datetime.now().isoformat(), message_type.value),
+                )
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE messages
                     SET status = 'acknowledged', acknowledged_at = ?
                     WHERE status = 'pending'
-                """, (datetime.now().isoformat(),))
+                """,
+                    (datetime.now().isoformat(),),
+                )
 
             count = cursor.rowcount
             conn.commit()
@@ -285,10 +313,13 @@ class MessageQueue:
         conn = sqlite3.connect(str(self.db_path))
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 DELETE FROM messages
                 WHERE status = 'acknowledged' AND acknowledged_at < ?
-            """, (cutoff_date.isoformat(),))
+            """,
+                (cutoff_date.isoformat(),),
+            )
 
             count = cursor.rowcount
             conn.commit()
@@ -313,12 +344,15 @@ class MessageQueue:
         conn = sqlite3.connect(str(self.db_path))
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, created_at, message_type, priority, title, content,
                        metadata, acknowledged_at, status
                 FROM messages
                 WHERE id = ?
-            """, (message_id,))
+            """,
+                (message_id,),
+            )
 
             row = cursor.fetchone()
             if not row:
@@ -328,15 +362,15 @@ class MessageQueue:
             metadata = json.loads(row[6]) if row[6] else {}
 
             return {
-                'id': row[0],
-                'created_at': row[1],
-                'message_type': row[2],
-                'priority': row[3],
-                'title': row[4],
-                'content': row[5],
-                'metadata': metadata,
-                'acknowledged_at': row[7],
-                'status': row[8]
+                "id": row[0],
+                "created_at": row[1],
+                "message_type": row[2],
+                "priority": row[3],
+                "title": row[4],
+                "content": row[5],
+                "metadata": metadata,
+                "acknowledged_at": row[7],
+                "status": row[8],
             }
         finally:
             conn.close()
@@ -365,8 +399,9 @@ class MessageQueue:
         finally:
             conn.close()
 
-    def clear_messages(self, message_type: Optional[MessageType] = None,
-                      status: Optional[str] = None) -> int:
+    def clear_messages(
+        self, message_type: Optional[MessageType] = None, status: Optional[str] = None
+    ) -> int:
         """
         Clear (delete) multiple messages by type and/or status.
 
@@ -412,7 +447,7 @@ class MessageQueue:
             String like '[7$]>' for 7 messages or '$>' if no messages
         """
         counts = self.get_pending_counts()
-        total_count = counts['system'] + counts['code']
+        total_count = counts["system"] + counts["code"]
 
         if total_count == 0:
             return "$>"

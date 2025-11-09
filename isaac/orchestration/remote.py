@@ -3,20 +3,22 @@
 Remote Execution System for Multi-Machine Orchestration
 """
 
-import time
-import threading
 import subprocess
-import requests
-from typing import Dict, List, Optional
+import threading
+import time
 from dataclasses import dataclass
+from typing import Dict, List, Optional
 
-from isaac.orchestration.registry import MachineRegistry, Machine
+import requests
+
 from isaac.orchestration.load_balancer import LoadBalancer, LoadBalancingStrategy
+from isaac.orchestration.registry import Machine, MachineRegistry
 
 
 @dataclass
 class RemoteCommand:
     """Represents a command to be executed on a remote machine"""
+
     command_id: str
     target_machine: str
     command: str
@@ -29,6 +31,7 @@ class RemoteCommand:
 @dataclass
 class RemoteResult:
     """Result of a remote command execution"""
+
     command_id: str
     success: bool
     output: str
@@ -49,10 +52,14 @@ class RemoteExecutor:
         self.load_balancer = LoadBalancer(registry)
         self._lock = threading.Lock()
 
-    def execute_on_machine(self, machine_id: str, command: str,
-                          working_directory: Optional[str] = None,
-                          environment: Optional[Dict[str, str]] = None,
-                          timeout: int = 30) -> RemoteResult:
+    def execute_on_machine(
+        self,
+        machine_id: str,
+        command: str,
+        working_directory: Optional[str] = None,
+        environment: Optional[Dict[str, str]] = None,
+        timeout: int = 30,
+    ) -> RemoteResult:
         """Execute a command on a specific machine"""
 
         machine = self.registry.get_machine(machine_id)
@@ -64,7 +71,7 @@ class RemoteExecutor:
                 exit_code=1,
                 execution_time=0.0,
                 error_message=f"Machine '{machine_id}' not found",
-                machine_id=machine_id
+                machine_id=machine_id,
             )
 
         if not machine.status.is_online:
@@ -75,11 +82,12 @@ class RemoteExecutor:
                 exit_code=1,
                 execution_time=0.0,
                 error_message=f"Machine '{machine.hostname}' is offline",
-                machine_id=machine_id
+                machine_id=machine_id,
             )
 
         # Create remote command
         import uuid
+
         command_id = str(uuid.uuid4())[:8]
 
         remote_cmd = RemoteCommand(
@@ -88,7 +96,7 @@ class RemoteExecutor:
             command=command,
             working_directory=working_directory,
             environment=environment,
-            timeout=timeout
+            timeout=timeout,
         )
 
         # Store active command
@@ -114,7 +122,7 @@ class RemoteExecutor:
                 exit_code=1,
                 execution_time=0.0,
                 error_message=f"Remote execution failed: {str(e)}",
-                machine_id=machine_id
+                machine_id=machine_id,
             )
 
             with self._lock:
@@ -124,29 +132,36 @@ class RemoteExecutor:
 
             return error_result
 
-    def execute_on_group(self, group_name: str, command: str,
-                        working_directory: Optional[str] = None,
-                        environment: Optional[Dict[str, str]] = None,
-                        timeout: int = 30,
-                        parallel: bool = True) -> List[RemoteResult]:
+    def execute_on_group(
+        self,
+        group_name: str,
+        command: str,
+        working_directory: Optional[str] = None,
+        environment: Optional[Dict[str, str]] = None,
+        timeout: int = 30,
+        parallel: bool = True,
+    ) -> List[RemoteResult]:
         """Execute a command on all machines in a group"""
 
         machines = self.registry.get_group_machines(group_name)
         if not machines:
-            return [RemoteResult(
-                command_id="",
-                success=False,
-                output="",
-                exit_code=1,
-                execution_time=0.0,
-                error_message=f"Group '{group_name}' not found or empty"
-            )]
+            return [
+                RemoteResult(
+                    command_id="",
+                    success=False,
+                    output="",
+                    exit_code=1,
+                    execution_time=0.0,
+                    error_message=f"Group '{group_name}' not found or empty",
+                )
+            ]
 
         results = []
 
         if parallel:
             # Execute in parallel
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(machines)) as executor:
                 futures = []
                 for machine in machines:
@@ -156,7 +171,7 @@ class RemoteExecutor:
                         command,
                         working_directory,
                         environment,
-                        timeout
+                        timeout,
                     )
                     futures.append(future)
 
@@ -165,39 +180,45 @@ class RemoteExecutor:
                         result = future.result()
                         results.append(result)
                     except Exception as e:
-                        results.append(RemoteResult(
-                            command_id="",
-                            success=False,
-                            output="",
-                            exit_code=1,
-                            execution_time=0.0,
-                            error_message=f"Execution failed: {str(e)}"
-                        ))
+                        results.append(
+                            RemoteResult(
+                                command_id="",
+                                success=False,
+                                output="",
+                                exit_code=1,
+                                execution_time=0.0,
+                                error_message=f"Execution failed: {str(e)}",
+                            )
+                        )
         else:
             # Execute sequentially
             for machine in machines:
                 result = self.execute_on_machine(
-                    machine.machine_id,
-                    command,
-                    working_directory,
-                    environment,
-                    timeout
+                    machine.machine_id, command, working_directory, environment, timeout
                 )
                 results.append(result)
 
         return results
 
-    def find_best_machine(self, command: str, required_tags: Optional[List[str]] = None,
-                         min_cpu: int = 0, min_memory: float = 0.0) -> Optional[Machine]:
+    def find_best_machine(
+        self,
+        command: str,
+        required_tags: Optional[List[str]] = None,
+        min_cpu: int = 0,
+        min_memory: float = 0.0,
+    ) -> Optional[Machine]:
         """Find the best machine for executing a command"""
         return self.registry.find_best_machine(required_tags, min_cpu, min_memory)
 
-    def select_optimal_machine(self, strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
-                              group_name: Optional[str] = None,
-                              required_tags: Optional[List[str]] = None,
-                              min_cpu_cores: int = 0,
-                              min_memory_gb: float = 0.0,
-                              command_complexity: str = "normal") -> Optional[Machine]:
+    def select_optimal_machine(
+        self,
+        strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
+        group_name: Optional[str] = None,
+        required_tags: Optional[List[str]] = None,
+        min_cpu_cores: int = 0,
+        min_memory_gb: float = 0.0,
+        command_complexity: str = "normal",
+    ) -> Optional[Machine]:
         """
         Select the optimal machine using intelligent load balancing
 
@@ -218,17 +239,20 @@ class RemoteExecutor:
             required_tags=required_tags,
             min_cpu_cores=min_cpu_cores,
             min_memory_gb=min_memory_gb,
-            command_complexity=command_complexity
+            command_complexity=command_complexity,
         )
 
-    def execute_with_load_balancing(self, command: str,
-                                   strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
-                                   group_name: Optional[str] = None,
-                                   required_tags: Optional[List[str]] = None,
-                                   command_complexity: str = "normal",
-                                   working_directory: Optional[str] = None,
-                                   environment: Optional[Dict[str, str]] = None,
-                                   timeout: int = 30) -> RemoteResult:
+    def execute_with_load_balancing(
+        self,
+        command: str,
+        strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOAD,
+        group_name: Optional[str] = None,
+        required_tags: Optional[List[str]] = None,
+        command_complexity: str = "normal",
+        working_directory: Optional[str] = None,
+        environment: Optional[Dict[str, str]] = None,
+        timeout: int = 30,
+    ) -> RemoteResult:
         """
         Execute a command on the optimal machine selected by load balancing
 
@@ -251,7 +275,7 @@ class RemoteExecutor:
             strategy=strategy,
             group_name=group_name,
             required_tags=required_tags,
-            command_complexity=command_complexity
+            command_complexity=command_complexity,
         )
 
         if not machine:
@@ -261,16 +285,12 @@ class RemoteExecutor:
                 output="",
                 exit_code=1,
                 execution_time=0.0,
-                error_message="No suitable machine found for load balancing"
+                error_message="No suitable machine found for load balancing",
             )
 
         # Execute on selected machine
         result = self.execute_on_machine(
-            machine.machine_id,
-            command,
-            working_directory,
-            environment,
-            timeout
+            machine.machine_id, command, working_directory, environment, timeout
         )
 
         # Record execution time for performance tracking
@@ -289,7 +309,7 @@ class RemoteExecutor:
             payload = {
                 "command": remote_cmd.command,
                 "command_id": remote_cmd.command_id,
-                "timeout": remote_cmd.timeout
+                "timeout": remote_cmd.timeout,
             }
 
             if remote_cmd.working_directory:
@@ -306,7 +326,7 @@ class RemoteExecutor:
                 url,
                 json=payload,
                 headers=headers,
-                timeout=remote_cmd.timeout + 5  # Add buffer for network
+                timeout=remote_cmd.timeout + 5,  # Add buffer for network
             )
 
             execution_time = time.time() - start_time
@@ -319,7 +339,7 @@ class RemoteExecutor:
                     output=data.get("output", ""),
                     exit_code=data.get("exit_code", 0),
                     execution_time=execution_time,
-                    machine_id=machine.machine_id
+                    machine_id=machine.machine_id,
                 )
             else:
                 return RemoteResult(
@@ -329,7 +349,7 @@ class RemoteExecutor:
                     exit_code=1,
                     execution_time=execution_time,
                     error_message=f"HTTP {response.status_code}: {response.text}",
-                    machine_id=machine.machine_id
+                    machine_id=machine.machine_id,
                 )
 
         except requests.exceptions.RequestException as e:
@@ -341,7 +361,7 @@ class RemoteExecutor:
                 exit_code=1,
                 execution_time=execution_time,
                 error_message=f"Network error: {str(e)}",
-                machine_id=machine.machine_id
+                machine_id=machine.machine_id,
             )
 
     def get_active_commands(self) -> List[RemoteCommand]:
@@ -376,7 +396,7 @@ class RemoteCommandServer:
     def start(self):
         """Start the remote command server"""
         try:
-            from flask import Flask, request, jsonify
+            from flask import Flask, jsonify, request
         except ImportError:
             print("❌ Flask not installed. Remote command server requires: pip install flask")
             return
@@ -413,15 +433,17 @@ class RemoteCommandServer:
                     text=True,
                     timeout=timeout,
                     cwd=cwd,
-                    env=env
+                    env=env,
                 )
 
-                return jsonify({
-                    "success": result.returncode == 0,
-                    "output": result.stdout + result.stderr,
-                    "exit_code": result.returncode,
-                    "command_id": command_id
-                })
+                return jsonify(
+                    {
+                        "success": result.returncode == 0,
+                        "output": result.stdout + result.stderr,
+                        "exit_code": result.returncode,
+                        "command_id": command_id,
+                    }
+                )
 
             except subprocess.TimeoutExpired:
                 return jsonify({"success": False, "error": "Command timed out"}), 408
@@ -432,23 +454,27 @@ class RemoteCommandServer:
         def get_status():
             """Get machine status"""
             # Get local machine info
-            import psutil
             import platform
 
-            return jsonify({
-                "hostname": platform.node(),
-                "os": platform.system(),
-                "cpu_percent": psutil.cpu_percent(),
-                "memory_percent": psutil.virtual_memory().percent,
-                "disk_usage": psutil.disk_usage('/').percent,
-                "timestamp": time.time()
-            })
+            import psutil
+
+            return jsonify(
+                {
+                    "hostname": platform.node(),
+                    "os": platform.system(),
+                    "cpu_percent": psutil.cpu_percent(),
+                    "memory_percent": psutil.virtual_memory().percent,
+                    "disk_usage": psutil.disk_usage("/").percent,
+                    "timestamp": time.time(),
+                }
+            )
 
         # Start server in background thread
         def run_server():
             app.run(host=self.host, port=self.port, debug=False, use_reloader=False)
 
         import threading
+
         server_thread = threading.Thread(target=run_server, daemon=True)
         server_thread.start()
 

@@ -3,21 +3,22 @@ Real-time Code Review Mode - Phase 4.2
 Isaac provides real-time code review as you write code.
 """
 
-import sqlite3
-import re
 import ast
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from pathlib import Path
-from enum import Enum
+import re
+import sqlite3
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 
 
 class ReviewSeverity(Enum):
     """Review suggestion severity."""
+
     INFO = "info"
     SUGGESTION = "suggestion"
     WARNING = "warning"
@@ -26,6 +27,7 @@ class ReviewSeverity(Enum):
 
 class ReviewCategory(Enum):
     """Review suggestion category."""
+
     STYLE = "style"
     PERFORMANCE = "performance"
     SECURITY = "security"
@@ -37,6 +39,7 @@ class ReviewCategory(Enum):
 @dataclass
 class ReviewSuggestion:
     """A code review suggestion."""
+
     id: str
     file_path: str
     line_number: int
@@ -60,11 +63,11 @@ class CodeReviewer:
             session_manager: Session manager instance
         """
         self.session_manager = session_manager
-        self.data_dir = Path.home() / '.isaac' / 'pairing'
+        self.data_dir = Path.home() / ".isaac" / "pairing"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Database for review history
-        self.db_path = self.data_dir / 'reviews.db'
+        self.db_path = self.data_dir / "reviews.db"
         self._init_database()
 
         # Known anti-patterns and their fixes
@@ -73,7 +76,8 @@ class CodeReviewer:
     def _init_database(self):
         """Initialize SQLite database for review storage."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS review_suggestions (
                     id TEXT PRIMARY KEY,
                     file_path TEXT,
@@ -87,9 +91,10 @@ class CodeReviewer:
                     resolved BOOLEAN,
                     resolution TEXT
                 )
-            ''')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_file ON review_suggestions(file_path)')
-            conn.execute('CREATE INDEX IF NOT EXISTS idx_resolved ON review_suggestions(resolved)')
+            """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_file ON review_suggestions(file_path)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_resolved ON review_suggestions(resolved)")
 
     def _load_review_rules(self):
         """Load code review rules."""
@@ -97,54 +102,51 @@ class CodeReviewer:
         # In a real implementation, this would be more sophisticated
         self.python_rules = [
             {
-                'pattern': r'except\s*:',
-                'category': ReviewCategory.BEST_PRACTICE,
-                'severity': ReviewSeverity.WARNING,
-                'message': 'Bare except clause catches all exceptions',
-                'suggestion': 'Specify the exception type: except Exception:'
+                "pattern": r"except\s*:",
+                "category": ReviewCategory.BEST_PRACTICE,
+                "severity": ReviewSeverity.WARNING,
+                "message": "Bare except clause catches all exceptions",
+                "suggestion": "Specify the exception type: except Exception:",
             },
             {
-                'pattern': r'eval\s*\(',
-                'category': ReviewCategory.SECURITY,
-                'severity': ReviewSeverity.ERROR,
-                'message': 'Using eval() is a security risk',
-                'suggestion': 'Avoid eval(); use safer alternatives like ast.literal_eval() for data'
+                "pattern": r"eval\s*\(",
+                "category": ReviewCategory.SECURITY,
+                "severity": ReviewSeverity.ERROR,
+                "message": "Using eval() is a security risk",
+                "suggestion": "Avoid eval(); use safer alternatives like ast.literal_eval() for data",
             },
             {
-                'pattern': r'exec\s*\(',
-                'category': ReviewCategory.SECURITY,
-                'severity': ReviewSeverity.ERROR,
-                'message': 'Using exec() is a security risk',
-                'suggestion': 'Avoid exec(); refactor to use safer alternatives'
+                "pattern": r"exec\s*\(",
+                "category": ReviewCategory.SECURITY,
+                "severity": ReviewSeverity.ERROR,
+                "message": "Using exec() is a security risk",
+                "suggestion": "Avoid exec(); refactor to use safer alternatives",
             },
             {
-                'pattern': r'TODO:',
-                'category': ReviewCategory.MAINTAINABILITY,
-                'severity': ReviewSeverity.INFO,
-                'message': 'TODO comment found',
-                'suggestion': 'Consider creating a task or issue to track this TODO'
+                "pattern": r"TODO:",
+                "category": ReviewCategory.MAINTAINABILITY,
+                "severity": ReviewSeverity.INFO,
+                "message": "TODO comment found",
+                "suggestion": "Consider creating a task or issue to track this TODO",
             },
             {
-                'pattern': r'FIXME:',
-                'category': ReviewCategory.MAINTAINABILITY,
-                'severity': ReviewSeverity.WARNING,
-                'message': 'FIXME comment found',
-                'suggestion': 'This code needs to be fixed'
+                "pattern": r"FIXME:",
+                "category": ReviewCategory.MAINTAINABILITY,
+                "severity": ReviewSeverity.WARNING,
+                "message": "FIXME comment found",
+                "suggestion": "This code needs to be fixed",
             },
             {
-                'pattern': r'import\s+\*',
-                'category': ReviewCategory.BEST_PRACTICE,
-                'severity': ReviewSeverity.SUGGESTION,
-                'message': 'Wildcard imports make code harder to read',
-                'suggestion': 'Import specific names instead of using import *'
+                "pattern": r"import\s+\*",
+                "category": ReviewCategory.BEST_PRACTICE,
+                "severity": ReviewSeverity.SUGGESTION,
+                "message": "Wildcard imports make code harder to read",
+                "suggestion": "Import specific names instead of using import *",
             },
         ]
 
     def review_code(
-        self,
-        file_path: str,
-        content: Optional[str] = None,
-        language: str = 'python'
+        self, file_path: str, content: Optional[str] = None, language: str = "python"
     ) -> List[ReviewSuggestion]:
         """Review code and generate suggestions.
 
@@ -158,14 +160,14 @@ class CodeReviewer:
         """
         if content is None:
             try:
-                with open(file_path, 'r') as f:
+                with open(file_path, "r") as f:
                     content = f.read()
             except Exception:
                 return []
 
         suggestions = []
 
-        if language == 'python':
+        if language == "python":
             suggestions.extend(self._review_python_code(file_path, content))
 
         # Save suggestions
@@ -185,22 +187,22 @@ class CodeReviewer:
             List of suggestions
         """
         suggestions = []
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         # Pattern-based reviews
         for i, line in enumerate(lines, 1):
             for rule in self.python_rules:
-                if re.search(rule['pattern'], line):
+                if re.search(rule["pattern"], line):
                     suggestion = ReviewSuggestion(
                         id=str(uuid.uuid4()),
                         file_path=file_path,
                         line_number=i,
-                        severity=rule['severity'].value,
-                        category=rule['category'].value,
-                        message=rule['message'],
-                        suggestion=rule['suggestion'],
+                        severity=rule["severity"].value,
+                        category=rule["category"].value,
+                        message=rule["message"],
+                        suggestion=rule["suggestion"],
                         code_snippet=line.strip(),
-                        created_at=datetime.now().timestamp()
+                        created_at=datetime.now().timestamp(),
                     )
                     suggestions.append(suggestion)
 
@@ -215,10 +217,7 @@ class CodeReviewer:
         return suggestions
 
     def _review_python_ast(
-        self,
-        file_path: str,
-        tree: ast.AST,
-        lines: List[str]
+        self, file_path: str, tree: ast.AST, lines: List[str]
     ) -> List[ReviewSuggestion]:
         """Review Python code using AST analysis.
 
@@ -244,9 +243,9 @@ class CodeReviewer:
                         severity=ReviewSeverity.SUGGESTION.value,
                         category=ReviewCategory.MAINTAINABILITY.value,
                         message=f'Function "{node.name}" is {func_length} lines long',
-                        suggestion='Consider breaking this function into smaller, more focused functions',
-                        code_snippet=f'def {node.name}(...):',
-                        created_at=datetime.now().timestamp()
+                        suggestion="Consider breaking this function into smaller, more focused functions",
+                        code_snippet=f"def {node.name}(...):",
+                        created_at=datetime.now().timestamp(),
                     )
                     suggestions.append(suggestion)
 
@@ -260,10 +259,12 @@ class CodeReviewer:
                         line_number=node.lineno,
                         severity=ReviewSeverity.SUGGESTION.value,
                         category=ReviewCategory.MAINTAINABILITY.value,
-                        message='Complex conditional statement',
-                        suggestion='Consider extracting condition into a well-named variable or function',
-                        code_snippet=lines[node.lineno - 1].strip() if node.lineno <= len(lines) else '',
-                        created_at=datetime.now().timestamp()
+                        message="Complex conditional statement",
+                        suggestion="Consider extracting condition into a well-named variable or function",
+                        code_snippet=(
+                            lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+                        ),
+                        created_at=datetime.now().timestamp(),
                     )
                     suggestions.append(suggestion)
 
@@ -278,9 +279,9 @@ class CodeReviewer:
                             severity=ReviewSeverity.WARNING.value,
                             category=ReviewCategory.CORRECTNESS.value,
                             message=f'Function "{node.name}" has mutable default argument',
-                            suggestion='Use None as default and create the mutable object inside the function',
-                            code_snippet=f'def {node.name}(...):',
-                            created_at=datetime.now().timestamp()
+                            suggestion="Use None as default and create the mutable object inside the function",
+                            code_snippet=f"def {node.name}(...):",
+                            created_at=datetime.now().timestamp(),
                         )
                         suggestions.append(suggestion)
 
@@ -295,7 +296,7 @@ class CodeReviewer:
         Returns:
             Number of lines
         """
-        if hasattr(node, 'end_lineno') and node.end_lineno:
+        if hasattr(node, "end_lineno") and node.end_lineno:
             return node.end_lineno - node.lineno + 1
         return 0
 
@@ -318,10 +319,7 @@ class CodeReviewer:
             return 0
 
     def review_diff(
-        self,
-        file_path: str,
-        old_content: str,
-        new_content: str
+        self, file_path: str, old_content: str, new_content: str
     ) -> List[ReviewSuggestion]:
         """Review only the changed lines in a diff.
 
@@ -334,8 +332,8 @@ class CodeReviewer:
             List of suggestions for changed lines
         """
         # Simple line-by-line diff
-        old_lines = old_content.split('\n')
-        new_lines = new_content.split('\n')
+        old_lines = old_content.split("\n")
+        new_lines = new_content.split("\n")
 
         suggestions = []
 
@@ -344,26 +342,23 @@ class CodeReviewer:
             if i > len(old_lines) or old_lines[i - 1] != new_line:
                 # This line was added or modified
                 for rule in self.python_rules:
-                    if re.search(rule['pattern'], new_line):
+                    if re.search(rule["pattern"], new_line):
                         suggestion = ReviewSuggestion(
                             id=str(uuid.uuid4()),
                             file_path=file_path,
                             line_number=i,
-                            severity=rule['severity'].value,
-                            category=rule['category'].value,
-                            message=rule['message'],
-                            suggestion=rule['suggestion'],
+                            severity=rule["severity"].value,
+                            category=rule["category"].value,
+                            message=rule["message"],
+                            suggestion=rule["suggestion"],
                             code_snippet=new_line.strip(),
-                            created_at=datetime.now().timestamp()
+                            created_at=datetime.now().timestamp(),
                         )
                         suggestions.append(suggestion)
 
         return suggestions
 
-    def get_unresolved_suggestions(
-        self,
-        file_path: Optional[str] = None
-    ) -> List[ReviewSuggestion]:
+    def get_unresolved_suggestions(self, file_path: Optional[str] = None) -> List[ReviewSuggestion]:
         """Get unresolved review suggestions.
 
         Args:
@@ -375,21 +370,26 @@ class CodeReviewer:
         suggestions = []
         with sqlite3.connect(self.db_path) as conn:
             if file_path:
-                cursor = conn.execute('''
+                cursor = conn.execute(
+                    """
                     SELECT id, file_path, line_number, severity, category, message,
                            suggestion, code_snippet, created_at, resolved, resolution
                     FROM review_suggestions
                     WHERE resolved = 0 AND file_path = ?
                     ORDER BY severity DESC, line_number ASC
-                ''', (file_path,))
+                """,
+                    (file_path,),
+                )
             else:
-                cursor = conn.execute('''
+                cursor = conn.execute(
+                    """
                     SELECT id, file_path, line_number, severity, category, message,
                            suggestion, code_snippet, created_at, resolved, resolution
                     FROM review_suggestions
                     WHERE resolved = 0
                     ORDER BY severity DESC, created_at DESC
-                ''')
+                """
+                )
 
             for row in cursor:
                 suggestion = ReviewSuggestion(
@@ -403,17 +403,13 @@ class CodeReviewer:
                     code_snippet=row[7],
                     created_at=row[8],
                     resolved=bool(row[9]),
-                    resolution=row[10]
+                    resolution=row[10],
                 )
                 suggestions.append(suggestion)
 
         return suggestions
 
-    def resolve_suggestion(
-        self,
-        suggestion_id: str,
-        resolution: str = "fixed"
-    ) -> bool:
+    def resolve_suggestion(self, suggestion_id: str, resolution: str = "fixed") -> bool:
         """Mark a suggestion as resolved.
 
         Args:
@@ -424,11 +420,14 @@ class CodeReviewer:
             True if successful
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 UPDATE review_suggestions
                 SET resolved = 1, resolution = ?
                 WHERE id = ?
-            ''', (resolution, suggestion_id))
+            """,
+                (resolution, suggestion_id),
+            )
 
         return True
 
@@ -439,24 +438,27 @@ class CodeReviewer:
             suggestion: Suggestion to save
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO review_suggestions
                 (id, file_path, line_number, severity, category, message,
                  suggestion, code_snippet, created_at, resolved, resolution)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                suggestion.id,
-                suggestion.file_path,
-                suggestion.line_number,
-                suggestion.severity,
-                suggestion.category,
-                suggestion.message,
-                suggestion.suggestion,
-                suggestion.code_snippet,
-                suggestion.created_at,
-                suggestion.resolved,
-                suggestion.resolution
-            ))
+            """,
+                (
+                    suggestion.id,
+                    suggestion.file_path,
+                    suggestion.line_number,
+                    suggestion.severity,
+                    suggestion.category,
+                    suggestion.message,
+                    suggestion.suggestion,
+                    suggestion.code_snippet,
+                    suggestion.created_at,
+                    suggestion.resolved,
+                    suggestion.resolution,
+                ),
+            )
 
     def get_review_statistics(self, days: int = 30) -> Dict[str, Any]:
         """Get review statistics.
@@ -471,41 +473,55 @@ class CodeReviewer:
 
         with sqlite3.connect(self.db_path) as conn:
             # Total suggestions
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM review_suggestions
                 WHERE created_at >= ?
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             total_suggestions = cursor.fetchone()[0]
 
             # Resolved suggestions
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT COUNT(*) FROM review_suggestions
                 WHERE created_at >= ? AND resolved = 1
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             resolved_suggestions = cursor.fetchone()[0]
 
             # By severity
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT severity, COUNT(*) FROM review_suggestions
                 WHERE created_at >= ?
                 GROUP BY severity
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             by_severity = dict(cursor.fetchall())
 
             # By category
-            cursor = conn.execute('''
+            cursor = conn.execute(
+                """
                 SELECT category, COUNT(*) FROM review_suggestions
                 WHERE created_at >= ?
                 GROUP BY category
-            ''', (cutoff_time,))
+            """,
+                (cutoff_time,),
+            )
             by_category = dict(cursor.fetchall())
 
         return {
-            'total_suggestions': total_suggestions,
-            'resolved_suggestions': resolved_suggestions,
-            'unresolved_suggestions': total_suggestions - resolved_suggestions,
-            'resolution_rate': resolved_suggestions / total_suggestions if total_suggestions > 0 else 0,
-            'by_severity': by_severity,
-            'by_category': by_category,
-            'period_days': days
+            "total_suggestions": total_suggestions,
+            "resolved_suggestions": resolved_suggestions,
+            "unresolved_suggestions": total_suggestions - resolved_suggestions,
+            "resolution_rate": (
+                resolved_suggestions / total_suggestions if total_suggestions > 0 else 0
+            ),
+            "by_severity": by_severity,
+            "by_category": by_category,
+            "period_days": days,
         }

@@ -6,8 +6,9 @@ Orchestrates memory storage, retrieval, and management.
 import time
 import uuid
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from .database import MemoryDatabase, MemoryEntry, ConversationContext
+from typing import Any, Dict, List, Optional, Tuple
+
+from .database import ConversationContext, MemoryDatabase, MemoryEntry
 
 
 class MemoryManager:
@@ -17,9 +18,10 @@ class MemoryManager:
         if db_path is None:
             # Default to user's Isaac directory
             from pathlib import Path
-            isaac_dir = Path.home() / '.isaac'
+
+            isaac_dir = Path.home() / ".isaac"
             isaac_dir.mkdir(exist_ok=True)
-            db_path = isaac_dir / 'memory.db'
+            db_path = isaac_dir / "memory.db"
 
         self.db = MemoryDatabase(db_path)
         self.current_session_id = str(uuid.uuid4())
@@ -35,13 +37,15 @@ class MemoryManager:
         self.current_session_id = session_id
 
     # Context Window Management
-    def create_context(self, title: str = "", metadata: Optional[Dict[str, Any]] = None) -> ConversationContext:
+    def create_context(
+        self, title: str = "", metadata: Optional[Dict[str, Any]] = None
+    ) -> ConversationContext:
         """Create a new conversation context"""
         context = ConversationContext(
             session_id=self.current_session_id,
             context_id=str(uuid.uuid4()),
             title=title or f"Context {int(time.time())}",
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
         self.active_context = context
         return context
@@ -72,9 +76,14 @@ class MemoryManager:
         return self.db.get_contexts(session_id=self.current_session_id, limit=limit)
 
     # Memory Storage
-    def store_memory(self, memory_type: str, content: Dict[str, Any],
-                    metadata: Optional[Dict[str, Any]] = None,
-                    importance: float = 1.0, tags: Optional[List[str]] = None) -> Optional[int]:
+    def store_memory(
+        self,
+        memory_type: str,
+        content: Dict[str, Any],
+        metadata: Optional[Dict[str, Any]] = None,
+        importance: float = 1.0,
+        tags: Optional[List[str]] = None,
+    ) -> Optional[int]:
         """Store a memory entry"""
         entry = MemoryEntry(
             session_id=self.current_session_id,
@@ -83,47 +92,45 @@ class MemoryManager:
             content=content,
             metadata=metadata or {},
             importance=importance,
-            tags=tags or []
+            tags=tags or [],
         )
         return self.db.store_memory(entry)
 
-    def store_conversation_memory(self, user_input: str, ai_response: str,
-                                 metadata: Optional[Dict[str, Any]] = None):
+    def store_conversation_memory(
+        self, user_input: str, ai_response: str, metadata: Optional[Dict[str, Any]] = None
+    ):
         """Store a conversation exchange"""
         content = {
             "user_input": user_input,
             "ai_response": ai_response,
-            "context_id": self.active_context.context_id if self.active_context else None
+            "context_id": self.active_context.context_id if self.active_context else None,
         }
         self.store_memory("conversation", content, metadata, importance=0.8)
 
-    def store_command_memory(self, command: str, result: str, success: bool = True,
-                           metadata: Optional[Dict[str, Any]] = None):
+    def store_command_memory(
+        self,
+        command: str,
+        result: str,
+        success: bool = True,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
         """Store a command execution"""
-        content = {
-            "command": command,
-            "result": result,
-            "success": success
-        }
+        content = {"command": command, "result": result, "success": success}
         importance = 0.9 if success else 0.7
         self.store_memory("command", content, metadata, importance=importance)
 
-    def store_fact_memory(self, fact: str, source: str = "user",
-                         metadata: Optional[Dict[str, Any]] = None):
+    def store_fact_memory(
+        self, fact: str, source: str = "user", metadata: Optional[Dict[str, Any]] = None
+    ):
         """Store a factual memory"""
-        content = {
-            "fact": fact,
-            "source": source
-        }
+        content = {"fact": fact, "source": source}
         self.store_memory("fact", content, metadata, importance=0.95, tags=["fact"])
 
     # Memory Retrieval
     def get_memories(self, memory_type: Optional[str] = None, limit: int = 50) -> List[MemoryEntry]:
         """Get memories for current session"""
         return self.db.get_memories(
-            session_id=self.current_session_id,
-            memory_type=memory_type,
-            limit=limit
+            session_id=self.current_session_id, memory_type=memory_type, limit=limit
         )
 
     def search_memories(self, query: str, limit: int = 20) -> List[MemoryEntry]:
@@ -149,7 +156,11 @@ class MemoryManager:
         relevant = self.search_memories(current_input, limit=limit)
 
         # Also get recent context if available
-        if self.active_context and self.active_context.messages and len(self.active_context.messages) > 0:
+        if (
+            self.active_context
+            and self.active_context.messages
+            and len(self.active_context.messages) > 0
+        ):
             recent_messages = self.active_context.get_recent_messages(10)
             # Add recent context as pseudo-memories
             for msg in recent_messages[-3:]:  # Last 3 messages
@@ -158,7 +169,7 @@ class MemoryManager:
                     timestamp=msg["timestamp"],
                     memory_type="recent_context",
                     content={"message": msg},
-                    importance=0.6
+                    importance=0.6,
                 )
                 relevant.append(pseudo_memory)
 
@@ -178,18 +189,23 @@ class MemoryManager:
     def export_memories(self, file_path: Path, session_id: Optional[str] = None) -> bool:
         """Export memories to JSON file"""
         try:
-            memories = self.db.get_memories(session_id=session_id or self.current_session_id, limit=10000)
-            contexts = self.db.get_contexts(session_id=session_id or self.current_session_id, limit=1000)
+            memories = self.db.get_memories(
+                session_id=session_id or self.current_session_id, limit=10000
+            )
+            contexts = self.db.get_contexts(
+                session_id=session_id or self.current_session_id, limit=1000
+            )
 
             export_data = {
                 "exported_at": time.time(),
                 "session_id": session_id or self.current_session_id,
                 "memories": [m.to_dict() for m in memories],
-                "contexts": [c.to_dict() for c in contexts]
+                "contexts": [c.to_dict() for c in contexts],
             }
 
             import json
-            with open(file_path, 'w', encoding='utf-8') as f:
+
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(export_data, f, indent=2, ensure_ascii=False)
 
             return True
@@ -200,7 +216,8 @@ class MemoryManager:
         """Import memories from JSON file"""
         try:
             import json
-            with open(file_path, 'r', encoding='utf-8') as f:
+
+            with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             memories_imported = 0
@@ -257,5 +274,5 @@ class MemoryManager:
             "memory_types": memory_types,
             "total_contexts": len(contexts),
             "oldest_memory": min((m.timestamp for m in memories), default=0),
-            "newest_memory": max((m.timestamp for m in memories), default=0)
+            "newest_memory": max((m.timestamp for m in memories), default=0),
         }

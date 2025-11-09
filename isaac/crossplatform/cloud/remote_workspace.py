@@ -3,9 +3,9 @@ Remote Workspace - Manage cloud-based development environments
 """
 
 import asyncio
-from typing import Dict, Any, Optional, List
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 class RemoteWorkspace:
@@ -19,10 +19,7 @@ class RemoteWorkspace:
         self.workspaces = {}
 
     async def create_workspace(
-        self,
-        name: str,
-        template: Optional[str] = None,
-        resources: Optional[Dict[str, Any]] = None
+        self, name: str, template: Optional[str] = None, resources: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Create a new remote workspace
@@ -38,14 +35,14 @@ class RemoteWorkspace:
         workspace_id = str(uuid.uuid4())
 
         workspace = {
-            'id': workspace_id,
-            'name': name,
-            'template': template,
-            'resources': resources or {'cpu': '1', 'memory': '2GB'},
-            'status': 'creating',
-            'created_at': datetime.utcnow().isoformat(),
-            'endpoint': f'https://{workspace_id}.isaac.cloud',
-            'files': []
+            "id": workspace_id,
+            "name": name,
+            "template": template,
+            "resources": resources or {"cpu": "1", "memory": "2GB"},
+            "status": "creating",
+            "created_at": datetime.utcnow().isoformat(),
+            "endpoint": f"https://{workspace_id}.isaac.cloud",
+            "files": [],
         }
 
         self.workspaces[workspace_id] = workspace
@@ -53,7 +50,7 @@ class RemoteWorkspace:
         # Initialize workspace in cloud
         await self._initialize_cloud_workspace(workspace_id, template)
 
-        workspace['status'] = 'running'
+        workspace["status"] = "running"
 
         return workspace_id
 
@@ -80,21 +77,18 @@ class RemoteWorkspace:
             raise ValueError(f"Workspace {workspace_id} not found")
 
         return {
-            'workspace_id': workspace_id,
-            'endpoint': workspace['endpoint'],
-            'status': workspace['status'],
-            'connection_info': {
-                'protocol': 'wss',
-                'host': f'{workspace_id}.isaac.cloud',
-                'port': 443
-            }
+            "workspace_id": workspace_id,
+            "endpoint": workspace["endpoint"],
+            "status": workspace["status"],
+            "connection_info": {
+                "protocol": "wss",
+                "host": f"{workspace_id}.isaac.cloud",
+                "port": 443,
+            },
         }
 
     async def execute_in_workspace(
-        self,
-        workspace_id: str,
-        command: str,
-        stream: bool = True
+        self, workspace_id: str, command: str, stream: bool = True
     ) -> Dict[str, Any]:
         """
         Execute command in remote workspace
@@ -107,17 +101,10 @@ class RemoteWorkspace:
         Returns:
             Execution result
         """
-        return await self.executor.execute_command(
-            command,
-            workspace_id,
-            stream_output=stream
-        )
+        return await self.executor.execute_command(command, workspace_id, stream_output=stream)
 
     async def sync_files(
-        self,
-        workspace_id: str,
-        local_path: Optional[str] = None,
-        direction: str = 'bidirectional'
+        self, workspace_id: str, local_path: Optional[str] = None, direction: str = "bidirectional"
     ) -> Dict[str, Any]:
         """
         Sync files between local and remote workspace
@@ -137,11 +124,7 @@ class RemoteWorkspace:
         else:
             local_path = Path(local_path)
 
-        return await self.storage.sync_workspace(
-            workspace_id,
-            local_path,
-            direction
-        )
+        return await self.storage.sync_workspace(workspace_id, local_path, direction)
 
     async def read_file(self, workspace_id: str, file_path: str) -> Optional[str]:
         """
@@ -157,7 +140,7 @@ class RemoteWorkspace:
         content = await self.storage.download_file(workspace_id, file_path)
 
         if content:
-            return content.decode('utf-8')
+            return content.decode("utf-8")
 
         return None
 
@@ -170,13 +153,9 @@ class RemoteWorkspace:
             file_path: Path to file
             content: File content
         """
-        await self.storage.upload_file(
-            workspace_id,
-            file_path,
-            content.encode('utf-8')
-        )
+        await self.storage.upload_file(workspace_id, file_path, content.encode("utf-8"))
 
-    async def list_files(self, workspace_id: str, path: str = '') -> List[str]:
+    async def list_files(self, workspace_id: str, path: str = "") -> List[str]:
         """
         List files in remote workspace
 
@@ -223,8 +202,8 @@ class RemoteWorkspace:
         workspace = self.workspaces.get(workspace_id)
 
         if workspace:
-            workspace['status'] = 'paused'
-            workspace['paused_at'] = datetime.utcnow().isoformat()
+            workspace["status"] = "paused"
+            workspace["paused_at"] = datetime.utcnow().isoformat()
             return True
 
         return False
@@ -233,9 +212,9 @@ class RemoteWorkspace:
         """Resume a paused workspace"""
         workspace = self.workspaces.get(workspace_id)
 
-        if workspace and workspace['status'] == 'paused':
-            workspace['status'] = 'running'
-            workspace['resumed_at'] = datetime.utcnow().isoformat()
+        if workspace and workspace["status"] == "paused":
+            workspace["status"] = "running"
+            workspace["resumed_at"] = datetime.utcnow().isoformat()
             return True
 
         return False
@@ -249,11 +228,11 @@ class RemoteWorkspace:
         """
         # Simulate metrics
         return {
-            'workspace_id': workspace_id,
-            'cpu_usage': 45.2,
-            'memory_usage': 1234567890,
-            'storage_usage': 9876543210,
-            'network_in': 123456,
-            'network_out': 654321,
-            'uptime': 3600
+            "workspace_id": workspace_id,
+            "cpu_usage": 45.2,
+            "memory_usage": 1234567890,
+            "storage_usage": 9876543210,
+            "network_in": 123456,
+            "network_out": 654321,
+            "uptime": 3600,
         }

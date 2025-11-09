@@ -23,10 +23,10 @@ def main():
     result = command.execute(args)
 
     # Print output
-    print(result['output'])
+    print(result["output"])
 
     # Exit with appropriate code
-    sys.exit(result['exit_code'])
+    sys.exit(result["exit_code"])
 
 
 if __name__ == "__main__":

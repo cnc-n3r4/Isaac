@@ -5,14 +5,15 @@ Persistent conversation state with project awareness and context retrieval
 
 import json
 import time
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Set
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
 
 
 @dataclass
 class ConversationEntry:
     """Single conversation entry"""
+
     role: str  # 'user', 'assistant', 'tool', 'system'
     content: str
     timestamp: float
@@ -20,25 +21,26 @@ class ConversationEntry:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'role': self.role,
-            'content': self.content,
-            'timestamp': self.timestamp,
-            'metadata': self.metadata
+            "role": self.role,
+            "content": self.content,
+            "timestamp": self.timestamp,
+            "metadata": self.metadata,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ConversationEntry':
+    def from_dict(cls, data: Dict[str, Any]) -> "ConversationEntry":
         return cls(
-            role=data['role'],
-            content=data['content'],
-            timestamp=data.get('timestamp', time.time()),
-            metadata=data.get('metadata', {})
+            role=data["role"],
+            content=data["content"],
+            timestamp=data.get("timestamp", time.time()),
+            metadata=data.get("metadata", {}),
         )
 
 
 @dataclass
 class ProjectContext:
     """Project-level context information"""
+
     root_directory: Optional[Path] = None
     current_directory: Optional[Path] = None
     working_files: Set[Path] = field(default_factory=set)
@@ -47,21 +49,23 @@ class ProjectContext:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'root_directory': str(self.root_directory) if self.root_directory else None,
-            'current_directory': str(self.current_directory) if self.current_directory else None,
-            'working_files': [str(f) for f in self.working_files],
-            'recent_operations': self.recent_operations,
-            'project_metadata': self.project_metadata
+            "root_directory": str(self.root_directory) if self.root_directory else None,
+            "current_directory": str(self.current_directory) if self.current_directory else None,
+            "working_files": [str(f) for f in self.working_files],
+            "recent_operations": self.recent_operations,
+            "project_metadata": self.project_metadata,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ProjectContext':
+    def from_dict(cls, data: Dict[str, Any]) -> "ProjectContext":
         return cls(
-            root_directory=Path(data['root_directory']) if data.get('root_directory') else None,
-            current_directory=Path(data['current_directory']) if data.get('current_directory') else None,
-            working_files=set(Path(f) for f in data.get('working_files', [])),
-            recent_operations=data.get('recent_operations', []),
-            project_metadata=data.get('project_metadata', {})
+            root_directory=Path(data["root_directory"]) if data.get("root_directory") else None,
+            current_directory=(
+                Path(data["current_directory"]) if data.get("current_directory") else None
+            ),
+            working_files=set(Path(f) for f in data.get("working_files", [])),
+            recent_operations=data.get("recent_operations", []),
+            project_metadata=data.get("project_metadata", {}),
         )
 
 
@@ -75,7 +79,7 @@ class ConversationContext:
 
     def __init__(self, context_file: Optional[Path] = None):
         if context_file is None:
-            context_file = Path.home() / '.isaac' / 'conversation_context.json'
+            context_file = Path.home() / ".isaac" / "conversation_context.json"
 
         self.context_file = context_file
         self.context_file.parent.mkdir(parents=True, exist_ok=True)
@@ -98,18 +102,18 @@ class ConversationContext:
         """Load context from file"""
         if self.context_file.exists():
             try:
-                with open(self.context_file, 'r', encoding='utf-8') as f:
+                with open(self.context_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 # Load conversation history
                 self.conversation_history = [
                     ConversationEntry.from_dict(entry)
-                    for entry in data.get('conversation_history', [])
+                    for entry in data.get("conversation_history", [])
                 ]
 
                 # Load project context
-                if 'project_context' in data:
-                    self.project_context = ProjectContext.from_dict(data['project_context'])
+                if "project_context" in data:
+                    self.project_context = ProjectContext.from_dict(data["project_context"])
 
                 print(f"✅ Loaded context: {len(self.conversation_history)} entries")
 
@@ -121,15 +125,15 @@ class ConversationContext:
         """Save context to file"""
         try:
             data = {
-                'conversation_history': [entry.to_dict() for entry in self.conversation_history],
-                'project_context': self.project_context.to_dict(),
-                'session_info': {
-                    'start_time': self.session_start_time,
-                    'last_activity': self.last_activity
-                }
+                "conversation_history": [entry.to_dict() for entry in self.conversation_history],
+                "project_context": self.project_context.to_dict(),
+                "session_info": {
+                    "start_time": self.session_start_time,
+                    "last_activity": self.last_activity,
+                },
             }
 
-            with open(self.context_file, 'w', encoding='utf-8') as f:
+            with open(self.context_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
         except Exception as e:
@@ -138,17 +142,14 @@ class ConversationContext:
     def add_entry(self, role: str, content: str, metadata: Optional[Dict[str, Any]] = None):
         """Add a new conversation entry"""
         entry = ConversationEntry(
-            role=role,
-            content=content,
-            timestamp=time.time(),
-            metadata=metadata or {}
+            role=role, content=content, timestamp=time.time(), metadata=metadata or {}
         )
 
         self.conversation_history.append(entry)
 
         # Trim history if too long
         if len(self.conversation_history) > self.max_history_length:
-            self.conversation_history = self.conversation_history[-self.max_history_length:]
+            self.conversation_history = self.conversation_history[-self.max_history_length :]
 
         self.last_activity = time.time()
         self._save_context()
@@ -187,8 +188,16 @@ class ConversationContext:
         context = {
             "recent_history": [entry.to_dict() for entry, _ in relevant_entries],
             "working_files": [str(f) for f in self.project_context.working_files],
-            "current_directory": str(self.project_context.current_directory) if self.project_context.current_directory else None,
-            "project_root": str(self.project_context.root_directory) if self.project_context.root_directory else None,
+            "current_directory": (
+                str(self.project_context.current_directory)
+                if self.project_context.current_directory
+                else None
+            ),
+            "project_root": (
+                str(self.project_context.root_directory)
+                if self.project_context.root_directory
+                else None
+            ),
             "recent_operations": self.project_context.recent_operations[-3:],  # Last 3 operations
         }
 
@@ -197,20 +206,20 @@ class ConversationContext:
     def update_project_context(self, **kwargs):
         """Update project context information"""
         for key, value in kwargs.items():
-            if key == 'current_directory' and value:
+            if key == "current_directory" and value:
                 self.project_context.current_directory = Path(value)
-            elif key == 'root_directory' and value:
+            elif key == "root_directory" and value:
                 self.project_context.root_directory = Path(value)
-            elif key == 'working_files' and isinstance(value, list):
+            elif key == "working_files" and isinstance(value, list):
                 self.project_context.working_files.update(Path(f) for f in value)
-            elif key == 'project_metadata':
+            elif key == "project_metadata":
                 self.project_context.project_metadata.update(value)
 
         self._save_context()
 
     def add_recent_operation(self, operation: Dict[str, Any]):
         """Add a recent operation to project context"""
-        operation['timestamp'] = time.time()
+        operation["timestamp"] = time.time()
         self.project_context.recent_operations.append(operation)
 
         # Keep only last 10 operations
@@ -230,14 +239,14 @@ class ConversationContext:
 
         # Filter conversation history
         self.conversation_history = [
-            entry for entry in self.conversation_history
-            if entry.timestamp > cutoff_time
+            entry for entry in self.conversation_history if entry.timestamp > cutoff_time
         ]
 
         # Clear old operations
         self.project_context.recent_operations = [
-            op for op in self.project_context.recent_operations
-            if op.get('timestamp', 0) > cutoff_time
+            op
+            for op in self.project_context.recent_operations
+            if op.get("timestamp", 0) > cutoff_time
         ]
 
         self._save_context()
@@ -246,40 +255,39 @@ class ConversationContext:
     def get_statistics(self) -> Dict[str, Any]:
         """Get context statistics"""
         return {
-            'conversation_entries': len(self.conversation_history),
-            'working_files': len(self.project_context.working_files),
-            'recent_operations': len(self.project_context.recent_operations),
-            'session_duration': time.time() - self.session_start_time,
-            'last_activity': time.time() - self.last_activity
+            "conversation_entries": len(self.conversation_history),
+            "working_files": len(self.project_context.working_files),
+            "recent_operations": len(self.project_context.recent_operations),
+            "session_duration": time.time() - self.session_start_time,
+            "last_activity": time.time() - self.last_activity,
         }
 
     def export_context(self, export_file: Path):
         """Export context to a file"""
         data = {
-            'conversation_history': [entry.to_dict() for entry in self.conversation_history],
-            'project_context': self.project_context.to_dict(),
-            'export_time': time.time()
+            "conversation_history": [entry.to_dict() for entry in self.conversation_history],
+            "project_context": self.project_context.to_dict(),
+            "export_time": time.time(),
         }
 
-        with open(export_file, 'w', encoding='utf-8') as f:
+        with open(export_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         print(f"✅ Context exported to {export_file}")
 
     def import_context(self, import_file: Path):
         """Import context from a file"""
-        with open(import_file, 'r', encoding='utf-8') as f:
+        with open(import_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         # Import conversation history
         self.conversation_history = [
-            ConversationEntry.from_dict(entry)
-            for entry in data.get('conversation_history', [])
+            ConversationEntry.from_dict(entry) for entry in data.get("conversation_history", [])
         ]
 
         # Import project context
-        if 'project_context' in data:
-            self.project_context = ProjectContext.from_dict(data['project_context'])
+        if "project_context" in data:
+            self.project_context = ProjectContext.from_dict(data["project_context"])
 
         self._save_context()
         print(f"✅ Context imported from {import_file}")

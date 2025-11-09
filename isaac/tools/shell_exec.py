@@ -3,7 +3,8 @@ Shell Execution Tool - Safe command execution for Isaac Agent
 Integrates with tier validation and shell adapters for controlled command execution
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from .base import BaseTool
 
 
@@ -24,22 +25,22 @@ class ShellTool(BaseTool):
             "properties": {
                 "command": {
                     "type": "string",
-                    "description": "Shell command to execute (will be validated for safety)"
+                    "description": "Shell command to execute (will be validated for safety)",
                 },
                 "working_directory": {
                     "type": "string",
                     "description": "Working directory for command execution (optional)",
-                    "default": "."
+                    "default": ".",
                 },
                 "timeout_seconds": {
                     "type": "integer",
                     "description": "Command timeout in seconds (optional, default 30)",
                     "default": 30,
                     "minimum": 1,
-                    "maximum": 300
-                }
+                    "maximum": 300,
+                },
             },
-            "required": ["command"]
+            "required": ["command"],
         }
 
     def _get_tier_validator(self):
@@ -47,6 +48,7 @@ class ShellTool(BaseTool):
         try:
             from ..core.tier_validator import TierValidator
             from ..models.preferences import Preferences
+
             # Create a basic preferences object for validation
             prefs = Preferences(machine_id="agent-shell-tool")
             return TierValidator(prefs)
@@ -57,6 +59,7 @@ class ShellTool(BaseTool):
         """Lazy load appropriate shell adapter"""
         try:
             from ..adapters.shell_detector import detect_shell
+
             return detect_shell()
         except ImportError:
             return None
@@ -95,16 +98,16 @@ class ShellTool(BaseTool):
         Returns:
             dict: Execution result
         """
-        command = kwargs.get('command', '').strip()
-        working_directory = kwargs.get('working_directory', '.')
-        timeout_seconds = kwargs.get('timeout_seconds', 30)
+        command = kwargs.get("command", "").strip()
+        working_directory = kwargs.get("working_directory", ".")
+        timeout_seconds = kwargs.get("timeout_seconds", 30)
 
         if not command:
             return {
-                'success': False,
-                'error': 'No command provided',
-                'tier': None,
-                'executed': False
+                "success": False,
+                "error": "No command provided",
+                "tier": None,
+                "executed": False,
             }
 
         # Validate command safety
@@ -114,21 +117,21 @@ class ShellTool(BaseTool):
         if not is_safe:
             tier = validator.get_tier(command) if validator else None
             return {
-                'success': False,
-                'error': f'Command blocked: {reason}',
-                'tier': tier,
-                'executed': False,
-                'command': command
+                "success": False,
+                "error": f"Command blocked: {reason}",
+                "tier": tier,
+                "executed": False,
+                "command": command,
             }
 
         # Get shell adapter
         adapter = self._get_shell_adapter()
         if not adapter:
             return {
-                'success': False,
-                'error': 'Could not initialize shell adapter',
-                'tier': None,
-                'executed': False
+                "success": False,
+                "error": "Could not initialize shell adapter",
+                "tier": None,
+                "executed": False,
             }
 
         try:
@@ -136,21 +139,21 @@ class ShellTool(BaseTool):
             result = adapter.execute(command)
 
             return {
-                'success': result.success,
-                'output': result.output,
-                'exit_code': result.exit_code,
-                'tier': validator.get_tier(command) if validator else None,
-                'executed': True,
-                'command': command,
-                'working_directory': working_directory,
-                'timeout_seconds': timeout_seconds
+                "success": result.success,
+                "output": result.output,
+                "exit_code": result.exit_code,
+                "tier": validator.get_tier(command) if validator else None,
+                "executed": True,
+                "command": command,
+                "working_directory": working_directory,
+                "timeout_seconds": timeout_seconds,
             }
 
         except Exception as e:
             return {
-                'success': False,
-                'error': f'Execution failed: {str(e)}',
-                'tier': validator.get_tier(command) if validator else None,
-                'executed': False,
-                'command': command
+                "success": False,
+                "error": f"Execution failed: {str(e)}",
+                "tier": validator.get_tier(command) if validator else None,
+                "executed": False,
+                "command": command,
             }

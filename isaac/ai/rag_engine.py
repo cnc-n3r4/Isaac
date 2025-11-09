@@ -6,8 +6,8 @@ Combines semantic search from xAI Collections with AI chat for context-aware res
 """
 
 import logging
-from typing import Dict, List, Any
 from pathlib import Path
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,13 @@ class RAGQueryEngine:
 
         logger.info("RAG query engine initialized")
 
-    def query(self, user_prompt: str,
-             use_codebase: bool = True,
-             top_k: int = 5,
-             include_file_paths: bool = True) -> Dict[str, Any]:
+    def query(
+        self,
+        user_prompt: str,
+        use_codebase: bool = True,
+        top_k: int = 5,
+        include_file_paths: bool = True,
+    ) -> Dict[str, Any]:
         """
         Query with retrieval-augmented generation
 
@@ -87,14 +90,11 @@ class RAGQueryEngine:
         try:
             result = self.knowledge_base.search(query, top_k=top_k)
 
-            if result.get('success'):
-                results = result.get('results', [])
+            if result.get("success"):
+                results = result.get("results", [])
 
                 # Filter by relevance threshold
-                filtered = [
-                    r for r in results
-                    if r.get('score', 0) >= self.relevance_threshold
-                ]
+                filtered = [r for r in results if r.get("score", 0) >= self.relevance_threshold]
 
                 logger.info(f"Found {len(filtered)}/{len(results)} relevant results")
                 return filtered
@@ -115,23 +115,23 @@ class RAGQueryEngine:
             if total_chars >= self.context_char_limit:
                 break
 
-            content = result.get('content', '')
-            metadata = result.get('metadata', {})
-            result.get('score', 0)
+            content = result.get("content", "")
+            metadata = result.get("metadata", {})
+            result.get("score", 0)
 
             # Build context block
             block_parts = []
 
-            if include_file_paths and metadata.get('file'):
-                file_path = metadata['file']
-                start_line = metadata.get('start_line', '?')
-                end_line = metadata.get('end_line', '?')
+            if include_file_paths and metadata.get("file"):
+                file_path = metadata["file"]
+                start_line = metadata.get("start_line", "?")
+                end_line = metadata.get("end_line", "?")
 
                 block_parts.append(f"[{file_path}:{start_line}-{end_line}]")
 
             block_parts.append(content)
 
-            block = '\n'.join(block_parts)
+            block = "\n".join(block_parts)
 
             # Check if adding this block exceeds limit
             if total_chars + len(block) > self.context_char_limit:
@@ -151,7 +151,9 @@ class RAGQueryEngine:
 
         return context
 
-    def _rag_query(self, user_prompt: str, context: str, search_results: List[Dict]) -> Dict[str, Any]:
+    def _rag_query(
+        self, user_prompt: str, context: str, search_results: List[Dict]
+    ) -> Dict[str, Any]:
         """Query with RAG (context injection)"""
         # Build system prompt with context
         system_prompt = f"""You are an AI assistant helping with code questions.
@@ -168,40 +170,40 @@ Include file paths and line numbers when referencing specific code."""
             if self.fallback_manager:
                 # Use fallback manager for resilience
                 result = self.fallback_manager.call_with_fallback(
-                    'xai_chat',
+                    "xai_chat",
                     primary_fn=lambda: self.xai_client.chat(user_prompt, system_prompt),
                     fallback_fn=None,
-                    queue_on_failure=False
+                    queue_on_failure=False,
                 )
 
-                if not result['success']:
+                if not result["success"]:
                     return {
-                        'success': False,
-                        'error': result.get('error', 'AI service unavailable'),
-                        'context_used': search_results,
-                        'source': 'rag_failed'
+                        "success": False,
+                        "error": result.get("error", "AI service unavailable"),
+                        "context_used": search_results,
+                        "source": "rag_failed",
                     }
 
-                response = result['result']
+                response = result["result"]
             else:
                 # Direct call
                 response = self.xai_client.chat(user_prompt, system_prompt)
 
             return {
-                'success': True,
-                'response': response,
-                'context_used': search_results,
-                'tokens_saved': 0,  # TODO: Calculate based on filtered results
-                'source': 'rag'
+                "success": True,
+                "response": response,
+                "context_used": search_results,
+                "tokens_saved": 0,  # TODO: Calculate based on filtered results
+                "source": "rag",
             }
 
         except Exception as e:
             logger.error(f"RAG query failed: {e}")
             return {
-                'success': False,
-                'error': str(e),
-                'context_used': search_results,
-                'source': 'rag_failed'
+                "success": False,
+                "error": str(e),
+                "context_used": search_results,
+                "source": "rag_failed",
             }
 
     def _direct_query(self, user_prompt: str) -> Dict[str, Any]:
@@ -209,38 +211,34 @@ Include file paths and line numbers when referencing specific code."""
         try:
             if self.fallback_manager:
                 result = self.fallback_manager.call_with_fallback(
-                    'xai_chat',
+                    "xai_chat",
                     primary_fn=lambda: self.xai_client.chat(user_prompt),
                     fallback_fn=None,
-                    queue_on_failure=False
+                    queue_on_failure=False,
                 )
 
-                if not result['success']:
+                if not result["success"]:
                     return {
-                        'success': False,
-                        'error': result.get('error', 'AI service unavailable'),
-                        'source': 'direct_failed'
+                        "success": False,
+                        "error": result.get("error", "AI service unavailable"),
+                        "source": "direct_failed",
                     }
 
-                response = result['result']
+                response = result["result"]
             else:
                 response = self.xai_client.chat(user_prompt)
 
             return {
-                'success': True,
-                'response': response,
-                'context_used': [],
-                'tokens_saved': 0,
-                'source': 'direct'
+                "success": True,
+                "response": response,
+                "context_used": [],
+                "tokens_saved": 0,
+                "source": "direct",
             }
 
         except Exception as e:
             logger.error(f"Direct query failed: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'source': 'direct_failed'
-            }
+            return {"success": False, "error": str(e), "source": "direct_failed"}
 
     def configure(self, **kwargs):
         """
@@ -251,17 +249,19 @@ Include file paths and line numbers when referencing specific code."""
             context_char_limit: Max characters of context
             relevance_threshold: Minimum relevance score
         """
-        if 'max_context_chunks' in kwargs:
-            self.max_context_chunks = kwargs['max_context_chunks']
+        if "max_context_chunks" in kwargs:
+            self.max_context_chunks = kwargs["max_context_chunks"]
 
-        if 'context_char_limit' in kwargs:
-            self.context_char_limit = kwargs['context_char_limit']
+        if "context_char_limit" in kwargs:
+            self.context_char_limit = kwargs["context_char_limit"]
 
-        if 'relevance_threshold' in kwargs:
-            self.relevance_threshold = kwargs['relevance_threshold']
+        if "relevance_threshold" in kwargs:
+            self.relevance_threshold = kwargs["relevance_threshold"]
 
-        logger.info(f"RAG engine configured: max_chunks={self.max_context_chunks}, "
-                   f"char_limit={self.context_char_limit}, threshold={self.relevance_threshold}")
+        logger.info(
+            f"RAG engine configured: max_chunks={self.max_context_chunks}, "
+            f"char_limit={self.context_char_limit}, threshold={self.relevance_threshold}"
+        )
 
 
 class CodebaseAwareChat:
@@ -286,10 +286,11 @@ class CodebaseAwareChat:
 
         # Create RAG engine
         from isaac.core.fallback_manager import get_fallback_manager
+
         self.rag_engine = RAGQueryEngine(
             xai_client=self.xai_client,
             knowledge_base=self.knowledge_base,
-            fallback_manager=get_fallback_manager()
+            fallback_manager=get_fallback_manager(),
         )
 
     def chat(self, prompt: str, use_codebase: bool = True) -> str:
@@ -305,17 +306,17 @@ class CodebaseAwareChat:
         """
         result = self.rag_engine.query(prompt, use_codebase=use_codebase)
 
-        if result['success']:
-            response = result['response']
+        if result["success"]:
+            response = result["response"]
 
             # Add context info if RAG was used
-            if result['source'] == 'rag' and result.get('context_used'):
-                context_count = len(result['context_used'])
+            if result["source"] == "rag" and result.get("context_used"):
+                context_count = len(result["context_used"])
                 response += f"\n\n_[Used {context_count} code snippets for context]_"
 
             return response
         else:
-            raise Exception(result.get('error', 'Query failed'))
+            raise Exception(result.get("error", "Query failed"))
 
     def query_with_details(self, prompt: str, use_codebase: bool = True) -> Dict[str, Any]:
         """
@@ -331,18 +332,20 @@ class CodebaseAwareChat:
         return self.rag_engine.query(prompt, use_codebase=use_codebase)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test RAG engine
-    import sys
     import os
+    import sys
+
     logging.basicConfig(level=logging.INFO)
 
     from pathlib import Path
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
     from isaac.core.workspace_integration import WorkspaceContext
 
-    api_key = os.getenv('XAI_API_KEY')
+    api_key = os.getenv("XAI_API_KEY")
 
     if not api_key:
         print("Warning: XAI_API_KEY not set, using mock mode")
@@ -369,7 +372,7 @@ if __name__ == '__main__':
 
     result = chat.query_with_details(query)
 
-    if result['success']:
+    if result["success"]:
         print(f"Response: {result['response']}\n")
         print(f"Source: {result['source']}")
         print(f"Context used: {len(result.get('context_used', []))} chunks")

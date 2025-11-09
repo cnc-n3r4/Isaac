@@ -4,15 +4,16 @@ Isaac's intelligent test generation system for comprehensive bug prevention
 """
 
 import re
-from typing import Dict, List, Any, Optional
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-import subprocess
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class TestCase:
     """Represents a generated test case."""
+
     test_id: str
     title: str
     description: str
@@ -28,6 +29,7 @@ class TestCase:
 @dataclass
 class TestSuite:
     """Collection of related test cases."""
+
     suite_name: str
     description: str
     test_cases: List[TestCase]
@@ -39,6 +41,7 @@ class TestSuite:
 @dataclass
 class BugReproductionTest:
     """Test specifically designed to reproduce a bug."""
+
     bug_id: str
     error_message: str
     reproduction_steps: List[str]
@@ -58,8 +61,8 @@ class TestGenerator:
     def _load_test_templates(self) -> Dict[str, Dict[str, Any]]:
         """Load test templates for different scenarios."""
         return {
-            'command_failure': {
-                'template': '''
+            "command_failure": {
+                "template": '''
 def test_{command_name}_failure_{error_type}(self):
     """Test that {command_name} fails appropriately with {error_type}."""
     # Setup
@@ -72,12 +75,11 @@ def test_{command_name}_failure_{error_type}(self):
     # Verify error message
     self.assertIn("{error_message}", str(result.exception))
 ''',
-                'imports': ['unittest', 'subprocess'],
-                'setup': 'def run_command(cmd): return subprocess.run(cmd, shell=True, capture_output=True, text=True)'
+                "imports": ["unittest", "subprocess"],
+                "setup": "def run_command(cmd): return subprocess.run(cmd, shell=True, capture_output=True, text=True)",
             },
-
-            'permission_denied': {
-                'template': '''
+            "permission_denied": {
+                "template": '''
 def test_{resource}_permission_denied(self):
     """Test permission denied scenario for {resource}."""
     # Setup: Create file/directory with restricted permissions
@@ -90,12 +92,11 @@ def test_{resource}_permission_denied(self):
     # Cleanup
     {cleanup_code}
 ''',
-                'imports': ['unittest', 'os', 'stat'],
-                'setup': 'import tempfile; import shutil'
+                "imports": ["unittest", "os", "stat"],
+                "setup": "import tempfile; import shutil",
             },
-
-            'resource_exhaustion': {
-                'template': '''
+            "resource_exhaustion": {
+                "template": '''
 def test_{resource}_exhaustion_handling(self):
     """Test handling of {resource} exhaustion."""
     # Setup: Simulate resource exhaustion
@@ -108,12 +109,11 @@ def test_{resource}_exhaustion_handling(self):
     # Verify graceful degradation
     self.assertTrue(system_has_recovered())
 ''',
-                'imports': ['unittest', 'psutil', 'resource'],
-                'setup': 'import psutil; import resource'
+                "imports": ["unittest", "psutil", "resource"],
+                "setup": "import psutil; import resource",
             },
-
-            'network_failure': {
-                'template': '''
+            "network_failure": {
+                "template": '''
 def test_network_{operation}_failure(self):
     """Test {operation} failure with network issues."""
     # Setup: Simulate network failure
@@ -126,12 +126,11 @@ def test_network_{operation}_failure(self):
     # Verify timeout and error handling
     self.assertLess(operation_duration(), {timeout} * 2)
 ''',
-                'imports': ['unittest', 'socket', 'time'],
-                'setup': 'import socket; import time'
+                "imports": ["unittest", "socket", "time"],
+                "setup": "import socket; import time",
             },
-
-            'file_operation': {
-                'template': '''
+            "file_operation": {
+                "template": '''
 def test_file_{operation}_robustness(self):
     """Test file {operation} with various edge cases."""
     test_cases = [
@@ -156,41 +155,41 @@ def test_file_{operation}_robustness(self):
             # Cleanup
             {cleanup_code}
 ''',
-                'imports': ['unittest', 'tempfile', 'os'],
-                'setup': 'import tempfile; import os'
-            }
+                "imports": ["unittest", "tempfile", "os"],
+                "setup": "import tempfile; import os",
+            },
         }
 
     def _load_language_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Load language-specific test patterns."""
         return {
-            'python': {
-                'test_frameworks': ['unittest', 'pytest'],
-                'assertion_patterns': {
-                    'equality': 'self.assertEqual({actual}, {expected})',
-                    'exception': 'with self.assertRaises({exception}): {code}',
-                    'truth': 'self.assertTrue({condition})',
-                    'false': 'self.assertFalse({condition})'
+            "python": {
+                "test_frameworks": ["unittest", "pytest"],
+                "assertion_patterns": {
+                    "equality": "self.assertEqual({actual}, {expected})",
+                    "exception": "with self.assertRaises({exception}): {code}",
+                    "truth": "self.assertTrue({condition})",
+                    "false": "self.assertFalse({condition})",
                 },
-                'test_file_pattern': 'test_*.py',
-                'test_class_pattern': 'Test*'
+                "test_file_pattern": "test_*.py",
+                "test_class_pattern": "Test*",
             },
-            'javascript': {
-                'test_frameworks': ['jest', 'mocha'],
-                'assertion_patterns': {
-                    'equality': 'expect({actual}).toBe({expected})',
-                    'exception': 'expect(() => { {code} }).toThrow({exception})',
-                    'truth': 'expect({condition}).toBeTruthy()',
-                    'false': 'expect({condition}).toBeFalsy()'
+            "javascript": {
+                "test_frameworks": ["jest", "mocha"],
+                "assertion_patterns": {
+                    "equality": "expect({actual}).toBe({expected})",
+                    "exception": "expect(() => { {code} }).toThrow({exception})",
+                    "truth": "expect({condition}).toBeTruthy()",
+                    "false": "expect({condition}).toBeFalsy()",
                 },
-                'test_file_pattern': '*.test.js',
-                'test_class_pattern': 'describe'
-            }
+                "test_file_pattern": "*.test.js",
+                "test_class_pattern": "describe",
+            },
         }
 
-    def generate_bug_reproduction_test(self, error_message: str,
-                                     diagnostic_data: Dict[str, Any],
-                                     root_cause: str = None) -> BugReproductionTest:
+    def generate_bug_reproduction_test(
+        self, error_message: str, diagnostic_data: Dict[str, Any], root_cause: str = None
+    ) -> BugReproductionTest:
         """Generate a test that reproduces a specific bug.
 
         Args:
@@ -214,7 +213,9 @@ def test_file_{operation}_robustness(self):
         expected_failure = self._determine_expected_failure(error_type, error_message)
 
         # Define success criteria
-        success_criteria = "Test should fail with the exact error message when bug conditions are met"
+        success_criteria = (
+            "Test should fail with the exact error message when bug conditions are met"
+        )
 
         return BugReproductionTest(
             bug_id=bug_id,
@@ -222,7 +223,7 @@ def test_file_{operation}_robustness(self):
             reproduction_steps=reproduction_steps,
             test_code=test_code,
             expected_failure=expected_failure,
-            success_criteria=success_criteria
+            success_criteria=success_criteria,
         )
 
     def generate_regression_test_suite(self, error_history: List[Dict[str, Any]]) -> TestSuite:
@@ -256,7 +257,7 @@ import sys
 # Cleanup temporary files and resources
 """
 
-        dependencies = ['unittest', 'subprocess', 'tempfile']
+        dependencies = ["unittest", "subprocess", "tempfile"]
 
         return TestSuite(
             suite_name=suite_name,
@@ -264,7 +265,7 @@ import sys
             test_cases=test_cases,
             setup_code=setup_code,
             teardown_code=teardown_code,
-            dependencies=dependencies
+            dependencies=dependencies,
         )
 
     def generate_edge_case_tests(self, command: str, context: Dict[str, Any]) -> List[TestCase]:
@@ -282,35 +283,35 @@ import sys
         # Common edge cases
         edge_cases = [
             {
-                'name': 'empty_input',
-                'description': 'Test behavior with empty input',
-                'input': '',
-                'expected': 'graceful_handling'
+                "name": "empty_input",
+                "description": "Test behavior with empty input",
+                "input": "",
+                "expected": "graceful_handling",
             },
             {
-                'name': 'large_input',
-                'description': 'Test behavior with very large input',
-                'input': 'x' * 1000000,
-                'expected': 'no_crash'
+                "name": "large_input",
+                "description": "Test behavior with very large input",
+                "input": "x" * 1000000,
+                "expected": "no_crash",
             },
             {
-                'name': 'special_characters',
-                'description': 'Test behavior with special characters',
-                'input': '!@#$%^&*()[]{}|;:,.<>?',
-                'expected': 'proper_escaping'
+                "name": "special_characters",
+                "description": "Test behavior with special characters",
+                "input": "!@#$%^&*()[]{}|;:,.<>?",
+                "expected": "proper_escaping",
             },
             {
-                'name': 'unicode_input',
-                'description': 'Test behavior with unicode characters',
-                'input': 'ñáéíóú 🚀 🌟',
-                'expected': 'unicode_support'
+                "name": "unicode_input",
+                "description": "Test behavior with unicode characters",
+                "input": "ñáéíóú 🚀 🌟",
+                "expected": "unicode_support",
             },
             {
-                'name': 'concurrent_execution',
-                'description': 'Test behavior when run concurrently',
-                'input': 'normal_input',
-                'expected': 'no_race_conditions'
-            }
+                "name": "concurrent_execution",
+                "description": "Test behavior when run concurrently",
+                "input": "normal_input",
+                "expected": "no_race_conditions",
+            },
         ]
 
         for edge_case in edge_cases:
@@ -319,7 +320,9 @@ import sys
 
         return test_cases
 
-    def generate_performance_tests(self, command: str, performance_profile: Dict[str, Any]) -> List[TestCase]:
+    def generate_performance_tests(
+        self, command: str, performance_profile: Dict[str, Any]
+    ) -> List[TestCase]:
         """Generate performance regression tests.
 
         Args:
@@ -358,7 +361,7 @@ def test_{command.replace(' ', '_')}_performance_baseline(self):
             assertions=[f"duration < {performance_profile.get('duration', 1.0) * 1.5}"],
             expected_behavior="Command completes within performance baseline",
             prerequisites=["Performance baseline established"],
-            tags=["performance", "regression"]
+            tags=["performance", "regression"],
         )
 
         test_cases.append(baseline_test)
@@ -392,7 +395,7 @@ def test_{command.replace(' ', '_')}_resource_usage(self):
             assertions=["memory_increase < 50.0"],
             expected_behavior="Command uses reasonable system resources",
             prerequisites=["psutil available"],
-            tags=["performance", "resource"]
+            tags=["performance", "resource"],
         )
 
         test_cases.append(resource_test)
@@ -403,88 +406,88 @@ def test_{command.replace(' ', '_')}_resource_usage(self):
         """Categorize error for test generation."""
         error_lower = error_message.lower()
 
-        if re.search(r'command not found|is not recognized', error_lower):
-            return 'command_not_found'
-        elif re.search(r'permission denied|access is denied', error_lower):
-            return 'permission_denied'
-        elif re.search(r'out of memory|cannot allocate memory', error_lower):
-            return 'out_of_memory'
-        elif re.search(r'no space left|disk full', error_lower):
-            return 'disk_full'
-        elif re.search(r'connection refused|connection timed out', error_lower):
-            return 'connection_refused'
+        if re.search(r"command not found|is not recognized", error_lower):
+            return "command_not_found"
+        elif re.search(r"permission denied|access is denied", error_lower):
+            return "permission_denied"
+        elif re.search(r"out of memory|cannot allocate memory", error_lower):
+            return "out_of_memory"
+        elif re.search(r"no space left|disk full", error_lower):
+            return "disk_full"
+        elif re.search(r"connection refused|connection timed out", error_lower):
+            return "connection_refused"
         else:
-            return 'unknown_error'
+            return "unknown_error"
 
-    def _generate_reproduction_steps(self, error_type: str, diagnostic_data: Dict[str, Any]) -> List[str]:
+    def _generate_reproduction_steps(
+        self, error_type: str, diagnostic_data: Dict[str, Any]
+    ) -> List[str]:
         """Generate steps to reproduce an error."""
         steps = []
 
-        if error_type == 'command_not_found':
+        if error_type == "command_not_found":
             steps = [
                 "Ensure the command is not installed",
                 "Attempt to execute the command",
-                "Verify the error message appears"
+                "Verify the error message appears",
             ]
-        elif error_type == 'permission_denied':
+        elif error_type == "permission_denied":
             steps = [
                 "Create a file or directory",
                 "Remove read/write/execute permissions",
                 "Attempt to access the resource",
-                "Verify permission denied error"
+                "Verify permission denied error",
             ]
-        elif error_type == 'out_of_memory':
+        elif error_type == "out_of_memory":
             steps = [
                 "Consume most available memory",
                 "Execute memory-intensive operation",
-                "Verify out of memory error occurs"
+                "Verify out of memory error occurs",
             ]
-        elif error_type == 'disk_full':
-            steps = [
-                "Fill up disk space",
-                "Attempt to write to disk",
-                "Verify disk full error"
-            ]
-        elif error_type == 'connection_refused':
+        elif error_type == "disk_full":
+            steps = ["Fill up disk space", "Attempt to write to disk", "Verify disk full error"]
+        elif error_type == "connection_refused":
             steps = [
                 "Stop the target service",
                 "Attempt to connect to the service",
-                "Verify connection refused error"
+                "Verify connection refused error",
             ]
 
         return steps
 
-    def _generate_reproduction_test_code(self, error_type: str, diagnostic_data: Dict[str, Any]) -> str:
+    def _generate_reproduction_test_code(
+        self, error_type: str, diagnostic_data: Dict[str, Any]
+    ) -> str:
         """Generate test code to reproduce an error."""
-        template = self.test_templates.get(error_type, self.test_templates['command_failure'])
+        template = self.test_templates.get(error_type, self.test_templates["command_failure"])
 
         # Fill in template variables
         variables = {
-            'command_name': diagnostic_data.get('command', '').split()[0] or 'unknown_command',
-            'error_type': error_type,
-            'setup_code': self._generate_setup_code(error_type, diagnostic_data),
-            'exception_type': self._map_error_to_exception(error_type),
-            'error_message': diagnostic_data.get('error_message', ''),
-            'command': diagnostic_data.get('command', ''),
-            'resource': diagnostic_data.get('resource', 'resource'),
-            'access_code': self._generate_access_code(error_type, diagnostic_data),
-            'cleanup_code': self._generate_cleanup_code(error_type),
-            'operation': diagnostic_data.get('operation', 'operation'),
-            'network_code': self._generate_network_code(error_type, diagnostic_data),
-            'timeout': diagnostic_data.get('timeout', 30),
-            'operation_code': self._generate_operation_code(error_type),
-            'assertion_code': self._generate_assertion_code(error_type)
+            "command_name": diagnostic_data.get("command", "").split()[0] or "unknown_command",
+            "error_type": error_type,
+            "setup_code": self._generate_setup_code(error_type, diagnostic_data),
+            "exception_type": self._map_error_to_exception(error_type),
+            "error_message": diagnostic_data.get("error_message", ""),
+            "command": diagnostic_data.get("command", ""),
+            "resource": diagnostic_data.get("resource", "resource"),
+            "access_code": self._generate_access_code(error_type, diagnostic_data),
+            "cleanup_code": self._generate_cleanup_code(error_type),
+            "operation": diagnostic_data.get("operation", "operation"),
+            "network_code": self._generate_network_code(error_type, diagnostic_data),
+            "timeout": diagnostic_data.get("timeout", 30),
+            "operation_code": self._generate_operation_code(error_type),
+            "assertion_code": self._generate_assertion_code(error_type),
         }
 
         try:
-            test_code = template['template'].format(**variables)
+            test_code = template["template"].format(**variables)
             return test_code.strip()
         except KeyError as e:
             return f"# Error generating test code: missing variable {e}"
 
     def _generate_setup_code(self, error_type: str, diagnostic_data: Dict[str, Any]) -> str:
         """Generate setup code for test."""
-        if error_type == 'permission_denied':
+        if error_type == "permission_denied":
             return """
 import tempfile
 import os
@@ -496,7 +499,7 @@ temp_file.close()
 os.chmod(temp_file.name, stat.S_IRUSR)  # Read-only for owner
 test_file = temp_file.name
 """
-        elif error_type == 'out_of_memory':
+        elif error_type == "out_of_memory":
             return """
 import resource
 import sys
@@ -504,7 +507,7 @@ import sys
 # Set memory limit
 resource.setrlimit(resource.RLIMIT_AS, (100 * 1024 * 1024, 200 * 1024 * 1024))  # 100MB limit
 """
-        elif error_type == 'disk_full':
+        elif error_type == "disk_full":
             return """
 import tempfile
 import os
@@ -519,24 +522,24 @@ temp_dir = tempfile.mkdtemp()
     def _map_error_to_exception(self, error_type: str) -> str:
         """Map error type to Python exception."""
         mapping = {
-            'command_not_found': 'FileNotFoundError',
-            'permission_denied': 'PermissionError',
-            'out_of_memory': 'MemoryError',
-            'disk_full': 'OSError',
-            'connection_refused': 'ConnectionError'
+            "command_not_found": "FileNotFoundError",
+            "permission_denied": "PermissionError",
+            "out_of_memory": "MemoryError",
+            "disk_full": "OSError",
+            "connection_refused": "ConnectionError",
         }
-        return mapping.get(error_type, 'Exception')
+        return mapping.get(error_type, "Exception")
 
     def _generate_access_code(self, error_type: str, diagnostic_data: Dict[str, Any]) -> str:
         """Generate code that attempts to access a resource."""
-        if error_type == 'permission_denied':
+        if error_type == "permission_denied":
             return "with open(test_file, 'w') as f: f.write('test')"
         else:
             return "pass  # Access code"
 
     def _generate_cleanup_code(self, error_type: str) -> str:
         """Generate cleanup code for test."""
-        if error_type == 'permission_denied':
+        if error_type == "permission_denied":
             return "os.unlink(test_file)"
         else:
             return "pass  # Cleanup code"
@@ -563,7 +566,7 @@ sock.connect(('localhost', 12345))  # Non-existent service
 
     def _generate_regression_test(self, error_data: Dict[str, Any]) -> Optional[TestCase]:
         """Generate a regression test for a past error."""
-        error_message = error_data.get('error_message', '')
+        error_message = error_data.get("error_message", "")
         if not error_message:
             return None
 
@@ -581,7 +584,7 @@ sock.connect(('localhost', 12345))  # Non-existent service
             assertions=["self.assertTrue(True)  # Bug should not occur"],
             expected_behavior="Command executes without the previous error",
             prerequisites=["Bug has been fixed"],
-            tags=["regression", error_type]
+            tags=["regression", error_type],
         )
 
     def _generate_edge_case_test(self, command: str, edge_case: Dict[str, Any]) -> TestCase:
@@ -589,7 +592,7 @@ sock.connect(('localhost', 12345))  # Non-existent service
         return TestCase(
             test_id=f"edge_{edge_case['name']}_{int(time.time())}",
             title=f"Edge case: {edge_case['name']} for {command}",
-            description=edge_case['description'],
+            description=edge_case["description"],
             test_type="unit",
             code=f"""
 def test_{command.replace(' ', '_')}_{edge_case['name']}(self):
@@ -606,9 +609,9 @@ def test_{command.replace(' ', '_')}_{edge_case['name']}(self):
 """,
             setup_code="import subprocess",
             assertions=["result.returncode == 0"],
-            expected_behavior=edge_case['expected'],
+            expected_behavior=edge_case["expected"],
             prerequisites=["Command available"],
-            tags=["edge_case", edge_case['name']]
+            tags=["edge_case", edge_case["name"]],
         )
 
     def write_test_file(self, test_suite: TestSuite, output_path: Path) -> bool:
@@ -622,7 +625,7 @@ def test_{command.replace(' ', '_')}_{edge_case['name']}(self):
             True if successful, False otherwise
         """
         try:
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 # Write imports
                 f.write("import unittest\n")
                 for dep in test_suite.dependencies:
@@ -636,21 +639,21 @@ def test_{command.replace(' ', '_')}_{edge_case['name']}(self):
 
                 # Write test class
                 f.write(f"class {test_suite.suite_name}(unittest.TestCase):\n")
-                f.write(f"    \"\"\"{test_suite.description}\"\"\"\n\n")
+                f.write(f'    """{test_suite.description}"""\n\n')
 
                 # Write test methods
                 for test_case in test_suite.test_cases:
                     f.write(f"    def {test_case.test_id}(self):\n")
-                    f.write(f"        \"\"\"{test_case.title}\"\"\"\n")
+                    f.write(f'        """{test_case.title}"""\n')
 
                     # Write setup code
                     if test_case.setup_code:
-                        for line in test_case.setup_code.split('\n'):
+                        for line in test_case.setup_code.split("\n"):
                             if line.strip():
                                 f.write(f"        {line}\n")
 
                     # Write test code
-                    for line in test_case.code.split('\n'):
+                    for line in test_case.code.split("\n"):
                         if line.strip():
                             f.write(f"        {line}\n")
 
@@ -659,7 +662,7 @@ def test_{command.replace(' ', '_')}_{edge_case['name']}(self):
                 # Write teardown code
                 if test_suite.teardown_code.strip():
                     f.write("    def tearDown(self):\n")
-                    for line in test_suite.teardown_code.split('\n'):
+                    for line in test_suite.teardown_code.split("\n"):
                         if line.strip():
                             f.write(f"        {line}\n")
                     f.write("\n")
@@ -685,29 +688,21 @@ def test_{command.replace(' ', '_')}_{edge_case['name']}(self):
         """
         try:
             result = subprocess.run(
-                ['python', '-m', 'pytest', str(test_file), '-v'],
+                ["python", "-m", "pytest", str(test_file), "-v"],
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
             )
 
             return {
-                'success': result.returncode == 0,
-                'return_code': result.returncode,
-                'stdout': result.stdout,
-                'stderr': result.stderr,
-                'duration': getattr(result, 'duration', None)
+                "success": result.returncode == 0,
+                "return_code": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "duration": getattr(result, "duration", None),
             }
 
         except subprocess.TimeoutExpired:
-            return {
-                'success': False,
-                'error': 'Test execution timed out',
-                'return_code': -1
-            }
+            return {"success": False, "error": "Test execution timed out", "return_code": -1}
         except Exception as e:
-            return {
-                'success': False,
-                'error': str(e),
-                'return_code': -1
-            }
+            return {"success": False, "error": str(e), "return_code": -1}

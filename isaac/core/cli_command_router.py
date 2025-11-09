@@ -7,24 +7,26 @@ Handles:
 - Natural language commands (via AI translator)
 """
 
-from enum import Enum
-from dataclasses import dataclass
-from typing import Optional, Tuple, List, Dict, Any
 import shlex
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class CommandType(Enum):
     """Types of commands Isaac can handle."""
-    INTERNAL = "internal"      # --help, --version, etc.
-    SHELL = "shell"            # cd, ls, cp, etc.
-    NATURAL = "natural"        # AI-translated commands
-    TASK = "task"              # isaac task: description
+
+    INTERNAL = "internal"  # --help, --version, etc.
+    SHELL = "shell"  # cd, ls, cp, etc.
+    NATURAL = "natural"  # AI-translated commands
+    TASK = "task"  # isaac task: description
     UNKNOWN = "unknown"
 
 
 @dataclass
 class CommandResult:
     """Result of command execution."""
+
     success: bool
     message: str
     status_symbol: str  # '✓' / '✗' / '⊘'
@@ -50,19 +52,25 @@ class CommandRouter:
     """
 
     # Internal commands that Isaac handles directly
-    INTERNAL_COMMANDS = {
-        '--help', '-h',
-        '--version', '-v',
-        '--show-log',
-        '--config',
-        'help'
-    }
+    INTERNAL_COMMANDS = {"--help", "-h", "--version", "-v", "--show-log", "--config", "help"}
 
     # Common shell commands (basic validation)
     SHELL_COMMANDS = {
-        'cd', 'ls', 'dir', 'pwd', 'cat', 'echo',
-        'cp', 'mv', 'rm', 'mkdir', 'rmdir',
-        'grep', 'find', 'chmod', 'chown'
+        "cd",
+        "ls",
+        "dir",
+        "pwd",
+        "cat",
+        "echo",
+        "cp",
+        "mv",
+        "rm",
+        "mkdir",
+        "rmdir",
+        "grep",
+        "find",
+        "chmod",
+        "chown",
     }
 
     def __init__(self, session_manager):
@@ -109,15 +117,15 @@ class CommandRouter:
             return (CommandType.INTERNAL, tokens)
 
         # Check for task mode
-        if first_token == 'task' and len(tokens) > 1:
-            if tokens[1] == ':':
+        if first_token == "task" and len(tokens) > 1:
+            if tokens[1] == ":":
                 # Format: isaac task : do something
-                task_desc = ' '.join(tokens[2:])
+                task_desc = " ".join(tokens[2:])
                 return (CommandType.TASK, [task_desc])
             else:
                 # Format: isaac task: do something
-                task_desc = ' '.join(tokens[1:])
-                if task_desc.startswith(':'):
+                task_desc = " ".join(tokens[1:])
+                if task_desc.startswith(":"):
                     task_desc = task_desc[1:].strip()
                 return (CommandType.TASK, [task_desc])
 
@@ -148,17 +156,19 @@ class CommandRouter:
         if cmd_type == CommandType.NATURAL:
             first_word = tokens[0].lower() if tokens else ""
             # Allow direct commands through (backup, restore, list)
-            direct_commands = {'backup', 'restore', 'list'}
-            if first_word not in direct_commands and not command_string.lower().startswith("isaac "):
+            direct_commands = {"backup", "restore", "list"}
+            if first_word not in direct_commands and not command_string.lower().startswith(
+                "isaac "
+            ):
                 return CommandResult(
                     success=False,
-                    status_symbol='⊘',
+                    status_symbol="⊘",
                     message="I have a name, use it.",
                     suggestion=f"Try: isaac {command_string}",
                     metadata={
                         "error_type": "missing_prefix",
-                        "hint": "Natural language commands require the 'isaac' prefix"
-                    }
+                        "hint": "Natural language commands require the 'isaac' prefix",
+                    },
                 )
 
         # Route to appropriate handler
@@ -174,8 +184,8 @@ class CommandRouter:
             return CommandResult(
                 success=False,
                 message=f"Unknown command: {command_string}",
-                status_symbol='✗',
-                suggestion="Type 'help' or '--help' for available commands"
+                status_symbol="✗",
+                suggestion="Type 'help' or '--help' for available commands",
             )
 
     def _handle_internal(self, tokens: List[str]) -> CommandResult:
@@ -186,31 +196,29 @@ class CommandRouter:
         """
         command = tokens[0].lower()
 
-        if command in ['--help', '-h', 'help']:
+        if command in ["--help", "-h", "help"]:
             # Import and delegate to help handler
             from isaac.commands.help import HelpHandler
+
             handler = HelpHandler(self.session)
             return handler.execute(tokens[1:])
 
-        elif command in ['--version', '-v']:
-            return CommandResult(
-                success=True,
-                message="Isaac v0.1.0",
-                status_symbol='✓'
-            )
+        elif command in ["--version", "-v"]:
+            return CommandResult(success=True, message="Isaac v0.1.0", status_symbol="✓")
 
-        elif command == '--show-log':
+        elif command == "--show-log":
             # Import and delegate to list handler
             from isaac.commands.list import ListHandler
+
             handler = ListHandler(self.session)
-            return handler.execute(['history'])
+            return handler.execute(["history"])
 
         else:
             return CommandResult(
                 success=False,
                 message=f"Internal command not implemented: {command}",
-                status_symbol='✗',
-                suggestion="Type '--help' for available commands"
+                status_symbol="✗",
+                suggestion="Type '--help' for available commands",
             )
 
     def _handle_shell(self, tokens: List[str]) -> CommandResult:
@@ -219,15 +227,15 @@ class CommandRouter:
 
         Placeholder - will integrate with SessionManager's execution layer.
         """
-        command = ' '.join(tokens)
+        command = " ".join(tokens)
 
         # For now, return placeholder result
         # TODO: Integrate with actual shell execution
         return CommandResult(
             success=False,
             message=f"Shell execution not yet implemented: {command}",
-            status_symbol='✗',
-            suggestion="Shell commands coming in next phase"
+            status_symbol="✗",
+            suggestion="Shell commands coming in next phase",
         )
 
     def _handle_natural(self, tokens: List[str], original: str) -> CommandResult:
@@ -237,24 +245,28 @@ class CommandRouter:
         # Check if it looks like a direct command first
         first_word = tokens[0].lower()
 
-        if first_word == 'backup':
+        if first_word == "backup":
             from isaac.commands.backup import BackupHandler
+
             handler = BackupHandler(self.session)
             return handler.execute(tokens[1:])
 
-        elif first_word == 'restore':
+        elif first_word == "restore":
             from isaac.commands.restore import RestoreHandler
+
             handler = RestoreHandler(self.session)
             return handler.execute(tokens[1:])
 
-        elif first_word == 'list':
+        elif first_word == "list":
             from isaac.commands.list import ListHandler
+
             handler = ListHandler(self.session)
             return handler.execute(tokens[1:])
 
         else:
             # Try AI translation (Phase 2)
             from isaac.core.ai_translator import create_translator
+
             translator = create_translator()
 
             # P0-2: Strip "isaac " prefix before translation
@@ -273,21 +285,21 @@ class CommandRouter:
 
                 # Handle different translation types
                 translated_cmd = translation.translated
-                if translated_cmd in ["chat", "query", "info"] or translated_cmd.startswith("query "):
+                if translated_cmd in ["chat", "query", "info"] or translated_cmd.startswith(
+                    "query "
+                ):
                     # These are conversational responses, not commands to execute
                     return CommandResult(
                         success=True,
                         message=f"Understood: {translation.original}",
-                        status_symbol='✓',
-                        metadata=translation.metadata
+                        status_symbol="✓",
+                        metadata=translation.metadata,
                     )
                 elif translation.needs_confirmation:
                     confirm = input("Execute? (y/n): ").strip().lower()
-                    if confirm not in ['y', 'yes']:
+                    if confirm not in ["y", "yes"]:
                         return CommandResult(
-                            success=False,
-                            message="Cancelled by user",
-                            status_symbol='⊘'
+                            success=False, message="Cancelled by user", status_symbol="⊘"
                         )
 
                 # Re-execute with translated command
@@ -297,8 +309,8 @@ class CommandRouter:
                 return CommandResult(
                     success=False,
                     message=f"Unable to translate: {original}",
-                    status_symbol='✗',
-                    suggestion="Try being more specific or use explicit commands"
+                    status_symbol="✗",
+                    suggestion="Try being more specific or use explicit commands",
                 )
 
     def _handle_task(self, tokens: List[str]) -> CommandResult:
@@ -312,8 +324,8 @@ class CommandRouter:
         return CommandResult(
             success=False,
             message=f"Task mode not yet implemented: {task_description}",
-            status_symbol='✗',
-            suggestion="Task mode coming in next phase"
+            status_symbol="✗",
+            suggestion="Task mode coming in next phase",
         )
 
 

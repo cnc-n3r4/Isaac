@@ -3,6 +3,7 @@
 Provides a simple local-first API with a placeholder cloud fallback.
 This is intentionally minimal and suitable for iterative enhancement.
 """
+
 from pathlib import Path
 from typing import Optional
 
@@ -25,13 +26,13 @@ class UnifiedFileSystem:
 
     def read(self, path) -> str:
         p = self._local_path(path)
-        with p.open('r', encoding='utf-8') as fh:
+        with p.open("r", encoding="utf-8") as fh:
             return fh.read()
 
     def write(self, path, data: str) -> None:
         p = self._local_path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
-        with p.open('w', encoding='utf-8') as fh:
+        with p.open("w", encoding="utf-8") as fh:
             fh.write(data)
 
     def exists(self, path) -> bool:

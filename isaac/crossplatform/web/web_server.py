@@ -11,7 +11,7 @@ class WebServer:
     Web server for Isaac web interface
     """
 
-    def __init__(self, isaac_core, host: str = '0.0.0.0', port: int = 8000):
+    def __init__(self, isaac_core, host: str = "0.0.0.0", port: int = 8000):
         self.app = Flask(__name__)
         CORS(self.app)
 
@@ -24,30 +24,30 @@ class WebServer:
     def _setup_routes(self):
         """Setup web routes"""
 
-        @self.app.route('/')
+        @self.app.route("/")
         def index():
             """Main web interface"""
             return render_template_string(self._get_index_html())
 
-        @self.app.route('/terminal')
+        @self.app.route("/terminal")
         def terminal():
             """Terminal interface"""
             return render_template_string(self._get_terminal_html())
 
-        @self.app.route('/workspace')
+        @self.app.route("/workspace")
         def workspace():
             """Workspace explorer"""
             return render_template_string(self._get_workspace_html())
 
-        @self.app.route('/static/<path:filename>')
+        @self.app.route("/static/<path:filename>")
         def static_files(filename):
             """Serve static files"""
             # TODO: Implement static file serving
-            return ''
+            return ""
 
     def _get_index_html(self) -> str:
         """Get main interface HTML"""
-        return '''
+        return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -174,11 +174,11 @@ class WebServer:
     </div>
 </body>
 </html>
-'''
+"""
 
     def _get_terminal_html(self) -> str:
         """Get terminal interface HTML"""
-        return '''
+        return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -364,11 +364,11 @@ class WebServer:
     </script>
 </body>
 </html>
-'''
+"""
 
     def _get_workspace_html(self) -> str:
         """Get workspace explorer HTML"""
-        return '''
+        return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -523,7 +523,7 @@ class WebServer:
     </script>
 </body>
 </html>
-'''
+"""
 
     def run(self, debug: bool = False):
         """Run the web server"""

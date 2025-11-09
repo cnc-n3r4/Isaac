@@ -3,10 +3,10 @@ Continuous Learning Coordinator - Phase 3.5 Self-Improving System
 Orchestrates all learning components for seamless continuous improvement.
 """
 
-import time
-import threading
-from typing import Dict, Any
 import logging
+import threading
+import time
+from typing import Any, Dict
 
 from isaac.core.session_manager import SessionManager
 
@@ -48,10 +48,10 @@ class ContinuousLearningCoordinator:
 
         # Configuration
         self.config = {
-            'optimization_interval': 3600,  # 1 hour
-            'metrics_interval': 1800,  # 30 minutes
-            'pattern_consolidation_threshold': 20,  # Consolidate when >20 patterns
-            'learning_health_threshold': 40.0,  # Alert when health <40
+            "optimization_interval": 3600,  # 1 hour
+            "metrics_interval": 1800,  # 30 minutes
+            "pattern_consolidation_threshold": 20,  # Consolidate when >20 patterns
+            "learning_health_threshold": 40.0,  # Alert when health <40
         }
 
     def start(self):
@@ -62,9 +62,7 @@ class ContinuousLearningCoordinator:
 
         self._stop_coordination = False
         self.coordination_thread = threading.Thread(
-            target=self._coordination_loop,
-            daemon=True,
-            name="ContinuousLearningCoordinator"
+            target=self._coordination_loop, daemon=True, name="ContinuousLearningCoordinator"
         )
         self.coordination_thread.start()
         self.logger.info("Continuous learning coordinator started")
@@ -99,12 +97,12 @@ class ContinuousLearningCoordinator:
         current_time = time.time()
 
         # Generate metrics periodically
-        if current_time - self.last_metrics_generation > self.config['metrics_interval']:
+        if current_time - self.last_metrics_generation > self.config["metrics_interval"]:
             self._generate_and_analyze_metrics()
             self.last_metrics_generation = current_time
 
         # Run optimization periodically
-        if current_time - self.last_optimization > self.config['optimization_interval']:
+        if current_time - self.last_optimization > self.config["optimization_interval"]:
             self._run_learning_optimization()
             self.last_optimization = current_time
 
@@ -135,7 +133,7 @@ class ContinuousLearningCoordinator:
             # Check for concerning trends
             if len(metrics.improvement_trend) >= 3:
                 recent_trend = metrics.improvement_trend[-3:]
-                if all(recent_trend[i] < recent_trend[i-1] for i in range(1, len(recent_trend))):
+                if all(recent_trend[i] < recent_trend[i - 1] for i in range(1, len(recent_trend))):
                     self.logger.warning("Learning health declining - review needed")
 
         except Exception as e:
@@ -146,7 +144,7 @@ class ContinuousLearningCoordinator:
         try:
             # Trigger pattern learning from accumulated mistakes
             if self.mistake_learner:
-                mistake_types = ['command_error', 'command_typo', 'ai_response']
+                mistake_types = ["command_error", "command_typo", "ai_response"]
                 patterns_learned = 0
 
                 for mistake_type in mistake_types:
@@ -160,7 +158,7 @@ class ContinuousLearningCoordinator:
             # Analyze behavior effectiveness
             if self.behavior_engine:
                 effectiveness = self.behavior_engine.analyze_behavior_effectiveness()
-                if effectiveness.get('total_adjustments', 0) > 0:
+                if effectiveness.get("total_adjustments", 0) > 0:
                     self.logger.debug(f"Behavior adjustments: {effectiveness['total_adjustments']}")
 
         except Exception as e:
@@ -173,16 +171,16 @@ class ContinuousLearningCoordinator:
 
         try:
             summary = self.metrics_dashboard.get_dashboard_summary()
-            health = summary.get('current_health_score', 0)
+            health = summary.get("current_health_score", 0)
 
-            if health < self.config['learning_health_threshold']:
+            if health < self.config["learning_health_threshold"]:
                 self.logger.warning(
                     f"Low learning health: {health:.1f}/100 - "
                     f"Consider increasing user interactions or reviewing patterns"
                 )
 
                 # Get insights for low health
-                insights = self.metrics_dashboard.get_learning_insights(priority='high', limit=3)
+                insights = self.metrics_dashboard.get_learning_insights(priority="high", limit=3)
                 for insight in insights:
                     self.logger.info(f"Insight: {insight.title} - {insight.recommendation}")
 
@@ -197,7 +195,7 @@ class ContinuousLearningCoordinator:
         try:
             pattern_count = len(self.mistake_learner.learning_patterns)
 
-            if pattern_count > self.config['pattern_consolidation_threshold']:
+            if pattern_count > self.config["pattern_consolidation_threshold"]:
                 self.logger.info(f"Pattern consolidation needed: {pattern_count} patterns")
 
                 # Group patterns by type
@@ -238,7 +236,7 @@ class ContinuousLearningCoordinator:
                 prefs = self.preference_learner.user_preferences
                 if prefs:
                     # Check if communication style preference conflicts with behavior profile
-                    comm_style_prefs = prefs.get_top_preferences('communication_style', limit=1)
+                    comm_style_prefs = prefs.get_top_preferences("communication_style", limit=1)
                     if comm_style_prefs:
                         pref_style = comm_style_prefs[0][1].preference_value
                         behavior_style = self.behavior_engine.behavior_profile.response_style
@@ -253,8 +251,7 @@ class ContinuousLearningCoordinator:
             # Share high-confidence patterns with metrics for better recommendations
             if self.mistake_learner and self.metrics_dashboard:
                 high_conf_patterns = [
-                    p for p in self.mistake_learner.learning_patterns.values()
-                    if p.confidence > 0.8
+                    p for p in self.mistake_learner.learning_patterns.values() if p.confidence > 0.8
                 ]
                 if len(high_conf_patterns) > 5:
                     self.logger.debug(f"Found {len(high_conf_patterns)} high-confidence patterns")
@@ -269,16 +266,16 @@ class ContinuousLearningCoordinator:
             Dictionary with coordination statistics
         """
         return {
-            'active': self.coordination_thread and self.coordination_thread.is_alive(),
-            'learning_cycles': self.learning_cycle_count,
-            'last_optimization': time.time() - self.last_optimization,
-            'last_metrics': time.time() - self.last_metrics_generation,
-            'components': {
-                'mistake_learner': self.mistake_learner is not None,
-                'behavior_engine': self.behavior_engine is not None,
-                'metrics_dashboard': self.metrics_dashboard is not None,
-                'preference_learner': self.preference_learner is not None,
-            }
+            "active": self.coordination_thread and self.coordination_thread.is_alive(),
+            "learning_cycles": self.learning_cycle_count,
+            "last_optimization": time.time() - self.last_optimization,
+            "last_metrics": time.time() - self.last_metrics_generation,
+            "components": {
+                "mistake_learner": self.mistake_learner is not None,
+                "behavior_engine": self.behavior_engine is not None,
+                "metrics_dashboard": self.metrics_dashboard is not None,
+                "preference_learner": self.preference_learner is not None,
+            },
         }
 
     def force_learning_cycle(self):
@@ -306,26 +303,23 @@ class ContinuousLearningCoordinator:
         Returns:
             Dictionary with complete learning system status
         """
-        summary = {
-            'coordination': self.get_coordination_status(),
-            'components': {}
-        }
+        summary = {"coordination": self.get_coordination_status(), "components": {}}
 
         try:
             if self.mistake_learner:
-                summary['components']['mistakes'] = self.mistake_learner.get_learning_stats()
+                summary["components"]["mistakes"] = self.mistake_learner.get_learning_stats()
 
             if self.behavior_engine:
-                summary['components']['behavior'] = {
-                    'profile': self.behavior_engine.get_current_behavior_profile(),
-                    'effectiveness': self.behavior_engine.analyze_behavior_effectiveness()
+                summary["components"]["behavior"] = {
+                    "profile": self.behavior_engine.get_current_behavior_profile(),
+                    "effectiveness": self.behavior_engine.analyze_behavior_effectiveness(),
                 }
 
             if self.preference_learner:
-                summary['components']['preferences'] = self.preference_learner.get_learning_stats()
+                summary["components"]["preferences"] = self.preference_learner.get_learning_stats()
 
             if self.metrics_dashboard:
-                summary['components']['metrics'] = self.metrics_dashboard.get_dashboard_summary()
+                summary["components"]["metrics"] = self.metrics_dashboard.get_dashboard_summary()
 
         except Exception as e:
             self.logger.error(f"Failed to generate learning summary: {e}")

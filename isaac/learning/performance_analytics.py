@@ -3,13 +3,13 @@ Performance Analytics - Phase 3.5 Self-Improving System
 Tracks and optimizes system performance metrics for continuous improvement.
 """
 
-import time
 import json
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, asdict, field
-from pathlib import Path
-from collections import defaultdict, deque
 import statistics
+import time
+from collections import defaultdict, deque
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
 
@@ -17,6 +17,7 @@ from isaac.core.session_manager import SessionManager
 @dataclass
 class PerformanceMetric:
     """A performance metric measurement."""
+
     metric_name: str
     timestamp: float
     value: float
@@ -27,6 +28,7 @@ class PerformanceMetric:
 @dataclass
 class PerformanceAlert:
     """Alert for performance issues."""
+
     id: str
     alert_type: str  # 'degradation', 'improvement', 'anomaly'
     metric_name: str
@@ -58,12 +60,12 @@ class PerformanceAnalytics:
         """
         self.session_manager = session_manager
 
-        self.data_dir = Path.home() / '.isaac' / 'performance'
+        self.data_dir = Path.home() / ".isaac" / "performance"
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
         # Data files
-        self.metrics_file = self.data_dir / 'performance_metrics.json'
-        self.alerts_file = self.data_dir / 'performance_alerts.json'
+        self.metrics_file = self.data_dir / "performance_metrics.json"
+        self.alerts_file = self.data_dir / "performance_alerts.json"
 
         # In-memory data structures
         self.recent_metrics: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
@@ -76,8 +78,13 @@ class PerformanceAnalytics:
         self._load_performance_data()
         self._calculate_baselines()
 
-    def record_metric(self, metric_name: str, value: float, unit: str = "ms",
-                     context: Optional[Dict[str, Any]] = None):
+    def record_metric(
+        self,
+        metric_name: str,
+        value: float,
+        unit: str = "ms",
+        context: Optional[Dict[str, Any]] = None,
+    ):
         """Record a performance metric.
 
         Args:
@@ -91,7 +98,7 @@ class PerformanceAnalytics:
             timestamp=time.time(),
             value=value,
             unit=unit,
-            context=context or {}
+            context=context or {},
         )
 
         self.recent_metrics[metric_name].append(metric)
@@ -112,25 +119,24 @@ class PerformanceAnalytics:
             success: Whether command succeeded
         """
         self.record_metric(
-            metric_name='command_execution_time',
+            metric_name="command_execution_time",
             value=execution_time * 1000,  # Convert to ms
-            unit='ms',
-            context={
-                'command': command[:50],  # Truncate long commands
-                'success': success
-            }
+            unit="ms",
+            context={"command": command[:50], "success": success},  # Truncate long commands
         )
 
         # Track success rate
         success_value = 1.0 if success else 0.0
         self.record_metric(
-            metric_name='command_success_rate',
+            metric_name="command_success_rate",
             value=success_value,
-            unit='ratio',
-            context={'command': command[:50]}
+            unit="ratio",
+            context={"command": command[:50]},
         )
 
-    def record_ai_query(self, query_type: str, response_time: float, token_count: Optional[int] = None):
+    def record_ai_query(
+        self, query_type: str, response_time: float, token_count: Optional[int] = None
+    ):
         """Record AI query performance.
 
         Args:
@@ -139,21 +145,18 @@ class PerformanceAnalytics:
             token_count: Number of tokens in response (if available)
         """
         self.record_metric(
-            metric_name=f'ai_{query_type}_latency',
+            metric_name=f"ai_{query_type}_latency",
             value=response_time * 1000,  # Convert to ms
-            unit='ms',
-            context={
-                'query_type': query_type,
-                'tokens': token_count
-            }
+            unit="ms",
+            context={"query_type": query_type, "tokens": token_count},
         )
 
         if token_count:
             self.record_metric(
-                metric_name=f'ai_{query_type}_tokens',
+                metric_name=f"ai_{query_type}_tokens",
                 value=float(token_count),
-                unit='tokens',
-                context={'query_type': query_type}
+                unit="tokens",
+                context={"query_type": query_type},
             )
 
     def record_learning_overhead(self, operation: str, overhead_time: float):
@@ -164,10 +167,10 @@ class PerformanceAnalytics:
             overhead_time: Time overhead (seconds)
         """
         self.record_metric(
-            metric_name=f'learning_{operation}_overhead',
+            metric_name=f"learning_{operation}_overhead",
             value=overhead_time * 1000,  # Convert to ms
-            unit='ms',
-            context={'operation': operation}
+            unit="ms",
+            context={"operation": operation},
         )
 
     def get_metric_statistics(self, metric_name: str, period_minutes: int = 60) -> Dict[str, Any]:
@@ -181,27 +184,30 @@ class PerformanceAnalytics:
             Dictionary with metric statistics
         """
         if metric_name not in self.recent_metrics:
-            return {'error': 'Metric not found'}
+            return {"error": "Metric not found"}
 
         cutoff_time = time.time() - (period_minutes * 60)
         recent_values = [
-            m.value for m in self.recent_metrics[metric_name]
-            if m.timestamp > cutoff_time
+            m.value for m in self.recent_metrics[metric_name] if m.timestamp > cutoff_time
         ]
 
         if not recent_values:
-            return {'error': 'No recent data'}
+            return {"error": "No recent data"}
 
         return {
-            'metric': metric_name,
-            'period_minutes': period_minutes,
-            'count': len(recent_values),
-            'min': min(recent_values),
-            'max': max(recent_values),
-            'mean': statistics.mean(recent_values),
-            'median': statistics.median(recent_values),
-            'stdev': statistics.stdev(recent_values) if len(recent_values) > 1 else 0,
-            'unit': self.recent_metrics[metric_name][0].unit if self.recent_metrics[metric_name] else 'unknown'
+            "metric": metric_name,
+            "period_minutes": period_minutes,
+            "count": len(recent_values),
+            "min": min(recent_values),
+            "max": max(recent_values),
+            "mean": statistics.mean(recent_values),
+            "median": statistics.median(recent_values),
+            "stdev": statistics.stdev(recent_values) if len(recent_values) > 1 else 0,
+            "unit": (
+                self.recent_metrics[metric_name][0].unit
+                if self.recent_metrics[metric_name]
+                else "unknown"
+            ),
         }
 
     def get_performance_summary(self) -> Dict[str, Any]:
@@ -211,42 +217,40 @@ class PerformanceAnalytics:
             Dictionary with performance overview
         """
         summary = {
-            'timestamp': time.time(),
-            'metrics': {},
-            'alerts': {
-                'total': len(self.performance_alerts),
-                'critical': sum(1 for a in self.performance_alerts if a.severity == 'critical'),
-                'high': sum(1 for a in self.performance_alerts if a.severity == 'high'),
-                'recent': []
-            }
+            "timestamp": time.time(),
+            "metrics": {},
+            "alerts": {
+                "total": len(self.performance_alerts),
+                "critical": sum(1 for a in self.performance_alerts if a.severity == "critical"),
+                "high": sum(1 for a in self.performance_alerts if a.severity == "high"),
+                "recent": [],
+            },
         }
 
         # Get statistics for key metrics
         key_metrics = [
-            'command_execution_time',
-            'command_success_rate',
-            'ai_translation_latency',
-            'learning_pattern_matching_overhead'
+            "command_execution_time",
+            "command_success_rate",
+            "ai_translation_latency",
+            "learning_pattern_matching_overhead",
         ]
 
         for metric in key_metrics:
             if metric in self.recent_metrics:
-                summary['metrics'][metric] = self.get_metric_statistics(metric, period_minutes=60)
+                summary["metrics"][metric] = self.get_metric_statistics(metric, period_minutes=60)
 
         # Get recent alerts
-        recent_alerts = sorted(
-            self.performance_alerts,
-            key=lambda a: a.created_at,
-            reverse=True
-        )[:5]
+        recent_alerts = sorted(self.performance_alerts, key=lambda a: a.created_at, reverse=True)[
+            :5
+        ]
 
-        summary['alerts']['recent'] = [
+        summary["alerts"]["recent"] = [
             {
-                'type': a.alert_type,
-                'metric': a.metric_name,
-                'severity': a.severity,
-                'description': a.description,
-                'recommendation': a.recommendation
+                "type": a.alert_type,
+                "metric": a.metric_name,
+                "severity": a.severity,
+                "description": a.description,
+                "recommendation": a.recommendation,
             }
             for a in recent_alerts
         ]
@@ -262,44 +266,46 @@ class PerformanceAnalytics:
         recommendations = []
 
         # Analyze command execution performance
-        if 'command_execution_time' in self.recent_metrics:
-            stats = self.get_metric_statistics('command_execution_time', period_minutes=60)
-            if stats.get('mean', 0) > 1000:  # >1 second average
+        if "command_execution_time" in self.recent_metrics:
+            stats = self.get_metric_statistics("command_execution_time", period_minutes=60)
+            if stats.get("mean", 0) > 1000:  # >1 second average
                 recommendations.append(
                     "High command execution time detected. Consider reviewing "
                     "command complexity or system resources."
                 )
 
         # Analyze AI query latency
-        ai_metrics = [k for k in self.recent_metrics.keys() if k.startswith('ai_')]
+        ai_metrics = [k for k in self.recent_metrics.keys() if k.startswith("ai_")]
         for metric in ai_metrics:
             stats = self.get_metric_statistics(metric, period_minutes=60)
-            if stats.get('mean', 0) > 2000:  # >2 seconds
+            if stats.get("mean", 0) > 2000:  # >2 seconds
                 recommendations.append(
                     f"High {metric} detected. Consider using a faster AI provider "
                     f"or reducing query complexity."
                 )
 
         # Analyze learning overhead
-        if 'learning_pattern_matching_overhead' in self.recent_metrics:
-            stats = self.get_metric_statistics('learning_pattern_matching_overhead', period_minutes=60)
-            if stats.get('mean', 0) > 100:  # >100ms overhead
+        if "learning_pattern_matching_overhead" in self.recent_metrics:
+            stats = self.get_metric_statistics(
+                "learning_pattern_matching_overhead", period_minutes=60
+            )
+            if stats.get("mean", 0) > 100:  # >100ms overhead
                 recommendations.append(
                     "High learning system overhead. Consider pattern consolidation "
                     "or reducing pattern matching frequency."
                 )
 
         # Analyze success rate
-        if 'command_success_rate' in self.recent_metrics:
-            stats = self.get_metric_statistics('command_success_rate', period_minutes=60)
-            if stats.get('mean', 1.0) < 0.8:  # <80% success rate
+        if "command_success_rate" in self.recent_metrics:
+            stats = self.get_metric_statistics("command_success_rate", period_minutes=60)
+            if stats.get("mean", 1.0) < 0.8:  # <80% success rate
                 recommendations.append(
                     "Low command success rate. Review recent mistakes and consider "
                     "improving command validation or auto-correction."
                 )
 
         # Check for active critical alerts
-        critical_alerts = [a for a in self.performance_alerts if a.severity == 'critical']
+        critical_alerts = [a for a in self.performance_alerts if a.severity == "critical"]
         if critical_alerts:
             recommendations.append(
                 f"{len(critical_alerts)} critical performance alerts active. "
@@ -328,22 +334,21 @@ class PerformanceAnalytics:
             # Check if we already have a recent alert for this
             recent_cutoff = time.time() - 3600  # Last hour
             existing_alert = any(
-                a.metric_name == metric.metric_name and
-                a.created_at > recent_cutoff
+                a.metric_name == metric.metric_name and a.created_at > recent_cutoff
                 for a in self.performance_alerts
             )
 
             if not existing_alert:
                 alert = PerformanceAlert(
                     id=f"alert_{metric.metric_name}_{int(time.time())}",
-                    alert_type='degradation',
+                    alert_type="degradation",
                     metric_name=metric.metric_name,
-                    severity='high' if metric.value > baseline * 2 else 'medium',
+                    severity="high" if metric.value > baseline * 2 else "medium",
                     description=f"{metric.metric_name} degraded significantly",
                     current_value=metric.value,
                     expected_value=baseline,
                     recommendation=f"Review recent changes affecting {metric.metric_name}",
-                    created_at=time.time()
+                    created_at=time.time(),
                 )
 
                 self.performance_alerts.append(alert)
@@ -359,14 +364,14 @@ class PerformanceAnalytics:
                 # Anomaly detected
                 alert = PerformanceAlert(
                     id=f"anomaly_{metric.metric_name}_{int(time.time())}",
-                    alert_type='anomaly',
+                    alert_type="anomaly",
                     metric_name=metric.metric_name,
-                    severity='medium',
+                    severity="medium",
                     description=f"Anomalous {metric.metric_name} value detected",
                     current_value=metric.value,
                     expected_value=mean,
                     recommendation="Investigate unusual system behavior or external factors",
-                    created_at=time.time()
+                    created_at=time.time(),
                 )
 
                 self.performance_alerts.append(alert)
@@ -385,7 +390,7 @@ class PerformanceAnalytics:
         # Load metrics (only recent ones to avoid memory issues)
         if self.metrics_file.exists():
             try:
-                with open(self.metrics_file, 'r') as f:
+                with open(self.metrics_file, "r") as f:
                     data = json.load(f)
                     for metric_name, metric_list in data.items():
                         # Only load last 1000 metrics per type
@@ -398,7 +403,7 @@ class PerformanceAnalytics:
         # Load alerts
         if self.alerts_file.exists():
             try:
-                with open(self.alerts_file, 'r') as f:
+                with open(self.alerts_file, "r") as f:
                     data = json.load(f)
                     self.performance_alerts = [PerformanceAlert(**alert) for alert in data[-200:]]
             except Exception as e:
@@ -412,7 +417,7 @@ class PerformanceAnalytics:
             for metric_name, metrics in self.recent_metrics.items():
                 data[metric_name] = [asdict(m) for m in list(metrics)[-1000:]]
 
-            with open(self.metrics_file, 'w') as f:
+            with open(self.metrics_file, "w") as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -424,7 +429,7 @@ class PerformanceAnalytics:
             # Keep only last 200 alerts
             data = [asdict(a) for a in self.performance_alerts[-200:]]
 
-            with open(self.alerts_file, 'w') as f:
+            with open(self.alerts_file, "w") as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -439,10 +444,7 @@ class PerformanceAnalytics:
         cutoff_time = time.time() - (age_hours * 3600)
         before_count = len(self.performance_alerts)
 
-        self.performance_alerts = [
-            a for a in self.performance_alerts
-            if a.created_at > cutoff_time
-        ]
+        self.performance_alerts = [a for a in self.performance_alerts if a.created_at > cutoff_time]
 
         after_count = len(self.performance_alerts)
         if before_count > after_count:
