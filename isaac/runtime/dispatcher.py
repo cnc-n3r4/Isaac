@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 import shlex
+import re
 
 
 class CommandDispatcher:
@@ -16,6 +17,7 @@ class CommandDispatcher:
         self.commands = {}  # trigger → manifest mapping
         self.security = SecurityEnforcer()
         self.loader = ManifestLoader()
+        self.task_manager = None  # Lazy loaded TaskManager for background execution
 
     def load_commands(self, directories: List[Path]):
         """Scan directories for command.yaml manifests"""
@@ -94,9 +96,100 @@ class CommandDispatcher:
 
         return parsed_args
 
+    def _detect_execution_mode(self, command: str) -> Tuple[str, str]:
+        """
+        Detect execution mode flags and return (cleaned_command, mode)
+
+        Modes: 'verbose' (default), 'background', 'piped'
+        Flags: --background, --bg, -bg
+
+        Returns:
+            Tuple of (command without flags, execution_mode)
+        """
+        # Check for background execution flags
+        bg_pattern = r'\s+(--background|--bg|-bg)\b'
+
+        if re.search(bg_pattern, command):
+            # Remove the flag from command
+            cleaned_command = re.sub(bg_pattern, '', command)
+            return (cleaned_command.strip(), 'background')
+
+        return (command, 'verbose')
+
+    def _get_task_manager(self):
+        """Lazy load TaskManager"""
+        if self.task_manager is None:
+            from isaac.core.task_manager import get_task_manager
+            self.task_manager = get_task_manager()
+        return self.task_manager
+
+    def _execute_background(self, command: str, args: Optional[Dict] = None, stdin: Optional[str] = None) -> Dict:
+        """
+        Execute command in background using TaskManager
+
+        Returns immediate response with task ID
+        """
+        try:
+            # Get task manager
+            task_manager = self._get_task_manager()
+
+            # Determine task type based on command
+            # System commands: backup, restore, sync, workspace operations
+            # Code commands: grep, read, write, edit, etc.
+            system_commands = {'/backup', '/restore', '/sync', '/workspace', '/status'}
+            base_cmd = command.split()[0] if command else ''
+            task_type = 'system' if base_cmd in system_commands else 'code'
+
+            # Build full command string for execution
+            # For now, we'll execute commands through the shell
+            # In future, this could directly call command handlers
+            full_command = command
+
+            # Spawn background task
+            task_id = task_manager.spawn_task(
+                command=full_command,
+                task_type=task_type,
+                priority='normal',
+                metadata={
+                    'dispatcher': 'CommandDispatcher',
+                    'original_command': command,
+                    'has_stdin': stdin is not None
+                }
+            )
+
+            return {
+                "ok": True,
+                "kind": "text",
+                "stdout": f"✓ Background task started: {task_id}\n\nCommand: {command}\nType: {task_type}\n\nMonitor with: /tasks --show {task_id}\nView all tasks: /tasks",
+                "meta": {
+                    "task_id": task_id,
+                    "execution_mode": "background"
+                }
+            }
+
+        except Exception as e:
+            return {
+                "ok": False,
+                "error": {
+                    "code": "BACKGROUND_EXECUTION_ERROR",
+                    "message": f"Failed to spawn background task: {str(e)}"
+                },
+                "meta": {}
+            }
+
     def execute(self, command: str, args: Optional[Dict] = None, stdin: Optional[str] = None) -> Dict:
         """Run handler and return normalized envelope"""
         try:
+            # Detect execution mode
+            cleaned_command, exec_mode = self._detect_execution_mode(command)
+
+            # Handle background execution
+            if exec_mode == 'background':
+                return self._execute_background(cleaned_command, args, stdin)
+
+            # Continue with normal execution for verbose mode
+            command = cleaned_command
+
             # Resolve the command
             resolved = self.resolve_trigger(command)
             if not resolved:
@@ -273,39 +366,119 @@ class CommandDispatcher:
                 "meta": {}
             }
 
+    def parse_pipeline(self, input_text: str) -> List[str]:
+        """
+        Parse command pipeline separated by pipes (|)
+
+        Returns list of commands to execute in sequence
+
+        Example:
+            "/glob '**/*.py' | /grep 'def main' | /read"
+            Returns: ["/glob '**/*.py'", "/grep 'def main'", "/read"]
+        """
+        # Split by | but respect quotes
+        commands = []
+        current_cmd = []
+        in_quotes = False
+        quote_char = None
+
+        for char in input_text:
+            if char in ['"', "'"] and (not in_quotes or char == quote_char):
+                in_quotes = not in_quotes
+                quote_char = char if in_quotes else None
+                current_cmd.append(char)
+            elif char == '|' and not in_quotes:
+                # End of current command
+                cmd_str = ''.join(current_cmd).strip()
+                if cmd_str:
+                    commands.append(cmd_str)
+                current_cmd = []
+            else:
+                current_cmd.append(char)
+
+        # Add final command
+        cmd_str = ''.join(current_cmd).strip()
+        if cmd_str:
+            commands.append(cmd_str)
+
+        return commands
+
+    def execute_pipeline(self, pipeline_input: str) -> Dict:
+        """
+        Execute a pipeline of commands connected by pipes
+
+        Example:
+            execute_pipeline("/glob '**/*.py' | /grep 'def main'")
+
+        Returns result of final command in pipeline
+        """
+        # Parse pipeline
+        commands = self.parse_pipeline(pipeline_input)
+
+        if len(commands) == 0:
+            return {
+                "ok": False,
+                "error": {
+                    "code": "EMPTY_PIPELINE",
+                    "message": "No commands in pipeline"
+                },
+                "meta": {}
+            }
+
+        if len(commands) == 1:
+            # Single command, execute normally
+            return self.execute(commands[0])
+
+        # Execute pipeline
+        stdin_data = None
+
+        for i, cmd in enumerate(commands):
+            is_first = (i == 0)
+            is_last = (i == len(commands) - 1)
+
+            # Execute command
+            if is_first:
+                result = self.execute(cmd)
+            else:
+                # Verify command accepts stdin
+                resolved = self.resolve_trigger(cmd)
+                if not resolved:
+                    return {
+                        "ok": False,
+                        "error": {
+                            "code": "UNKNOWN_COMMAND",
+                            "message": f"Unknown command in pipeline: {cmd}"
+                        },
+                        "meta": {"pipeline_stage": i + 1}
+                    }
+
+                manifest = resolved['manifest']
+                if not manifest.get('stdin', False):
+                    return {
+                        "ok": False,
+                        "error": {
+                            "code": "PIPE_NOT_SUPPORTED",
+                            "message": f"Command '{cmd}' does not accept stdin (pipeline stage {i + 1})"
+                        },
+                        "meta": {"pipeline_stage": i + 1}
+                    }
+
+                result = self.execute(cmd, stdin=stdin_data)
+
+            # Check if command succeeded
+            if not result.get('ok', False):
+                return result
+
+            # Pass stdout to next command (unless this is the last command)
+            if not is_last:
+                stdin_data = result.get('stdout', '')
+
+        # Return result of final command
+        return result
+
     def chain_pipe(self, cmd1: str, cmd2: str) -> Dict:
-        """Connect stdout of cmd1 to stdin of cmd2"""
-        # Execute first command
-        result1 = self.execute(cmd1)
-        if not result1.get('ok', False):
-            return result1
-
-        # Check if cmd2 accepts stdin
-        resolved2 = self.resolve_trigger(cmd2)
-        if not resolved2:
-            return {
-                "ok": False,
-                "error": {
-                    "code": "UNKNOWN_COMMAND",
-                    "message": f"Unknown command: {cmd2}"
-                },
-                "meta": {}
-            }
-
-        manifest2 = resolved2['manifest']
-        if not manifest2.get('stdin', False):
-            return {
-                "ok": False,
-                "error": {
-                    "code": "PIPE_NOT_SUPPORTED",
-                    "message": f"Command {cmd2} does not accept stdin"
-                },
-                "meta": {}
-            }
-
-        # Execute second command with stdin from first
-        stdin_data = result1.get('stdout', '')
-        return self.execute(cmd2, stdin=stdin_data)
+        """Connect stdout of cmd1 to stdin of cmd2 (legacy method, use execute_pipeline instead)"""
+        return self.execute_pipeline(f"{cmd1} | {cmd2}")
 
     def route_remote(self, alias: str, command: str) -> Dict:
         """Send command to device via cloud client"""

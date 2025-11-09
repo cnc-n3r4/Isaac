@@ -12,6 +12,7 @@ import json
 import time
 import threading
 import subprocess
+import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Callable
 from datetime import datetime
@@ -77,6 +78,24 @@ class Task:
             'metadata': self.metadata
         }
 
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> 'Task':
+        """Create task from dictionary representation"""
+        task = Task(
+            task_id=data['task_id'],
+            command=data['command'],
+            task_type=data.get('task_type', 'code'),
+            priority=data.get('priority', 'normal'),
+            metadata=data.get('metadata', {})
+        )
+        task.status = TaskStatus(data['status'])
+        task.start_time = datetime.fromisoformat(data['start_time']) if data.get('start_time') else None
+        task.end_time = datetime.fromisoformat(data['end_time']) if data.get('end_time') else None
+        task.exit_code = data.get('exit_code')
+        task.stdout = data.get('stdout', '')
+        task.stderr = data.get('stderr', '')
+        return task
+
 
 class TaskManager:
     """
@@ -89,12 +108,13 @@ class TaskManager:
     - Task status queries
     """
 
-    def __init__(self, max_concurrent_tasks: int = 10):
+    def __init__(self, max_concurrent_tasks: int = 10, db_path: Optional[Path] = None):
         """
         Initialize task manager
 
         Args:
             max_concurrent_tasks: Maximum number of concurrent background tasks
+            db_path: Path to SQLite database for persistent storage
         """
         self.max_concurrent_tasks = max_concurrent_tasks
         self.tasks: Dict[str, Task] = {}
@@ -102,6 +122,137 @@ class TaskManager:
 
         # Callback for task completion notifications
         self.on_task_complete: Optional[Callable[[Task], None]] = None
+
+        # Persistent storage
+        if db_path is None:
+            db_path = Path.home() / '.isaac' / 'tasks.db'
+        self.db_path = db_path
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._init_db()
+        self._load_tasks_from_db()
+
+    def _init_db(self):
+        """Initialize task database schema"""
+        conn = sqlite3.connect(str(self.db_path))
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                task_id TEXT PRIMARY KEY,
+                command TEXT NOT NULL,
+                task_type TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                status TEXT NOT NULL,
+                start_time TEXT,
+                end_time TEXT,
+                exit_code INTEGER,
+                stdout TEXT,
+                stderr TEXT,
+                metadata TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_tasks_status
+            ON tasks(status)
+        """)
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_tasks_created
+            ON tasks(created_at DESC)
+        """)
+        conn.commit()
+        conn.close()
+
+    def _load_tasks_from_db(self):
+        """Load existing tasks from database on startup"""
+        conn = sqlite3.connect(str(self.db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Only load tasks that are not completed/failed/cancelled
+        # Or load recent completed tasks (last 24 hours) for reference
+        cursor.execute("""
+            SELECT * FROM tasks
+            WHERE status IN ('pending', 'running')
+               OR (status IN ('completed', 'failed', 'cancelled')
+                   AND datetime(created_at) > datetime('now', '-1 day'))
+            ORDER BY created_at DESC
+        """)
+
+        for row in cursor.fetchall():
+            task_data = {
+                'task_id': row['task_id'],
+                'command': row['command'],
+                'task_type': row['task_type'],
+                'priority': row['priority'],
+                'status': row['status'],
+                'start_time': row['start_time'],
+                'end_time': row['end_time'],
+                'exit_code': row['exit_code'],
+                'stdout': row['stdout'] or '',
+                'stderr': row['stderr'] or '',
+                'metadata': json.loads(row['metadata']) if row['metadata'] else {}
+            }
+
+            task = Task.from_dict(task_data)
+
+            # Don't restart running tasks - mark them as failed
+            if task.status == TaskStatus.RUNNING:
+                task.status = TaskStatus.FAILED
+                task.stderr = "Task was interrupted (ISAAC restart)"
+                task.end_time = datetime.now()
+                self._update_task_in_db(task)
+
+            self.tasks[task.task_id] = task
+
+        conn.close()
+
+    def _save_task_to_db(self, task: Task):
+        """Save task to database"""
+        conn = sqlite3.connect(str(self.db_path))
+
+        conn.execute("""
+            INSERT OR REPLACE INTO tasks
+            (task_id, command, task_type, priority, status, start_time, end_time,
+             exit_code, stdout, stderr, metadata, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            task.task_id,
+            task.command,
+            task.task_type,
+            task.priority,
+            task.status.value,
+            task.start_time.isoformat() if task.start_time else None,
+            task.end_time.isoformat() if task.end_time else None,
+            task.exit_code,
+            task.stdout,
+            task.stderr,
+            json.dumps(task.metadata),
+            task.start_time.isoformat() if task.start_time else datetime.now().isoformat()
+        ))
+
+        conn.commit()
+        conn.close()
+
+    def _update_task_in_db(self, task: Task):
+        """Update task in database"""
+        conn = sqlite3.connect(str(self.db_path))
+
+        conn.execute("""
+            UPDATE tasks
+            SET status = ?, start_time = ?, end_time = ?, exit_code = ?,
+                stdout = ?, stderr = ?
+            WHERE task_id = ?
+        """, (
+            task.status.value,
+            task.start_time.isoformat() if task.start_time else None,
+            task.end_time.isoformat() if task.end_time else None,
+            task.exit_code,
+            task.stdout,
+            task.stderr,
+            task.task_id
+        ))
+
+        conn.commit()
+        conn.close()
 
     def spawn_task(
         self,
@@ -152,6 +303,9 @@ class TaskManager:
             # Store task
             self.tasks[task_id] = task
 
+            # Save to database
+            self._save_task_to_db(task)
+
         # Spawn execution thread
         thread = threading.Thread(
             target=self._execute_task,
@@ -173,6 +327,7 @@ class TaskManager:
         """
         task.status = TaskStatus.RUNNING
         task.start_time = datetime.now()
+        self._update_task_in_db(task)  # Persist running status
 
         try:
             # Execute command
@@ -206,6 +361,9 @@ class TaskManager:
             task.stderr = f"Task execution error: {str(e)}"
             task.exit_code = -1
             task.end_time = datetime.now()
+
+        # Persist final state
+        self._update_task_in_db(task)
 
         # Trigger callbacks
         if callback:
@@ -284,6 +442,7 @@ class TaskManager:
 
         task.status = TaskStatus.CANCELLED
         task.end_time = datetime.now()
+        self._update_task_in_db(task)  # Persist cancellation
 
         return True
 
@@ -300,6 +459,15 @@ class TaskManager:
                 if task.status in [TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED]
             ]
 
+            # Remove from database
+            if to_remove:
+                conn = sqlite3.connect(str(self.db_path))
+                placeholders = ','.join('?' * len(to_remove))
+                conn.execute(f"DELETE FROM tasks WHERE task_id IN ({placeholders})", to_remove)
+                conn.commit()
+                conn.close()
+
+            # Remove from memory
             for tid in to_remove:
                 del self.tasks[tid]
 
