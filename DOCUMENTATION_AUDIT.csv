@@ -1,0 +1,50 @@
+Filename,Category,Purpose,Last Update,References Code?,Duplicates Other Doc?,Markdown Compliant?,Action,Merge Target,Priority,Estimated Effort (hours)
+README.md,User,Main project introduction and overview,Current,Partial,"OVERVIEW.md, QUICK_START.md",Yes,Keep,N/A,P1,0.5
+OVERVIEW.md,User,Comprehensive system overview and architecture,Current,Partial,README.md (overlap),Yes,Keep,N/A,P1,0.5
+QUICK_START.md,User,Quick installation and setup guide,Current,Partial,README.md (overlap),Yes,Keep,N/A,P1,0.5
+HOW_TO_GUIDE.md,User,Practical workflows and task examples,Current,Yes,None,Yes,Keep,N/A,P1,0
+COMPLETE_REFERENCE.md,User,Comprehensive command reference documentation,Current,Yes,ISAAC_COMMAND_REFERENCE.md,Yes,Keep,N/A,P1,0
+DOCUMENTATION_INDEX.md,User,Navigation guide for all documentation,Current,No,None,Yes,Keep,N/A,P1,0
+CROSS_PLATFORM_DEV_GUIDE.md,Dev,Cross-platform development guide for contributors,Current,Yes,None,Yes,Keep,N/A,P2,0
+AGENT_EXECUTION_PLAN.md,Dev,Comprehensive agent execution plan for ISAAC cleanup,Current,Yes,None,Yes,Keep,N/A,P2,0
+PLUGIN_ARCHITECTURE_ANALYSIS.md,Dev,Plugin system architecture analysis,Current,Yes,PLUGIN_SYSTEM_SUMMARY.txt,Yes,Keep,N/A,P2,1
+ISAAC_COMMAND_REFERENCE.md,Internal,Legacy command reference documentation,Old,Yes,COMPLETE_REFERENCE.md,Yes,Merge,COMPLETE_REFERENCE.md,P2,2
+ISAAC_COMMAND_SYSTEM_ANALYSIS.md,Internal,Command system technical analysis,Old,Yes,None,Yes,Update,N/A,P3,3
+ALIAS_SYSTEM_ANALYSIS.md,Internal,Comprehensive alias system analysis (1744 lines),Old,Yes,ALIAS_QUICK_REFERENCE.md,Yes,Archive,docs/architecture/,P3,1
+SECURITY_ANALYSIS.md,Internal,Security and tier system analysis,Old,Yes,VULNERABILITY_DETAILS.md,Yes,Consolidate,SECURITY_SUMMARY.md,P1,2
+PERFORMANCE_ANALYSIS.md,Internal,Performance bottlenecks and optimization,Old,Yes,None,Yes,Archive,docs/architecture/,P3,1
+CODE_QUALITY_AUDIT_2025.md,Internal,Code quality audit report,Old,Yes,None,Yes,Archive,docs/project/,P3,1
+VULNERABILITY_DETAILS.md,Internal,Detailed vulnerability report,Old,Yes,SECURITY_ANALYSIS.md,Yes,Consolidate,SECURITY_SUMMARY.md,P1,2
+ISAAC_COMPREHENSIVE_ANALYSIS_EXECUTIVE_SUMMARY.md,Internal,Comprehensive analysis executive summary,Old,Partial,Multiple analysis docs,Yes,Archive,docs/project/,P3,1
+ISAAC_CLAUDE_CODE_ANALYSIS.md,Internal,Claude Code integration analysis,Old,Yes,None,Yes,Archive,docs/project/,P3,1
+PLUGIN_SYSTEM_SUMMARY.txt,Internal,Plugin system summary (text format),Old,No,PLUGIN_ARCHITECTURE_ANALYSIS.md,No,Delete,N/A,P3,0.5
+AUDIT_DETAILED_REPORT.txt,Internal,Audit detailed report (text format),Old,No,CODE_QUALITY_AUDIT_2025.md,No,Delete,N/A,P3,0.5
+AUDIT_QUICK_SUMMARY.txt,Internal,Audit quick summary (text format),Old,No,AUDIT_EXECUTIVE_SUMMARY.md,No,Delete,N/A,P3,0.5
+HOUSEKEEPING_SUMMARY.txt,Internal,Housekeeping summary (text format),Old,No,HOUSEKEEPING_REPORT.md,No,Delete,N/A,P3,0.5
+PERFORMANCE_QUICK_REFERENCE.txt,Internal,Performance quick reference (text format),Old,No,PERFORMANCE_ANALYSIS.md,No,Delete,N/A,P3,0.5
+CLEANUP_SUMMARY.md,Obsolete,Old directory cleanup notes,Complete,No,CLEANUP_PLAN.md,Yes,Delete,N/A,P1,0.5
+CLEANUP_PLAN.md,Obsolete,Directory cleanup plan,Complete,No,CLEANUP_SUMMARY.md,Yes,Delete,N/A,P1,0.5
+PHASE_3_COMPLETE.md,Obsolete,Phase 3 completion tracking document,Complete,Yes,None,Yes,Delete,N/A,P1,0.5
+PHASE_5_5_SUMMARY.md,Obsolete,Phase 5.5 implementation summary,Complete,Yes,None,Yes,Delete,N/A,P1,0.5
+PHASE_3_5_TODO.md,Obsolete,Phase 3.5 TODO tracking,Complete,No,None,Yes,Delete,N/A,P1,0.5
+IMPLEMENTATION_SUMMARY.md,Obsolete,Phase 5.3 analytics implementation summary,Complete,Yes,None,Yes,Delete,N/A,P1,0.5
+MSG_FEATURE_COMPLETE.md,Obsolete,Messaging feature completion tracking,Complete,Yes,None,Yes,Delete,N/A,P1,0.5
+NAS_SETUP_COMPLETE.md,Obsolete,NAS setup completion tracking,Complete,No,None,Yes,Delete,N/A,P1,0.5
+SETUP_COMPLETE.md,Obsolete,General setup completion tracking,Complete,No,QUICK_START.md,Yes,Delete,N/A,P1,0.5
+AI_ROUTING_BUILD_SUMMARY.md,Internal,AI routing system build summary,Old,Yes,None,Yes,Update,N/A,P2,2
+LEARNING_SYSTEM_SUMMARY.md,Internal,Learning system summary,Old,Yes,None,Yes,Archive,docs/architecture/,P3,1
+ALIAS_QUICK_REFERENCE.md,User,Quick reference for alias system,Current,No,ALIAS_SYSTEM_ANALYSIS.md,Yes,Keep,N/A,P2,0
+PLUGIN_SYSTEM_QUICK_REFERENCE.md,User,Quick reference for plugin system,Current,No,PLUGIN_ARCHITECTURE_ANALYSIS.md,Yes,Keep,N/A,P2,0
+AGENT_QUICK_REFERENCE.md,User,Quick reference for agent system,Current,No,AGENT_EXECUTION_PLAN.md,Yes,Keep,N/A,P2,0
+SECURITY_SUMMARY.md,Internal,Security summary document,Current,Partial,SECURITY_ANALYSIS.md,Yes,Update,N/A,P1,1
+AUDIT_EXECUTIVE_SUMMARY.md,Internal,Audit executive summary,Old,No,CODE_QUALITY_AUDIT_2025.md,Yes,Archive,docs/project/,P3,1
+HOUSEKEEPING_REPORT.md,Internal,Housekeeping report,Old,No,None,Yes,Archive,docs/project/,P3,1
+GITHUB_COMPARISON.md,Internal,GitHub vs ISAAC comparison,Old,No,None,Yes,Archive,docs/project/,P3,1
+ANALYSIS_INDEX.md,Internal,Index of analysis files,Old,No,None,Yes,Delete,N/A,P2,0.5
+ANALYSIS_FILES_README.md,Internal,README for analysis files,Old,No,None,Yes,Delete,N/A,P2,0.5
+FILE_PATH_MASTER_LIST.md,Internal,Master list of file paths,Current,Yes,None,Yes,Keep,N/A,P3,0
+proposal.md,Internal,Original project proposal document,Old,No,None,Yes,Archive,docs/project/,P3,0.5
+sunday_task.md,Internal,Task tracking document,Old,No,None,Yes,Delete,N/A,P2,0.5
+QUICK_START_AI.md,User,AI integration quick start guide,Current,Partial,None,Yes,Keep,N/A,P2,0
+QUICK_START_ANALYTICS.md,User,Analytics quick start guide,Current,Partial,None,Yes,Keep,N/A,P2,0
+WINDOWS_SETUP.md,User,Windows-specific setup instructions,Current,Partial,QUICK_START.md,Yes,Keep,N/A,P2,0
