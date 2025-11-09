@@ -1,0 +1,44 @@
+# isaac/commands/upload/command.yaml
+name: upload
+version: 1.0.0
+status: experimental
+summary: "Upload images to cloud storage"
+description: |
+  Upload images to cloud storage with automatic thumbnail generation.
+  Supports drag-and-drop or file path specification.
+
+triggers: ["/upload"]
+aliases: []
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: paths
+    type: string
+    required: true
+    help: "Comma-separated paths to image files to upload"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/upload --paths image1.jpg,image2.png  # Upload specific images"
+  - "/upload --paths /path/to/images/*.jpg   # Upload with glob pattern"

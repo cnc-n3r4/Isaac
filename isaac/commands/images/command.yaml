@@ -1,0 +1,62 @@
+# isaac/commands/images/command.yaml
+name: images
+version: 1.0.0
+status: experimental
+summary: "Browse uploaded images and history"
+description: |
+  View uploaded images with thumbnails and metadata.
+  Supports browsing history and searching images.
+
+triggers: ["/images"]
+aliases: []
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: action
+    type: enum
+    enum: [history, search, ocrsearch, info]
+    required: false
+    default: history
+    help: "Action: history (default), search, ocrsearch, or info"
+  - name: query
+    type: string
+    required: false
+    help: "Search query for filenames (used with search/ocrsearch actions)"
+  - name: checksum
+    type: string
+    required: false
+    help: "Image checksum for info action"
+  - name: limit
+    type: integer
+    required: false
+    default: 10
+    help: "Maximum number of results to show"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 5000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/images                    # Show recent image history"
+  - "/images --action history --limit 5  # Show last 5 images"
+  - "/images --action search --query logo  # Search for images with 'logo' in name"
+  - "/images --action ocrsearch --query hello  # Search images containing 'hello' in OCR text"
+  - "/images --action info --checksum abc123  # Show detailed info for specific image"

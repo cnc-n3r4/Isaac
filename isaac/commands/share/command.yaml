@@ -1,0 +1,55 @@
+# isaac/commands/share/command.yaml
+name: share
+version: 1.0.0
+status: experimental
+summary: "Generate shareable links for uploaded images"
+description: |
+  Create shareable public links for images that can be shared with others.
+  Links can have expiration times and can be revoked.
+
+triggers: ["/share"]
+aliases: []
+
+dependencies:
+  packages: []
+  api_keys: []
+
+args:
+  - name: action
+    type: enum
+    enum: [create, list, revoke]
+    required: true
+    help: "Action to perform: create, list, or revoke"
+  - name: checksum
+    type: string
+    required: false
+    help: "Image checksum for create/revoke actions"
+  - name: expires
+    type: integer
+    required: false
+    default: 7
+    help: "Link expiration in days (default: 7)"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 10000
+    max_stdout_kib: 64
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/share --action create --checksum abc123  # Create shareable link"
+  - "/share --action list                        # List all shared links"
+  - "/share --action revoke --checksum abc123   # Revoke shareable link"

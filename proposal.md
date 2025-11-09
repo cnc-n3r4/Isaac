@@ -59,11 +59,11 @@ Isaac evolves from a terminal assistant to a truly intelligent development envir
 ## **Phase 1: Enhanced Foundation** (Week 2-3)
 
 ### 1.1 Cloud Image Storage
-- [ ] **Image Upload Service** - Auto-upload dropped images to cloud
-- [ ] **Thumbnail Generation** - Create previews for quick browsing
-- [ ] **Shareable Links** - Generate public URLs for collaboration
-- [ ] **Image History Browser** - `/images --history` with previews
-- [ ] **OCR Integration** - Extract text from images automatically
+- [x] **Image Upload Service** - Auto-upload dropped images to cloud (implemented: `isaac/images/cloud_storage.py`)
+- [x] **Thumbnail Generation** - Create previews for quick browsing (implemented: PIL-based thumbnail creation)
+- [x] **Shareable Links** - Generate public URLs for collaboration (implemented: token-based sharing with expiration)
+- [x] **Image History Browser** - `/images --history` with previews (implemented: `/images` command with history/search/info)
+- [x] **OCR Integration** - Extract text from images automatically (implemented: pytesseract-based OCR with graceful fallback)
 - [ ] **Storage Quotas** - Manage and display storage usage
 
 ### 1.2 Smart Drag-Drop System
