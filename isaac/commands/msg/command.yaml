@@ -1,5 +1,6 @@
 name: msg
 version: 2.0.0
+status: stable
 summary: "View and manage AI assistant message notifications"
 description: |
   Comprehensive message queue management for ISAAC notifications.
@@ -14,6 +15,10 @@ description: |
 
 triggers: ["/msg"]
 aliases: ["/messages"]
+
+dependencies:
+  packages: []
+  api_keys: []
 
 args:
   - name: filter

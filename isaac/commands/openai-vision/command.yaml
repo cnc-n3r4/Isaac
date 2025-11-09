@@ -1,0 +1,54 @@
+name: openai-vision
+version: 0.1.0
+status: stub
+summary: "OpenAI Vision API integration"
+stub_reason: "Not yet implemented"
+description: |
+  Analyze images using OpenAI's Vision API.
+
+  Planned features:
+  - Image analysis and description
+  - OCR and text extraction
+  - Visual question answering
+  - Multi-image comparison
+
+triggers: ["/vision"]
+aliases: ["/see", "/openai-vision"]
+
+dependencies:
+  packages: []
+  api_keys: ["OPENAI_API_KEY"]
+
+args:
+  - name: image
+    type: string
+    required: true
+    help: "Path to image file or URL"
+  - name: prompt
+    type: string
+    required: false
+    help: "Question about the image"
+
+stdin: false
+stdout:
+  type: text
+
+security:
+  scope: user
+  allow_remote: false
+  resources:
+    timeout_ms: 30000
+    max_stdout_kib: 256
+
+runtime:
+  entry: "run.py"
+  interpreter: "python"
+
+telemetry:
+  log_invocation: true
+  log_output: false
+
+examples:
+  - "/vision photo.jpg"
+  - "/vision screenshot.png --prompt 'What is in this image?'"
+  - "/see diagram.png --prompt 'Explain this architecture'"
