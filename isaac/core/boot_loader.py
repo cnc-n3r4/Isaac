@@ -254,7 +254,7 @@ class BootLoader:
 
         # Header
         print()
-        print("ISAAC v2.0.0 (Phase 9 - Consolidated Commands)")
+        print("ISAAC v2.0.0")
         print("━" * 70)
         print()
 
@@ -331,14 +331,6 @@ class BootLoader:
         for cmd, msg in sorted(fail_cmds):
             self._print_status(PluginStatus.FAIL, f"{cmd} ({msg})")
 
-        print()
-
-        # Phase 9: Consolidated Commands
-        print("✨ Phase 9 - Consolidated Commands:")
-        consolidated = ["/help", "/file", "/search", "/task", "/status", "/config"]
-        for cmd in consolidated:
-            if any(cmd in ok_cmd for ok_cmd in ok_cmds):
-                self._print_status(PluginStatus.OK, f"{cmd} - Unified command interface")
         print()
 
         # Summary
