@@ -104,10 +104,15 @@ class PermanentShell:
                 # If no inline suggestion, try multi-step prediction
                 self._handle_multi_step_prediction(event)
 
-        @kb.add("c-tab")  # Ctrl+Tab
-        def _(event):
-            """Execute next command in multi-step sequence."""
-            self._execute_next_in_sequence()
+        # Only add Ctrl+Tab binding if supported (avoid "Invalid key: c-tab" error)
+        try:
+            @kb.add("c-tab")  # Ctrl+Tab
+            def _(event):
+                """Execute next command in multi-step sequence."""
+                self._execute_next_in_sequence()
+        except ValueError:
+            # Skip Ctrl+Tab binding if not supported in this terminal
+            pass
 
         return kb
 

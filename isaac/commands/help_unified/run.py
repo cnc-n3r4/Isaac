@@ -395,20 +395,13 @@ def main():
     """Command entry point"""
     import sys
 
-    # Check if being called through BaseCommand or directly
-    if len(sys.argv) > 1 and sys.argv[1] == "--use-base-command":
-        # Use BaseCommand interface
-        sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-        from isaac.commands.base import run_command
-        from isaac.commands.help_unified.command_impl import HelpUnifiedCommand
+    # Always use BaseCommand interface for dispatcher compatibility
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+    from isaac.commands.base import run_command
+    from isaac.commands.help_unified.command_impl import HelpUnifiedCommand
 
-        command = HelpUnifiedCommand()
-        run_command(command)
-    else:
-        # Legacy direct execution
-        command = UnifiedHelpCommand()
-        result = command.run(sys.argv[1:])
-        print(result)
+    command = HelpUnifiedCommand()
+    run_command(command)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ Created as part of Task 2.5: Command Schema Standardization
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import sys
 import json
 
@@ -433,21 +433,22 @@ Safety Tier: {manifest.tier}"""
             print(json.dumps(error_blob))
 
 
-def detect_execution_mode() -> str:
+def detect_execution_mode() -> Tuple[str, Optional[str]]:
     """
     Detect how the command is being executed.
 
     Returns:
-        "standalone", "dispatcher", or "piped"
+        Tuple of (mode, stdin_data) where mode is "standalone", "dispatcher", or "piped"
+        and stdin_data is the raw stdin content (or None for standalone)
     """
     if sys.stdin.isatty():
-        return "standalone"
+        return ("standalone", None)
 
     try:
         # Try to read stdin
         stdin_data = sys.stdin.read()
         if not stdin_data:
-            return "standalone"
+            return ("standalone", None)
 
         # Try to parse as JSON
         data = json.loads(stdin_data)
@@ -455,14 +456,14 @@ def detect_execution_mode() -> str:
         # Check format
         if isinstance(data, dict):
             if "kind" in data:
-                return "piped"
+                return ("piped", stdin_data)
             elif "manifest" in data or "command" in data:
-                return "dispatcher"
+                return ("dispatcher", stdin_data)
 
-        return "standalone"
+        return ("standalone", None)
 
     except (json.JSONDecodeError, Exception):
-        return "standalone"
+        return ("standalone", None)
 
 
 def run_command(command_instance: BaseCommand, args: Optional[List[str]] = None) -> None:
@@ -476,15 +477,15 @@ def run_command(command_instance: BaseCommand, args: Optional[List[str]] = None)
         command_instance: Instance of a BaseCommand subclass
         args: Optional arguments (defaults to sys.argv[1:])
     """
-    mode = detect_execution_mode()
+    mode, stdin_data = detect_execution_mode()
 
     if mode == "standalone":
         command_instance.run_standalone(args)
     elif mode == "dispatcher":
-        stdin_data = sys.stdin.read()
+        assert stdin_data is not None
         payload = json.loads(stdin_data)
         command_instance.run_dispatcher(payload)
     elif mode == "piped":
-        stdin_data = sys.stdin.read()
+        assert stdin_data is not None
         blob = json.loads(stdin_data)
         command_instance.run_piped(blob)

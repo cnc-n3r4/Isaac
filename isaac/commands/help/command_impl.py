@@ -19,7 +19,32 @@ class HelpCommand(BaseCommand):
 
     def __init__(self):
         super().__init__()
+        self.command_manifests = self._load_command_manifests()
         self.help_map = self._build_help_map()
+
+    def _load_command_manifests(self) -> Dict[str, Dict]:
+        """Load all command manifests from the commands directory"""
+        import yaml
+        
+        manifests = {}
+        commands_dir = Path(__file__).parent.parent
+        
+        # Find all command.yaml files
+        for yaml_file in commands_dir.rglob("command.yaml"):
+            try:
+                with open(yaml_file, 'r', encoding='utf-8') as f:
+                    manifest = yaml.safe_load(f)
+                    if manifest:
+                        # Register by all triggers and aliases
+                        for trigger in manifest.get("triggers", []):
+                            manifests[trigger] = manifest
+                        for alias in manifest.get("aliases", []):
+                            manifests[alias] = manifest
+            except Exception as e:
+                # Skip malformed manifests
+                continue
+                
+        return manifests
 
     def execute(self, args: List[str], context: Optional[Dict[str, Any]] = None) -> CommandResponse:
         """
@@ -60,90 +85,109 @@ class HelpCommand(BaseCommand):
 
     def _get_overview_help(self) -> str:
         """Show overview of available commands"""
-        return """
-Isaac Command Reference - Phase 9 (Consolidated Commands)
-
-════════════════════════════════════════════════════════════
-✨ 6 CORE COMMANDS (Unified Interface):
-════════════════════════════════════════════════════════════
-
-  /help [command]         Unified help (replaces /man, /apropos, /whatis)
-    /help                   Command overview
-    /help /search           Detailed help for specific command
-
-  /file <operation>       All file operations (replaces /read, /write, /edit)
-    /file read <path>       Read files
-    /file write <path>      Write/create files
-    /file edit <path>       Edit with string replacement
-    /file append <path>     Append to files
-    /file <path>            Smart mode (auto-detect)
-
-  /search <query>         Universal search (replaces /grep, /glob)
-    /search "*.py"          Find Python files (auto-detects glob)
-    /search "TODO"          Search for TODO (auto-detects grep)
-    /search "TODO" in "*.py" Search TODO in Python files
-
-  /task <operation>       Background task management
-    /task list              List all tasks
-    /task show <id>         Show task details
-    /task cancel <id>       Cancel task
-
-  /status [mode]          System status dashboard
-    /status                 Quick status
-    /status -v              Detailed status
-
-  /config <setting>       Configuration
-    /config --ai            AI provider settings
-    /config --ai-routing    AI routing config
-    /config --apikey <srv> <key> Set API key
-
-════════════════════════════════════════════════════════════
-🔧 SHELL COMMANDS (Work directly - no prefix):
-════════════════════════════════════════════════════════════
-  cat, grep, ls, cd, pwd, find, cp, mv, rm, mkdir, echo
-
-════════════════════════════════════════════════════════════
-💬 AI & MESSAGING:
-════════════════════════════════════════════════════════════
-  isaac <query>      - Natural language AI (primary interface!)
-  /ask <question>    - Direct AI chat (no execution)
-  /msg               - View notifications
-  /msg --ack ID      - Acknowledge message
-  /msg --clear       - Clear messages
-
-════════════════════════════════════════════════════════════
-📚 COLLECTIONS & DATA:
-════════════════════════════════════════════════════════════
-  /mine --create <name>     Create xAI collection
-  /mine --use <name>        Switch collection
-  /mine --upload <file>     Upload to collection
-  /mine --search <query>    Search collection
-
-════════════════════════════════════════════════════════════
-🎯 QUICK EXAMPLES:
-════════════════════════════════════════════════════════════
-  /search "TODO"                    Search for TODOs
-  /file read app.py                 Read a file
-  isaac update all pip packages     Let AI help you!
-  /msg                              Check notifications
-  /help /search                     Detailed help
-
-════════════════════════════════════════════════════════════
-📝 NOTE:
-════════════════════════════════════════════════════════════
-  Legacy commands (/read, /write, /grep, /glob, /man, /apropos)
-  still work for backward compatibility, but the 6 core commands
-  above are simpler and recommended.
-
-  Natural language is the PRIMARY interface - just ask Isaac!
-""".strip()
+        # Group commands by category
+        categories = {}
+        for trigger, manifest in self.command_manifests.items():
+            if trigger.startswith('/'):  # Only show slash commands
+                category = manifest.get("category", "general")
+                if category not in categories:
+                    categories[category] = []
+                if trigger not in categories[category]:  # Avoid duplicates
+                    categories[category].append(trigger)
+        
+        # Build help text
+        help_text = "ISAAC COMMAND REFERENCE\n"
+        help_text += "=" * 50 + "\n\n"
+        
+        # Sort categories
+        category_order = ["system", "file", "ai", "communication", "workspace", "general"]
+        for cat in category_order:
+            if cat in categories:
+                help_text += f"{cat.upper()}:\n"
+                for cmd in sorted(categories[cat]):
+                    manifest = self.command_manifests[cmd]
+                    summary = manifest.get("summary", manifest.get("description", ""))
+                    if len(summary) > 60:
+                        summary = summary[:57] + "..."
+                    help_text += f"  {cmd:<20} {summary}\n"
+                help_text += "\n"
+        
+        # Add any remaining categories
+        for cat, commands in categories.items():
+            if cat not in category_order:
+                help_text += f"{cat.upper()}:\n"
+                for cmd in sorted(commands):
+                    manifest = self.command_manifests[cmd]
+                    summary = manifest.get("summary", manifest.get("description", ""))
+                    if len(summary) > 60:
+                        summary = summary[:57] + "..."
+                    help_text += f"  {cmd:<20} {summary}\n"
+                help_text += "\n"
+        
+        help_text += "For detailed help: /help <command>\n"
+        help_text += "Example: /help /msg\n"
+        
+        return help_text
 
     def _get_detailed_help(self, command_name: str) -> str:
         """Show detailed help for a specific command"""
-        return self.help_map.get(
-            command_name,
-            f"No detailed help available for: {command_name}\n\nUse /help to see available commands."
-        )
+        # First check if we have custom help
+        if command_name in self.help_map:
+            return self.help_map[command_name]
+        
+        # Otherwise generate help from manifest
+        manifest = self.command_manifests.get(command_name)
+        if manifest:
+            return self._generate_help_from_manifest(manifest)
+        
+        return f"No help available for: {command_name}\n\nUse /help to see available commands."
+
+    def _generate_help_from_manifest(self, manifest: Dict) -> str:
+        """Generate help text from a command manifest"""
+        name = manifest.get("name", "Unknown")
+        description = manifest.get("description", "")
+        usage = manifest.get("usage", "")
+        examples = manifest.get("examples", [])
+        tier = manifest.get("tier", "?")
+        aliases = manifest.get("aliases", [])
+        args = manifest.get("args", [])
+        
+        help_text = f"{name.upper()} COMMAND - DETAILED HELP\n\n"
+        
+        if description:
+            help_text += f"DESCRIPTION:\n  {description}\n\n"
+            
+        if usage:
+            help_text += f"USAGE:\n  {usage}\n\n"
+            
+        if examples:
+            help_text += "EXAMPLES:\n"
+            for example in examples:
+                help_text += f"  {example}\n"
+            help_text += "\n"
+            
+        if args:
+            help_text += "ARGUMENTS:\n"
+            for arg in args:
+                arg_name = arg.get("name", "")
+                arg_type = arg.get("type", "")
+                required = arg.get("required", False)
+                arg_help = arg.get("help", "")
+                enum_values = arg.get("enum", [])
+                
+                req_str = "required" if required else "optional"
+                help_text += f"  --{arg_name} ({arg_type}, {req_str})"
+                if enum_values:
+                    help_text += f" [{', '.join(enum_values)}]"
+                help_text += f"\n    {arg_help}\n"
+            help_text += "\n"
+            
+        help_text += f"SAFETY TIER: {tier}\n"
+        
+        if aliases:
+            help_text += f"ALIASES: {', '.join(aliases)}\n"
+            
+        return help_text.strip()
 
     def _build_help_map(self) -> Dict[str, str]:
         """Build comprehensive help map for all commands"""
