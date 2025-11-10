@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from isaac.core.session_manager import SessionManager
+from isaac.logging import StructuredLogger
 
 
 @dataclass
@@ -53,6 +54,9 @@ class MistakeLearner:
         self.session_manager = session_manager
         self.data_dir = Path.home() / ".isaac" / "learning"
         self.data_dir.mkdir(parents=True, exist_ok=True)
+
+        # Initialize structured logger
+        self.logger = StructuredLogger()
 
         # Database for mistake storage
         self.db_path = self.data_dir / "mistakes.db"
@@ -102,7 +106,12 @@ class MistakeLearner:
                     for pattern_id, pattern_data in data.items():
                         self.learning_patterns[pattern_id] = LearningPattern(**pattern_data)
             except Exception as e:
-                print(f"Error loading learning patterns: {e}")
+                self.logger.log_error(
+                    error_type="pattern_load_error",
+                    message="Error loading learning patterns from disk",
+                    source="mistake_learner.py:_load_patterns",
+                    details={"error": str(e), "file": str(self.patterns_file)}
+                )
 
     def _save_patterns(self):
         """Save learning patterns to disk."""
@@ -111,7 +120,12 @@ class MistakeLearner:
             with open(self.patterns_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            print(f"Error saving learning patterns: {e}")
+            self.logger.log_error(
+                error_type="pattern_save_error",
+                message="Error saving learning patterns to disk",
+                source="mistake_learner.py:_save_patterns",
+                details={"error": str(e), "file": str(self.patterns_file)}
+            )
 
     def record_mistake(self, mistake: MistakeRecord):
         """Record a new mistake for learning."""
@@ -136,6 +150,16 @@ class MistakeLearner:
                     mistake.recurrence_count,
                 ),
             )
+
+        # Log mistake recording
+        self.logger.log_mistake_recorded(
+            mistake_id=mistake.id,
+            mistake_type=mistake.mistake_type,
+            description=mistake.mistake_description,
+            correction=mistake.user_correction,
+            severity=mistake.severity,
+            context=mistake.context
+        )
 
     def get_similar_mistakes(
         self, mistake_type: str, context: Dict[str, Any], limit: int = 10
@@ -210,6 +234,18 @@ class MistakeLearner:
 
         # Mark mistakes as learned
         self._mark_mistakes_learned([m.id for m in mistakes])
+
+        # Log pattern learning
+        self.logger.log_pattern_learned(
+            pattern_id=pattern_id,
+            pattern_type=mistake_type,
+            description=pattern.pattern_description,
+            confidence=pattern.confidence,
+            trigger_conditions=pattern.trigger_conditions,
+            correction_action=pattern.correction_action,
+            success_count=pattern.success_count,
+            failure_count=pattern.failure_count
+        )
 
         return pattern
 
@@ -317,9 +353,14 @@ class MistakeLearner:
                     if self._stop_learning:
                         break
                     pattern = self.learn_from_mistakes(mistake_type)
-                    if pattern:
-                        print(f"Learned new pattern: {pattern.id}")
+                    # Pattern learning is already logged in learn_from_mistakes()
+                    # No need to print here
 
             except Exception as e:
-                print(f"Background learning error: {e}")
+                self.logger.log_error(
+                    error_type="background_learning_error",
+                    message="Error in background learning thread",
+                    source="mistake_learner.py:_background_learning",
+                    details={"error": str(e)}
+                )
                 time.sleep(60)  # Wait a minute before retrying

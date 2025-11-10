@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from isaac.ambient.workflow_learner import WorkflowLearner
+from isaac.logging import StructuredLogger
 
 
 @dataclass
@@ -47,6 +48,9 @@ class ProactiveSuggester:
         self.max_context_history = 100
         self.suggestion_timeout = 3600  # 1 hour
 
+        # Initialize structured logger
+        self.logger = StructuredLogger()
+
         # Context tracking
         self.current_context = {
             "last_command": "",
@@ -77,7 +81,12 @@ class ProactiveSuggester:
                         if not suggestion.is_expired():
                             self.suggestions[suggestion.suggestion_id] = suggestion
             except Exception as e:
-                print(f"Warning: Could not load suggestions: {e}")
+                self.logger.log_warning(
+                    warning_type="suggestion_load_error",
+                    message="Could not load suggestions from disk",
+                    source="proactive_suggester.py:_load_suggestions",
+                    details={"error": str(e), "file": str(suggestion_file)}
+                )
 
     def _save_suggestions(self) -> None:
         """Save suggestions to disk."""
@@ -93,7 +102,12 @@ class ProactiveSuggester:
             with open(suggestion_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            print(f"Warning: Could not save suggestions: {e}")
+            self.logger.log_warning(
+                warning_type="suggestion_save_error",
+                message="Could not save suggestions to disk",
+                source="proactive_suggester.py:_save_suggestions",
+                details={"error": str(e), "file": str(suggestion_file)}
+            )
 
     def update_context(self, context_update: Dict[str, Any]) -> None:
         """Update current context with new information.
@@ -220,6 +234,17 @@ class ProactiveSuggester:
             )
 
         self.suggestions[suggestion_id] = suggestion
+
+        # Log suggestion generation
+        self.logger.log_suggestion_generated(
+            suggestion_id=suggestion_id,
+            suggestion_type=suggestion.type,
+            title=suggestion.title,
+            description=suggestion.description,
+            confidence=suggestion.confidence,
+            context=suggestion.context
+        )
+
         self._save_suggestions()
 
     def _generate_pattern_suggestions(self, command: str) -> None:
@@ -279,6 +304,16 @@ class ProactiveSuggester:
 
             self.suggestions[suggestion_id] = suggestion
 
+            # Log suggestion generation
+            self.logger.log_suggestion_generated(
+                suggestion_id=suggestion_id,
+                suggestion_type=suggestion.type,
+                title=suggestion.title,
+                description=suggestion.description,
+                confidence=suggestion.confidence,
+                context=suggestion.context
+            )
+
         if pattern_suggestions:
             self._save_suggestions()
 
@@ -305,6 +340,16 @@ class ProactiveSuggester:
             )
             self.suggestions[suggestion_id] = suggestion
 
+            # Log suggestion generation
+            self.logger.log_suggestion_generated(
+                suggestion_id=suggestion_id,
+                suggestion_type=suggestion.type,
+                title=suggestion.title,
+                description=suggestion.description,
+                confidence=suggestion.confidence,
+                context=suggestion.context
+            )
+
         # Long idle time detection
         if context["time_since_last_command"] > 1800:  # 30 minutes
             suggestion_id = f"context_idle_{int(time.time())}"
@@ -324,6 +369,16 @@ class ProactiveSuggester:
             )
             self.suggestions[suggestion_id] = suggestion
 
+            # Log suggestion generation
+            self.logger.log_suggestion_generated(
+                suggestion_id=suggestion_id,
+                suggestion_type=suggestion.type,
+                title=suggestion.title,
+                description=suggestion.description,
+                confidence=suggestion.confidence,
+                context=suggestion.context
+            )
+
     def _background_analysis(self) -> None:
         """Background thread for continuous analysis."""
         while True:
@@ -338,7 +393,12 @@ class ProactiveSuggester:
                 self._save_suggestions()
 
             except Exception as e:
-                print(f"Background analysis error: {e}")
+                self.logger.log_error(
+                    error_type="background_analysis_error",
+                    message="Error in background analysis thread",
+                    source="proactive_suggester.py:_background_analysis",
+                    details={"error": str(e)}
+                )
 
             time.sleep(60)  # Run every minute
 
