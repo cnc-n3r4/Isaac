@@ -309,7 +309,7 @@ class CommandDispatcher:
                 "stdin": stdin or "",
                 "manifest": manifest,
                 "session": {
-                    "machine_id": getattr(self.session.config, "machine_id", "unknown"),
+                    "machine_id": self.session.config.get("machine_id", "unknown"),
                     "user_prefs": getattr(self.session.preferences, "data", {}),
                     "config": self.session.get_config(),
                 },

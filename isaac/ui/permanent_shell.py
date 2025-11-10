@@ -156,11 +156,13 @@ class PermanentShell:
 
         # Print output
         if result.output:
-            print(result.output)
+            sys.stdout.write(result.output + "\n")
+            sys.stdout.flush()
 
         # Print any errors
         if not result.success and result.exit_code != 0:
-            print(f"Error (exit code {result.exit_code})", file=sys.stderr)
+            sys.stderr.write(f"Error (exit code {result.exit_code})\n")
+            sys.stderr.flush()
 
         # Check if sequence is complete
         if self.multi_step_index >= len(self.multi_step_sequence):
@@ -391,11 +393,13 @@ class PermanentShell:
 
                 # Print output
                 if result.output:
-                    print(result.output)
+                    sys.stdout.write(result.output + "\n")
+                    sys.stdout.flush()
 
                 # Print any errors
                 if not result.success and result.exit_code != 0:
-                    print(f"Error (exit code {result.exit_code})", file=sys.stderr)
+                    sys.stderr.write(f"Error (exit code {result.exit_code})\n")
+                    sys.stderr.flush()
 
             except KeyboardInterrupt:
                 print("\nUse 'exit' or '/exit' to quit")
