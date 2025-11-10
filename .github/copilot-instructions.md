@@ -7,13 +7,50 @@
 ```powershell
 # Development setup
 pip install -e .              # Install with entry point 'isaac'
-isaac --start                 # Launch permanent shell assistant
+isaac --start -key YOUR_KEY   # Launch permanent shell assistant (requires auth key)
 
 # Testing (run after tier/config changes)
 pytest tests/test_tier_validator.py -v           # Tier safety tests
 pytest tests/test_cloud_client.py -v             # Cloud sync tests
 pytest tests/ --cov=isaac --cov-report=term-missing  # Full coverage report
 ```
+
+### First Time Setup
+```powershell
+# Set API keys for AI functionality (at least one required)
+$env:XAI_API_KEY = "your-xai-key"           # Grok (primary)
+$env:ANTHROPIC_API_KEY = "your-claude-key"  # Claude (fallback)
+$env:OPENAI_API_KEY = "your-openai-key"     # OpenAI (backup)
+
+# Launch Isaac
+isaac --start
+```
+
+### Basic Usage
+```powershell
+# Meta-commands (start with /)
+isaac --start
+/help                    # Show all available commands
+/status                  # System status and diagnostics
+/config                  # View/modify settings
+
+# AI queries (start with 'isaac')
+isaac show me all python files
+isaac what is Docker?
+isaac help me debug this error
+
+# Regular shell commands (tier-validated)
+/workspace create myproject --venv
+ls -la
+git status
+```
+
+### Command Categories
+- **AI & Analysis**: `/ask`, `/ambient`, `/debug`, `/script`
+- **File Operations**: `/read`, `/write`, `/edit`, `/search`, `/grep`
+- **System Management**: `/status`, `/config`, `/backup`, `/update`
+- **Workspace**: `/workspace`, `/bubble`, `/timemachine`
+- **Communication**: `/msg`, `/mine`, `/tasks`
 
 ## Big Picture Architecture
 
@@ -31,7 +68,7 @@ pytest tests/ --cov=isaac --cov-report=term-missing  # Full coverage report
 ## Critical Developer Workflows
 
 - **Build & Setup**: `pip install -e .` creates `isaac`, `ask`, and `mine` entry points. Config in `~/.isaac/`.
-- **Testing**: `pytest tests/` (≥85% coverage required). Use fixtures from `tests/conftest.py`: `temp_isaac_dir`, `mock_api_client`, `sample_preferences`.
+- **Testing**: `pytest tests/` (≥85% coverage required). Use fixtures from `tests/conftest.py`: `temp_isaac_dir`, `mock_api_client`, `sample_preferences`. ⚠️ **Import errors in test suite** due to incomplete command implementations.
 - **Meta-Commands**: 40+ built-in commands in `isaac/commands/*/`. Each directory has `command.yaml` manifest and `run.py` implementation.
 - **AI Providers**: Set `XAI_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENAI_API_KEY`. Router auto-selects based on task complexity via `TaskAnalyzer`.
 - **Tool Development**: Extend `BaseTool` from `isaac/tools/base.py`. See `ReadTool`, `WriteTool`, `EditTool`, `ShellTool` for patterns.

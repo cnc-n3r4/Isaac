@@ -25,7 +25,7 @@ args:
     required: false
     help: "Image checksum for create/revoke actions"
   - name: expires
-    type: integer
+    type: int
     required: false
     default: 7
     help: "Link expiration in days (default: 7)"

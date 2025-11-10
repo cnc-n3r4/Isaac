@@ -1,3 +1,7 @@
+name: update
+version: 1.0.0
+summary: "Intelligent package management and dependency updates"
+
 triggers:
   - "/update"
   - "/upgrade"

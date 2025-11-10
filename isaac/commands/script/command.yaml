@@ -1,11 +1,15 @@
+name: script
+version: 1.0.0
+summary: "AI-powered script generation, translation, and scheduling"
+
 triggers:
   - "/script"
   - "/bash"
   - "/sh"
 aliases:
-  - "script"
-  - "bash"
-  - "sh"
+  - "/script"
+  - "/bash"
+  - "/sh"
 args:
   - name: action
     type: enum
@@ -29,7 +33,7 @@ args:
     required: false
     description: "Schedule time in natural language (for schedule action)"
   - name: strict
-    type: boolean
+    type: bool
     default: false
     description: "Use strict validation mode"
   - name: detail_level

@@ -1,11 +1,15 @@
+name: debug
+version: 1.0.0
+summary: "AI-powered debugging and error analysis"
+
 triggers:
   - "/debug"
   - "/analyze"
   - "/fix"
 aliases:
-  - "debug"
-  - "analyze"
-  - "fix"
+  - "/debug"
+  - "/analyze"
+  - "/fix"
 args:
   - name: command
     type: string
