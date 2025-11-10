@@ -307,21 +307,41 @@ class PermanentShell:
         print()
 
     def _get_prompt(self) -> str:
-        """Build prompt with queue status."""
-        base_prompt = "$"
+        """Build color-coded prompt based on system status.
 
-        # Check queue status
+        Color coding:
+        - Green: Normal state (no pending items)
+        - Yellow: Pending messages (worth noticing)
+        - Red: Queued sync commands (needs attention) OR both issues
+        """
+        base_prompt = "$> "
+
+        # Check message queue status (pending notifications)
+        message_counts = self.message_queue.get_pending_counts()
+        total_messages = message_counts["system"] + message_counts["code"]
+
+        # Check sync queue status (commands waiting to sync)
         queue_status = self.session.get_queue_status()
-        pending_count = queue_status["pending"]
+        pending_sync = queue_status["pending"]
 
-        if pending_count > 0:
-            # Show offline indicator with count
-            prompt = f"{base_prompt} [OFFLINE: {pending_count} queued]> "
+        # Determine color based on status
+        if pending_sync > 0 and total_messages > 0:
+            # Both sync issues and messages - highest priority (red)
+            color_code = "\033[31m"  # Red
+        elif pending_sync > 0:
+            # Sync issues - needs attention (red)
+            color_code = "\033[31m"  # Red
+        elif total_messages > 0:
+            # Just pending messages - worth noticing (yellow)
+            color_code = "\033[33m"  # Yellow
         else:
-            prompt = f"{base_prompt}> "
+            # Normal state (green)
+            color_code = "\033[32m"  # Green
 
-        # Make prompt yellow
-        return f"\033[33m{prompt}\033[0m"
+        # Reset color at end
+        reset_code = "\033[0m"
+
+        return f"{color_code}{base_prompt}{reset_code}"
 
     def run(self):
         """Main shell loop - simplified"""

@@ -2,9 +2,6 @@
 Mobile API - RESTful API for mobile companion apps
 """
 
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-
 
 class MobileAPI:
     """
@@ -12,6 +9,17 @@ class MobileAPI:
     """
 
     def __init__(self, isaac_core, host: str = "0.0.0.0", port: int = 8081):
+        try:
+            from flask import Flask, jsonify, request
+            from flask_cors import CORS
+        except ImportError:
+            raise ImportError("Flask is required for mobile API functionality. Install with: pip install flask flask-cors")
+
+        self.Flask = Flask
+        self.jsonify = jsonify
+        self.request = request
+        self.CORS = CORS
+
         self.app = Flask(__name__)
         CORS(self.app)
 
@@ -28,34 +36,34 @@ class MobileAPI:
         @self.app.route("/mobile/v1/health", methods=["GET"])
         def health():
             """Health check endpoint"""
-            return jsonify({"status": "healthy", "version": "5.5.0", "platform": "mobile"})
+            return self.jsonify({"status": "healthy", "version": "5.5.0", "platform": "mobile"})
 
         # Device registration
         @self.app.route("/mobile/v1/devices", methods=["POST"])
         def register_device():
             """Register a mobile device"""
-            data = request.json
+            data = self.request.json
             device_token = data.get("device_token")
             platform = data.get("platform")  # 'ios' or 'android'
 
             if not device_token or not platform:
-                return jsonify({"error": "device_token and platform required"}), 400
+                return self.jsonify({"error": "device_token and platform required"}), 400
 
             # TODO: Store device registration
-            return jsonify({"device_id": "new-device-id", "registered": True}), 201
+            return self.jsonify({"device_id": "new-device-id", "registered": True}), 201
 
         @self.app.route("/mobile/v1/devices/<device_id>", methods=["DELETE"])
         def unregister_device(device_id):
             """Unregister a mobile device"""
             # TODO: Remove device registration
-            return jsonify({"success": True})
+            return self.jsonify({"success": True})
 
         # Instance monitoring
         @self.app.route("/mobile/v1/instances", methods=["GET"])
         def list_instances():
             """List Isaac instances"""
             # TODO: Get list of Isaac instances user has access to
-            return jsonify(
+            return self.jsonify(
                 {
                     "instances": [
                         {
@@ -72,7 +80,7 @@ class MobileAPI:
         def get_instance_status(instance_id):
             """Get status of an Isaac instance"""
             # TODO: Get real-time instance status
-            return jsonify(
+            return self.jsonify(
                 {
                     "instance_id": instance_id,
                     "status": "active",
@@ -87,14 +95,14 @@ class MobileAPI:
         @self.app.route("/mobile/v1/instances/<instance_id>/commands", methods=["POST"])
         def execute_quick_command(instance_id):
             """Execute a quick command"""
-            data = request.json
+            data = self.request.json
             command = data.get("command")
 
             if not command:
-                return jsonify({"error": "command required"}), 400
+                return self.jsonify({"error": "command required"}), 400
 
             # TODO: Execute command on instance
-            return jsonify(
+            return self.jsonify(
                 {"execution_id": "exec-id", "status": "running", "instance_id": instance_id}
             )
 
@@ -102,7 +110,7 @@ class MobileAPI:
         def get_execution_status(execution_id):
             """Get execution status"""
             # TODO: Get execution status
-            return jsonify(
+            return self.jsonify(
                 {
                     "execution_id": execution_id,
                     "status": "completed",
@@ -116,7 +124,7 @@ class MobileAPI:
         def get_context(instance_id):
             """Get workspace context"""
             # TODO: Get workspace context
-            return jsonify(
+            return self.jsonify(
                 {
                     "instance_id": instance_id,
                     "workspace": "/home/user/project",
@@ -129,14 +137,14 @@ class MobileAPI:
         @self.app.route("/mobile/v1/instances/<instance_id>/search", methods=["POST"])
         def search_context(instance_id):
             """Search workspace context"""
-            data = request.json
+            data = self.request.json
             query = data.get("query")
 
             if not query:
-                return jsonify({"error": "query required"}), 400
+                return self.jsonify({"error": "query required"}), 400
 
             # TODO: Search workspace context
-            return jsonify(
+            return self.jsonify(
                 {"results": [{"file": "src/main.py", "line": 42, "content": "def main():"}]}
             )
 
@@ -144,10 +152,10 @@ class MobileAPI:
         @self.app.route("/mobile/v1/instances/<instance_id>/activity", methods=["GET"])
         def get_recent_activity(instance_id):
             """Get recent activity"""
-            limit = request.args.get("limit", 10, type=int)
+            limit = self.request.args.get("limit", 10, type=int)
 
             # TODO: Get recent activity
-            return jsonify(
+            return self.jsonify(
                 {
                     "activities": [
                         {
@@ -164,7 +172,7 @@ class MobileAPI:
         def get_notifications():
             """Get notifications for user"""
             # TODO: Get notifications
-            return jsonify(
+            return self.jsonify(
                 {
                     "notifications": [
                         {
@@ -183,14 +191,14 @@ class MobileAPI:
         def mark_notification_read(notification_id):
             """Mark notification as read"""
             # TODO: Mark as read
-            return jsonify({"success": True})
+            return self.jsonify({"success": True})
 
         # Bubbles (workspace snapshots)
         @self.app.route("/mobile/v1/bubbles", methods=["GET"])
         def list_bubbles():
             """List saved bubbles"""
             # TODO: Get bubbles
-            return jsonify(
+            return self.jsonify(
                 {
                     "bubbles": [
                         {
@@ -207,7 +215,7 @@ class MobileAPI:
         def get_bubble_info(bubble_id):
             """Get bubble information"""
             # TODO: Get bubble details
-            return jsonify(
+            return self.jsonify(
                 {
                     "id": bubble_id,
                     "name": "my-project",
@@ -222,10 +230,10 @@ class MobileAPI:
         @self.app.route("/mobile/v1/instances/<instance_id>/files", methods=["GET"])
         def list_files(instance_id):
             """List files in workspace"""
-            path = request.args.get("path", "")
+            path = self.request.args.get("path", "")
 
             # TODO: List files
-            return jsonify(
+            return self.jsonify(
                 {
                     "path": path,
                     "files": [
@@ -240,10 +248,10 @@ class MobileAPI:
         )
         def get_file_content(instance_id, file_path):
             """Get file content (limited size for mobile)"""
-            max_size = request.args.get("max_size", 10000, type=int)
+            max_size = self.request.args.get("max_size", 10000, type=int)
 
             # TODO: Get file content
-            return jsonify(
+            return self.jsonify(
                 {
                     "path": file_path,
                     "content": "File content here...",
@@ -257,7 +265,7 @@ class MobileAPI:
         def get_analytics_summary(instance_id):
             """Get analytics summary (mobile-optimized)"""
             # TODO: Get analytics
-            return jsonify(
+            return self.jsonify(
                 {
                     "commands_today": 42,
                     "productivity_score": 85,

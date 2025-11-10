@@ -35,21 +35,13 @@ class UnixAliasStrategy(CommandStrategy):
                 else:
                     return self.shell.execute(translated)
             else:
-                # Translation failed, continue with original
-                router = context.get("router")
-                if router:
-                    return router.route_command(input_text)
-                else:
-                    return self.shell.execute(input_text)
+                # Translation failed, execute original command directly
+                return self.shell.execute(input_text)
 
         except Exception as e:
-            # If translation fails, continue with original command
+            # If translation fails, execute original command directly
             print(f"Isaac > Warning: Unix alias translation failed: {e}")
-            router = context.get("router")
-            if router:
-                return router.route_command(input_text)
-            else:
-                return self.shell.execute(input_text)
+            return self.shell.execute(input_text)
 
     def get_help(self) -> str:
         """Get help text for Unix alias translation."""

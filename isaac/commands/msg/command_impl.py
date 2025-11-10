@@ -32,7 +32,18 @@ class MsgCommand(BaseCommand):
         parser = FlagParser(args)
 
         # Check for different operations
-        if parser.has_flag("read"):
+        if parser.has_flag("clear"):
+            # Clear messages - check for filter flags
+            filter_type = None
+            if parser.has_flag("sys"):
+                filter_type = "--sys"
+            elif parser.has_flag("code"):
+                filter_type = "--code"
+            elif parser.has_flag("ack"):
+                filter_type = "--ack"
+            return self._clear_messages(filter_type)
+
+        elif parser.has_flag("read"):
             # Read specific message
             message_id = parser.get_flag("read")
             if message_id:
@@ -57,8 +68,12 @@ class MsgCommand(BaseCommand):
                 )
 
         elif parser.has_flag("ack_all") or parser.has_flag("ack-all"):
-            # Acknowledge all messages
-            filter_type = parser.get_flag("ack_all") or parser.get_flag("ack-all")
+            # Acknowledge all messages - check for filter flags
+            filter_type = None
+            if parser.has_flag("sys"):
+                filter_type = "--sys"
+            elif parser.has_flag("code"):
+                filter_type = "--code"
             return self._acknowledge_all_messages(filter_type)
 
         elif parser.has_flag("delete"):
@@ -73,10 +88,9 @@ class MsgCommand(BaseCommand):
                     metadata={"error_code": "MISSING_ID"}
                 )
 
-        elif parser.has_flag("clear"):
-            # Clear messages
-            filter_type = parser.get_flag("clear")
-            return self._clear_messages(filter_type)
+        elif parser.has_flag("auto_run") or parser.has_flag("auto-run"):
+            # Auto-run safe recommendations
+            return self._auto_run_recommendations()
 
         # Default: show messages with optional filter
         filter_type = parser.get_flag("filter")
@@ -115,14 +129,7 @@ class MsgCommand(BaseCommand):
         """Read a specific message by ID"""
         try:
             message_queue = MessageQueue()
-            # Try to get message by ID - we'll need to add this method to MessageQueue
-            # For now, get all messages and find by ID
-            messages = message_queue.get_messages(status="all")
-            message = None
-            for msg in messages:
-                if str(msg['id']) == message_id:
-                    message = msg
-                    break
+            message = message_queue.get_message_by_id(int(message_id))
             
             if not message:
                 return CommandResponse(
@@ -137,6 +144,12 @@ class MsgCommand(BaseCommand):
                 data=output,
                 metadata={"operation": "read", "message_id": message_id}
             )
+        except ValueError:
+            return CommandResponse(
+                success=False,
+                error=f"Invalid message ID: {message_id}",
+                metadata={"error_code": "INVALID_ID"}
+            )
         except Exception as e:
             return CommandResponse(
                 success=False,
@@ -148,12 +161,24 @@ class MsgCommand(BaseCommand):
         """Acknowledge a specific message by ID"""
         try:
             message_queue = MessageQueue()
-            # We'll need to add an acknowledge method to MessageQueue
-            # For now, return a placeholder
+            success = message_queue.acknowledge_message(int(message_id))
+            if success:
+                return CommandResponse(
+                    success=True,
+                    data=f"Message {message_id} acknowledged",
+                    metadata={"operation": "ack", "message_id": message_id}
+                )
+            else:
+                return CommandResponse(
+                    success=False,
+                    error=f"Message {message_id} not found or already acknowledged",
+                    metadata={"error_code": "NOT_FOUND"}
+                )
+        except ValueError:
             return CommandResponse(
-                success=True,
-                data=f"Message {message_id} acknowledged",
-                metadata={"operation": "ack", "message_id": message_id}
+                success=False,
+                error=f"Invalid message ID: {message_id}",
+                metadata={"error_code": "INVALID_ID"}
             )
         except Exception as e:
             return CommandResponse(
@@ -166,12 +191,26 @@ class MsgCommand(BaseCommand):
         """Acknowledge all messages, optionally filtered by type"""
         try:
             message_queue = MessageQueue()
-            # Placeholder implementation
-            filter_desc = f" ({filter_type})" if filter_type else ""
+            
+            # Parse filter type
+            message_type = None
+            if filter_type in ["--sys", "-s"]:
+                message_type = MessageType.SYSTEM
+            elif filter_type in ["--code", "-c"]:
+                message_type = MessageType.CODE
+            
+            # Acknowledge messages
+            count = message_queue.acknowledge_all(message_type=message_type)
+            
+            # Build description
+            filter_desc = ""
+            if message_type:
+                filter_desc = f" {message_type.value}"
+            
             return CommandResponse(
                 success=True,
-                data=f"All messages{filter_desc} acknowledged",
-                metadata={"operation": "ack_all", "filter": filter_type}
+                data=f"All messages{filter_desc} acknowledged ({count} messages)",
+                metadata={"operation": "ack_all", "filter": filter_type, "count": count}
             )
         except Exception as e:
             return CommandResponse(
@@ -184,11 +223,24 @@ class MsgCommand(BaseCommand):
         """Delete a specific message by ID"""
         try:
             message_queue = MessageQueue()
-            # Placeholder implementation
+            success = message_queue.delete_message(int(message_id))
+            if success:
+                return CommandResponse(
+                    success=True,
+                    data=f"Message {message_id} deleted",
+                    metadata={"operation": "delete", "message_id": message_id}
+                )
+            else:
+                return CommandResponse(
+                    success=False,
+                    error=f"Message {message_id} not found",
+                    metadata={"error_code": "NOT_FOUND"}
+                )
+        except ValueError:
             return CommandResponse(
-                success=True,
-                data=f"Message {message_id} deleted",
-                metadata={"operation": "delete", "message_id": message_id}
+                success=False,
+                error=f"Invalid message ID: {message_id}",
+                metadata={"error_code": "INVALID_ID"}
             )
         except Exception as e:
             return CommandResponse(
@@ -201,17 +253,74 @@ class MsgCommand(BaseCommand):
         """Clear messages based on filter type"""
         try:
             message_queue = MessageQueue()
-            filter_desc = f" ({filter_type})" if filter_type else ""
+            
+            # Parse filter type
+            message_type = None
+            status = None
+            
+            if filter_type in ["--sys", "-s"]:
+                message_type = MessageType.SYSTEM
+            elif filter_type in ["--code", "-c"]:
+                message_type = MessageType.CODE
+            elif filter_type in ["--ack", "-a"]:
+                status = "acknowledged"
+            
+            # Clear messages
+            count = message_queue.clear_messages(message_type=message_type, status=status)
+            
+            # Build description
+            filter_desc = ""
+            if filter_type:
+                if message_type:
+                    filter_desc = f" {message_type.value}"
+                elif status:
+                    filter_desc = f" {status}"
+            
             return CommandResponse(
                 success=True,
-                data=f"Messages{filter_desc} cleared",
-                metadata={"operation": "clear", "filter": filter_type}
+                data=f"Messages{filter_desc} cleared ({count} deleted)",
+                metadata={"operation": "clear", "filter": filter_type, "count": count}
             )
         except Exception as e:
             return CommandResponse(
                 success=False,
                 error=f"Error clearing messages: {e}",
                 metadata={"error_code": "CLEAR_ERROR"}
+            )
+
+    def _auto_run_recommendations(self) -> CommandResponse:
+        """Auto-run safe recommendations from pending messages"""
+        try:
+            message_queue = MessageQueue()
+            # Get pending messages that might have safe recommendations
+            messages = message_queue.get_messages(status="pending")
+            
+            safe_actions = []
+            for msg in messages:
+                # Check if message has safe recommendations (this would need to be implemented)
+                # For now, return a placeholder
+                if "safe" in msg.get("metadata", {}).get("recommendation_type", "").lower():
+                    safe_actions.append(f"Would run: {msg['title']}")
+            
+            if not safe_actions:
+                return CommandResponse(
+                    success=True,
+                    data="No safe recommendations found to auto-run",
+                    metadata={"operation": "auto_run", "actions_found": 0}
+                )
+            
+            # Note: Actually running commands would require careful security review
+            actions_text = "\n".join(f"  {action}" for action in safe_actions)
+            return CommandResponse(
+                success=True,
+                data=f"Found {len(safe_actions)} safe recommendations:\n{actions_text}\n\n(Auto-run not yet implemented - manual execution required)",
+                metadata={"operation": "auto_run", "actions_found": len(safe_actions)}
+            )
+        except Exception as e:
+            return CommandResponse(
+                success=False,
+                error=f"Error processing auto-run recommendations: {e}",
+                metadata={"error_code": "AUTO_RUN_ERROR"}
             )
 
     def _display_full_message(self, message: Dict[str, Any]) -> str:

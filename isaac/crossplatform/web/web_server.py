@@ -2,9 +2,6 @@
 Web Server - HTTP server for web interface
 """
 
-from flask import Flask, render_template_string
-from flask_cors import CORS
-
 
 class WebServer:
     """
@@ -12,6 +9,16 @@ class WebServer:
     """
 
     def __init__(self, isaac_core, host: str = "0.0.0.0", port: int = 8000):
+        try:
+            from flask import Flask, render_template_string
+            from flask_cors import CORS
+        except ImportError:
+            raise ImportError("Flask is required for web server functionality. Install with: pip install flask flask-cors")
+
+        self.Flask = Flask
+        self.render_template_string = render_template_string
+        self.CORS = CORS
+
         self.app = Flask(__name__)
         CORS(self.app)
 
@@ -27,17 +34,17 @@ class WebServer:
         @self.app.route("/")
         def index():
             """Main web interface"""
-            return render_template_string(self._get_index_html())
+            return self.render_template_string(self._get_index_html())
 
         @self.app.route("/terminal")
         def terminal():
             """Terminal interface"""
-            return render_template_string(self._get_terminal_html())
+            return self.render_template_string(self._get_terminal_html())
 
         @self.app.route("/workspace")
         def workspace():
             """Workspace explorer"""
-            return render_template_string(self._get_workspace_html())
+            return self.render_template_string(self._get_workspace_html())
 
         @self.app.route("/static/<path:filename>")
         def static_files(filename):
