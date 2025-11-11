@@ -80,7 +80,7 @@ class NewfileCommand(BaseCommand):
         if content is None and context and "piped_input" in context:
             content = context["piped_input"]
 
-        return self._handle_create_file(session_manager, filename, template, content, force)
+        return self._handle_create_file(session_manager, filename, template, content, force, context)
 
     def _handle_list_templates(self, session_manager: SessionManager) -> CommandResponse:
         """List available templates"""
@@ -136,7 +136,8 @@ class NewfileCommand(BaseCommand):
         filename: str,
         template: Optional[str],
         content: Optional[str],
-        force: bool
+        force: bool,
+        context: Optional[Dict[str, Any]] = None
     ) -> CommandResponse:
         """Create a new file"""
         try:

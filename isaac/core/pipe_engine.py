@@ -128,8 +128,30 @@ class PipeEngine:
 
             # Parse JSON output
             try:
-                output_blob = json.loads(result.stdout)
-                return output_blob
+                output_data = json.loads(result.stdout)
+                
+                # Check if it's a dispatcher envelope (has "ok" key)
+                if "ok" in output_data:
+                    # Convert dispatcher envelope to blob format
+                    if output_data.get("ok"):
+                        return {
+                            "kind": "text",
+                            "content": output_data.get("stdout", ""),
+                            "meta": {"source_command": cmd, "exit_code": result.returncode}
+                        }
+                    else:
+                        # Error envelope
+                        error_info = output_data.get("error", {})
+                        error_msg = error_info.get("message", "Unknown error") if isinstance(error_info, dict) else str(error_info)
+                        return {
+                            "kind": "error",
+                            "content": error_msg,
+                            "meta": {"source_command": cmd, "error": error_info}
+                        }
+                else:
+                    # Already blob format, return as-is
+                    return output_data
+                    
             except json.JSONDecodeError:
                 # Command returned plain text, wrap it
                 return {

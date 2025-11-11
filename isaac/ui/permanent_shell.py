@@ -3,6 +3,7 @@ Permanent Shell - Isaac's simplified terminal interface
 Implements a simple prompt/output loop with meta-commands
 """
 
+import logging
 import sys
 
 from prompt_toolkit import PromptSession
@@ -26,6 +27,10 @@ from isaac.ui.predictive_completer import PredictionContext, PredictiveCompleter
 
 class PermanentShell:
     def __init__(self):
+        # Configure logging to suppress monitoring warnings in interactive mode
+        # Only show ERROR level and above for monitoring modules
+        logging.getLogger('isaac.monitoring').setLevel(logging.ERROR)
+        
         self.session = SessionManager()
         self.shell = self._detect_shell()
         self.router = CommandRouter(self.session, self.shell)

@@ -25,11 +25,26 @@ class MetaCommandStrategy(CommandStrategy):
                 engine = PipeEngine(self.session, self.shell)
                 result_blob = engine.execute_pipeline(input_text)
 
+                # Validate blob structure
+                if not isinstance(result_blob, dict):
+                    return CommandResult(
+                        success=False, 
+                        output=f"Invalid pipe result: expected dict, got {type(result_blob).__name__}", 
+                        exit_code=1
+                    )
+                
+                if "kind" not in result_blob:
+                    return CommandResult(
+                        success=False, 
+                        output=f"Invalid pipe result: missing 'kind' field. Got: {result_blob}", 
+                        exit_code=1
+                    )
+
                 # Convert blob to CommandResult
                 if result_blob["kind"] == "error":
-                    return CommandResult(success=False, output=result_blob["content"], exit_code=1)
+                    return CommandResult(success=False, output=result_blob.get("content", "Unknown error"), exit_code=1)
                 else:
-                    return CommandResult(success=True, output=result_blob["content"], exit_code=0)
+                    return CommandResult(success=True, output=result_blob.get("content", ""), exit_code=0)
             else:
                 # Single command - use dispatcher
                 dispatcher = context.get("dispatcher")
