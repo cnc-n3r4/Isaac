@@ -1,9 +1,15 @@
+# ============================================================================
 # Python
+# ============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyd
+*.pyo
 .Python
+
+# Distribution / packaging
 build/
 develop-eggs/
 dist/
@@ -16,42 +22,355 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-!./claude/bible/**
-.claude/logs/
-.claude/mail/
-.claude/status/
+MANIFEST
 
+# PyInstaller
+*.manifest
+*.spec
 
-# Virtual environments
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.hypothesis/
+.pytest_cache/
+
+# ============================================================================
+# C++ / CMake / Build Artifacts
+# ============================================================================
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.cmake
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Build directories
+build/
+out/
+Build/
+debug/
+release/
+x64/
+x86/
+Win32/
+.cmake/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Ninja build files
+.ninja_deps
+.ninja_log
+build.ninja
+
+# ============================================================================
+# Virtual Environments
+# ============================================================================
 venv/
+.venv/
 ENV/
 env/
+virtualenv/
+Lib/
+Scripts/
+pyvenv.cfg
 
-# IDE
+# ============================================================================
+# IDEs and Editors
+# ============================================================================
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+*.VC.VC.opendb
+*.ipch
+
+# Visual Studio Code
 .vscode/
+*.code-workspace
+!Isaac.code-workspace
+
+# JetBrains IDEs (PyCharm, CLion, etc.)
 .idea/
+*.iml
+*.iws
+*.ipr
+out/
+cmake-build-*/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
 *.swp
 *.swo
+*.swn
 *~
+.netrwhist
 
-# Testing
+# Emacs
+*~
+\#*\#
+.\#*
+.projectile
+
+# Eclipse
+.cproject
+.project
+.settings/
+
+# ============================================================================
+# Operating System Files
+# ============================================================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# Testing & Coverage
+# ============================================================================
 .pytest_cache/
+.tox/
 .coverage
 htmlcov/
+.hypothesis/
+test_results_sample.txt
+baseline_*.txt
+*_AUDIT.txt
+*_AUDIT.csv
+*_SUMMARY.txt
 
-# Isaac specific
+# ============================================================================
+# Isaac Specific
+# ============================================================================
+# Isaac user data and configuration
 .isaac/
 *.jsonl
 
-# Environment variables
+# Exported test files
+exported_*.json
+
+# Log files
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache files
+*.cache
+.cache/
+isaac/cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Archived/old code
+*_old.py
+*_backup.py
+*_archived/
+_archived/
+archive/
+Archive/
+OLD/
+old/
+
+# Analysis scripts (one-time use)
+analyze_*.py
+
+# ============================================================================
+# Environment & Secrets
+# ============================================================================
 .env
 .env.local
 .env.*.local
 .env.production
 .env.development
 
-# Keep example file in version control
+# API keys and secrets
+secrets.json
+*_secrets.json
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Keep example files
 !.env.example
+
+# ============================================================================
+# Documentation Build Artifacts
+# ============================================================================
+_build/
+docs/_build/
+docs/_static/
+docs/_templates/
+site/
+
+# ============================================================================
+# Package Manager Files
+# ============================================================================
+node_modules/
+package-lock.json
+yarn.lock
+.pnp/
+.pnp.js
+
+# ============================================================================
+# Large Files & Binary Data
+# ============================================================================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.bz2
+*.gz
+*.xz
+
+# Large datasets
+data/
+datasets/
+*.csv
+*.parquet
+*.feather
+*.h5
+*.hdf5
+
+# Models and weights (uncomment if needed)
+# *.ckpt
+# *.pth
+# *.pt
+# *.h5
+# *.pb
+# *.onnx
+
+# ============================================================================
+# Keep These Files (Overrides)
+# ============================================================================
+# Keep specific configuration examples
+!.env.example
+!requirements.txt
+!setup.py
+!CMakeLists.txt
+!isaac/data/*.json
+!isaac/data/*.yaml
+!isaac/commands/*/command.yaml
+
+# Keep documentation
+!README.md
+!ISAAC_USER_GUIDE.md
+!HOW_TO_GUIDE.md
+!CLEANUP_SUMMARY.md
+!LICENSE
+
+# Keep source code
+!src/**/*.cpp
+!src/**/*.hpp
+!isaac/**/*.py
+!tests/**/*.py
+
+# Keep examples
+!examples/**/*.py

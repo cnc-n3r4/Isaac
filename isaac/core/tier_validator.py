@@ -114,17 +114,17 @@ class TierValidator:
         if not command or not command.strip():
             return 3
 
-        # Extract base command (first word)
-        base_cmd = command.strip().split()[0].lower()
+        # Extract base command (first word) - keep original case for case-sensitive commands
+        base_cmd = command.strip().split()[0]
 
-        # Check user overrides first
+        # Check user overrides first (case-insensitive for overrides)
         if hasattr(self.preferences, "tier_overrides") and self.preferences.tier_overrides:
-            if base_cmd in self.preferences.tier_overrides:
-                return self.preferences.tier_overrides[base_cmd]
+            if base_cmd.lower() in self.preferences.tier_overrides:
+                return self.preferences.tier_overrides[base_cmd.lower()]
 
-        # Check default tiers
+        # Check default tiers - case-sensitive matching
         for tier_str, commands in self.tier_defaults.items():
-            if base_cmd in [cmd.lower() for cmd in commands]:
+            if base_cmd in commands:
                 return float(tier_str) if "." in tier_str else int(tier_str)
 
         # Unknown commands default to Tier 3 (validation required)

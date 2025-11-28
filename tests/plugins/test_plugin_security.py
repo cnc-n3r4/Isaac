@@ -8,6 +8,7 @@ from isaac.plugins.plugin_security import (
     SecurityPolicy,
     PluginSandbox,
     PermissionManager,
+    APIKeyManager,
 )
 
 
@@ -181,6 +182,102 @@ class TestPermissionManager(unittest.TestCase):
         self.assertTrue(policy.allow_file_write)
         self.assertTrue(policy.allow_network)
         self.assertFalse(policy.allow_subprocess)
+
+
+class TestAPIKeyManager(unittest.TestCase):
+    """Test APIKeyManager class."""
+
+    def test_manager_creation(self):
+        """Test creating API key manager."""
+        manager = APIKeyManager()
+        self.assertIsNotNone(manager)
+
+    def test_register_key(self):
+        """Test registering API key."""
+        manager = APIKeyManager()
+
+        manager.register_key("test-plugin", "openai", "sk-test123")
+        manager.grant_service_access("test-plugin", "openai")
+
+        key = manager.get_key("test-plugin", "openai")
+        self.assertEqual(key, "sk-test123")
+
+    def test_get_key_without_permission(self):
+        """Test getting key without permission."""
+        manager = APIKeyManager()
+
+        manager.register_key("test-plugin", "openai", "sk-test123")
+        # Don't grant access
+
+        key = manager.get_key("test-plugin", "openai")
+        self.assertIsNone(key)
+
+    def test_grant_revoke_service_access(self):
+        """Test granting and revoking service access."""
+        manager = APIKeyManager()
+
+        manager.grant_service_access("test-plugin", "openai")
+        self.assertTrue(manager.has_service_access("test-plugin", "openai"))
+
+        manager.revoke_service_access("test-plugin", "openai")
+        self.assertFalse(manager.has_service_access("test-plugin", "openai"))
+
+    def test_list_services(self):
+        """Test listing services."""
+        manager = APIKeyManager()
+
+        manager.grant_service_access("test-plugin", "openai")
+        manager.grant_service_access("test-plugin", "anthropic")
+
+        services = manager.list_services("test-plugin")
+        self.assertEqual(len(services), 2)
+        self.assertIn("openai", services)
+        self.assertIn("anthropic", services)
+
+    def test_validate_key_format_openai(self):
+        """Test OpenAI key format validation."""
+        manager = APIKeyManager()
+
+        self.assertTrue(manager.validate_key_format("openai", "sk-test123456789"))
+        self.assertFalse(manager.validate_key_format("openai", "invalid"))
+
+    def test_validate_key_format_anthropic(self):
+        """Test Anthropic key format validation."""
+        manager = APIKeyManager()
+
+        self.assertTrue(manager.validate_key_format("anthropic", "sk-ant-test12345678901234567890"))
+        self.assertFalse(manager.validate_key_format("anthropic", "invalid"))
+
+    def test_secure_store_key(self):
+        """Test secure key storage."""
+        manager = APIKeyManager()
+
+        success = manager.secure_store_key("test-plugin", "openai", "sk-test123456789")
+        self.assertTrue(success)
+
+        self.assertTrue(manager.has_service_access("test-plugin", "openai"))
+        key = manager.get_key("test-plugin", "openai")
+        self.assertEqual(key, "sk-test123456789")
+
+    def test_secure_store_invalid_key(self):
+        """Test secure storage rejects invalid keys."""
+        manager = APIKeyManager()
+
+        success = manager.secure_store_key("test-plugin", "openai", "invalid")
+        self.assertFalse(success)
+
+    def test_remove_key(self):
+        """Test key removal."""
+        manager = APIKeyManager()
+
+        manager.register_key("test-plugin", "openai", "sk-test123")
+        manager.grant_service_access("test-plugin", "openai")
+
+        manager.remove_key("test-plugin", "openai")
+
+        self.assertFalse(manager.has_service_access("test-plugin", "openai"))
+        key = manager.get_key("test-plugin", "openai")
+        self.assertIsNone(key)
 
 
 if __name__ == "__main__":

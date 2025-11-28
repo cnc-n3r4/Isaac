@@ -33,6 +33,9 @@ class PowerShellAdapter(BaseShellAdapter):
         Returns:
             CommandResult with output and exit code
         """
+        # Translate common Unix commands to PowerShell equivalents
+        command = self._translate_command(command)
+
         try:
             result = subprocess.run(
                 [self.ps_exe, "-NoProfile", "-Command", command],
@@ -91,3 +94,40 @@ class PowerShellAdapter(BaseShellAdapter):
 
         # Default to powershell.exe (will fail if not found, but better error)
         return "powershell.exe"
+
+    def _translate_command(self, command: str) -> str:
+        """
+        Translate common Unix commands to PowerShell equivalents.
+
+        Args:
+            command: The original command to translate
+
+        Returns:
+            str: Translated command suitable for PowerShell
+        """
+        translations = {
+            "ls": "Get-ChildItem",
+            "cat": "Get-Content",
+            "echo": "Write-Output",
+            "kill": "Stop-Process",
+            "grep": "Select-String",
+            "find": "Where-Object",
+            "xargs": "ForEach-Object",
+            "df": "Get-PSDrive",
+            "du": "Get-ChildItem | Measure-Object -Property Length -Sum",
+            "free": "Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object -Property TotalPhysicalMemory, @{Name='FreePhysicalMemory';Expression={[math]::round($_.TotalPhysicalMemory/1MB,2)}}, @{Name='UsedPhysicalMemory';Expression={[math]::round(($_.TotalPhysicalMemory - $_.FreePhysicalMemory)/1MB,2)}}",
+            "ps": "Get-Process",
+            "top": "Sort-Object -Property CPU -Descending | Select-Object -First 10",
+        }
+
+        # Split the command by spaces to separate command and arguments
+        command_parts = command.split(" ")
+
+        # Translate the command itself, if it exists in the translations
+        if command_parts[0] in translations:
+            command_parts[0] = translations[command_parts[0]]
+
+        # Reconstruct the command from its parts
+        translated_command = " ".join(command_parts)
+
+        return translated_command

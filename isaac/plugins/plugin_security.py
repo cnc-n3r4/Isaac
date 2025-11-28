@@ -1,10 +1,31 @@
 """Plugin Security - Sandboxed plugin execution and security policies."""
 
-import resource
+import platform
 import signal
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set
+
+# resource module is Unix-only
+try:
+    import resource
+    HAS_RESOURCE = True
+except ImportError:
+    HAS_RESOURCE = False
+    # Provide stub for Windows
+    class resource:
+        """Stub for Unix resource module on Windows"""
+        RLIMIT_AS = 0
+        RLIMIT_CPU = 1
+        RLIMIT_FSIZE = 2
+        
+        @staticmethod
+        def setrlimit(limit_type, limits):
+            pass  # No-op on Windows
+        
+        @staticmethod
+        def getrlimit(limit_type):
+            return (-1, -1)  # Unlimited on Windows
 
 
 @dataclass
@@ -360,3 +381,140 @@ class PermissionManager:
             allow_file_write=self.PERMISSION_FILE_WRITE in permissions,
             allow_file_read=self.PERMISSION_FILE_READ in permissions,
         )
+
+
+class APIKeyManager:
+    """Manage API keys for plugins with security validation."""
+
+    def __init__(self):
+        """Initialize API key manager."""
+        self._api_keys: Dict[str, Dict[str, str]] = {}  # plugin_name -> {service: key}
+        self._key_permissions: Dict[str, Set[str]] = {}  # plugin_name -> allowed_services
+
+    def register_key(self, plugin_name: str, service: str, api_key: str) -> None:
+        """Register an API key for a plugin and service.
+
+        Args:
+            plugin_name: Plugin name
+            service: API service name (e.g., 'openai', 'anthropic')
+            api_key: API key to store
+        """
+        if plugin_name not in self._api_keys:
+            self._api_keys[plugin_name] = {}
+        self._api_keys[plugin_name][service] = api_key
+
+    def grant_service_access(self, plugin_name: str, service: str) -> None:
+        """Grant access to a specific API service.
+
+        Args:
+            plugin_name: Plugin name
+            service: API service name
+        """
+        if plugin_name not in self._key_permissions:
+            self._key_permissions[plugin_name] = set()
+        self._key_permissions[plugin_name].add(service)
+
+    def revoke_service_access(self, plugin_name: str, service: str) -> None:
+        """Revoke access to a specific API service.
+
+        Args:
+            plugin_name: Plugin name
+            service: API service name
+        """
+        if plugin_name in self._key_permissions:
+            self._key_permissions[plugin_name].discard(service)
+
+    def get_key(self, plugin_name: str, service: str) -> Optional[str]:
+        """Get API key for a plugin and service.
+
+        Args:
+            plugin_name: Plugin name
+            service: API service name
+
+        Returns:
+            API key if available and permitted, None otherwise
+        """
+        # Check if plugin has permission for this service
+        if plugin_name not in self._key_permissions:
+            return None
+        if service not in self._key_permissions[plugin_name]:
+            return None
+
+        # Return key if it exists
+        plugin_keys = self._api_keys.get(plugin_name, {})
+        return plugin_keys.get(service)
+
+    def has_service_access(self, plugin_name: str, service: str) -> bool:
+        """Check if plugin has access to a service.
+
+        Args:
+            plugin_name: Plugin name
+            service: API service name
+
+        Returns:
+            True if access is granted
+        """
+        return service in self._key_permissions.get(plugin_name, set())
+
+    def list_services(self, plugin_name: str) -> Set[str]:
+        """List all services a plugin has access to.
+
+        Args:
+            plugin_name: Plugin name
+
+        Returns:
+            Set of service names
+        """
+        return self._key_permissions.get(plugin_name, set()).copy()
+
+    def validate_key_format(self, service: str, api_key: str) -> bool:
+        """Validate API key format for a service.
+
+        Args:
+            service: API service name
+            api_key: API key to validate
+
+        Returns:
+            True if key format is valid
+        """
+        # Basic validation patterns (can be extended)
+        patterns = {
+            'openai': lambda k: k.startswith('sk-') and len(k) > 20,
+            'anthropic': lambda k: k.startswith('sk-ant-') and len(k) > 30,
+            'xai': lambda k: len(k) > 10,  # XAI keys vary
+            'claude': lambda k: k.startswith('sk-ant-') and len(k) > 30,
+        }
+
+        validator = patterns.get(service.lower())
+        if validator:
+            return validator(api_key)
+        return len(api_key) > 10  # Default validation
+
+    def secure_store_key(self, plugin_name: str, service: str, api_key: str) -> bool:
+        """Securely store an API key with validation.
+
+        Args:
+            plugin_name: Plugin name
+            service: API service name
+            api_key: API key to store
+
+        Returns:
+            True if key was stored successfully
+        """
+        if not self.validate_key_format(service, api_key):
+            return False
+
+        self.register_key(plugin_name, service, api_key)
+        self.grant_service_access(plugin_name, service)
+        return True
+
+    def remove_key(self, plugin_name: str, service: str) -> None:
+        """Remove an API key and revoke access.
+
+        Args:
+            plugin_name: Plugin name
+            service: API service name
+        """
+        if plugin_name in self._api_keys:
+            self._api_keys[plugin_name].pop(service, None)
+        self.revoke_service_access(plugin_name, service)

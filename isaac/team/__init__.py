@@ -1,7 +1,7 @@
 """Team collaboration system for Isaac."""
 
 from .manager import TeamManager
-from .models import Permission, PermissionLevel, Team, TeamMember
+from .models import Permission, PermissionLevel, ResourceType, Team, TeamMember
 from .permission_system import PermissionSystem
 from .team_collections import TeamCollections
 from .team_memory import TeamMemory
@@ -14,6 +14,7 @@ __all__ = [
     "TeamMember",
     "Permission",
     "PermissionLevel",
+    "ResourceType",
     "TeamManager",
     "WorkspaceSharer",
     "TeamCollections",

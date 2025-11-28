@@ -1,0 +1,230 @@
+name: Isaac CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8, 3.9, '3.10', '3.11']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pytest pytest-cov mypy flake8
+
+    - name: Set up C++ build environment
+      if: matrix.os != 'macos-latest'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install CMake (Linux/macOS)
+      if: matrix.os != 'windows-latest'
+      run: |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          brew install cmake
+        fi
+
+    - name: Build C++ core
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          cmake --build . --config Release
+        else
+          make -j$(nproc)
+        fi
+
+    - name: Run Python tests
+      run: |
+        pytest tests/ -v --cov=isaac --cov-report=xml --cov-report=term-missing
+
+    - name: Run C++ tests (if available)
+      run: |
+        # Add C++ test execution here when implemented
+        echo "C++ tests not yet implemented"
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: ${{ matrix.os }}-${{ matrix.python-version }}
+        name: codecov-umbrella
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install linting dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 mypy black isort
+
+    - name: Run flake8
+      run: |
+        flake8 isaac/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 isaac/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Run mypy
+      run: |
+        mypy isaac/ --ignore-missing-imports
+
+    - name: Check code formatting
+      run: |
+        black --check isaac/ tests/
+        isort --check-only isaac/ tests/
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install security dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+
+    - name: Run Bandit security linter
+      run: |
+        bandit -r isaac/ -f json -o bandit-report.json || true
+
+    - name: Run Safety check
+      run: |
+        safety check --json > safety-report.json || true
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install performance dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install memory-profiler psutil
+
+    - name: Build C++ core
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+
+    - name: Run performance benchmarks
+      run: |
+        python -c "
+        import psutil
+        import os
+        from isaac.core.command_router import CommandRouter
+        from isaac.core.tier_validator import TierValidator
+        from isaac.adapters.shell_adapter import ShellAdapter
+
+        # Memory usage before
+        process = psutil.Process(os.getpid())
+        mem_before = process.memory_info().rss / 1024 / 1024
+        print(f'Memory before initialization: {mem_before:.1f} MB')
+
+        # Initialize components
+        shell = ShellAdapter()
+        router = CommandRouter(None, shell)
+
+        # Memory usage after
+        mem_after = process.memory_info().rss / 1024 / 1024
+        print(f'Memory after initialization: {mem_after:.1f} MB')
+        print(f'Memory increase: {mem_after - mem_before:.1f} MB')
+
+        # Test command routing performance
+        import time
+        start_time = time.time()
+        for i in range(100):
+            result = router.route_command('ls')
+        end_time = time.time()
+        avg_time = (end_time - start_time) / 100 * 1000
+        print(f'Average command latency: {avg_time:.2f} ms')
+        "
+
+  release:
+    needs: [test, lint, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Build package
+      run: python -m build
+
+    - name: Publish to PyPI (dry run)
+      run: |
+        twine check dist/*
+        echo "Package ready for release. Run 'twine upload dist/*' to publish."
+
+    - name: Create GitHub release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body: |
+          ## Changes
+          - Automated release from CI/CD pipeline
+          - All tests passed
+          - Code quality checks completed
+        draft: false
+        prerelease: false

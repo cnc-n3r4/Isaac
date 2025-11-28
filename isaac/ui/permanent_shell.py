@@ -391,7 +391,7 @@ class PermanentShell:
                     self._learn_from_correction(user_input)
 
                 # Handle exit commands
-                if user_input.lower() in ["/exit", "/quit"] and result.success:
+                if (user_input.lower() in ["/exit", "/quit", "exit", "quit", "q"] or "Goodbye" in result.output) and result.success:
                     print("Goodbye!")
                     self.monitor_manager.stop_all()
                     break
